@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 static void lval_expr_print(lval* v, char open, char close);
+
 static void lval_print(lval* v)
 {
     switch (v->type) {
@@ -17,6 +18,9 @@ static void lval_print(lval* v)
         break;
     case LVAL_SEXPR:
         lval_expr_print(v, '(', ')');
+        break;
+    case LVAL_QEXPR:
+        lval_expr_print(v, '{', '}');
         break;
     }
 }
