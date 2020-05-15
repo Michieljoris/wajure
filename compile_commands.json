@@ -3,11 +3,112 @@
         "arguments": [
             "gcc",
             "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
             "-o",
-            "repl",
-            "repl.c"
+            "build/lispy",
+            "src/lval.c"
         ],
         "directory": "/home/mj/src/c/playground",
-        "file": "repl.c"
+        "file": "src/lval.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/print.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/print.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/read.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/read.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/grammar.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/grammar.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/mpc.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/mpc.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/repl.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/repl.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/eval.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/eval.c"
+    },
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=c99",
+            "-Wall",
+            "-Isrc/include",
+            "-o",
+            "build/lispy",
+            "src/main.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "src/main.c"
     }
 ]

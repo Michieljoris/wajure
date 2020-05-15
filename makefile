@@ -1,3 +1,2 @@
-build:
-	gcc -std=c99 -Wall repl.c mpc.c -ledit -o repl 
-
+go:
+	gcc -std=c99 -Wall -Isrc/include src/*.c -ledit -o build/lispy
