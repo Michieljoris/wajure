@@ -1,0 +1,13 @@
+[
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-o",
+            "repl",
+            "repl.c"
+        ],
+        "directory": "/home/mj/src/c/playground",
+        "file": "repl.c"
+    }
+]
