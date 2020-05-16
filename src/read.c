@@ -1,38 +1,7 @@
-#include "read.h"
+#include <stdlib.h>
 
 #include "lval.h"
 #include "mpc.h"
-
-lval* lval_num(long x) {
-  lval* v = malloc(sizeof(lval));
-  v->type = LVAL_NUM;
-  v->num = x;
-  return v;
-}
-
-lval* lval_sym(char* s) {
-  lval* v = malloc(sizeof(lval));
-  v->type = LVAL_SYM;
-  v->sym = malloc(strlen(s) + 1);
-  strcpy(v->sym, s);
-  return v;
-}
-
-lval* lval_sexpr(void) {
-  lval* v = malloc(sizeof(lval));
-  v->type = LVAL_SEXPR;
-  v->count = 0;
-  v->cell = NULL;
-  return v;
-}
-
-lval* lval_qexpr(void) {
-  lval* v = malloc(sizeof(lval));
-  v->type = LVAL_QEXPR;
-  v->count = 0;
-  v->cell = NULL;
-  return v;
-}
 
 static lval* lval_read_num(mpc_ast_t* t) {
   errno = 0;
@@ -54,7 +23,7 @@ lval* lval_read(mpc_ast_t* t) {
   if (strstr(t->tag, "qexpr")) {
     x = lval_qexpr();
   }
-  for (int i = 0; i < t->children_num; ++i) {
+  for (int i = 0; i < t->children_num; i++) {
     char* contents = t->children[i]->contents;
     if (strcmp(contents, "(") == 0 || strcmp(contents, ")") == 0 ||
         strcmp(contents, "{") == 0 || strcmp(contents, "}") == 0 ||
