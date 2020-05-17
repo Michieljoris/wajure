@@ -5,9 +5,9 @@
 #include "env.h"
 #include "lval.h"
 
-static void lval_expr_print(lval* v, char open, char close);
+static void lval_expr_print(Lval* v, char open, char close);
 
-static void lval_print(lval* v) {
+static void lval_print(Lval* v) {
   switch (v->type) {
     case LVAL_NUM:
       printf("%li", v->num);
@@ -29,7 +29,7 @@ static void lval_print(lval* v) {
   }
 }
 
-static void lval_expr_print(lval* v, char open, char close) {
+static void lval_expr_print(Lval* v, char open, char close) {
   putchar(open);
   for (int i = 0; i < v->count; i++) {
     lval_print(v->cell[i]);
@@ -40,12 +40,12 @@ static void lval_expr_print(lval* v, char open, char close) {
   putchar(close);
 }
 
-void lval_println(lval* v) {
+void lval_println(Lval* v) {
   lval_print(v);
   putchar('\n');
 }
 
-void lenv_print(lenv* e) {
+void lenv_print(Lenv* e) {
   for (int i = 0; i < e->count; ++i) {
     printf("%s:", e->syms[i]);
     lval_println(e->vals[i]);

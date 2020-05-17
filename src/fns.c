@@ -7,11 +7,11 @@
 #include "print.h"
 #include "read.h"
 
-#define LASSERT(sexpr, cond, fmt, ...)        \
-  if (!(cond)) {                              \
-    lval* err = lval_err(fmt, ##__VA_ARGS__); \
-    lval_del(sexpr);                          \
-    return err;                               \
+#define LASSERT(sexpr, cond, fmt, ...)             \
+  if (!(cond)) {                                   \
+    Lval* err = make_lval_err(fmt, ##__VA_ARGS__); \
+    lval_del(sexpr);                               \
+    return err;                                    \
   }
 
 #define LASSERT_ARGS_COUNT(sexpr, fn_name, expected_count) \
@@ -21,29 +21,29 @@
           "got %i, expected %i",                           \
           sexpr->count, 1);
 
-#define LASSERT_TYPE(sexpr, fn_name, index, expected_type) \
-  LASSERT(sexpr, sexpr->cell[index]->type == LVAL_QEXPR,   \
-          "Function '" fn_name                             \
-          "' passed incorrect type for arg %d, "           \
-          "got %s, expected %s",                           \
-          index, ltype_name(sexpr->cell[index]->type),     \
-          ltype_name(expected_type));
+#define LASSERT_TYPE(sexpr, fn_name, index, expected_type)    \
+  LASSERT(sexpr, sexpr->cell[index]->type == LVAL_QEXPR,      \
+          "Function '" fn_name                                \
+          "' passed incorrect type for arg %d, "              \
+          "got %s, expected %s",                              \
+          index, lval_type_to_name(sexpr->cell[index]->type), \
+          lval_type_to_name(expected_type));
 
-lval* builtin_head_fn(lenv* e, lval* sexpr) {
+Lval* head_fn(Lenv* e, Lval* sexpr) {
   LASSERT_ARGS_COUNT(sexpr, "head", 1);
   LASSERT_TYPE(sexpr, "head", 0, LVAL_QEXPR);
 
-  lval* qexpr = lval_take(sexpr, 0);
+  Lval* qexpr = lval_take(sexpr, 0);
   while (qexpr->count > 1) {
     lval_del(lval_pop(qexpr, 1));
   }
   return qexpr;
 }
 
-lval* builtin_tail_fn(lenv* e, lval* sexpr) {
+Lval* tail_fn(Lenv* e, Lval* sexpr) {
   LASSERT_ARGS_COUNT(sexpr, "tail", 1);
   LASSERT_TYPE(sexpr, "tail", 0, LVAL_QEXPR);
-  lval* qexpr = sexpr->cell[0];
+  Lval* qexpr = sexpr->cell[0];
   LASSERT(sexpr, qexpr->count != 0, "Function 'tail_fn' passed {}");
 
   qexpr = lval_take(sexpr, 0);
@@ -51,23 +51,23 @@ lval* builtin_tail_fn(lenv* e, lval* sexpr) {
   return qexpr;
 }
 
-lval* builtin_list_fn(lenv* e, lval* sexpr) {
+Lval* list_fn(Lenv* e, Lval* sexpr) {
   sexpr->type = LVAL_QEXPR;
   return sexpr;
 }
 
-lval* builtin_eval_fn(lenv* e, lval* sexpr) {
+Lval* eval_fn(Lenv* e, Lval* sexpr) {
   LASSERT_ARGS_COUNT(sexpr, "eval", 1);
   LASSERT_TYPE(sexpr, "eval", 0, LVAL_QEXPR);
-  lval* qexpr = lval_take(sexpr, 0);
+  Lval* qexpr = lval_take(sexpr, 0);
   qexpr->type = LVAL_SEXPR;
   return lval_eval(e, qexpr);
 }
 
-lval* lval_join(lval* x, lval* y) {
+Lval* lval_join(Lval* x, Lval* y) {
   /* For each cell in 'y' add it to 'x' */
   while (y->count) {
-    x = lval_add(x, lval_pop(y, 0));
+    x = lval_add_child(x, lval_pop(y, 0));
   }
 
   /* Delete the empty 'y' and return 'x' */
@@ -75,12 +75,12 @@ lval* lval_join(lval* x, lval* y) {
   return x;
 }
 
-lval* builtin_join_fn(lenv* e, lval* sexpr) {
+Lval* join_fn(Lenv* e, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
     LASSERT_TYPE(sexpr, "join", i, LVAL_QEXPR);
   }
 
-  lval* qexpr = lval_pop(sexpr, 0);
+  Lval* qexpr = lval_pop(sexpr, 0);
 
   while (sexpr->count) {
     qexpr = lval_join(qexpr, lval_pop(sexpr, 0));
@@ -90,22 +90,22 @@ lval* builtin_join_fn(lenv* e, lval* sexpr) {
   return qexpr;
 }
 
-static lval* builtin_op(lenv* e, char* op, lval* sexpr) {
+static Lval* _op(Lenv* e, char* op, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
     if (sexpr->cell[i]->type != LVAL_NUM) {
       lval_del(sexpr);
-      return lval_err("Expected number but got %s",
-                      ltype_name(sexpr->cell[0]->type));
+      return make_lval_err("Expected number but got %s",
+                           lval_type_to_name(sexpr->cell[0]->type));
     }
   }
-  lval* result = lval_pop(sexpr, 0);
+  Lval* result = lval_pop(sexpr, 0);
 
   if ((strcmp(op, "-") == 0) && sexpr->count == 0) {
     result->num = -result->num;
   }
 
   while (sexpr->count > 0) {
-    lval* operand = lval_pop(sexpr, 0);
+    Lval* operand = lval_pop(sexpr, 0);
     if (strcmp(op, "+") == 0) {
       result->num += operand->num;
     }
@@ -119,7 +119,7 @@ static lval* builtin_op(lenv* e, char* op, lval* sexpr) {
       if (operand->num == 0) {
         lval_del(result);
         lval_del(operand);
-        result = lval_err("Division by operand zero");
+        result = make_lval_err("Division by operand zero");
         break;
       }
       result->num /= operand->num;
@@ -131,18 +131,18 @@ static lval* builtin_op(lenv* e, char* op, lval* sexpr) {
   return result;
 }
 
-lval* builtin_add(lenv* e, lval* sexpr) { return builtin_op(e, "+", sexpr); }
+Lval* add_fn(Lenv* e, Lval* sexpr) { return _op(e, "+", sexpr); }
 
-lval* builtin_sub(lenv* e, lval* sexpr) { return builtin_op(e, "-", sexpr); }
+Lval* sub_fn(Lenv* e, Lval* sexpr) { return _op(e, "-", sexpr); }
 
-lval* builtin_mul(lenv* e, lval* sexpr) { return builtin_op(e, "*", sexpr); }
+Lval* mul_fn(Lenv* e, Lval* sexpr) { return _op(e, "*", sexpr); }
 
-lval* builtin_div(lenv* e, lval* sexpr) { return builtin_op(e, "/", sexpr); }
+Lval* div_fn(Lenv* e, Lval* sexpr) { return _op(e, "/", sexpr); }
 
-lval* builtin_def(lenv* e, lval* sexpr) {
+Lval* def_fn(Lenv* e, Lval* sexpr) {
   LASSERT(sexpr, sexpr->cell[0]->type == LVAL_QEXPR,
           "Function 'def' passed incorrect type");
-  lval* syms = sexpr->cell[0];
+  Lval* syms = sexpr->cell[0];
   for (int i = 0; i < syms->count; ++i) {
     LASSERT(sexpr, syms->cell[i]->type == LVAL_SYM,
             "Function 'def' cannont define a non-symbol");
@@ -154,43 +154,43 @@ lval* builtin_def(lenv* e, lval* sexpr) {
             "Can't redefine internal variable '%s' ", syms->cell[i]->sym);
   }
   lval_del(sexpr);
-  return lval_sexpr();
+  return make_lval_sexpr();
 }
 
-lval* builtin_print_env(lenv* e, lval* sexpr) {
+Lval* print_env_fn(Lenv* e, Lval* sexpr) {
   lenv_print(e);
   lval_del(sexpr);
-  return lval_sexpr();
+  return make_lval_sexpr();
 }
 
 bool exit_repl = false;
 
-lval* builtin_exit(lenv* e, lval* sexpr) {
+Lval* exit_fn(Lenv* e, Lval* sexpr) {
   lval_del(sexpr);
   exit_repl = true;
-  return lval_sexpr();
+  return make_lval_sexpr();
 }
 
-void lenv_add_builtin(lenv* e, char* name, lbuiltin func) {
-  lval* k = lval_sym(name);
-  lval* v = lval_fun(func, name);
-  lenv_put(e, k, v, true);
-  lval_del(k);
-  lval_del(v);
+void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
+  Lval* lval_sym = make_lval_sym(name);
+  Lval* lval_fun = make_lval_fun(func, name);
+  lenv_put(env, lval_sym, lval_fun, true);
+  lval_del(lval_sym);
+  lval_del(lval_fun);
 }
-void lenv_add_builtins(lenv* e) {
-  lenv_add_builtin(e, "list", builtin_list_fn);
-  lenv_add_builtin(e, "head", builtin_head_fn);
-  lenv_add_builtin(e, "tail", builtin_tail_fn);
-  lenv_add_builtin(e, "eval", builtin_eval_fn);
-  lenv_add_builtin(e, "join", builtin_join_fn);
+void lenv_add_builtins(Lenv* env) {
+  lenv_add_builtin(env, "list", list_fn);
+  lenv_add_builtin(env, "head", head_fn);
+  lenv_add_builtin(env, "tail", tail_fn);
+  lenv_add_builtin(env, "eval", eval_fn);
+  lenv_add_builtin(env, "join", join_fn);
 
-  lenv_add_builtin(e, "+", builtin_add);
-  lenv_add_builtin(e, "-", builtin_sub);
-  lenv_add_builtin(e, "*", builtin_mul);
-  lenv_add_builtin(e, "/", builtin_div);
+  lenv_add_builtin(env, "+", add_fn);
+  lenv_add_builtin(env, "-", sub_fn);
+  lenv_add_builtin(env, "*", mul_fn);
+  lenv_add_builtin(env, "/", div_fn);
 
-  lenv_add_builtin(e, "def", builtin_def);
-  lenv_add_builtin(e, "print-env", builtin_print_env);
-  lenv_add_builtin(e, "exit", builtin_exit);
+  lenv_add_builtin(env, "def", def_fn);
+  lenv_add_builtin(env, "print-env", print_env_fn);
+  lenv_add_builtin(env, "exit", exit_fn);
 }

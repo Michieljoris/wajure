@@ -14,7 +14,7 @@
 void repl() {
   /* puts("Press Ctrl+c to Exit\n"); */
   mpc_parser_t* Lispy = init_grammar();
-  lenv* e = lenv_new();
+  Lenv* e = lenv_new();
   lenv_add_builtins(e);
 
   while (!exit_repl) {
@@ -24,9 +24,9 @@ void repl() {
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Lispy, &r)) {
       /* printf("Success\n"); */
-      lval* ast = lval_read(r.output);
+      Lval* ast = lval_read(r.output);
       lval_println(ast);
-      lval* result = lval_eval(e, ast);
+      Lval* result = lval_eval(e, ast);
       lval_println(result);
       lval_del(result);
       mpc_ast_delete(r.output);

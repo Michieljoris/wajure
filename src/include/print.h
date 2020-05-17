@@ -3,7 +3,7 @@
 #include "env.h"
 #include "lval.h"
 
-void lval_println(lval* v);
-void lenv_print(lenv* e);
+void lval_println(Lval* v);
+void lenv_print(Lenv* e);
 
 #endif  // __PRINT_H_

@@ -8,9 +8,9 @@
 #include "lval.h"
 #include "print.h"
 
-lval* lval_eval(lenv* e, lval* v);
+Lval* lval_eval(Lenv* e, Lval* v);
 
-static lval* lval_eval_sexpr(lenv* e, lval* sexpr) {
+static Lval* lval_eval_sexpr(Lenv* e, Lval* sexpr) {
   /* eval children */
   for (int i = 0; i < sexpr->count; i++) {
     sexpr->cell[i] = lval_eval(e, sexpr->cell[i]);
@@ -31,28 +31,28 @@ static lval* lval_eval_sexpr(lenv* e, lval* sexpr) {
   /* } */
 
   /* first expr should have evalled to a fun*/
-  lval* fun = lval_pop(sexpr, 0);
+  Lval* fun = lval_pop(sexpr, 0);
   if (fun->type != LVAL_FUN) {
     lval_del(fun);
     lval_del(sexpr);
-    return lval_err("sexpr doesn't start with a function");
+    return make_lval_err("sexpr doesn't start with a function");
   }
 
   /* sexpr has all elements now except for first (a LVAL_FUN) */
-  lval* result = fun->fun(e, sexpr);
+  Lval* result = fun->fun(e, sexpr);
   lval_del(fun);
   return result;
 }
 
-lval* lval_eval(lenv* env, lval* value) {
-  if (value->type == LVAL_SYM) {
-    lval* resolved_symbol = lenv_get(env, value);
+Lval* lval_eval(Lenv* env, Lval* lval) {
+  if (lval->type == LVAL_SYM) {
+    Lval* lval_resolved_sym = lenv_get(env, lval);
 
-    lval_del(value);
-    return resolved_symbol;
+    lval_del(lval);
+    return lval_resolved_sym;
   }
-  if (value->type == LVAL_SEXPR) {
-    return lval_eval_sexpr(env, value);
+  if (lval->type == LVAL_SEXPR) {
+    return lval_eval_sexpr(env, lval);
   }
-  return value;
+  return lval;
 }

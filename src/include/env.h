@@ -5,9 +5,9 @@
 
 #include "lval.h"
 
-lenv* lenv_new(void);
-void lenv_del(lenv* e);
-lval* lenv_get(lenv* e, lval* k);
-bool lenv_put(lenv* e, lval* k, lval* v, bool is_builtin);
+Lenv* lenv_new(void);
+void lenv_del(Lenv* e);
+Lval* lenv_get(Lenv* e, Lval* k);
+bool lenv_put(Lenv* e, Lval* k, Lval* v, bool is_builtin);
 
 #endif  // __ENV_H_

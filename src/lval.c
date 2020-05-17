@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-lval* lval_fun(lbuiltin func, char* func_name) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_fun(lbuiltin func, char* func_name) {
+  Lval* v = malloc(sizeof(Lval));
   v->func_name = malloc(strlen(func_name) + 1);
   strcpy(v->func_name, func_name);
   v->type = LVAL_FUN;
@@ -14,39 +14,39 @@ lval* lval_fun(lbuiltin func, char* func_name) {
   return v;
 }
 
-lval* lval_num(long x) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_num(long x) {
+  Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_NUM;
   v->num = x;
   return v;
 }
 
-lval* lval_sym(char* s) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_sym(char* s) {
+  Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_SYM;
   v->sym = malloc(strlen(s) + 1);
   strcpy(v->sym, s);
   return v;
 }
 
-lval* lval_sexpr(void) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_sexpr(void) {
+  Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_SEXPR;
   v->count = 0;
   v->cell = NULL;
   return v;
 }
 
-lval* lval_qexpr(void) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_qexpr(void) {
+  Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_QEXPR;
   v->count = 0;
   v->cell = NULL;
   return v;
 }
 
-lval* lval_err(char* fmt, ...) {
-  lval* v = malloc(sizeof(lval));
+Lval* make_lval_err(char* fmt, ...) {
+  Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_ERR;
 
   va_list va;
@@ -59,7 +59,7 @@ lval* lval_err(char* fmt, ...) {
   return v;
 }
 
-char* ltype_name(int t) {
+char* lval_type_to_name(int t) {
   switch (t) {
     case LVAL_NUM:
       return "Number";
@@ -78,14 +78,14 @@ char* ltype_name(int t) {
   }
 }
 
-lval* lval_add(lval* v, lval* x) {
+Lval* lval_add_child(Lval* v, Lval* x) {
   v->count++;
-  v->cell = realloc(v->cell, sizeof(lval*) * v->count);
+  v->cell = realloc(v->cell, sizeof(Lval*) * v->count);
   v->cell[v->count - 1] = x;
   return v;
 }
 
-void lval_del(lval* v) {
+void lval_del(Lval* v) {
   switch (v->type) {
     case LVAL_NUM:
       break;
@@ -109,8 +109,8 @@ void lval_del(lval* v) {
   free(v);
 }
 
-lval* lval_copy(lval* v) {
-  lval* x = malloc(sizeof(lval));
+Lval* make_lval_copy(Lval* v) {
+  Lval* x = malloc(sizeof(Lval));
   x->type = v->type;
 
   switch (v->type) {
@@ -134,25 +134,25 @@ lval* lval_copy(lval* v) {
     case LVAL_SEXPR:
     case LVAL_QEXPR:
       x->count = v->count;
-      x->cell = malloc(sizeof(lval*) * x->count);
+      x->cell = malloc(sizeof(Lval*) * x->count);
       for (int i = 0; i < x->count; i++) {
-        x->cell[i] = lval_copy(v->cell[i]);
+        x->cell[i] = make_lval_copy(v->cell[i]);
       }
       break;
   }
   return x;
 }
 
-lval* lval_pop(lval* v, int i) {
-  lval* x = v->cell[i];
-  memmove(&v->cell[i], &v->cell[i + 1], sizeof(lval*) * (v->count - i - 1));
+Lval* lval_pop(Lval* v, int i) {
+  Lval* x = v->cell[i];
+  memmove(&v->cell[i], &v->cell[i + 1], sizeof(Lval*) * (v->count - i - 1));
   v->count--;
-  v->cell = realloc(v->cell, sizeof(lval*) * v->count);
+  v->cell = realloc(v->cell, sizeof(Lval*) * v->count);
   return x;
 }
 
-lval* lval_take(lval* v, int i) {
-  lval* x = lval_pop(v, i);
+Lval* lval_take(Lval* v, int i) {
+  Lval* x = lval_pop(v, i);
   lval_del(v);
   return x;
 }
