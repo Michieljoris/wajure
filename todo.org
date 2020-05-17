@@ -1,0 +1,4 @@
+#+TITLE: Todo
+* Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
+* Add a builtin function len that returns the number of elements in a Q-Expression.
+* Add a builtin function init that returns all of a Q-Expression except the final element.

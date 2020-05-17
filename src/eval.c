@@ -10,47 +10,49 @@
 
 lval* lval_eval(lenv* e, lval* v);
 
-static lval* lval_eval_sexpr(lenv* e, lval* v) {
+static lval* lval_eval_sexpr(lenv* e, lval* sexpr) {
   /* eval children */
-  for (int i = 0; i < v->count; i++) {
-    v->cell[i] = lval_eval(e, v->cell[i]);
+  for (int i = 0; i < sexpr->count; i++) {
+    sexpr->cell[i] = lval_eval(e, sexpr->cell[i]);
   }
   /* error checking */
-  for (int i = 0; i < v->count; i++) {
-    if (v->cell[i]->type == LVAL_ERR) {
-      return lval_take(v, i);
+  for (int i = 0; i < sexpr->count; i++) {
+    if (sexpr->cell[i]->type == LVAL_ERR) {
+      return lval_take(sexpr, i);
     }
   }
   /* empty expr */
-  if (v->count == 0) {
-    return v;
+  if (sexpr->count == 0) {
+    return sexpr;
   }
   /* single expr */
   /* if (v->count == 1) { */
   /*   return lval_take(v, 0); */
   /* } */
-  /* first element should be a function  */
-  lval* f = lval_pop(v, 0);
-  if (f->type != LVAL_FUN) {
-    lval_del(f);
-    lval_del(v);
-    return lval_err("sexpr doesn't start with a symbol");
+
+  /* first expr should have evalled to a fun*/
+  lval* fun = lval_pop(sexpr, 0);
+  if (fun->type != LVAL_FUN) {
+    lval_del(fun);
+    lval_del(sexpr);
+    return lval_err("sexpr doesn't start with a function");
   }
 
-  lval* result = f->fun(e, v);
-  lval_del(f);
+  /* sexpr has all elements now except for first (a LVAL_FUN) */
+  lval* result = fun->fun(e, sexpr);
+  lval_del(fun);
   return result;
 }
 
-lval* lval_eval(lenv* e, lval* v) {
-  if (v->type == LVAL_SYM) {
-    lval* x = lenv_get(e, v);
+lval* lval_eval(lenv* env, lval* value) {
+  if (value->type == LVAL_SYM) {
+    lval* resolved_symbol = lenv_get(env, value);
 
-    lval_del(v);
-    return x;
+    lval_del(value);
+    return resolved_symbol;
   }
-  if (v->type == LVAL_SEXPR) {
-    return lval_eval_sexpr(e, v);
+  if (value->type == LVAL_SEXPR) {
+    return lval_eval_sexpr(env, value);
   }
-  return v;
+  return value;
 }
