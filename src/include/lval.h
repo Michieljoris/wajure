@@ -17,14 +17,16 @@ struct lval {
   long num;
   char* err;
 
+  /* function */
   lbuiltin fun;
   char* func_name;
   Lenv* env;
   Lval* formals;
   Lval* body;
+
   /* list of lval */
   int count;
-  struct lval** cell;
+  Lval** cell;
 };
 
 struct lenv {

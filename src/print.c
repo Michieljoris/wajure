@@ -7,25 +7,32 @@
 
 static void lval_expr_print(Lval* v, char open, char close);
 
-static void lval_print(Lval* v) {
-  switch (v->type) {
+static void lval_print(Lval* lval) {
+  switch (lval->type) {
     case LVAL_NUM:
-      printf("%li", v->num);
+      printf("%li", lval->num);
       break;
     case LVAL_ERR:
-      printf("Error: %s", v->err);
+      printf("Error: %s", lval->err);
       break;
     case LVAL_SYM:
-      printf("%s", v->sym);
+      printf("%s", lval->sym);
       break;
     case LVAL_SEXPR:
-      lval_expr_print(v, '(', ')');
+      lval_expr_print(lval, '(', ')');
       break;
     case LVAL_QEXPR:
-      lval_expr_print(v, '{', '}');
+      lval_expr_print(lval, '{', '}');
       break;
     case LVAL_FUN:
-      printf("<function %s>", v->func_name);
+      if (lval->fun) {
+        printf("<function %s>", lval->func_name);
+      } else {
+        printf("(\\");
+        lval_print(lval->formals);
+        putchar(' ');
+        lval_print(lval->body);
+      }
   }
 }
 

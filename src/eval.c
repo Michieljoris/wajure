@@ -31,17 +31,17 @@ static Lval* lval_eval_sexpr(Lenv* e, Lval* sexpr) {
   /* } */
 
   /* first expr should have evalled to a fun*/
-  Lval* fun = lval_pop(sexpr, 0);
-  if (fun->type != LVAL_FUN) {
-    lval_del(fun);
+  Lval* lval_fun = lval_pop(sexpr, 0);
+  if (lval_fun->type != LVAL_FUN) {
+    lval_del(lval_fun);
     lval_del(sexpr);
     return make_lval_err("sexpr doesn't start with a function");
   }
 
   /* sexpr has all elements now except for first (a LVAL_FUN) */
-  Lval* result = fun->fun(e, sexpr);
-  lval_del(fun);
-  return result;
+  Lval* lval = lval_fun->fun(e, sexpr);
+  lval_del(lval_fun);
+  return lval;
 }
 
 Lval* lval_eval(Lenv* env, Lval* lval) {

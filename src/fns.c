@@ -14,24 +14,24 @@
     return err;                                    \
   }
 
-#define LASSERT_ARGS_COUNT(sexpr, fn_name, expected_count) \
+#define LASSERT_CELL_COUNT(sexpr, expected_count, fn_name) \
   LASSERT(sexpr, sexpr->count == expected_count,           \
           "Function '" fn_name                             \
           "' passed wrong number of[] args, "              \
           "got %i, expected %i",                           \
           sexpr->count, 1);
 
-#define LASSERT_TYPE(sexpr, fn_name, index, expected_type)    \
-  LASSERT(sexpr, sexpr->cell[index]->type == LVAL_QEXPR,      \
-          "Function '" fn_name                                \
-          "' passed incorrect type for arg %d, "              \
-          "got %s, expected %s",                              \
-          index, lval_type_to_name(sexpr->cell[index]->type), \
+#define LASSERT_CELL_TYPE(sexpr, index, expected_type, fn_name) \
+  LASSERT(sexpr, sexpr->cell[index]->type == LVAL_QEXPR,        \
+          "Function '" fn_name                                  \
+          "' passed incorrect type for arg %d, "                \
+          "got %s, expected %s",                                \
+          index, lval_type_to_name(sexpr->cell[index]->type),   \
           lval_type_to_name(expected_type));
 
 Lval* head_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_ARGS_COUNT(sexpr, "head", 1);
-  LASSERT_TYPE(sexpr, "head", 0, LVAL_QEXPR);
+  LASSERT_CELL_COUNT(sexpr, 1, "head");
+  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "head");
 
   Lval* qexpr = lval_take(sexpr, 0);
   while (qexpr->count > 1) {
@@ -41,8 +41,8 @@ Lval* head_fn(Lenv* e, Lval* sexpr) {
 }
 
 Lval* tail_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_ARGS_COUNT(sexpr, "tail", 1);
-  LASSERT_TYPE(sexpr, "tail", 0, LVAL_QEXPR);
+  LASSERT_CELL_COUNT(sexpr, 1, "tail");
+  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
   Lval* qexpr = sexpr->cell[0];
   LASSERT(sexpr, qexpr->count != 0, "Function 'tail_fn' passed {}");
 
@@ -57,8 +57,8 @@ Lval* list_fn(Lenv* e, Lval* sexpr) {
 }
 
 Lval* eval_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_ARGS_COUNT(sexpr, "eval", 1);
-  LASSERT_TYPE(sexpr, "eval", 0, LVAL_QEXPR);
+  LASSERT_CELL_COUNT(sexpr, 1, "eval");
+  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "eval");
   Lval* qexpr = lval_take(sexpr, 0);
   qexpr->type = LVAL_SEXPR;
   return lval_eval(e, qexpr);
@@ -77,7 +77,7 @@ Lval* lval_join(Lval* x, Lval* y) {
 
 Lval* join_fn(Lenv* e, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
-    LASSERT_TYPE(sexpr, "join", i, LVAL_QEXPR);
+    LASSERT_CELL_TYPE(sexpr, i, LVAL_QEXPR, "join");
   }
 
   Lval* qexpr = lval_pop(sexpr, 0);
@@ -169,6 +169,19 @@ Lval* exit_fn(Lenv* e, Lval* sexpr) {
   lval_del(sexpr);
   exit_repl = true;
   return make_lval_sexpr();
+}
+
+Lval* lambda_fn(Lenv* env, Lval* sexpr) {
+  LASSERT_CELL_COUNT(sexpr, 2, "\\");
+  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "\\");
+  LASSERT_CELL_TYPE(sexpr, 1, LVAL_QEXPR, "\\");
+
+  for (int i = 0; i < sexpr->cell[0]->count; ++i) {
+    LASSERT(sexpr, sexpr->cell[0]->cell[i]->type == LVAL_SYM,
+            "Canot define non-symbol. Got %s, expected %s.",
+            lval_type_to_name(sexpr->cell[0]->cell[i]->type),
+            lval_type_to_name(LVAL_SYM));
+  }
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
