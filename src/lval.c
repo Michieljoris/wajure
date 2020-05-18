@@ -46,7 +46,7 @@ Lval* make_lval_sexpr(void) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_SEXPR;
   v->count = 0;
-  v->cell = NULL;
+  v->node = NULL;
   return v;
 }
 
@@ -54,7 +54,7 @@ Lval* make_lval_qexpr(void) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_QEXPR;
   v->count = 0;
-  v->cell = NULL;
+  v->node = NULL;
   return v;
 }
 
@@ -93,8 +93,8 @@ char* lval_type_to_name(int t) {
 
 Lval* lval_add_child(Lval* v, Lval* x) {
   v->count++;
-  v->cell = realloc(v->cell, sizeof(Lval*) * v->count);
-  v->cell[v->count - 1] = x;
+  v->node = realloc(v->node, sizeof(Lval*) * v->count);
+  v->node[v->count - 1] = x;
   return v;
 }
 
@@ -111,9 +111,9 @@ void lval_del(Lval* lval) {
     case LVAL_QEXPR:
     case LVAL_SEXPR:
       for (int i = 0; i < lval->count; i++) {
-        lval_del(lval->cell[i]);
+        lval_del(lval->node[i]);
       }
-      free(lval->cell);
+      free(lval->node);
       break;
     case LVAL_FUN:
       if (lval->fun) {
@@ -140,7 +140,7 @@ Lval* make_lval_copy(Lval* lval) {
         strcpy(x->func_name, lval->func_name);
       } else {
         x->fun = NULL;
-        /* x->env = make_lenv_copy(lval->env); */
+        x->env = make_lenv_copy(lval->env);
         x->formals = make_lval_copy(lval->formals);
         x->body = make_lval_copy(lval->body);
       }
@@ -160,9 +160,9 @@ Lval* make_lval_copy(Lval* lval) {
     case LVAL_SEXPR:
     case LVAL_QEXPR:
       x->count = lval->count;
-      x->cell = malloc(sizeof(Lval*) * x->count);
+      x->node = malloc(sizeof(Lval*) * x->count);
       for (int i = 0; i < x->count; i++) {
-        x->cell[i] = make_lval_copy(lval->cell[i]);
+        x->node[i] = make_lval_copy(lval->node[i]);
       }
       break;
   }
@@ -170,10 +170,10 @@ Lval* make_lval_copy(Lval* lval) {
 }
 
 Lval* lval_pop(Lval* v, int i) {
-  Lval* x = v->cell[i];
-  memmove(&v->cell[i], &v->cell[i + 1], sizeof(Lval*) * (v->count - i - 1));
+  Lval* x = v->node[i];
+  memmove(&v->node[i], &v->node[i + 1], sizeof(Lval*) * (v->count - i - 1));
   v->count--;
-  v->cell = realloc(v->cell, sizeof(Lval*) * v->count);
+  v->node = realloc(v->node, sizeof(Lval*) * v->count);
   return x;
 }
 

@@ -39,7 +39,7 @@ static void lval_print(Lval* lval) {
 static void lval_expr_print(Lval* v, char open, char close) {
   putchar(open);
   for (int i = 0; i < v->count; i++) {
-    lval_print(v->cell[i]);
+    lval_print(v->node[i]);
     if (i != (v->count - 1)) {
       putchar(' ');
     }

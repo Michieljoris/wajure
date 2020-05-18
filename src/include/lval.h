@@ -26,10 +26,11 @@ struct lval {
 
   /* list of lval */
   int count;
-  Lval** cell;
+  Lval** node;
 };
 
 struct lenv {
+  Lenv* parent_env;
   int count;
   char** syms;
   Lval** vals;
@@ -43,7 +44,9 @@ Lval* make_lval_sym(char* s);
 Lval* make_lval_sexpr(void);
 Lval* make_lval_qexpr(void);
 Lval* make_lval_fun(lbuiltin func, char* func_name);
+Lval* make_lval_lambda(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
+
 char* lval_type_to_name(int t);
 
 Lval* lval_add_child(Lval* v, Lval* x);

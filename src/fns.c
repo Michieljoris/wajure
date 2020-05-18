@@ -22,11 +22,11 @@
           sexpr->count, 1);
 
 #define LASSERT_CELL_TYPE(sexpr, index, expected_type, fn_name) \
-  LASSERT(sexpr, sexpr->cell[index]->type == LVAL_QEXPR,        \
+  LASSERT(sexpr, sexpr->node[index]->type == LVAL_QEXPR,        \
           "Function '" fn_name                                  \
           "' passed incorrect type for arg %d, "                \
           "got %s, expected %s",                                \
-          index, lval_type_to_name(sexpr->cell[index]->type),   \
+          index, lval_type_to_name(sexpr->node[index]->type),   \
           lval_type_to_name(expected_type));
 
 Lval* head_fn(Lenv* e, Lval* sexpr) {
@@ -43,7 +43,7 @@ Lval* head_fn(Lenv* e, Lval* sexpr) {
 Lval* tail_fn(Lenv* e, Lval* sexpr) {
   LASSERT_CELL_COUNT(sexpr, 1, "tail");
   LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
-  Lval* qexpr = sexpr->cell[0];
+  Lval* qexpr = sexpr->node[0];
   LASSERT(sexpr, qexpr->count != 0, "Function 'tail_fn' passed {}");
 
   qexpr = lval_take(sexpr, 0);
@@ -92,10 +92,10 @@ Lval* join_fn(Lenv* e, Lval* sexpr) {
 
 static Lval* _op(Lenv* e, char* op, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->cell[i]->type != LVAL_NUM) {
+    if (sexpr->node[i]->type != LVAL_NUM) {
       lval_del(sexpr);
       return make_lval_err("Expected number but got %s",
-                           lval_type_to_name(sexpr->cell[0]->type));
+                           lval_type_to_name(sexpr->node[0]->type));
     }
   }
   Lval* result = lval_pop(sexpr, 0);
@@ -140,18 +140,18 @@ Lval* mul_fn(Lenv* e, Lval* sexpr) { return _op(e, "*", sexpr); }
 Lval* div_fn(Lenv* e, Lval* sexpr) { return _op(e, "/", sexpr); }
 
 Lval* def_fn(Lenv* e, Lval* sexpr) {
-  LASSERT(sexpr, sexpr->cell[0]->type == LVAL_QEXPR,
+  LASSERT(sexpr, sexpr->node[0]->type == LVAL_QEXPR,
           "Function 'def' passed incorrect type");
-  Lval* syms = sexpr->cell[0];
+  Lval* syms = sexpr->node[0];
   for (int i = 0; i < syms->count; ++i) {
-    LASSERT(sexpr, syms->cell[i]->type == LVAL_SYM,
+    LASSERT(sexpr, syms->node[i]->type == LVAL_SYM,
             "Function 'def' cannont define a non-symbol");
   }
   LASSERT(sexpr, syms->count == sexpr->count - 1,
           "Function 'def' cannot define incorrect number of values to symbols");
   for (int i = 0; i < syms->count; ++i) {
-    LASSERT(sexpr, lenv_put(e, syms->cell[i], sexpr->cell[i + 1], false),
-            "Can't redefine internal variable '%s' ", syms->cell[i]->sym);
+    LASSERT(sexpr, lenv_put(e, syms->node[i], sexpr->node[i + 1], false),
+            "Can't redefine internal variable '%s' ", syms->node[i]->sym);
   }
   lval_del(sexpr);
   return make_lval_sexpr();
@@ -176,12 +176,18 @@ Lval* lambda_fn(Lenv* env, Lval* sexpr) {
   LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "\\");
   LASSERT_CELL_TYPE(sexpr, 1, LVAL_QEXPR, "\\");
 
-  for (int i = 0; i < sexpr->cell[0]->count; ++i) {
-    LASSERT(sexpr, sexpr->cell[0]->cell[i]->type == LVAL_SYM,
+  for (int i = 0; i < sexpr->node[0]->count; ++i) {
+    LASSERT(sexpr, sexpr->node[0]->node[i]->type == LVAL_SYM,
             "Canot define non-symbol. Got %s, expected %s.",
-            lval_type_to_name(sexpr->cell[0]->cell[i]->type),
+            lval_type_to_name(sexpr->node[0]->node[i]->type),
             lval_type_to_name(LVAL_SYM));
   }
+
+  Lval* formals = lval_pop(sexpr, 0);
+  Lval* body = lval_pop(sexpr, 0);
+  lval_del(sexpr);
+
+  return make_lval_lambda(formals, body);
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
@@ -206,4 +212,5 @@ void lenv_add_builtins(Lenv* env) {
   lenv_add_builtin(env, "def", def_fn);
   lenv_add_builtin(env, "print-env", print_env_fn);
   lenv_add_builtin(env, "exit", exit_fn);
+  lenv_add_builtin(env, "\\", lambda_fn);
 }

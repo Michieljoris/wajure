@@ -13,11 +13,11 @@ Lval* lval_eval(Lenv* e, Lval* v);
 static Lval* lval_eval_sexpr(Lenv* e, Lval* sexpr) {
   /* eval children */
   for (int i = 0; i < sexpr->count; i++) {
-    sexpr->cell[i] = lval_eval(e, sexpr->cell[i]);
+    sexpr->node[i] = lval_eval(e, sexpr->node[i]);
   }
   /* error checking */
   for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->cell[i]->type == LVAL_ERR) {
+    if (sexpr->node[i]->type == LVAL_ERR) {
       return lval_take(sexpr, i);
     }
   }
