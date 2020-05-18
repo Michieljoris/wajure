@@ -169,11 +169,12 @@ Lval* make_lval_copy(Lval* lval) {
   return x;
 }
 
-Lval* lval_pop(Lval* v, int i) {
-  Lval* x = v->node[i];
-  memmove(&v->node[i], &v->node[i + 1], sizeof(Lval*) * (v->count - i - 1));
-  v->count--;
-  v->node = realloc(v->node, sizeof(Lval*) * v->count);
+Lval* lval_pop(Lval* lval, int i) {
+  Lval* x = lval->node[i];
+  memmove(&lval->node[i], &lval->node[i + 1],
+          sizeof(Lval*) * (lval->count - i - 1));
+  lval->count--;
+  lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
   return x;
 }
 

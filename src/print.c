@@ -28,7 +28,7 @@ static void lval_print(Lval* lval) {
       if (lval->fun) {
         printf("<function %s>", lval->func_name);
       } else {
-        printf("(fn");
+        printf("(fn ");
         lval_print(lval->formals);
         putchar(' ');
         lval_print(lval->body);

@@ -12,24 +12,70 @@
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
-Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr) {
+Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   if (lval_fun->fun) {
-    return lval_fun->fun(env, sexpr);
+    return lval_fun->fun(env, sexpr_args);
   }
-  for (int i = 0; i < sexpr->count; ++i) {
-    bool is_not_internal_var =
-        lenv_put(lval_fun->env, lval_fun->formals->node[i], sexpr->node[i],
-                 USER_DEFINED);
-    LASSERT(sexpr, is_not_internal_var,
-            "Can't redefine internal variable '%s' ",
-            lval_fun->formals->node[i]->sym)
+
+  int given = sexpr_args->count;
+  int total = lval_fun->formals->count;
+
+  /* bind any args */
+  while (sexpr_args->count) {
+    if (lval_fun->formals->count == 0) {
+      lval_del(sexpr_args);
+      return make_lval_err(
+          "Function passed too many args. Got %i, expected %i.", given, total);
+    }
+
+    Lval* sym = lval_pop(lval_fun->formals, 0);
+    if (strcmp(sym->sym, "&") == 0) {
+      if (lval_fun->formals->count != 1) {
+        lval_del(sexpr_args);
+        return make_lval_err(
+            "Function format invalid. "
+            "Symbol '&' not followed by single symbol.");
+      }
+      Lval* rest_sym = lval_pop(lval_fun->formals, 0);
+      lenv_put(lval_fun->env, rest_sym, list_fn(env, sexpr_args));
+      lval_del(sym);
+      lval_del(rest_sym);
+      break;
+    }
+    Lval* val = lval_pop(sexpr_args, 0);
+
+    bool is_not_internal_var = lenv_put(lval_fun->env, sym, val);
+    LASSERT(sexpr_args, is_not_internal_var,
+            "Can't redefine internal variable '%s' ", sym)
+    lval_del(sym);
+    lval_del(val);
   }
-  lval_del(sexpr);
 
-  lval_fun->env->parent_env = env;
+  lval_del(sexpr_args);
 
-  return eval_fn(lval_fun->env, lval_add_child(make_lval_sexpr(),
-                                               make_lval_copy(lval_fun->body)));
+  if (lval_fun->formals->count > 0 &&
+      strcmp(lval_fun->formals->node[0]->sym, "&") == 0) {
+    if (lval_fun->formals->count != 2) {
+      return make_lval_err(
+          "Function format invalid. "
+          "Symbol '&' not followed by single symbol.");
+    }
+    lval_del(lval_pop(lval_fun->formals, 0));
+    Lval* sym = lval_pop(lval_fun->formals, 0);
+    Lval* val = make_lval_qexpr();
+    lenv_put(lval_fun->env, sym, val);
+    lval_del(sym);
+    lval_del(val);
+  }
+
+  if (lval_fun->formals->count == 0) {
+    lval_fun->env->parent_env = env;
+    return eval_fn(
+        lval_fun->env,
+        lval_add_child(make_lval_sexpr(), make_lval_copy(lval_fun->body)));
+  }
+
+  return make_lval_copy(lval_fun);
 }
 
 static Lval* lval_eval_sexpr(Lenv* env, Lval* sexpr) {
@@ -57,11 +103,13 @@ static Lval* lval_eval_sexpr(Lenv* env, Lval* sexpr) {
   if (lval_fun->type != LVAL_FUN) {
     lval_del(lval_fun);
     lval_del(sexpr);
-    return make_lval_err("sexpr doesn't start with a function");
+    return make_lval_err(
+        "sexpr starts with incorrect type. "
+        "Got %s, expected %s.",
+        lval_type_to_name(lval_fun->type), lval_type_to_name(LVAL_FUN));
   }
 
   /* sexpr has all elements now except for first (a LVAL_FUN) */
-  /* Lval* lval = lval_fun->fun(e, sexpr); */
   Lval* lval = lval_call(env, lval_fun, sexpr);
   lval_del(lval_fun);
   return lval;

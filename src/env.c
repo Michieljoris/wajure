@@ -69,28 +69,24 @@ int find_str_index(char** strs, int count, char* str) {
   return -1;
 }
 
-bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval, int var_type) {
+bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   char* sym = lval_sym->sym;
   Lenv* root_env = get_root_env(env);
   int sym_index = find_str_index(root_env->syms, root_env->count, sym);
   bool is_root_env = env->parent_env == NULL;
 
-  if (var_type == BUILTIN) {
-    builtin_index_max += 1;
-  } else {
-    /* Check if already bound in the root env*/
+  /* Check if already bound in the root env*/
+  if (sym_index != -1) {
+    if (sym_index < builtin_index_max) {
+      return false;
+    }
+    if (!is_root_env) {
+      sym_index = find_str_index(env->syms, env->count, sym);
+    }
     if (sym_index != -1) {
-      if (sym_index < builtin_index_max) {
-        return false;
-      }
-      if (!is_root_env) {
-        sym_index = find_str_index(env->syms, env->count, sym);
-      }
-      if (sym_index != -1) {
-        lval_del(env->lvals[sym_index]);
-        env->lvals[sym_index] = make_lval_copy(lval);
-        return true;
-      }
+      lval_del(env->lvals[sym_index]);
+      env->lvals[sym_index] = make_lval_copy(lval);
+      return true;
     }
   }
 
@@ -102,4 +98,10 @@ bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval, int var_type) {
   env->syms[env->count - 1] = malloc(strlen(lval_sym->sym) + 1);
   strcpy(env->syms[env->count - 1], lval_sym->sym);
   return true;
+}
+
+bool lenv_put_builtin(Lenv* env, Lval* lval_sym, Lval* lval) {
+  bool result = lenv_put(env, lval_sym, lval);
+  builtin_index_max += 1;
+  return result;
 }

@@ -141,8 +141,7 @@ Lval* env_put(Lenv* env, Lval* sexpr, char* fn_name, int ROOT_OR_LOCAL) {
   }
 
   for (int i = 0; i < syms->count; ++i) {
-    bool is_not_internal_var =
-        lenv_put(env, syms->node[i], sexpr->node[i + 1], USER_DEFINED);
+    bool is_not_internal_var = lenv_put(env, syms->node[i], sexpr->node[i + 1]);
     LASSERT(sexpr, is_not_internal_var,
             "Can't redefine internal variable '%s' ", syms->node[i]->sym);
   }
@@ -194,7 +193,7 @@ Lval* lambda_fn(Lenv* env, Lval* sexpr) {
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
   Lval* lval_sym = make_lval_sym(name);
   Lval* lval_fun = make_lval_fun(func, name);
-  lenv_put(env, lval_sym, lval_fun, BUILTIN);
+  lenv_put_builtin(env, lval_sym, lval_fun);
   lval_del(lval_sym);
   lval_del(lval_fun);
 }

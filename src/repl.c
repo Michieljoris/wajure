@@ -11,11 +11,36 @@
 #include "print.h"
 #include "read.h"
 
+void load_stdlib(Lenv* env, mpc_parser_t* Lispy) {
+  char* lines[] = {
+      "def {defn} (fn {args body} {def (head args) (fn (tail args) body)})",
+      "defn {unpack f xs} {eval (join (list f) xs)}",
+      "defn {pack f & xs} {f xs}",
+      "def {uncurry} pack",
+      "def {curry} unpack",
+      "def {apply} unpack"};
+
+  /* defn {reverse f x y} {curry f {y x}}} */
+  /* defn {first xs} {curry + (head xs)} */
+  /* defn {second xs} {curry + (head (tail xs))} */
+  /* (defn {foo f g & xs} {g (apply f xs)}) */
+
+  unsigned long count = sizeof(lines) / sizeof(char*);
+  mpc_result_t r;
+  Lval* ast;
+  for (int i = 0; i < count; ++i) {
+    mpc_parse("<stdin>", lines[i], Lispy, &r);
+    ast = lval_read(r.output);
+    lval_eval(env, ast);
+  }
+}
+
 void repl() {
   /* puts("Press Ctrl+c to Exit\n"); */
   mpc_parser_t* Lispy = init_grammar();
-  Lenv* e = lenv_new();
-  lenv_add_builtins(e);
+  Lenv* env = lenv_new();
+  lenv_add_builtins(env);
+  load_stdlib(env, Lispy);
 
   while (!exit_repl) {
     /* Output our prompt and get input*/
@@ -26,7 +51,7 @@ void repl() {
       /* printf("Success\n"); */
       Lval* ast = lval_read(r.output);
       lval_println(ast);
-      Lval* result = lval_eval(e, ast);
+      Lval* result = lval_eval(env, ast);
       lval_println(result);
       lval_del(result);
       mpc_ast_delete(r.output);
@@ -41,7 +66,7 @@ void repl() {
 
     free(input);
   }
-  lenv_del(e);
+  lenv_del(env);
   /* Undefine and Delete our Parsers */
   grammar_cleanup();
 }
