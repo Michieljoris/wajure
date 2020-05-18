@@ -3,4 +3,5 @@
 
 void lenv_add_builtins(Lenv* e);
 bool exit_repl;
+Lval* eval_fn(Lenv* env, Lval* sexpr);
 #endif  // __FNS_H_

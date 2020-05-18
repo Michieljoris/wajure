@@ -28,10 +28,11 @@ static void lval_print(Lval* lval) {
       if (lval->fun) {
         printf("<function %s>", lval->func_name);
       } else {
-        printf("(\\");
+        printf("(fn");
         lval_print(lval->formals);
         putchar(' ');
         lval_print(lval->body);
+        putchar(')');
       }
   }
 }
@@ -55,7 +56,7 @@ void lval_println(Lval* v) {
 void lenv_print(Lenv* e) {
   for (int i = 0; i < e->count; ++i) {
     printf("%s:", e->syms[i]);
-    lval_println(e->vals[i]);
+    lval_println(e->lvals[i]);
   }
   return;
 }

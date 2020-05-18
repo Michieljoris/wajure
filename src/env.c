@@ -1,4 +1,6 @@
+#include <env.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,20 +11,20 @@ Lenv* lenv_new(void) {
   env->parent_env = NULL;
   env->count = 0;
   env->syms = NULL;
-  env->vals = NULL;
+  env->lvals = NULL;
   return env;
 }
 
-Lenv* lenv_copy(Lenv* env) {
+Lenv* make_lenv_copy(Lenv* env) {
   Lenv* env_copy = malloc(sizeof(Lenv));
   env_copy->parent_env = env->parent_env;
   env_copy->count = env->count;
   env_copy->syms = malloc(sizeof(char*) * env->count);
-  env_copy->vals = malloc(sizeof(Lval*) * env->count);
+  env_copy->lvals = malloc(sizeof(Lval*) * env->count);
   for (int i = 0; i < env->count; ++i) {
     env_copy->syms[i] = malloc(sizeof(strlen(env_copy->syms[i]) + 1));
     strcpy(env_copy->syms[i], env->syms[i]);
-    env_copy->vals[i] = make_lval_copy(env->vals[i]);
+    env_copy->lvals[i] = make_lval_copy(env->lvals[i]);
   }
   return env_copy;
 }
@@ -30,17 +32,17 @@ Lenv* lenv_copy(Lenv* env) {
 void lenv_del(Lenv* e) {
   for (int i = 0; i < e->count; i++) {
     free(e->syms[i]);
-    lval_del(e->vals[i]);
+    lval_del(e->lvals[i]);
   }
   free(e->syms);
-  free(e->vals);
+  free(e->lvals);
   free(e);
 }
 
 Lval* lenv_get(Lenv* env, Lval* lval_sym) {
   for (int i = 0; i < env->count; i++) {
     if (strcmp(env->syms[i], lval_sym->sym) == 0) {
-      return make_lval_copy(env->vals[i]);
+      return make_lval_copy(env->lvals[i]);
     }
   }
   if (env->parent_env) {
@@ -51,28 +53,53 @@ Lval* lenv_get(Lenv* env, Lval* lval_sym) {
 
 int builtin_index_max = 0;
 
-bool lenv_put(Lenv* e, Lval* k, Lval* v, bool is_builtin) {
-  for (int i = 0; i < e->count; ++i) {
-    if (strcmp(e->syms[i], k->sym) == 0) {
-      if (i < builtin_index_max) {
+Lenv* get_root_env(Lenv* env) {
+  while (env->parent_env) {
+    env = env->parent_env;
+  }
+  return env;
+}
+
+int find_str_index(char** strs, int count, char* str) {
+  for (int i = 0; i < count; ++i) {
+    if (strcmp(strs[i], str) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval, int var_type) {
+  char* sym = lval_sym->sym;
+  Lenv* root_env = get_root_env(env);
+  int sym_index = find_str_index(root_env->syms, root_env->count, sym);
+  bool is_root_env = env->parent_env == NULL;
+
+  if (var_type == BUILTIN) {
+    builtin_index_max += 1;
+  } else {
+    /* Check if already bound in the root env*/
+    if (sym_index != -1) {
+      if (sym_index < builtin_index_max) {
         return false;
       }
-      lval_del(e->vals[i]);
-      e->vals[i] = make_lval_copy(v);
-      return true;
+      if (!is_root_env) {
+        sym_index = find_str_index(env->syms, env->count, sym);
+      }
+      if (sym_index != -1) {
+        lval_del(env->lvals[sym_index]);
+        env->lvals[sym_index] = make_lval_copy(lval);
+        return true;
+      }
     }
   }
 
-  if (is_builtin) {
-    builtin_index_max += 1;
-  }
+  env->count++;
+  env->lvals = realloc(env->lvals, sizeof(Lval*) * env->count);
+  env->syms = realloc(env->syms, sizeof(char*) * env->count);
 
-  e->count++;
-  e->vals = realloc(e->vals, sizeof(Lval*) * e->count);
-  e->syms = realloc(e->syms, sizeof(char*) * e->count);
-
-  e->vals[e->count - 1] = make_lval_copy(v);
-  e->syms[e->count - 1] = malloc(strlen(k->sym) + 1);
-  strcpy(e->syms[e->count - 1], k->sym);
+  env->lvals[env->count - 1] = make_lval_copy(lval);
+  env->syms[env->count - 1] = malloc(strlen(lval_sym->sym) + 1);
+  strcpy(env->syms[env->count - 1], lval_sym->sym);
   return true;
 }

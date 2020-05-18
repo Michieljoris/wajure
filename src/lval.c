@@ -91,11 +91,11 @@ char* lval_type_to_name(int t) {
   }
 }
 
-Lval* lval_add_child(Lval* v, Lval* x) {
-  v->count++;
-  v->node = realloc(v->node, sizeof(Lval*) * v->count);
-  v->node[v->count - 1] = x;
-  return v;
+Lval* lval_add_child(Lval* lval, Lval* x) {
+  lval->count++;
+  lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
+  lval->node[lval->count - 1] = x;
+  return lval;
 }
 
 void lval_del(Lval* lval) {

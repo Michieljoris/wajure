@@ -33,7 +33,7 @@ struct lenv {
   Lenv* parent_env;
   int count;
   char** syms;
-  Lval** vals;
+  Lval** lvals;
 };
 
 /* lval types */
