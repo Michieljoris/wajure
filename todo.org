@@ -1,4 +1,23 @@
 #+TITLE: Todo
-* Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
-* Add a builtin function len that returns the number of elements in a Q-Expression.
-* Add a builtin function init that returns all of a Q-Expression except the final element.
+
+* Ch10
+ Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
+ Add a builtin function len that returns the number of elements in a Q-Expression.
+ Add a builtin function init that returns all of a Q-Expression except the final element.
+* Ch12
+Define a builtin_fun C function that is equivalent to the Lisp fun function.
+* Ch13
+Create builtin logical operators or ||, and && and not ! and add them to the language.
+Define a recursive Lisp function that returns the nth item of that list.
+Define a recursive Lisp function that returns 1 if an element is a member of a list, otherwise 0.
+Define a Lisp function that returns the last element of a list.
+Define in Lisp logical operator functions such as or, and and not.
+Add a specific boolean type to the language with the builtin variables true and false
+* Ch14
+Adapt the builtin function join to work on strings.
+Adapt the builtin function head to work on strings.
+Adapt the builtin function tail to work on strings.
+Create a builtin function read that reads in and converts a string to a Q-expression.
+Create a builtin function show that can print the contents of strings as it is (unescaped).
+Create a special value ok to return instead of empty expressions ().
+Add functions to wrap all of C's file handling functions such as fopen and fgets.
