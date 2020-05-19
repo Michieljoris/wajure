@@ -1,13 +1,24 @@
 #include "print.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "env.h"
 #include "lval.h"
+#include "mpc.h"
 
 static void lval_expr_print(Lval* v, char open, char close);
 
-static void lval_print(Lval* lval) {
+void lval_print_str(Lval* lval) {
+  char* escaped = malloc(strlen(lval->str) + 1);
+  strcpy(escaped, lval->str);
+  escaped = mpcf_escape(escaped);
+  printf("\"%s\"", escaped);
+  free(escaped);
+}
+
+void lval_print(Lval* lval) {
   switch (lval->type) {
     case LVAL_NUM:
       printf("%li", lval->num);
@@ -17,6 +28,9 @@ static void lval_print(Lval* lval) {
       break;
     case LVAL_SYM:
       printf("%s", lval->sym);
+      break;
+    case LVAL_STR:
+      lval_print_str(lval);
       break;
     case LVAL_SEXPR:
       lval_expr_print(lval, '(', ')');

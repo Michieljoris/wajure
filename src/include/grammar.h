@@ -3,7 +3,8 @@
 
 #include "mpc.h"
 
-mpc_parser_t* init_grammar();
+void init_grammar();
 void grammar_cleanup();
+mpc_parser_t* Lispy;
 
-#endif // __GRAMMAR_H_
+#endif  // __GRAMMAR_H_

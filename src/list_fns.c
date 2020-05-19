@@ -20,7 +20,7 @@ Lval* tail_fn(Lenv* e, Lval* sexpr) {
   LASSERT_CELL_COUNT(sexpr, 1, "tail");
   LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
   Lval* qexpr = sexpr->node[0];
-  LASSERT(sexpr, qexpr->count != 0, "Function 'tail_fn' passed {}");
+  LASSERT(sexpr, qexpr->count != 0, "Function 'tail' passed {}");
 
   qexpr = lval_take(sexpr, 0);
   lval_del(lval_pop(qexpr, 0));

@@ -81,6 +81,8 @@ int lval_eq(Lval* x, Lval* y) {
       return (strcmp(x->err, y->err) == 0);
     case LVAL_SYM:
       return (strcmp(x->sym, y->sym) == 0);
+    case LVAL_STR:
+      return (strcmp(x->str, y->str) == 0);
     case LVAL_FUN:
       if (x->fun || y->fun) {
         return x->fun == y->fun;

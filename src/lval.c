@@ -42,6 +42,14 @@ Lval* make_lval_sym(char* s) {
   return v;
 }
 
+Lval* make_lval_str(char* s) {
+  Lval* v = malloc(sizeof(Lval));
+  v->type = LVAL_STR;
+  v->str = malloc(strlen(s) + 1);
+  strcpy(v->str, s);
+  return v;
+}
+
 Lval* make_lval_sexpr(void) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_SEXPR;
@@ -86,6 +94,8 @@ char* lval_type_to_name(int t) {
       return "Error";
     case LVAL_FUN:
       return "Function";
+    case LVAL_STR:
+      return "String";
     default:
       return "Unknown";
   }
@@ -101,6 +111,9 @@ Lval* lval_add_child(Lval* lval, Lval* x) {
 void lval_del(Lval* lval) {
   switch (lval->type) {
     case LVAL_NUM:
+      break;
+    case LVAL_STR:
+      free(lval->str);
       break;
     case LVAL_SYM:
       free(lval->sym);
@@ -153,8 +166,12 @@ Lval* make_lval_copy(Lval* lval) {
       x->err = malloc(strlen(lval->err) + 1);
       strcpy(x->err, lval->err);
       break;
+    case LVAL_STR:
+      x->str = malloc(strlen(lval->str) + 1);
+      strcpy(x->sym, lval->sym);
+      break;
     case LVAL_SYM:
-      x->sym = malloc(strlen(lval->sym));
+      x->sym = malloc(strlen(lval->sym) + 1);
       strcpy(x->sym, lval->sym);
       break;
     case LVAL_SEXPR:

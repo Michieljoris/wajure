@@ -4,6 +4,7 @@
 #include "lval.h"
 
 void lval_println(Lval* v);
+void lval_print(Lval* lval);
 void lenv_print(Lenv* e);
 
 #endif  // __PRINT_H_

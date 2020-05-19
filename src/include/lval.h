@@ -16,6 +16,7 @@ struct lval {
   char* sym;
   long num;
   char* err;
+  char* str;
 
   /* function */
   lbuiltin fun;
@@ -37,10 +38,19 @@ struct lenv {
 };
 
 /* lval types */
-enum { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_FUN };
+enum {
+  LVAL_NUM,
+  LVAL_ERR,
+  LVAL_SYM,
+  LVAL_SEXPR,
+  LVAL_QEXPR,
+  LVAL_FUN,
+  LVAL_STR
+};
 
 Lval* make_lval_num(long x);
 Lval* make_lval_sym(char* s);
+Lval* make_lval_str(char* s);
 Lval* make_lval_sexpr(void);
 Lval* make_lval_qexpr(void);
 Lval* make_lval_fun(lbuiltin func, char* func_name);

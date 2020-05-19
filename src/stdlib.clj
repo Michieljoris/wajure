@@ -25,3 +25,5 @@
     {{}}
     {join (reverse (tail l)) (head l)}
 })
+
+(print "stdlib loaded")

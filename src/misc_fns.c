@@ -2,8 +2,11 @@
 
 #include "assert.h"
 #include "eval.h"
+#include "grammar.h"
 #include "lval.h"
+#include "mpc.h"
 #include "print.h"
+#include "read.h"
 
 Lval* env_put(Lenv* env, Lval* sexpr, char* fn_name, int ROOT_OR_LOCAL) {
   LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, fn_name)
@@ -95,6 +98,45 @@ Lval* if_fn(Lenv* env, Lval* sexpr) {
   return x;
 }
 
+Lval* load_fn(Lenv* env, Lval* sexpr_args) {
+  LASSERT_CELL_COUNT(sexpr_args, 1, "load");
+  LASSERT_CELL_TYPE(sexpr_args, 0, LVAL_STR, "load");
+
+  mpc_result_t result;
+  if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
+    Lval* expr = lval_read(result.output);
+    mpc_ast_delete(result.output);
+    while (expr->count) {
+      Lval* x = lval_eval(env, lval_pop(expr, 0));
+      if (x->type == LVAL_ERR) {
+        lval_println(x);
+      }
+      lval_del(x);
+    }
+    lval_del(expr);
+    lval_del(sexpr_args);
+    return make_lval_sexpr();
+  } else {
+    char* err_msg = mpc_err_string(result.error);
+    mpc_err_delete(result.error);
+    Lval* err = make_lval_err("Could load library %s", err_msg);
+    free(err_msg);
+    lval_del(sexpr_args);
+    return err;
+  }
+}
+
+Lval* print_fn(Lenv* env, Lval* sexpr_args) {
+  for (int i = 0; i < sexpr_args->count; ++i) {
+    lval_print(sexpr_args->node[i]);
+    putchar(' ');
+  }
+  putchar('\n');
+  lval_del(sexpr_args);
+
+  return make_lval_sexpr();
+}
+
 void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "def", def_fn);
   lenv_add_builtin(env, "set", set_fn);
@@ -102,4 +144,6 @@ void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "exit", exit_fn);
   lenv_add_builtin(env, "fn", lambda_fn);
   lenv_add_builtin(env, "if", if_fn);
+  lenv_add_builtin(env, "load", load_fn);
+  lenv_add_builtin(env, "print", print_fn);
 }
