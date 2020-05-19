@@ -100,8 +100,14 @@ bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   return true;
 }
 
-bool lenv_put_builtin(Lenv* env, Lval* lval_sym, Lval* lval) {
-  bool result = lenv_put(env, lval_sym, lval);
+void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
+  Lval* lval_sym = make_lval_sym(name);
+  Lval* lval_fun = make_lval_fun(func, name);
+  bool result = lenv_put(env, lval_sym, lval_fun);
+  if (!result) {
+    printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym);
+  }
   builtin_index_max += 1;
-  return result;
+  lval_del(lval_sym);
+  lval_del(lval_fun);
 }

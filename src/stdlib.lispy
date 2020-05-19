@@ -1,0 +1,27 @@
+(def {defn}
+  (fn {args body}
+    {def (head args)
+     (fn (tail args) body)}))
+
+(defn {unpack f xs}
+  {eval (join (list f) xs)})
+
+(defn {pack f & xs}
+  {f xs})
+
+(def {uncurry} pack)
+
+(def {curry} unpack)
+
+(def {apply} unpack)
+
+(defn {len l}
+  {if (= l {})
+   {0}
+   {+ 1 (len (tail l))}})
+
+(defn {reverse l} {
+  if (= l {})
+    {{}}
+    {join (reverse (tail l)) (head l)}
+})

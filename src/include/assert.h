@@ -15,7 +15,7 @@
           fn_name, sexpr->count, expected_count);
 
 #define LASSERT_CELL_TYPE(sexpr, index, expected_type, fn_name)        \
-  LASSERT(sexpr, sexpr->node[index]->type == LVAL_QEXPR,               \
+  LASSERT(sexpr, sexpr->node[index]->type == expected_type,            \
           "Function '%s' passed incorrect type for arg %d, "           \
           "got %s, expected %s",                                       \
           fn_name, index, lval_type_to_name(sexpr->node[index]->type), \

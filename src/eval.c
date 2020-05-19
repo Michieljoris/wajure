@@ -6,7 +6,7 @@
 
 #include "assert.h"
 #include "env.h"
-#include "fns.h"
+#include "list_fns.h"
 #include "lval.h"
 #include "print.h"
 

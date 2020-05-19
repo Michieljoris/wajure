@@ -7,6 +7,7 @@
 #include "fns.h"
 #include "grammar.h"
 #include "lval.h"
+#include "misc_fns.h"
 #include "mpc.h"
 #include "print.h"
 #include "read.h"
@@ -18,7 +19,8 @@ void load_stdlib(Lenv* env, mpc_parser_t* Lispy) {
       "defn {pack f & xs} {f xs}",
       "def {uncurry} pack",
       "def {curry} unpack",
-      "def {apply} unpack"};
+      "def {apply} unpack",
+      "(defn {len l} {if (= l {}) {0} {+ 1 (len (tail l))}})"};
 
   /* defn {reverse f x y} {curry f {y x}}} */
   /* defn {first xs} {curry + (head xs)} */
