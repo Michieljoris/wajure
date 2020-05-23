@@ -11,7 +11,7 @@
 #include "read.h"
 
 void repl(Lenv* env) {
-  /* puts("Press Ctrl+c to Exit\n"); */
+  /*  puts("Press Ctrl+c to Exit\n"); */
   while (!exit_repl) {
     /* Output our prompt and get input*/
     char* input = readline(">");
@@ -32,7 +32,6 @@ void repl(Lenv* env) {
 
     /* Add input to history */
     add_history(input);
-
     free(input);
   }
 }

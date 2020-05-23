@@ -3,6 +3,6 @@
 
 #include "env.h"
 #include "lval.h"
-Lval* lval_eval(Lenv* e, Lval* v);
 
+Lval* lval_eval(Lenv* e, Lval* v);
 #endif  // __EVAL_H_
