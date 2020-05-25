@@ -9,6 +9,7 @@
 #include "list_fns.h"
 #include "lval.h"
 #include "print.h"
+#include "special.h"
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
@@ -17,6 +18,7 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     return lval_fun->fun(env, sexpr_args);
   }
 
+  /* eval lispy fn */
   int given = sexpr_args->count;
   int total = lval_fun->formals->count;
 
@@ -78,7 +80,7 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   return make_lval_copy(lval_fun);
 }
 
-static Lval* lval_eval_sexpr(Lenv* env, Lval* sexpr) {
+Lval* eval_fun(Lenv* env, Lval* sexpr) {
   /* eval children */
   for (int i = 0; i < sexpr->count; i++) {
     sexpr->node[i] = lval_eval(env, sexpr->node[i]);
@@ -89,14 +91,10 @@ static Lval* lval_eval_sexpr(Lenv* env, Lval* sexpr) {
       return lval_take(sexpr, i);
     }
   }
-  /* empty expr */
-  if (sexpr->count == 0) {
-    return sexpr;
-  }
   /* single expr */
-  if (sexpr->count == 1) {
-    return lval_take(sexpr, 0);
-  }
+  /* if (sexpr->count == 1) { */
+  /*   return lval_take(sexpr, 0); */
+  /* } */
 
   /* first expr should have evalled to a fun*/
   Lval* lval_fun = lval_pop(sexpr, 0);
@@ -123,7 +121,20 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     return lval_resolved_sym;
   }
   if (lval->type == LVAL_SEXPR) {
-    return lval_eval_sexpr(env, lval);
+    if (lval->count == 0) {
+      return lval;
+    }
+
+    if (lval->node[0]->type == LVAL_SYM) {
+      int special_sym = lookup_special_sym(lval->node[0]->sym);
+      if (special_sym != -1) {
+        printf("special sym: %s\n", lval->node[0]->sym);
+        lval_del(lval_pop(lval, 0));
+        return eval_special(env, special_sym, lval);
+      }
+    }
+
+    return eval_fun(env, lval);
   }
   return lval;
 }

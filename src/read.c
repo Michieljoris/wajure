@@ -27,6 +27,9 @@ Lval* lval_read(mpc_ast_t* t) {
   if (strstr(t->tag, "symbol")) {
     return make_lval_sym(t->contents);
   }
+  if (strstr(t->tag, "quote")) {
+    return make_lval_quote();
+  }
   if (strstr(t->tag, "string")) {
     return lval_read_str(t);
   }

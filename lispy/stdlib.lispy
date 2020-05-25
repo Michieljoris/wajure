@@ -26,4 +26,14 @@
     {join (reverse (tail l)) (head l)}
 })
 
-(print "stdlib loaded")
+(defn {when cond body}
+  {if cond
+   {eval body}
+   {}})
+
+(defn {test cond}
+  {if (eval cond)
+   {}
+   {print cond}})
+
+;; (print "stdlib loaded")

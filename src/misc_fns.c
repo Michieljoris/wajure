@@ -104,6 +104,8 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
 
   mpc_result_t result;
   if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
+    /* printf("parsed\n"); */
+    /* mpc_ast_print(result.output); */
     Lval* expr = lval_read(result.output);
     mpc_ast_delete(result.output);
     while (expr->count) {
@@ -119,7 +121,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
   } else {
     char* err_msg = mpc_err_string(result.error);
     mpc_err_delete(result.error);
-    Lval* err = make_lval_err("Could load library %s", err_msg);
+    Lval* err = make_lval_err("Couldn't load library %s", err_msg);
     free(err_msg);
     lval_del(sexpr_args);
     return err;

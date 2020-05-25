@@ -58,6 +58,14 @@ Lval* make_lval_sexpr(void) {
   return v;
 }
 
+Lval* make_lval_quote(void) {
+  Lval* v = malloc(sizeof(Lval));
+  v->type = LVAL_QUOTE;
+  v->count = 0;
+  v->node = NULL;
+  return v;
+}
+
 Lval* make_lval_qexpr(void) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_QEXPR;
@@ -168,7 +176,7 @@ Lval* make_lval_copy(Lval* lval) {
       break;
     case LVAL_STR:
       x->str = malloc(strlen(lval->str) + 1);
-      strcpy(x->sym, lval->sym);
+      strcpy(x->str, lval->str);
       break;
     case LVAL_SYM:
       x->sym = malloc(strlen(lval->sym) + 1);
