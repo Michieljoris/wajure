@@ -55,9 +55,9 @@ Lval* div_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "/", sexpr); }
 
 #define MATH_FN(fn_name, operator_str, operator)                     \
   Lval* fn_name(Lenv* env, Lval* sexpr_args) {                       \
-    LASSERT_CELL_COUNT(sexpr_args, 2, operator_str);                 \
-    LASSERT_CELL_TYPE(sexpr_args, 0, LVAL_NUM, operator_str);        \
-    LASSERT_CELL_TYPE(sexpr_args, 1, LVAL_NUM, operator_str);        \
+    LASSERT_NODE_COUNT(sexpr_args, 2, operator_str);                 \
+    LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_NUM, operator_str);        \
+    LASSERT_NODE_TYPE(sexpr_args, 1, LVAL_NUM, operator_str);        \
     Lval* num = make_lval_num(                                       \
         sexpr_args->node[0]->num operator sexpr_args->node[1]->num); \
     lval_del(sexpr_args);                                            \
@@ -107,7 +107,7 @@ int lval_eq(Lval* x, Lval* y) {
 }
 
 Lval* cmp_fn(Lenv* env, Lval* sexpr_args, char* operator) {
-  LASSERT_CELL_COUNT(sexpr_args, 2, operator);
+  LASSERT_NODE_COUNT(sexpr_args, 2, operator);
   int result;
   if (strcmp(operator, "=") == 0) {
     result = lval_eq(sexpr_args->node[0], sexpr_args->node[1]);

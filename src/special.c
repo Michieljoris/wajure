@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "assert.h"
 #include "lval.h"
 
 typedef struct {
@@ -27,7 +28,7 @@ int lookup_special_sym(char* sym) {
 Lval* eval_special(Lenv* env, long special_sym, Lval* sexpr_args) {
   switch (special_sym) {
     case QUOTE:
-      printf("QUOTE\n");
+      LASSERT_NODE_COUNT(sexpr_args, 1, "quote");
       return sexpr_args;
       break;
     case DEFMACRO:

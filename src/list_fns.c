@@ -6,8 +6,8 @@
 #include "lval.h"
 
 Lval* head_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_CELL_COUNT(sexpr, 1, "head");
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "head");
+  LASSERT_NODE_COUNT(sexpr, 1, "head");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "head");
 
   Lval* qexpr = lval_take(sexpr, 0);
   while (qexpr->count > 1) {
@@ -17,8 +17,8 @@ Lval* head_fn(Lenv* e, Lval* sexpr) {
 }
 
 Lval* tail_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_CELL_COUNT(sexpr, 1, "tail");
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
+  LASSERT_NODE_COUNT(sexpr, 1, "tail");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
   Lval* qexpr = sexpr->node[0];
   LASSERT(sexpr, qexpr->count != 0, "Function 'tail' passed {}");
 
@@ -45,7 +45,7 @@ Lval* lval_join(Lval* x, Lval* y) {
 
 Lval* join_fn(Lenv* e, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
-    LASSERT_CELL_TYPE(sexpr, i, LVAL_QEXPR, "join");
+    LASSERT_NODE_TYPE(sexpr, i, LVAL_QEXPR, "join");
   }
 
   Lval* qexpr = lval_pop(sexpr, 0);
@@ -59,8 +59,8 @@ Lval* join_fn(Lenv* e, Lval* sexpr) {
 }
 
 Lval* eval_fn(Lenv* env, Lval* sexpr) {
-  LASSERT_CELL_COUNT(sexpr, 1, "eval");
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "eval");
+  LASSERT_NODE_COUNT(sexpr, 1, "eval");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "eval");
   Lval* qexpr = lval_take(sexpr, 0);
   qexpr->type = LVAL_SEXPR;
   return lval_eval(env, qexpr);

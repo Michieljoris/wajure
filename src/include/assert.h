@@ -8,13 +8,13 @@
     return err;                                    \
   }
 
-#define LASSERT_CELL_COUNT(sexpr, expected_count, fn_name) \
+#define LASSERT_NODE_COUNT(sexpr, expected_count, fn_name) \
   LASSERT(sexpr, sexpr->count == expected_count,           \
           "Function '%s' passed wrong number of args, "    \
           "got %i, expected %i",                           \
           fn_name, sexpr->count, expected_count);
 
-#define LASSERT_CELL_TYPE(sexpr, index, expected_type, fn_name)        \
+#define LASSERT_NODE_TYPE(sexpr, index, expected_type, fn_name)        \
   LASSERT(sexpr, sexpr->node[index]->type == expected_type,            \
           "Function '%s' passed incorrect type for arg %d, "           \
           "got %s, expected %s",                                       \

@@ -9,7 +9,7 @@
 #include "read.h"
 
 Lval* env_put(Lenv* env, Lval* sexpr, char* fn_name, int ROOT_OR_LOCAL) {
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, fn_name)
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, fn_name)
 
   Lval* syms = sexpr->node[0];
   for (int i = 0; i < syms->count; ++i) {
@@ -61,9 +61,9 @@ Lval* exit_fn(Lenv* e, Lval* sexpr) {
 }
 
 Lval* lambda_fn(Lenv* env, Lval* sexpr) {
-  LASSERT_CELL_COUNT(sexpr, 2, "fn");
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_QEXPR, "fn");
-  LASSERT_CELL_TYPE(sexpr, 1, LVAL_QEXPR, "fn");
+  LASSERT_NODE_COUNT(sexpr, 2, "fn");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "fn");
+  LASSERT_NODE_TYPE(sexpr, 1, LVAL_QEXPR, "fn");
 
   for (int i = 0; i < sexpr->node[0]->count; ++i) {
     LASSERT(sexpr, sexpr->node[0]->node[i]->type == LVAL_SYM,
@@ -80,10 +80,10 @@ Lval* lambda_fn(Lenv* env, Lval* sexpr) {
 }
 
 Lval* if_fn(Lenv* env, Lval* sexpr) {
-  LASSERT_CELL_COUNT(sexpr, 3, "if");
-  LASSERT_CELL_TYPE(sexpr, 0, LVAL_NUM, "if");
-  LASSERT_CELL_TYPE(sexpr, 1, LVAL_QEXPR, "if");
-  LASSERT_CELL_TYPE(sexpr, 2, LVAL_QEXPR, "if");
+  LASSERT_NODE_COUNT(sexpr, 3, "if");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_NUM, "if");
+  LASSERT_NODE_TYPE(sexpr, 1, LVAL_QEXPR, "if");
+  LASSERT_NODE_TYPE(sexpr, 2, LVAL_QEXPR, "if");
 
   Lval* x;
   sexpr->node[1]->type = LVAL_SEXPR;
@@ -99,23 +99,32 @@ Lval* if_fn(Lenv* env, Lval* sexpr) {
 }
 
 Lval* load_fn(Lenv* env, Lval* sexpr_args) {
-  LASSERT_CELL_COUNT(sexpr_args, 1, "load");
-  LASSERT_CELL_TYPE(sexpr_args, 0, LVAL_STR, "load");
+  LASSERT_NODE_COUNT(sexpr_args, 1, "load");
+  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_STR, "load");
 
   mpc_result_t result;
   if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
-    /* printf("parsed\n"); */
-    /* mpc_ast_print(result.output); */
-    Lval* expr = lval_read(result.output);
+    printf("parsed again\n");
+    mpc_ast_print(result.output);
+
+    /* parse contents into list of expressions */
+    mpc_ast_t* t = result.output;
+
+    Lval* expressions =
+        read_expressions(make_lval_sexpr(), t->children, t->children_num);
     mpc_ast_delete(result.output);
-    while (expr->count) {
-      Lval* x = lval_eval(env, lval_pop(expr, 0));
+    /* printf("%d\n", expressions->count); */
+    while (expressions->count) {
+      Lval* expr = lval_pop(expressions, 0);
+      /* lval_println(expr); */
+      /* lval_del(expr); */
+      Lval* x = lval_eval(env, expr);
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }
       lval_del(x);
     }
-    lval_del(expr);
+    lval_del(expressions);
     lval_del(sexpr_args);
     return make_lval_sexpr();
   } else {

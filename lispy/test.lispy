@@ -1,13 +1,1 @@
-;; (defmacro foo [arg]
-;;   (print arg)
-;;   )
-
-;; (print 123456)
-;; (print (quote print))
-;; (defmacro foo123)
-
-;; (test {= {list 1} {list 1}})
-;; (test {= (list 1 2 3) {1 2 3}})
-;; (test {= 1 1})
-(print (+ 1 2))
-;; (print "tests run")
+'
