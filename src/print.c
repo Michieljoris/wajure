@@ -38,6 +38,9 @@ void lval_print(Lval* lval) {
     case LVAL_QEXPR:
       lval_expr_print(lval, '{', '}');
       break;
+    case LVAL_VECTOR:
+      lval_expr_print(lval, '[', ']');
+      break;
     case LVAL_FUN:
       if (lval->fun) {
         printf("<function %s>", lval->func_name);

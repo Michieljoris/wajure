@@ -8,6 +8,7 @@
 #include "env.h"
 #include "list_fns.h"
 #include "lval.h"
+#include "misc_fns.h"
 #include "print.h"
 #include "special.h"
 
@@ -46,9 +47,7 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     }
     Lval* val = lval_pop(sexpr_args, 0);
 
-    bool is_not_internal_var = lenv_put(lval_fun->env, sym, val);
-    LASSERT(sexpr_args, is_not_internal_var,
-            "Can't redefine internal variable '%s' ", sym)
+    lenv_put(lval_fun->env, sym, val);
     lval_del(sym);
     lval_del(val);
   }
@@ -70,11 +69,22 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     lval_del(val);
   }
 
+  /* eval body expressions */
   if (lval_fun->formals->count == 0) {
     lval_fun->env->parent_env = env;
-    return eval_fn(
-        lval_fun->env,
-        lval_add_child(make_lval_sexpr(), make_lval_copy(lval_fun->body)));
+
+    Lval* body = lval_fun->body;
+    Lval* ret = NULL;
+
+    while (body->count) {
+      ret = lval_eval(lval_fun->env, lval_pop(body, 0));
+      if (ret->type == LVAL_ERR) {
+        lval_println(ret);
+      }
+      if (body->count) lval_del(ret);
+    }
+    if (!ret) return make_lval_sexpr();
+    return ret;
   }
 
   return make_lval_copy(lval_fun);
@@ -91,10 +101,6 @@ Lval* eval_fun(Lenv* env, Lval* sexpr) {
       return lval_take(sexpr, i);
     }
   }
-  /* single expr */
-  /* if (sexpr->count == 1) { */
-  /*   return lval_take(sexpr, 0); */
-  /* } */
 
   /* first expr should have evalled to a fun*/
   Lval* lval_fun = lval_pop(sexpr, 0);
@@ -128,7 +134,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     if (lval->node[0]->type == LVAL_SYM) {
       int special_sym = lookup_special_sym(lval->node[0]->sym);
       if (special_sym != -1) {
-        printf("special sym: %s\n", lval->node[0]->sym);
+        /* printf("special sym: %s\n", lval->node[0]->sym); */
         lval_del(lval_pop(lval, 0));
         return eval_special(env, special_sym, lval);
       }

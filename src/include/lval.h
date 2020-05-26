@@ -44,6 +44,7 @@ enum {
   LVAL_ERR,
   LVAL_SYM,
   LVAL_SEXPR,
+  LVAL_VECTOR,
   LVAL_QEXPR,
   LVAL_FUN,
   LVAL_STR
@@ -55,6 +56,7 @@ Lval* make_lval_sym(char* s);
 Lval* make_lval_str(char* s);
 Lval* make_lval_sexpr(void);
 Lval* make_lval_qexpr(void);
+Lval* make_lval_vector(void);
 Lval* make_lval_fun(lbuiltin func, char* func_name);
 Lval* make_lval_lambda(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);

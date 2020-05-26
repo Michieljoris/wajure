@@ -51,8 +51,6 @@ Lval* lenv_get(Lenv* env, Lval* lval_sym) {
   return make_lval_err("unbound symbol '%s'", lval_sym->sym);
 }
 
-int builtin_index_max = 0;
-
 Lenv* get_root_env(Lenv* env) {
   while (env->parent_env) {
     env = env->parent_env;
@@ -69,25 +67,19 @@ int find_str_index(char** strs, int count, char* str) {
   return -1;
 }
 
-bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
+bool lenv_is_bound(Lenv* env, Lval* lval_sym) {
   char* sym = lval_sym->sym;
-  Lenv* root_env = get_root_env(env);
-  int sym_index = find_str_index(root_env->syms, root_env->count, sym);
-  bool is_root_env = env->parent_env == NULL;
+  return find_str_index(env->syms, env->count, sym) != -1;
+}
 
-  /* Check if already bound in the root env*/
+void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
+  char* sym = lval_sym->sym;
+  int sym_index = find_str_index(env->syms, env->count, sym);
+
   if (sym_index != -1) {
-    if (sym_index < builtin_index_max) {
-      return false;
-    }
-    if (!is_root_env) {
-      sym_index = find_str_index(env->syms, env->count, sym);
-    }
-    if (sym_index != -1) {
-      lval_del(env->lvals[sym_index]);
-      env->lvals[sym_index] = make_lval_copy(lval);
-      return true;
-    }
+    lval_del(env->lvals[sym_index]);
+    env->lvals[sym_index] = make_lval_copy(lval);
+    return;
   }
 
   env->count++;
@@ -97,17 +89,15 @@ bool lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   env->lvals[env->count - 1] = make_lval_copy(lval);
   env->syms[env->count - 1] = malloc(strlen(lval_sym->sym) + 1);
   strcpy(env->syms[env->count - 1], lval_sym->sym);
-  return true;
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
   Lval* lval_sym = make_lval_sym(name);
   Lval* lval_fun = make_lval_fun(func, name);
-  bool result = lenv_put(env, lval_sym, lval_fun);
-  if (!result) {
-    printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym);
-  }
-  builtin_index_max += 1;
+  lenv_put(env, lval_sym, lval_fun);
+  /* if (!result) { */
+  /*   printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym); */
+  /* } */
   lval_del(lval_sym);
   lval_del(lval_fun);
 }

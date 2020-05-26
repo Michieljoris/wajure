@@ -74,6 +74,14 @@ Lval* make_lval_qexpr(void) {
   return v;
 }
 
+Lval* make_lval_vector(void) {
+  Lval* v = malloc(sizeof(Lval));
+  v->type = LVAL_VECTOR;
+  v->count = 0;
+  v->node = NULL;
+  return v;
+}
+
 Lval* make_lval_err(char* fmt, ...) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_ERR;
@@ -96,6 +104,8 @@ char* lval_type_to_name(int t) {
       return "Symbol";
     case LVAL_QEXPR:
       return "Q-Expression";
+    case LVAL_VECTOR:
+      return "Vector";
     case LVAL_SEXPR:
       return "S-Expression";
     case LVAL_ERR:
@@ -129,6 +139,7 @@ void lval_del(Lval* lval) {
     case LVAL_ERR:
       free(lval->err);
       break;
+    case LVAL_VECTOR:
     case LVAL_QEXPR:
     case LVAL_SEXPR:
       for (int i = 0; i < lval->count; i++) {
@@ -183,6 +194,7 @@ Lval* make_lval_copy(Lval* lval) {
       strcpy(x->sym, lval->sym);
       break;
     case LVAL_SEXPR:
+    case LVAL_VECTOR:
     case LVAL_QEXPR:
       x->count = lval->count;
       x->node = malloc(sizeof(Lval*) * x->count);

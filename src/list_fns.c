@@ -58,18 +58,9 @@ Lval* join_fn(Lenv* e, Lval* sexpr) {
   return qexpr;
 }
 
-Lval* eval_fn(Lenv* env, Lval* sexpr) {
-  LASSERT_NODE_COUNT(sexpr, 1, "eval");
-  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "eval");
-  Lval* qexpr = lval_take(sexpr, 0);
-  qexpr->type = LVAL_SEXPR;
-  return lval_eval(env, qexpr);
-}
-
 void lenv_add_list_fns(Lenv* env) {
   lenv_add_builtin(env, "list", list_fn);
   lenv_add_builtin(env, "head", head_fn);
   lenv_add_builtin(env, "tail", tail_fn);
-  lenv_add_builtin(env, "eval", eval_fn);
   lenv_add_builtin(env, "join", join_fn);
 }

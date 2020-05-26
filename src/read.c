@@ -54,6 +54,7 @@ enum {
   STRING_TOKEN,
   SEXPR,
   QEXPR,
+  VECTOR,
   REGEX,
   COMMENT,
   IGNORE,
@@ -82,8 +83,12 @@ int get_expr_type(mpc_ast_t* expr, char* token) {
   if (strstr(tag, "qexpr")) {
     return QEXPR;
   }
+  if (strstr(tag, "vector")) {
+    return VECTOR;
+  }
   if (strcmp(tag, "regex") == 0 || strstr(tag, "comment") ||
       strcmp(token, "(") == 0 || strcmp(token, ")") == 0 ||
+      strcmp(token, "[") == 0 || strcmp(token, "]") == 0 ||
       strcmp(token, "{") == 0 || strcmp(token, "}") == 0)
     return IGNORE;
   return ERROR;
@@ -120,6 +125,10 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
     case SEXPR:
       lval_from_expr = read_expressions(make_lval_sexpr(), expression->children,
                                         expression->children_num);
+      break;
+    case VECTOR:
+      lval_from_expr = read_expressions(
+          make_lval_vector(), expression->children, expression->children_num);
       break;
     case ERROR:
       lval_from_expr = make_lval_err("unknown token %s", token);
