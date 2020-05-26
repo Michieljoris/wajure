@@ -35,7 +35,7 @@ void lval_print(Lval* lval) {
     case LVAL_SEXPR:
       lval_expr_print(lval, '(', ')');
       break;
-    case LVAL_QEXPR:
+    case LVAL_MAP:
       lval_expr_print(lval, '{', '}');
       break;
     case LVAL_VECTOR:

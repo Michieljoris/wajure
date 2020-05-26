@@ -53,7 +53,7 @@ enum {
   QUOTE_TOKEN,
   STRING_TOKEN,
   SEXPR,
-  QEXPR,
+  MAP,
   VECTOR,
   REGEX,
   COMMENT,
@@ -80,8 +80,8 @@ int get_expr_type(mpc_ast_t* expr, char* token) {
   if (strstr(tag, "sexpr")) {
     return SEXPR;
   }
-  if (strstr(tag, "qexpr")) {
-    return QEXPR;
+  if (strstr(tag, "map")) {
+    return MAP;
   }
   if (strstr(tag, "vector")) {
     return VECTOR;
@@ -118,8 +118,8 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
     case QUOTE_TOKEN:
       lval_from_expr = lval_read_quote(expr_stream);
       break;
-    case QEXPR:
-      lval_from_expr = read_expressions(make_lval_qexpr(), expression->children,
+    case MAP:
+      lval_from_expr = read_expressions(make_lval_map(), expression->children,
                                         expression->children_num);
       break;
     case SEXPR:

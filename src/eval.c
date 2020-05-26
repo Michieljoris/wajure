@@ -63,7 +63,7 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     }
     lval_del(lval_pop(lval_fun->formals, 0));
     Lval* sym = lval_pop(lval_fun->formals, 0);
-    Lval* val = make_lval_qexpr();
+    Lval* val = make_lval_sexpr();
     lenv_put(lval_fun->env, sym, val);
     lval_del(sym);
     lval_del(val);
