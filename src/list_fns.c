@@ -5,34 +5,32 @@
 #include "eval.h"
 #include "lval.h"
 
-Lval* head_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_NODE_COUNT(sexpr, 1, "head");
-  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "head");
+Lval* list_fn(Lenv* e, Lval* sexpr) { return sexpr; }
 
-  Lval* qexpr = lval_take(sexpr, 0);
-  while (qexpr->count > 1) {
-    lval_del(lval_pop(qexpr, 1));
+Lval* first_fn(Lenv* e, Lval* sexpr_args) {
+  LASSERT_NODE_COUNT(sexpr_args, 1, "first");
+  LASSERT_IS_LIST_TYPE(sexpr_args, 0, "first");
+
+  Lval* lval = lval_take(sexpr_args, 0);
+  return lval_take(lval, 0);
+}
+
+Lval* rest_fn(Lenv* e, Lval* sexpr_args) {
+  LASSERT_NODE_COUNT(sexpr_args, 1, "rest");
+
+  Lval* lval = lval_take(sexpr_args, 0);
+  int type = lval->type;
+  if (!(type == LVAL_SEXPR || type == LVAL_VECTOR || type == LVAL_MAP)) {
+    return make_lval_err("first only works on list, vector or map, not a %s",
+                         lval_type_to_name(type));
   }
-  return qexpr;
+
+  lval_del(lval_pop(lval, 0));
+  lval->type = LVAL_SEXPR;
+  return lval;
 }
 
-Lval* tail_fn(Lenv* e, Lval* sexpr) {
-  LASSERT_NODE_COUNT(sexpr, 1, "tail");
-  LASSERT_NODE_TYPE(sexpr, 0, LVAL_QEXPR, "tail");
-  Lval* qexpr = sexpr->node[0];
-  LASSERT(sexpr, qexpr->count != 0, "Function 'tail' passed {}");
-
-  qexpr = lval_take(sexpr, 0);
-  lval_del(lval_pop(qexpr, 0));
-  return qexpr;
-}
-
-Lval* list_fn(Lenv* e, Lval* sexpr) {
-  sexpr->type = LVAL_QEXPR;
-  return sexpr;
-}
-
-Lval* lval_join(Lval* x, Lval* y) {
+Lval* lval_concat(Lval* x, Lval* y) {
   /* For each cell in 'y' add it to 'x' */
   while (y->count) {
     x = lval_add_child(x, lval_pop(y, 0));
@@ -43,24 +41,23 @@ Lval* lval_join(Lval* x, Lval* y) {
   return x;
 }
 
-Lval* join_fn(Lenv* e, Lval* sexpr) {
-  for (int i = 0; i < sexpr->count; i++) {
-    LASSERT_NODE_TYPE(sexpr, i, LVAL_QEXPR, "join");
+Lval* concat_fn(Lenv* e, Lval* sexpr_args) {
+  for (int i = 0; i < sexpr_args->count; i++) {
+    LASSERT_IS_LIST_TYPE(sexpr_args, i, "concat");
+  }
+  Lval* lval = lval_pop(sexpr_args, 0);
+
+  while (sexpr_args->count) {
+    lval = lval_concat(lval, lval_pop(sexpr_args, 0));
   }
 
-  Lval* qexpr = lval_pop(sexpr, 0);
-
-  while (sexpr->count) {
-    qexpr = lval_join(qexpr, lval_pop(sexpr, 0));
-  }
-
-  lval_del(sexpr);
-  return qexpr;
+  lval_del(sexpr_args);
+  return lval;
 }
 
 void lenv_add_list_fns(Lenv* env) {
   lenv_add_builtin(env, "list", list_fn);
-  lenv_add_builtin(env, "head", head_fn);
-  lenv_add_builtin(env, "tail", tail_fn);
-  lenv_add_builtin(env, "join", join_fn);
+  lenv_add_builtin(env, "first", first_fn);
+  lenv_add_builtin(env, "rest", rest_fn);
+  lenv_add_builtin(env, "concat", concat_fn);
 }

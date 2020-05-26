@@ -47,7 +47,8 @@ enum {
   LVAL_VECTOR,
   LVAL_QEXPR,
   LVAL_FUN,
-  LVAL_STR
+  LVAL_STR,
+  LVAL_MAP
 };
 
 Lval* make_lval_num(long x);

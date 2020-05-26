@@ -21,4 +21,18 @@
           fn_name, index, lval_type_to_name(sexpr->node[index]->type), \
           lval_type_to_name(expected_type));
 
+#define LASSERT_IS_LIST_TYPE(lval, index, fn_name)                             \
+  int type = lval->node[index]->type;                                          \
+  if (!(type == LVAL_SEXPR || type == LVAL_VECTOR || type == LVAL_MAP)) {      \
+    return make_lval_err(                                                      \
+        "parameter at %d should be a list, vector or map, but is a %s", index, \
+        lval_type_to_name(type));                                              \
+  }
+
+/* LASSERT(sexpr, sexpr->node[index]->type == expected_type,            \ */
+/*         "Function '%s' passed incorrect type for arg %d, "           \ */
+/*         "got %s, expected %s",                                       \ */
+/*         fn_name, index, lval_type_to_name(sexpr->node[index]->type), \ */
+/*         lval_type_to_name(expected_type)); */
+
 #endif  // __ASSERT_H_
