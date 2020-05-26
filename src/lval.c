@@ -220,3 +220,14 @@ Lval* lval_take(Lval* v, int i) {
   lval_del(v);
   return x;
 }
+
+Lval* lval_concat(Lval* x, Lval* y) {
+  /* For each cell in 'y' add it to 'x' */
+  while (y->count) {
+    x = lval_add_child(x, lval_pop(y, 0));
+  }
+
+  /* Delete the empty 'y' and return 'x' */
+  lval_del(y);
+  return x;
+}

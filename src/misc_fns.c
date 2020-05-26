@@ -46,13 +46,14 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
     mpc_ast_delete(result.output);
     while (expressions->count) {
       Lval* expr = lval_pop(expressions, 0);
-      lval_println(expr);
-      lval_del(expr);
-      /* Lval* x = lval_eval(env, expr); */
-      /* if (x->type == LVAL_ERR) { */
-      /*   lval_println(x); */
-      /* } */
-      /* lval_del(x); */
+      /* lval_println(expr); */
+      /* lval_del(expr); */
+
+      Lval* x = lval_eval(env, expr);
+      if (x->type == LVAL_ERR) {
+        lval_println(x);
+      }
+      lval_del(x);
     }
     lval_del(expressions);
 

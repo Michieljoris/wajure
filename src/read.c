@@ -62,7 +62,7 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   /* printf("token %s %s\n", token, expression->tag); */
 
   char* tag = expression->tag;
-  printf("tag: %s\n", tag);
+  /* printf("tag: %s\n", tag); */
   if (strstr(tag, "number")) return lval_read_num(token);
   if (strstr(tag, "symbol")) return make_lval_sym(token);
   if (strstr(tag, "|quote|")) return lval_read_quote(expr_stream);

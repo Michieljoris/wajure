@@ -15,9 +15,7 @@
 Lval* lval_eval(Lenv* e, Lval* v);
 
 Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  if (lval_fun->fun) {
-    return lval_fun->fun(env, sexpr_args);
-  }
+  if (lval_fun->fun) return lval_fun->fun(env, sexpr_args);
 
   /* eval lispy fn */
   int given = sexpr_args->count;
@@ -56,11 +54,11 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
 
   if (lval_fun->formals->count > 0 &&
       strcmp(lval_fun->formals->node[0]->sym, "&") == 0) {
-    if (lval_fun->formals->count != 2) {
+    if (lval_fun->formals->count != 2)
       return make_lval_err(
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
-    }
+
     lval_del(lval_pop(lval_fun->formals, 0));
     Lval* sym = lval_pop(lval_fun->formals, 0);
     Lval* val = make_lval_sexpr();
@@ -127,9 +125,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     return lval_resolved_sym;
   }
   if (lval->type == LVAL_SEXPR) {
-    if (lval->count == 0) {
-      return lval;
-    }
+    if (lval->count == 0) return lval;
 
     if (lval->node[0]->type == LVAL_SYM) {
       int special_sym = lookup_special_sym(lval->node[0]->sym);

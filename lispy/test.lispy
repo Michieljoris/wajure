@@ -4,10 +4,10 @@
 
 ;; (def foo (fn [x y] (+ x y)))
 ;; (print (foo 1 2))
-'foo
-`foo
-~foo
-~@foo
+;; 'foo
+;; `foo
+;; ~foo
+;; ~@foo
 ;; (print (eval '(+ 1 1)))
 
 ;; (print [1 2 3])
@@ -21,3 +21,14 @@
 ;; (print (rest [2 3 4]))
 ;; (print (rest (list 1 2 3)))
 ;; (print (concat (list -1) '(a b) [1 2] [3 4]))
+
+;; `foo
+;; (print `(bar))
+(def foo 123)
+;; (print `~foo)
+;; (print `~@foo)
+(def a [1 2 3])
+(print `(123 ~a))
+(print `(123 ~@a))
+(print `(foo ~(list 1 2 `(bar ~a))))
+(print `(foo ~foo 123 "str" ~@a 456 ~@a))

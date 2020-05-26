@@ -69,4 +69,5 @@ Lval* make_lval_copy(Lval* v);
 Lval* lval_pop(Lval* v, int i);
 Lval* lval_take(Lval* v, int i);
 
+Lval* lval_concat(Lval* x, Lval* y);
 #endif  // __LVAL_H_

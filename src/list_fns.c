@@ -20,25 +20,13 @@ Lval* rest_fn(Lenv* e, Lval* sexpr_args) {
 
   Lval* lval = lval_take(sexpr_args, 0);
   int type = lval->type;
-  if (!(type == LVAL_SEXPR || type == LVAL_VECTOR || type == LVAL_MAP)) {
+  if (!(type == LVAL_SEXPR || type == LVAL_VECTOR || type == LVAL_MAP))
     return make_lval_err("first only works on list, vector or map, not a %s",
                          lval_type_to_name(type));
-  }
 
   lval_del(lval_pop(lval, 0));
   lval->type = LVAL_SEXPR;
   return lval;
-}
-
-Lval* lval_concat(Lval* x, Lval* y) {
-  /* For each cell in 'y' add it to 'x' */
-  while (y->count) {
-    x = lval_add_child(x, lval_pop(y, 0));
-  }
-
-  /* Delete the empty 'y' and return 'x' */
-  lval_del(y);
-  return x;
 }
 
 Lval* concat_fn(Lenv* e, Lval* sexpr_args) {
