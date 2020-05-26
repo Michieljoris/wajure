@@ -1,39 +1,48 @@
-(def {defn}
-  (fn {args body}
-    {def (head args)
-     (fn (tail args) body)}))
+;; (def defn
+;;   (fn [args body]
+;;    (def (first args)
+;;     (fn (rest args) body))))
 
-(defn {unpack f xs}
-  {eval (join (list f) xs)})
+;; (defmacro defun [s params & body]
+;;   `(def ~s (fn ~params ~@body)))
 
-(defn {pack f & xs}
-  {f xs})
+(def s 1)
+(def params [x y])
+(def body (list x y))
 
-(def {uncurry} pack)
+`(def ~s (fn ~params ~@body))
 
-(def {curry} unpack)
+;; (defn {unpack f xs}
+;;   {eval (join (list f) xs)})
 
-(def {apply} unpack)
+;; (defn {pack f & xs}
+;;   {f xs})
 
-(defn {len l}
-  {if (= l {})
-   {0}
-   {+ 1 (len (tail l))}})
+;; (def {uncurry} pack)
 
-(defn {reverse l} {
-  if (= l {})
-    {{}}
-    {join (reverse (tail l)) (head l)}
-})
+;; (def {curry} unpack)
 
-(defn {when cond body}
-  {if cond
-   {eval body}
-   {}})
+;; (def {apply} unpack)
 
-(defn {test cond}
-  {if (eval cond)
-   {}
-   {print cond}})
+;; (defn {len l}
+;;   {if (= l {})
+;;    {0}
+;;    {+ 1 (len (tail l))}})
 
-;; (print "stdlib loaded")
+;; (defn {reverse l} {
+;;   if (= l {})
+;;     {{}}
+;;     {join (reverse (tail l)) (head l)}
+;; })
+
+;; (defn {when cond body}
+;;   {if cond
+;;    {eval body}
+;;    {}})
+
+;; (defn {test cond}
+;;   {if (eval cond)
+;;    {}
+;;    {print cond}})
+
+;; ;; (print "stdlib loaded")
