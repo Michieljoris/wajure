@@ -18,7 +18,37 @@ void lval_print_str(Lval* lval) {
   free(escaped);
 }
 
+void lval_fun_print(Lval* lval) {
+  switch (lval->subtype) {
+    case SYS:
+      printf("<function %s>", lval->func_name);
+      break;
+    case LAMBDA:
+      printf("(fn ");
+      lval_print(lval->formals);
+      putchar(' ');
+      for (int i = 0; i < lval->body->count; i++) {
+        lval_print(lval->body->node[i]);
+      }
+      putchar(')');
+      break;
+    case MACRO:
+      printf("(macro ");
+      lval_print(lval->formals);
+      putchar(' ');
+      for (int i = 0; i < lval->body->count; i++) {
+        lval_print(lval->body->node[i]);
+      }
+      putchar(')');
+      break;
+    case SPECIAL:
+      printf("<function %s>", lval->func_name);
+      break;
+  }
+}
+
 void lval_print(Lval* lval) {
+  /* printf("in lval print %s\n", lval_type_to_name2(lval)); */
   switch (lval->type) {
     case LVAL_NUM:
       printf("%li", lval->num);
@@ -32,25 +62,25 @@ void lval_print(Lval* lval) {
     case LVAL_STR:
       lval_print_str(lval);
       break;
-    case LVAL_SEXPR:
-      lval_expr_print(lval, '(', ')');
-      break;
-    case LVAL_MAP:
-      lval_expr_print(lval, '{', '}');
-      break;
-    case LVAL_VECTOR:
-      lval_expr_print(lval, '[', ']');
+    case LVAL_SEQ:
+      switch (lval->subtype) {
+        case LIST:
+          lval_expr_print(lval, '(', ')');
+          break;
+        case MAP:
+          lval_expr_print(lval, '{', '}');
+          break;
+        case VECTOR:
+          lval_expr_print(lval, '[', ']');
+          break;
+      }
       break;
     case LVAL_FUN:
-      if (lval->fun) {
-        printf("<function %s>", lval->func_name);
-      } else {
-        printf("(fn ");
-        lval_print(lval->formals);
-        putchar(' ');
-        lval_print(lval->body);
-        putchar(')');
-      }
+      lval_fun_print(lval);
+      break;
+    default:
+      printf("unknown lval type %d, %s\n", lval->type,
+             lval_type_to_name(lval->type));
   }
 }
 
@@ -70,10 +100,10 @@ void lval_println(Lval* v) {
   putchar('\n');
 }
 
-void lenv_print(Lenv* e) {
-  for (int i = 0; i < e->count; ++i) {
-    printf("%s:", e->syms[i]);
-    lval_println(e->lvals[i]);
+void lenv_print(Lenv* env) {
+  for (int i = 0; i < env->count; ++i) {
+    printf("%s:", env->syms[i]);
+    lval_println(env->lvals[i]);
   }
   return;
 }

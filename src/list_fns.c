@@ -20,12 +20,13 @@ Lval* rest_fn(Lenv* e, Lval* sexpr_args) {
 
   Lval* lval = lval_take(sexpr_args, 0);
   int type = lval->type;
-  if (!(type == LVAL_SEXPR || type == LVAL_VECTOR || type == LVAL_MAP))
+  if (!(type == LVAL_SEQ))
     return make_lval_err("first only works on list, vector or map, not a %s",
-                         lval_type_to_name(type));
+                         lval_type_to_name2(lval));
 
   lval_del(lval_pop(lval, 0));
-  lval->type = LVAL_SEXPR;
+  lval->type = LVAL_SEQ;
+  lval->subtype = LIST;
   return lval;
 }
 
@@ -44,8 +45,8 @@ Lval* concat_fn(Lenv* e, Lval* sexpr_args) {
 }
 
 void lenv_add_list_fns(Lenv* env) {
-  lenv_add_builtin(env, "list", list_fn);
-  lenv_add_builtin(env, "first", first_fn);
-  lenv_add_builtin(env, "rest", rest_fn);
-  lenv_add_builtin(env, "concat", concat_fn);
+  lenv_add_builtin(env, "list", list_fn, SYS);
+  lenv_add_builtin(env, "first", first_fn, SYS);
+  lenv_add_builtin(env, "rest", rest_fn, SYS);
+  lenv_add_builtin(env, "concat", concat_fn, SYS);
 }

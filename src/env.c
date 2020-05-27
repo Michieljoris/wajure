@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "lval.h"
+#include "print.h"
 
 Lenv* lenv_new(void) {
   Lenv* env = malloc(sizeof(Lenv));
@@ -81,23 +82,26 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
     env->lvals[sym_index] = make_lval_copy(lval);
     return;
   }
-
   env->count++;
   env->lvals = realloc(env->lvals, sizeof(Lval*) * env->count);
   env->syms = realloc(env->syms, sizeof(char*) * env->count);
 
-  env->lvals[env->count - 1] = make_lval_copy(lval);
+  /* printf("in lenv_put: count %d\n", env->count); */
+  /* lval_println(lval); */
+  Lval* copy = make_lval_copy(lval);
+  /* printf("in lenv_put\n"); */
+  env->lvals[env->count - 1] = copy;
   env->syms[env->count - 1] = malloc(strlen(lval_sym->sym) + 1);
   strcpy(env->syms[env->count - 1], lval_sym->sym);
 }
 
-void lenv_add_builtin(Lenv* env, char* name, lbuiltin func) {
+void lenv_add_builtin(Lenv* env, char* name, lbuiltin func, int subtype) {
   Lval* lval_sym = make_lval_sym(name);
-  Lval* lval_fun = make_lval_fun(func, name);
+  if (lenv_is_bound(get_root_env(env), lval_sym)) {
+    printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym);
+  }
+  Lval* lval_fun = make_lval_fun(func, name, subtype);
   lenv_put(env, lval_sym, lval_fun);
-  /* if (!result) { */
-  /*   printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym); */
-  /* } */
   lval_del(lval_sym);
   lval_del(lval_fun);
 }

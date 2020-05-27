@@ -10,7 +10,8 @@
 
 Lval* eval_fn(Lenv* env, Lval* sexpr) {
   LASSERT_NODE_COUNT(sexpr, 1, "eval");
-  LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEXPR, "eval");
+  LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEQ, "eval");
+  LASSERT_NODE_SUBTYPE(sexpr, 0, LIST, "eval");
   sexpr = lval_take(sexpr, 0);
   return lval_eval(env, sexpr);
 }
@@ -44,6 +45,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
     Lval* expressions =
         read_expressions(make_lval_sexpr(), t->children, t->children_num);
     mpc_ast_delete(result.output);
+    /* printf("exrp count:%d\n", expressions->count); */
     while (expressions->count) {
       Lval* expr = lval_pop(expressions, 0);
       /* lval_println(expr); */
@@ -81,9 +83,9 @@ Lval* print_fn(Lenv* env, Lval* sexpr_args) {
 }
 
 void lenv_add_misc_fns(Lenv* env) {
-  lenv_add_builtin(env, "eval", eval_fn);
-  lenv_add_builtin(env, "print-env", print_env_fn);
-  lenv_add_builtin(env, "exit", exit_fn);
-  lenv_add_builtin(env, "load", load_fn);
-  lenv_add_builtin(env, "print", print_fn);
+  lenv_add_builtin(env, "eval", eval_fn, SYS);
+  lenv_add_builtin(env, "print-env", print_env_fn, SYS);
+  lenv_add_builtin(env, "exit", exit_fn, SYS);
+  lenv_add_builtin(env, "load", load_fn, SYS);
+  lenv_add_builtin(env, "print", print_fn, SYS);
 }

@@ -24,11 +24,70 @@
 
 ;; `foo
 ;; (print `(bar))
-(def foo 123)
+;; (def foo 123)
 ;; (print `~foo)
 ;; (print `~@foo)
-(def a [1 2 3])
-(print `(123 ~a))
-(print `(123 ~@a))
-(print `(foo ~(list 1 2 `(bar ~a))))
-(print `(foo ~foo 123 "str" ~@a 456 ~@a))
+;; (def a [1 2 3])
+;; (print `(123 ~a))
+;; (print `(123 ~@a))
+;; (print `(foo ~(list 1 2 `(bar ~a))))
+;; (print `(foo ~foo 123 "str" ~@a 456 ~@a))
+
+;; (defmacro my-macro [x y] `(print ~x) `(print 2))
+;; (defmacro my-macro [x])
+
+;; (def defn (macro [s paramrint bar)
+;; (bar "hello")
+;; (def m (macro [x]  `(print ~x)))
+;; (print m)
+
+;; (print [1 2 (+ 1 2)])
+;; (print (m (+ 1 1)))
+;; (print-env 1)
+;; (def foo (fn [& x] (print x)))
+;; (foo 1234)
+;; (def baaaaaaaaaaaaar 1)
+;; (def fox (macro  [x y] `(print ~x)))
+;; ;; (macro [x])
+;; (print fox)
+;; (fox "123")
+;; (print-env)
+;; (print a)
+;; (m "123")
+
+
+;; (def my-defn (macro [sym params & body]
+;;                     `(fn ~params ~@body)))
+
+(def defmacro (macro [sym params & body]
+                     `(def ~sym (macro ~params ~@body))))
+
+;; (def defn (macro [sym params & body]
+;;                  `(def ~sym (fn ~params ~@body))))
+
+
+(defmacro defn [sym params & body]
+  `(def ~sym (fn ~params ~@body)))
+
+
+;; (print ">>> my-defn")
+;; (print my-defn)
+
+(defn fax [x y] (print "foo") (+ 3 4))
+;; (def fax (fn [x y] (+ 1 2) (+ 3 4)))
+(print (fax 5 6))
+;; (eval
+;;  '(def fax (fn [x y] (print x) (print y))))
+;; (fax 1 2)
+;; (def foo "foo")
+;; (def bar (list 1 2 3) )
+;; (print '`(list ~foo (list ~bar)))
+;; (print (quasiquote (list (unquote foo)
+;;                          (list (unquote bar)))))
+;; (print `(list 1 2))
+;; (print (quasiquote ((unquote foo) (splice-unquote bar))))
+;; (def foo (list 1 2))
+;; (print '`~@foo)
+
+;; (print `~@foo)
+;; (print "hello")

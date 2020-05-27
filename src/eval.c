@@ -10,14 +10,35 @@
 #include "lval.h"
 #include "misc_fns.h"
 #include "print.h"
-#include "special.h"
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
-Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  if (lval_fun->fun) return lval_fun->fun(env, sexpr_args);
+Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
+  /* eval nodes */
+  for (int i = 0; i < count; i++) {
+    lval->node[i] = lval_eval(env, lval->node[i]);
+  }
+  /* error checking */
+  for (int i = 0; i < count; i++) {
+    if (lval->node[i]->type == LVAL_ERR) {
+      return lval_take(lval, i);
+    }
+  }
+  return lval;
+}
 
-  /* eval lispy fn */
+Lval* eval_sys_call(Lenv* env, Lval* lval_fun, Lval* sexpr) {
+  Lval* evalled_nodes = eval_nodes(env, sexpr, sexpr->count);
+  if (evalled_nodes->type == LVAL_ERR) return evalled_nodes;
+  return lval_fun->fun(env, evalled_nodes);
+}
+
+Lval* eval_special_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
+  return lval_fun->fun(env, sexpr_args);
+}
+
+Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
+  /* eval lambda call */
   int given = sexpr_args->count;
   int total = lval_fun->formals->count;
 
@@ -88,55 +109,106 @@ Lval* lval_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   return make_lval_copy(lval_fun);
 }
 
-Lval* eval_fun(Lenv* env, Lval* sexpr) {
-  /* eval children */
-  for (int i = 0; i < sexpr->count; i++) {
-    sexpr->node[i] = lval_eval(env, sexpr->node[i]);
-  }
-  /* error checking */
-  for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->node[i]->type == LVAL_ERR) {
-      return lval_take(sexpr, i);
-    }
-  }
+Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
+  /* printf(">>>fun and args of macro call:\n"); */
+  /* lval_println(lval_fun); */
+  /* lval_println(sexpr_args); */
+  /* printf(">>>lambda call on macro :\n"); */
+  Lval* bound_macro = eval_lambda_call(env, lval_fun, sexpr_args);
+  /* printf(">>>result of lambda call on macro :\n"); */
+  /* lval_println(bound_macro); */
 
-  /* first expr should have evalled to a fun*/
+  /* lval_del(sexpr_args); */
+  Lval* ret = lval_eval(env, bound_macro);
+  if (!ret) return make_lval_sexpr();
+  return ret;
+}
+
+Lval* eval_sym(Lenv* env, Lval* lval_sym) {
+  Lval* lval_resolved_sym = lenv_get(env, lval_sym);
+  lval_del(lval_sym);
+  return lval_resolved_sym;
+}
+
+Lval* eval_vector(Lenv* env, Lval* lval_vector) {
+  return eval_nodes(env, lval_vector, lval_vector->count);
+}
+
+Lval* eval_sexpr(Lenv* env, Lval* sexpr) {
+  if (sexpr->count == 0) return sexpr;
+  sexpr = eval_nodes(env, sexpr, 1);
+
+  if (sexpr->type == LVAL_ERR) return sexpr;
+
   Lval* lval_fun = lval_pop(sexpr, 0);
-  if (lval_fun->type != LVAL_FUN) {
-    lval_del(lval_fun);
-    lval_del(sexpr);
+  if (lval_fun->type != LVAL_FUN)
     return make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
-        lval_type_to_name(lval_fun->type), lval_type_to_name(LVAL_FUN));
-  }
+        lval_type_to_name2(sexpr), lval_type_to_name(LVAL_FUN));
 
-  /* sexpr has all elements now except for first (a LVAL_FUN) */
-  Lval* lval = lval_call(env, lval_fun, sexpr);
-  lval_del(lval_fun);
-  return lval;
+  switch (lval_fun->subtype) {
+    case SYS:
+      return eval_sys_call(env, lval_fun, sexpr);
+    case MACRO:
+      return eval_macro_call(env, lval_fun, sexpr);
+    case SPECIAL:
+      return eval_special_call(env, lval_fun, sexpr);
+    case LAMBDA:
+      return eval_lambda_call(env, lval_fun, sexpr);
+    default:
+      return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
+                           lval_fun->func_name);
+  }
 }
 
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  if (lval->type == LVAL_SYM) {
-    Lval* lval_resolved_sym = lenv_get(env, lval);
-
-    lval_del(lval);
-    return lval_resolved_sym;
-  }
-  if (lval->type == LVAL_SEXPR) {
-    if (lval->count == 0) return lval;
-
-    if (lval->node[0]->type == LVAL_SYM) {
-      int special_sym = lookup_special_sym(lval->node[0]->sym);
-      if (special_sym != -1) {
-        /* printf("special sym: %s\n", lval->node[0]->sym); */
-        lval_del(lval_pop(lval, 0));
-        return eval_special(env, special_sym, lval);
+  /* printf("evalling!\n"); */
+  /* lval_println(lval); */
+  switch (lval->type) {
+    case LVAL_SYM:
+      return eval_sym(env, lval);
+    case LVAL_SEQ:
+      switch (lval->subtype) {
+        case VECTOR:
+          return eval_vector(env, lval);
+        case LIST:
+          return eval_sexpr(env, lval);
+        case MAP:
+          /* TODO: */
+          return lval;
+        default:
+          return make_lval_err("Unknown seq subtype");
       }
-    }
-
-    return eval_fun(env, lval);
+      break;
+    default:
+      return lval;
   }
-  return lval;
 }
+
+/* int special_sym = lookup_special_sym(lval->node[0]->sym); */
+/* if (special_sym != -1) { */
+/*   lval_del(lval_pop(lval, 0)); */
+/*   return eval_special(env, special_sym, lval); */
+/* } */
+
+/* Lval* eval_fun(Lenv* env, Lval* sexpr) { */
+/*   sexpr = eval_nodes(env, sexpr, sexpr->count); */
+/*   /\* if error return error!!! *\/ */
+
+/*   /\* first expr should have evalled to a fun*\/ */
+/*   Lval* lval_fun = lval_pop(sexpr, 0); */
+/*   if (lval_fun->type != LVAL_FUN && lval_fun->type != LVAL_MACRO) { */
+/*     lval_del(lval_fun); */
+/*     lval_del(sexpr); */
+/*     return make_lval_err( */
+/*         "sexpr starts with incorrect type. " */
+/*         "Got %s, expected %s.", */
+/*         lval_type_to_name(lval_fun->type), lval_type_to_name(LVAL_FUN)); */
+/*   } */
+
+/*   /\* sexpr has all elements now except for first (a LVAL_FUN) *\/ */
+/*   Lval* lval = lval_call(env, lval_fun, sexpr); */
+/*   lval_del(lval_fun); */
+/*   return lval; */
+/* } */

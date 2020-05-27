@@ -12,7 +12,7 @@ static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
     if (sexpr->node[i]->type != LVAL_NUM) {
       lval_del(sexpr);
       return make_lval_err("Expected number but got %s",
-                           lval_type_to_name(sexpr->node[0]->type));
+                           lval_type_to_name2(sexpr->node[0]));
     }
   }
   Lval* result = lval_pop(sexpr, 0);
@@ -89,8 +89,7 @@ int lval_eq(Lval* x, Lval* y) {
       } else {
         return lval_eq(x->formals, y->formals) && lval_eq(x->body, y->body);
       }
-    case LVAL_VECTOR:
-    case LVAL_SEXPR:
+    case LVAL_SEQ:
       if (x->count != y->count) {
         return 0;
       }
@@ -102,7 +101,7 @@ int lval_eq(Lval* x, Lval* y) {
       return 1;
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
-         lval_type_to_name(x->type));
+         lval_type_to_name2(x));
   return 0;
 }
 
@@ -129,16 +128,16 @@ Lval* not_eq_fn(Lenv* env, Lval* sexpr_args) {
 }
 
 void lenv_add_math_fns(Lenv* env) {
-  lenv_add_builtin(env, "+", add_fn);
-  lenv_add_builtin(env, "-", sub_fn);
-  lenv_add_builtin(env, "*", mul_fn);
-  lenv_add_builtin(env, "/", div_fn);
+  lenv_add_builtin(env, "+", add_fn, SYS);
+  lenv_add_builtin(env, "-", sub_fn, SYS);
+  lenv_add_builtin(env, "*", mul_fn, SYS);
+  lenv_add_builtin(env, "/", div_fn, SYS);
 
-  lenv_add_builtin(env, ">", gt_fn);
-  lenv_add_builtin(env, "<", lt_fn);
-  lenv_add_builtin(env, ">=", gte_fn);
-  lenv_add_builtin(env, "<=", lte_fn);
+  lenv_add_builtin(env, ">", gt_fn, SYS);
+  lenv_add_builtin(env, "<", lt_fn, SYS);
+  lenv_add_builtin(env, ">=", gte_fn, SYS);
+  lenv_add_builtin(env, "<=", lte_fn, SYS);
 
-  lenv_add_builtin(env, "=", eq_fn);
-  lenv_add_builtin(env, "not=", not_eq_fn);
+  lenv_add_builtin(env, "=", eq_fn, SYS);
+  lenv_add_builtin(env, "not=", not_eq_fn, SYS);
 }

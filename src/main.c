@@ -12,7 +12,7 @@
 int main(int argc, char** argv) {
   init_grammar();
   Lenv* env = lenv_new();
-  lenv_add_builtins(env);
+  lenv_add_sys_fns(env);
   if (argc >= 2) {
     for (int i = 1; i < argc; ++i) {
       Lval* args = lval_add_child(make_lval_sexpr(), make_lval_str(argv[i]));

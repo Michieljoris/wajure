@@ -6,20 +6,43 @@
 #include <string.h>
 
 #include "env.h"
+#include "print.h"
 
-Lval* make_lval_fun(lbuiltin func, char* func_name) {
-  Lval* v = malloc(sizeof(Lval));
-  v->func_name = malloc(strlen(func_name) + 1);
-  strcpy(v->func_name, func_name);
-  v->type = LVAL_FUN;
-  v->fun = func;
-  return v;
+Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
+  Lval* lval = malloc(sizeof(Lval));
+  lval->func_name = malloc(strlen(func_name) + 1);
+  strcpy(lval->func_name, func_name);
+  lval->type = LVAL_FUN;
+  lval->subtype = subtype;
+  lval->fun = func;
+  return lval;
+}
+
+Lval* make_lval_special(lbuiltin func, char* func_name) {
+  Lval* lval = malloc(sizeof(Lval));
+  lval->func_name = malloc(strlen(func_name) + 1);
+  strcpy(lval->func_name, func_name);
+  lval->type = LVAL_FUN;
+  lval->subtype = SPECIAL;
+  lval->fun = func;
+  return lval;
 }
 
 Lval* make_lval_lambda(Lval* formals, Lval* body) {
   Lval* lval = malloc(sizeof(Lval));
   lval->type = LVAL_FUN;
-  lval->fun = NULL;
+  lval->subtype = LAMBDA;
+
+  lval->env = lenv_new();
+  lval->formals = formals;
+  lval->body = body;
+  return lval;
+}
+
+Lval* make_lval_macro(Lval* formals, Lval* body) {
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_FUN;
+  lval->subtype = MACRO;
 
   lval->env = lenv_new();
   lval->formals = formals;
@@ -52,7 +75,26 @@ Lval* make_lval_str(char* s) {
 
 Lval* make_lval_sexpr(void) {
   Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_SEXPR;
+  v->type = LVAL_SEQ;
+  v->subtype = LIST;
+  v->count = 0;
+  v->node = NULL;
+  return v;
+}
+
+Lval* make_lval_vector(void) {
+  Lval* v = malloc(sizeof(Lval));
+  v->type = LVAL_SEQ;
+  v->subtype = VECTOR;
+  v->count = 0;
+  v->node = NULL;
+  return v;
+}
+
+Lval* make_lval_map(void) {
+  Lval* v = malloc(sizeof(Lval));
+  v->type = LVAL_SEQ;
+  v->subtype = MAP;
   v->count = 0;
   v->node = NULL;
   return v;
@@ -61,22 +103,6 @@ Lval* make_lval_sexpr(void) {
 Lval* make_lval_quote(void) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_QUOTE;
-  v->count = 0;
-  v->node = NULL;
-  return v;
-}
-
-Lval* make_lval_map(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_MAP;
-  v->count = 0;
-  v->node = NULL;
-  return v;
-}
-
-Lval* make_lval_vector(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_VECTOR;
   v->count = 0;
   v->node = NULL;
   return v;
@@ -96,24 +122,63 @@ Lval* make_lval_err(char* fmt, ...) {
   return v;
 }
 
+char* lval_type_to_name2(Lval* lval) {
+  switch (lval->type) {
+    case LVAL_NUM:
+      return "Number";
+    case LVAL_SYM:
+      return "Symbol";
+    case LVAL_SEQ:
+      switch (lval->subtype) {
+        case LIST:
+          return "List";
+        case VECTOR:
+          return "Vector";
+        case MAP:
+          return "Map";
+        default:
+          return "unknown SEQ subtype";
+      }
+    case LVAL_ERR:
+      return "Error";
+    case LVAL_FUN:
+      switch (lval->subtype) {
+        case SYS:
+          return "System Function";
+        case LAMBDA:
+          return "User Function";
+        case SPECIAL:
+          return "Special form";
+        case MACRO:
+          return "Macro";
+      }
+    case LVAL_STR:
+      return "String";
+    default:
+      return "Unknown";
+  }
+}
+
 char* lval_type_to_name(int t) {
   switch (t) {
     case LVAL_NUM:
       return "Number";
     case LVAL_SYM:
       return "Symbol";
-    case LVAL_MAP:
-      return "Map";
-    case LVAL_VECTOR:
-      return "Vector";
-    case LVAL_SEXPR:
-      return "S-Expression";
+    case LVAL_SEQ:
+      return "Seq";
     case LVAL_ERR:
       return "Error";
     case LVAL_FUN:
       return "Function";
     case LVAL_STR:
       return "String";
+    case LIST:
+      return "List";
+    case VECTOR:
+      return "List";
+    case MAP:
+      return "List";
     default:
       return "Unknown";
   }
@@ -139,16 +204,14 @@ void lval_del(Lval* lval) {
     case LVAL_ERR:
       free(lval->err);
       break;
-    case LVAL_VECTOR:
-    case LVAL_MAP:
-    case LVAL_SEXPR:
+    case LVAL_SEQ:
       for (int i = 0; i < lval->count; i++) {
         lval_del(lval->node[i]);
       }
       free(lval->node);
       break;
     case LVAL_FUN:
-      if (lval->fun) {
+      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
         lenv_del(lval->env);
@@ -161,20 +224,30 @@ void lval_del(Lval* lval) {
 }
 
 Lval* make_lval_copy(Lval* lval) {
+  /* printf("make_lval_copy\n"); */
   Lval* x = malloc(sizeof(Lval));
+  /* printf("make_lval_copy\n"); */
+  /* lval_println(lval); */
   x->type = lval->type;
-
+  x->subtype = lval->subtype;
+  /* printf("switching\n"); */
   switch (lval->type) {
     case LVAL_FUN:
-      if (lval->fun) {
+      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         x->fun = lval->fun;
         x->func_name = malloc(strlen(lval->func_name) + 1);
         strcpy(x->func_name, lval->func_name);
       } else {
-        x->fun = NULL;
+        /* printf("in lval_copy\n"); */
+        /* lval_println(lval); */
         x->env = make_lenv_copy(lval->env);
+        /* printf("copied ENV\n"); */
         x->formals = make_lval_copy(lval->formals);
+        /* printf("copied FORMALS\n"); */
+        /* lval_println(lval->body); */
+        /* printf("%s\n", lval_type_to_name(lval->body->type)); */
         x->body = make_lval_copy(lval->body);
+        /* printf("copied BODY\n"); */
       }
       break;
     case LVAL_NUM:
@@ -193,15 +266,17 @@ Lval* make_lval_copy(Lval* lval) {
       x->sym = malloc(strlen(lval->sym) + 1);
       strcpy(x->sym, lval->sym);
       break;
-    case LVAL_MAP:
-    case LVAL_SEXPR:
-    case LVAL_VECTOR:
+    case LVAL_SEQ:
+      /* printf("copying seq\n"); */
       x->count = lval->count;
       x->node = malloc(sizeof(Lval*) * x->count);
       for (int i = 0; i < x->count; i++) {
         x->node[i] = make_lval_copy(lval->node[i]);
       }
       break;
+
+    default:
+      printf("Don't know how to print %s\n", lval_type_to_name2(lval));
   }
   return x;
 }

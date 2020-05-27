@@ -13,10 +13,12 @@ typedef Lval* (*lbuiltin)(Lenv*, Lval*);
 
 struct lval {
   int type;
-  char* sym;
-  long num;
+  int subtype;
+
+  long num; /* TODO: could/should this be a union? */
   char* err;
   char* str;
+  char* sym;
 
   /* function */
   lbuiltin fun;
@@ -43,11 +45,18 @@ enum {
   LVAL_QUOTE,
   LVAL_ERR,
   LVAL_SYM,
-  LVAL_SEXPR,
-  LVAL_VECTOR,
+  LVAL_SEQ,
   LVAL_FUN,
   LVAL_STR,
-  LVAL_MAP
+  /* subtypes */
+  SYS,
+  MACRO,
+  SPECIAL,
+  LAMBDA,
+  LIST,
+  MAP,
+  VECTOR
+
 };
 
 Lval* make_lval_num(long x);
@@ -57,11 +66,14 @@ Lval* make_lval_str(char* s);
 Lval* make_lval_sexpr(void);
 Lval* make_lval_map(void);
 Lval* make_lval_vector(void);
-Lval* make_lval_fun(lbuiltin func, char* func_name);
+Lval* make_lval_fun(lbuiltin func, char* func_name, int type);
+Lval* make_lval_special(lbuiltin func, char* func_name);
 Lval* make_lval_lambda(Lval* formals, Lval* body);
+Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
 
 char* lval_type_to_name(int t);
+char* lval_type_to_name2(Lval* lval);
 
 Lval* lval_add_child(Lval* v, Lval* x);
 void lval_del(Lval* v);
