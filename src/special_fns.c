@@ -35,7 +35,10 @@ Lval* eval_def(Lenv* env, Lval* sexpr_args) {
   lval = lval_eval(env, lval);
 
   /* lval_println(lval); */
-  if (lval->type == LVAL_ERR) return lval;
+  if (lval->type == LVAL_ERR) {
+    lval_del(sexpr_args);
+    return lval;
+  }
   lenv_put(env, lval_sym, lval);
   lval_del(sexpr_args);
   return make_lval_sexpr();
@@ -47,10 +50,18 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
   /* COND */
   Lval* cond = lval_pop(sexpr_args, 0);
   cond = lval_eval(env, cond);
-  if (cond->type == LVAL_ERR) return cond;
-  LASSERT(sexpr_args, cond->type == LVAL_NUM,
-          "if passed incorrect type for cond, got %s, expected %s",
-          lval_type_to_name2(cond), lval_type_to_name(LVAL_NUM));
+  if (cond->type == LVAL_ERR) {
+    lval_del(sexpr_args);
+    return cond;
+  }
+  if (cond->type != LVAL_NUM) {
+    Lval* lval_err =
+        make_lval_err("if passed incorrect type for cond, got %s, expected %s",
+                      lval_type_to_name2(cond), lval_type_to_name(LVAL_NUM));
+    lval_del(cond);
+    lval_del(sexpr_args);
+    return lval_err;
+  }
   Lval* ret = NULL;
   if (cond->num) {
     /* TRUE */
@@ -115,33 +126,48 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
 }
 
 Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
+  /* a place to store processed nodes */
   Lval* processed_nodes = make_lval_sexpr();
   while (lval->count) {
+    /* Take the first of the remaining nodes*/
     Lval* node = lval_pop(lval, 0);
-    /* printf("node:\n"); */
-    /* lval_println(node); */
     if (is_unquoted(node)) {
-      /* printf("unquoted node: "); */
-      /* lval_println(node); */
+      /* Eval if node is unquoted */
       Lval* unquoted_lval = eval_unquote(env, node);
-      /* lval_println(node); */
-      if (unquoted_lval->type == LVAL_ERR) return unquoted_lval;
+      if (unquoted_lval->type == LVAL_ERR) {
+        lval_del(lval);
+        lval_del(processed_nodes);
+        return unquoted_lval;
+      }
+      /* And add to processed nodes */
       lval_add_child(processed_nodes, unquoted_lval);
-    } else if (is_splice_unquoted(node)) {
-      /* printf("splice-unquote\n"); */
-      Lval* splice_unquoted_eval = eval_splice_unquote(env, node);
-      /* lval_println(splice_unquoted_eval); */
 
-      if (splice_unquoted_eval->type == LVAL_ERR) return splice_unquoted_eval;
+    } else if (is_splice_unquoted(node)) {
+      /* Eval if node is splice unquoted */
+      Lval* splice_unquoted_eval = eval_splice_unquote(env, node);
+      if (splice_unquoted_eval->type == LVAL_ERR) {
+        lval_del(lval);
+        lval_del(processed_nodes);
+        return splice_unquoted_eval;
+      }
+      /* And concat to processed nodes */
       processed_nodes = lval_concat(processed_nodes, splice_unquoted_eval);
     } else {
+      /* if node is a list apply quasiquote recursively */
       if (node->type == LVAL_SEQ) node = eval_quasiquote_nodes(env, node);
-      if (node->type == LVAL_ERR) return node;
+      if (node->type == LVAL_ERR) {
+        lval_del(lval);
+        lval_del(processed_nodes);
+        return node;
+      }
+      /* And add to processed nodes */
       lval_add_child(processed_nodes, node);
     }
   }
+  /* Point lval->node to processed nodes */
   lval->count = processed_nodes->count;
   lval->node = processed_nodes->node;
+  /* And clean up processed nodes */
   processed_nodes->count = 0;
   free(processed_nodes);
   return lval;
