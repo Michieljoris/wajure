@@ -1,4 +1,48 @@
 #+TITLE: Todo
+* TODO
+** stdlib
+** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
+
+** TCO
+eval_ast(ast,env):
+  switch type(ast):
+    symbol:      return env.get(ast)
+    list,vector: return ast.map((x) -> EVAL(x,env))
+    hash:        return ast.map((k,v) -> list(k, EVAL(v,env)))
+    _default_:   return ast
+
+EVAL(ast,env):
+  while true:
+    if not list?(ast): return eval_ast(ast, env)
+
+    ast = macroexpand(ast, env)
+    if not list?(ast): return eval_ast(ast, env)
+    if empty?(ast): return ast
+
+    switch ast[0]:
+      'def!:        return env.set(ast[1], EVAL(ast[2], env))
+      'let*:        env = ...; ast = ast[2] // TCO
+      'quote:       return ast[1]
+      'quasiquote:  ast = quasiquote(ast[1]) // TCO
+      'defmacro!:   return ... // like def!, but set macro property
+      'macroexpand: return macroexpand(ast[1], env)
+      'do:          ast = eval_ast(ast[1..-1], env)[-1] // TCO
+      'if:          EVAL(ast[1], env) ? ast = ast[2] : ast = ast[3] // TCO
+      'fn*:         return new MalFunc(...)
+      _default_:    f, args = eval_ast(ast, env)
+                    if malfunc?(f): ast = f.fn; env = ... // TCO
+                    else:           return apply(f, args)
+
+** keywords
+** do special form
+** let special form
+** add tests from mal
+** hashtable for symbol lookup
+** immutable map, vector and sets
+** memory pool
+** GC
+** namespaces
+** call/cc
 
 * Ch10
  Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.

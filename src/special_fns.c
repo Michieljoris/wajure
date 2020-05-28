@@ -336,7 +336,6 @@ Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
 }
 
 /* https://clojure.org/reference/special_forms */
-/* TODO: loop recur try throw do */
 void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "quote", eval_quote, SPECIAL);
   lenv_add_builtin(env, "quasiquote", eval_quasiquote, SPECIAL);
@@ -346,6 +345,10 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
   lenv_add_builtin(env, "try", eval_try, SPECIAL);
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
+  /* TODO:  */
+  /* lenv_add_builtin(env, "do", eval_do, SPECIAL); */
+  /* lenv_add_builtin(env, "let", eval_let, SPECIAL); */
+  /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */
 }
 
 /* typedef struct { */
