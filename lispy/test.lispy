@@ -100,8 +100,32 @@
 ;; (print "hello")
 
 ;; (if 1 (print 'TRUE) (print 'FALSE))
-(defn foo [x y & z] (+ x y))
-(def bar (foo 1))
-(print bar)
-(print (bar 2))
+;; (defn foo [x y & z] (+ x y))
+;; (def bar (foo 1))
+;; (print bar)
+;; (print (bar 2))
 ;; (1 2)
+;; (try
+;;   ;; (throw "oops")
+;;   (print "past oops")
+
+;;   (catch
+;;     (print "in catch")
+;;     (print msg))
+;;   )
+
+(defn foo [] (print "in foo") (throw "exception in foo"))
+(print (try
+   (print "hello")
+   (print "two")
+   (foo)
+   ;; (throw "My error")
+   (print "three")
+   'try-return-value
+   (print "three")
+   (catch Exception foo (print foo) 'catch-return-value)
+   (catch Exception msg (print msg) 'catch-return-value)
+   (finally (print "finally") 'finally-return-value-is-ignored)
+
+   ))
+;; (print (throw "My error 222"))

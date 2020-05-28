@@ -55,7 +55,8 @@ enum {
   LAMBDA,
   LIST,
   MAP,
-  VECTOR
+  VECTOR,
+  USER
 
 };
 
@@ -71,6 +72,7 @@ Lval* make_lval_special(lbuiltin func, char* func_name);
 Lval* make_lval_lambda(Lval* formals, Lval* body);
 Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
+Lval* make_lval_exception(char* msg);
 
 char* lval_type_to_name(int t);
 char* lval_type_to_name2(Lval* lval);

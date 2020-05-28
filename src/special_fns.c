@@ -100,16 +100,10 @@ Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
-bool is_unquoted(Lval* lval) {
-  return lval->type == LVAL_SEQ && lval->count >= 2 &&
-         lval->node[0]->type == LVAL_SYM &&
-         strcmp(lval->node[0]->sym, "unquote") == 0;
-}
-
-bool is_splice_unquoted(Lval* lval) {
-  return lval->type == LVAL_SEQ && lval->count >= 2 &&
-         lval->node[0]->type == LVAL_SYM &&
-         strcmp(lval->node[0]->sym, "splice-unquote") == 0;
+bool is_fn_call(Lval* lval, char* sym, int min_node_count) {
+  return lval->type == LVAL_SEQ && lval->subtype == LIST &&
+         lval->count >= min_node_count && lval->node[0]->type == LVAL_SYM &&
+         strcmp(lval->node[0]->sym, sym) == 0;
 }
 
 Lval* eval_unquote(Lenv* env, Lval* lval) {
@@ -131,7 +125,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
   while (lval->count) {
     /* Take the first of the remaining nodes*/
     Lval* node = lval_pop(lval, 0);
-    if (is_unquoted(node)) {
+    if (is_fn_call(node, "unquote", 2)) {
       /* Eval if node is unquoted */
       Lval* unquoted_lval = eval_unquote(env, node);
       if (unquoted_lval->type == LVAL_ERR) {
@@ -142,7 +136,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
       /* And add to processed nodes */
       lval_add_child(processed_nodes, unquoted_lval);
 
-    } else if (is_splice_unquoted(node)) {
+    } else if (is_fn_call(node, "splice-unquote", 2)) {
       /* Eval if node is splice unquoted */
       Lval* splice_unquoted_eval = eval_splice_unquote(env, node);
       if (splice_unquoted_eval->type == LVAL_ERR) {
@@ -185,12 +179,12 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
     case LVAL_SEQ:
       switch (arg->subtype) {
         case LIST:
-          if (is_unquoted(arg)) {
+          if (is_fn_call(arg, "unquote", 2)) {
             ret = eval_unquote(env, arg);
             break;
           }
           LASSERT(
-              sexpr_args, !is_splice_unquoted(arg),
+              sexpr_args, !is_fn_call(arg, "splice-unquote", 2),
               "Trying to splice unquote a %s. Can only use splice unquote in a "
               "quasiquoted list",
               lval_type_to_name2(arg->node[1]));
@@ -228,6 +222,119 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
   return make_lval_macro(formals, sexpr_args);
 }
 
+enum { EXPR, CATCH, FINALLY };
+Lval* eval_try(Lenv* env, Lval* sexpr_args) {
+  int mode = EXPR;
+  Lval* ret = make_lval_sexpr();
+  Lval* node;
+
+  /* while (sexpr_args->count) { */
+  for (int i = 0; i < sexpr_args->count; ++i) {
+    node = sexpr_args->node[i];
+    /* printf("node: "); */
+    /* lval_println(node); */
+    switch (mode) {
+      case EXPR:
+        /* printf("in EXPR\n"); */
+        if (is_fn_call(node, "catch", 1)) {
+          /* printf("from EXPR, found catch\n"); */
+          mode = CATCH;
+          if (ret->type == LVAL_ERR) {
+            Lenv* catch_env = lenv_new();
+            catch_env->parent_env = env;
+            lval_del(lval_pop(node, 0));        /* case */
+            lval_del(lval_pop(node, 0));        /* ignored ( egException) */
+            Lval* lval_sym = lval_pop(node, 0); /* sym to bind msg to */
+            if (lval_sym->type != LVAL_SYM) {
+              lval_del(lval_sym);
+              lval_del(sexpr_args);
+              return make_lval_err(
+                  "Expected symbol in catch clause to bind exception message "
+                  "to.");
+            };
+
+            lenv_put(catch_env, lval_sym, make_lval_str(ret->err));
+            lval_del(lval_sym);
+            lval_del(ret);
+            ret = eval_nodes(catch_env, node, node->count);
+            if (ret->type == LVAL_ERR) {
+              lenv_del(catch_env);
+              lval_del(sexpr_args);
+              return ret;
+            }
+            if (ret->count > 0) {
+              ret = lval_take(ret, ret->count - 1);
+            }
+          }
+          continue;
+        }
+        if (is_fn_call(node, "finally", 1)) {
+          mode = FINALLY;
+          lval_del(lval_pop(node, 0));
+          Lval* finally_ret = eval_nodes(env, node, node->count);
+          if (finally_ret->type == LVAL_ERR) {
+            lval_del(ret);
+            lval_del(sexpr_args);
+            return finally_ret;
+          }
+          lval_del(finally_ret);
+          continue;
+        }
+        if (ret->type != LVAL_ERR) {
+          lval_del(ret);
+          ret = lval_eval(env, node);
+          if (ret->type == LVAL_ERR) {
+            if (ret->subtype == SYS) {
+              lval_del(sexpr_args);
+              return ret;
+            }
+          }
+        } else {
+          lval_del(node);
+        }
+        break;
+      case CATCH:
+        /* printf("in CATCH\n"); */
+        if (is_fn_call(node, "catch", 1)) {
+          printf("Catch clauses after the first one are ignored for now.\n");
+          continue;
+        }
+        if (is_fn_call(node, "finally", 1)) {
+          mode = FINALLY;
+          lval_del(lval_pop(node, 0));
+          Lval* finally_ret = eval_nodes(env, node, node->count);
+          if (finally_ret->type == LVAL_ERR) {
+            lval_del(ret);
+            lval_del(sexpr_args);
+            return finally_ret;
+          }
+          lval_del(finally_ret);
+          continue;
+        }
+        lval_del(sexpr_args);
+        return make_lval_err(
+            "Only catch or finally clause can follow catch in try expression");
+      case FINALLY:
+        /* printf("in FINALLy\n"); */
+        lval_del(sexpr_args);
+        lval_del(ret);
+        return make_lval_err("No clause can follow finally in try expression");
+    }
+  }
+  lval_del(sexpr_args);
+  return ret;
+}
+
+Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
+  LASSERT(sexpr_args, sexpr_args->count >= 1,
+          "Error: throw needs at a message");
+  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_STR, "throw");
+  char* msg = sexpr_args->node[0]->str;
+  Lval* lval_exc = make_lval_exception(msg);
+  lval_del(sexpr_args);
+  return lval_exc;
+}
+
 /* https://clojure.org/reference/special_forms */
 /* TODO: loop recur try throw do */
 void lenv_add_special_fns(Lenv* env) {
@@ -237,6 +344,8 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "if", eval_if, SPECIAL);
   lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
+  lenv_add_builtin(env, "try", eval_try, SPECIAL);
+  lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
 }
 
 /* typedef struct { */
@@ -281,6 +390,7 @@ void lenv_add_special_fns(Lenv* env) {
 /*     case MACRO: */
 /*       return eval_macro(env, sexpr_args); */
 /*     default: */
-/*       return make_lval_err("%li : not implemented yet!!\n", special_sym); */
+/*       return make_lval_err("%li : not implemented yet!!\n", special_sym);
+ */
 /*   } */
 /* } */

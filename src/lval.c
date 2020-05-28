@@ -111,7 +111,7 @@ Lval* make_lval_quote(void) {
 Lval* make_lval_err(char* fmt, ...) {
   Lval* v = malloc(sizeof(Lval));
   v->type = LVAL_ERR;
-
+  v->subtype = SYS;
   va_list va;
   va_start(va, fmt);
   v->err = malloc(512);
@@ -119,6 +119,12 @@ Lval* make_lval_err(char* fmt, ...) {
   v->err = realloc(v->err, strlen(v->err) + 1);
 
   va_end(va);
+  return v;
+}
+
+Lval* make_lval_exception(char* msg) {
+  Lval* v = make_lval_err(msg);
+  v->subtype = USER;
   return v;
 }
 
