@@ -27,6 +27,8 @@ Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
   return lval;
 }
 
+/* TODO: there's a memory leak with lval_fun!!!! */
+
 Lval* eval_sys_call(Lenv* env, Lval* lval_fun, Lval* sexpr) {
   Lval* evalled_nodes = eval_nodes(env, sexpr, sexpr->count);
   if (evalled_nodes->type == LVAL_ERR) return evalled_nodes;
@@ -115,8 +117,9 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   /* lval_println(sexpr_args); */
   /* printf(">>>lambda call on macro :\n"); */
   Lval* bound_macro = eval_lambda_call(env, lval_fun, sexpr_args);
-  /* printf(">>>result of lambda call on macro :\n"); */
-  /* lval_println(bound_macro); */
+  if (bound_macro->type == LVAL_ERR) return bound_macro;
+  printf(">>>result of lambda call on macro :\n");
+  lval_println(bound_macro);
 
   /* lval_del(sexpr_args); */
   Lval* ret = lval_eval(env, bound_macro);

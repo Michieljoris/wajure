@@ -44,6 +44,7 @@ Lval* eval_def(Lenv* env, Lval* sexpr_args) {
 Lval* eval_if(Lenv* env, Lval* sexpr_args) {
   LASSERT(sexpr_args, sexpr_args->count == 2 || sexpr_args->count == 3,
           "Expecting either 2 or 3 arguments to if, got %d", sexpr_args->count);
+  /* COND */
   Lval* cond = lval_pop(sexpr_args, 0);
   cond = lval_eval(env, cond);
   if (cond->type == LVAL_ERR) return cond;
@@ -52,9 +53,11 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
           lval_type_to_name2(cond), lval_type_to_name(LVAL_NUM));
   Lval* ret = NULL;
   if (cond->num) {
+    /* TRUE */
     Lval* body_true = lval_pop(sexpr_args, 0);
     ret = lval_eval(env, body_true);
   } else {
+    /* FALSE  */
     if (sexpr_args->count == 2) {
       Lval* body_false = lval_pop(sexpr_args, 1);
       ret = lval_eval(env, body_false);
@@ -182,8 +185,6 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
   }
   return ret;
 }
-
-Lval* eval_macroexpand(Lenv* env, Lval* sexpr_args) { return sexpr_args; }
 
 Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,

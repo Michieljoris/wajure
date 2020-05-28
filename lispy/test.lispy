@@ -72,10 +72,17 @@
 
 ;; (print ">>> my-defn")
 ;; (print my-defn)
+(defmacro foo [x] (list 'print x))
+(defmacro bar [y] (list 'foo y))
 
-(defn fax [x y] (print "foo") (+ 3 4))
+;; (defn fax [x y] (foo "foo") (+ x y))
+(print (macroexpand '(bar 123)))
+(print (macroexpand-1 '(bar 123)))
+(print "done");
+
+
 ;; (def fax (fn [x y] (+ 1 2) (+ 3 4)))
-(print (fax 5 6))
+;; (print (bar 6))
 ;; (eval
 ;;  '(def fax (fn [x y] (print x) (print y))))
 ;; (fax 1 2)
@@ -91,3 +98,5 @@
 
 ;; (print `~@foo)
 ;; (print "hello")
+
+(if 1 (print 'TRUE) (print 'FALSE))

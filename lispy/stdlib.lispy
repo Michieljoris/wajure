@@ -1,10 +1,13 @@
-;; (def defn
-;;   (fn [args body]
-;;    (def (first args)
-;;     (fn (rest args) body))))
+(def defmacro (macro [sym params & body]
+                     `(def ~sym (macro ~params ~@body))))
 
-;; (defmacro defun [s params & body]
-;;   `(def ~s (fn ~params ~@body)))
+;; (def defn (macro [sym params & body]
+;;                  `(def ~sym (fn ~params ~@body))))
+
+
+(defmacro defn [sym params & body]
+  `(def ~sym (fn ~params ~@body)))
+
 
 (def s 1)
 (def params [x y])
@@ -46,3 +49,12 @@
 ;;    {print cond}})
 
 ;; ;; (print "stdlib loaded")
+
+
+;; (def defn
+;;   (fn [args body]
+;;    (def (first args)
+;;     (fn (rest args) body))))
+
+;; (defmacro defun [s params & body]
+;;   `(def ~s (fn ~params ~@body)))

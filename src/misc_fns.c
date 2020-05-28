@@ -8,6 +8,45 @@
 #include "print.h"
 #include "read.h"
 
+bool is_lval_type(Lval* lval, int type, int subtype) {
+  return lval->type == type && lval->subtype == subtype;
+}
+
+Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
+  /* Check we have non-empty list where the first expr is a symbol */
+  if (is_lval_type(lval, LVAL_SEQ, LIST) && lval->count > 0 &&
+      lval->node[0]->type == LVAL_SYM) {
+    /* Have a peek the eval of that symbol */
+    Lval* lval_fun = lenv_get(env, lval->node[0]);
+    /* If it's a macro then eval it with the lval args */
+    if (is_lval_type(lval_fun, LVAL_FUN, MACRO)) {
+      lval_del(lval_pop(lval, 0)); /* discard the symbol */
+      /* Bind the macro with its args */
+      Lval* bound_macro = eval_lambda_call(env, lval_fun, lval);
+      if (bound_macro->type == LVAL_ERR) return bound_macro;
+      if (do_recurse) {
+        /* Recursively expand  */
+        return macroexpand(env, bound_macro, do_recurse);
+      } else {
+        return bound_macro;
+      }
+    }
+  }
+  return lval;
+}
+
+Lval* macroexpand_1_fn(Lenv* env, Lval* sexpr_args) {
+  LASSERT_NODE_COUNT(sexpr_args, 1, "macroexpand");
+  Lval* lval = lval_take(sexpr_args, 0);
+  return macroexpand(env, lval, 0);
+}
+
+Lval* macroexpand_fn(Lenv* env, Lval* sexpr_args) {
+  LASSERT_NODE_COUNT(sexpr_args, 1, "macroexpand");
+  Lval* lval = lval_take(sexpr_args, 0);
+  return macroexpand(env, lval, 1);
+}
+
 Lval* eval_fn(Lenv* env, Lval* sexpr) {
   LASSERT_NODE_COUNT(sexpr, 1, "eval");
   LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEQ, "eval");
@@ -88,4 +127,6 @@ void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "exit", exit_fn, SYS);
   lenv_add_builtin(env, "load", load_fn, SYS);
   lenv_add_builtin(env, "print", print_fn, SYS);
+  lenv_add_builtin(env, "macroexpand", macroexpand_fn, SYS);
+  lenv_add_builtin(env, "macroexpand-1", macroexpand_1_fn, SYS);
 }

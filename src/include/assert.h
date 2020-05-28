@@ -30,7 +30,7 @@
 
 #define LASSERT_IS_LIST_TYPE(lval, index, fn_name)                            \
   int type = lval->node[index]->type;                                         \
-  LASSERT(lval, type == LVAL_SEQ),                                          \
+  LASSERT(lval, type == LVAL_SEQ,                                             \
           "parameter %d for %s should be a list, vector or map, but is a %s", \
           index, fn_name, lval_type_to_name2(lval->node[index]));
 

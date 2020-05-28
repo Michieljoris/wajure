@@ -5,4 +5,5 @@
 #include "lval.h"
 
 Lval* lval_eval(Lenv* e, Lval* v);
+Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args);
 #endif  // __EVAL_H_
