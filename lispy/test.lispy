@@ -9,11 +9,16 @@
 ;; (print ((foo 1) 2))
 
 ;; closures ====================
-(defn foo [x] (fn [y] (+ x y)))
+;; (defn foo [x] (fn [y] (+ x y)))
 
-(def bar (foo 1))
+;; (def bar (foo 1))
 ;; (print bar)
-(print (bar 1))
+;; (print (bar 1))
+;; (def foo 1)
+;; (print foo)
+;; (def bar (fn [x] x))
+;; (defn baz [x] x)
+;; (print (baz 123))
 ;; closures ====================
 
 
@@ -112,7 +117,7 @@
 ;; (print `~@foo)
 ;; (print "hello")
 
-;; (if 1 (print 'TRUE) (print 'FALSE))
+;; (print (if 1 (print 'TRUE) (print 'FALSE)))
 ;; (defn foo [x y & z] (+ x y))
 ;; (def bar (foo 1))
 ;; (print bar)
@@ -121,6 +126,14 @@
 ;; (try
 ;;   ;; (throw "oops")
 ;;   (print "past oops")
+
+(defn recur [n]
+  (if (> n 0)
+    (recur (- n 1))
+    n)
+  )
+
+(print (recur 10))
 
 ;;   (catch
 ;;     (print "in catch")

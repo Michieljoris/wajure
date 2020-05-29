@@ -1,13 +1,7 @@
 #+TITLE: Todo
 * TODO
-** closures
-** returning partials from fn not working
-** add tests from mal
-** persistent lists
-** maps
-** stdlib
-** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
-
+** DONE closures
+** DONE returning partials from fn not working
 ** TCO
 eval_ast(ast,env):
   switch type(ast):
@@ -38,13 +32,20 @@ EVAL(ast,env):
                     if malfunc?(f): ast = f.fn; env = ... // TCO
                     else:           return apply(f, args)
 
-** keywords
-** do special form
-** let special form
-** hashtable for symbol lookup
-** immutable map, vector and sets
+** add tests from mal
+** persistent lists
 ** memory pool
-** GC
+** GC (reference counting / mark and sweep)
+** maps
+** stdlib
+*** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
+
+** keywords
+** special forms
+*** do special form
+*** let special form
+** hashtable for symbol lookup
+** immutable map, vector and sets and lists
 ** namespaces
 ** call/cc
 ** compile to wasm using emscrypten

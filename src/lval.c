@@ -15,6 +15,7 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   lval->type = LVAL_FUN;
   lval->subtype = subtype;
   lval->fun = func;
+  lval->tco_env = NULL;
   return lval;
 }
 
@@ -26,85 +27,95 @@ Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
   lval->env->parent_env = env;
   lval->formals = formals;
   lval->body = body;
+  lval->tco_env = NULL;
   return lval;
 }
 
 Lval* make_lval_num(long x) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_NUM;
-  v->num = x;
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_NUM;
+  lval->num = x;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_sym(char* s) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_SYM;
-  v->sym = malloc(strlen(s) + 1);
-  strcpy(v->sym, s);
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_SYM;
+  lval->sym = malloc(strlen(s) + 1);
+  strcpy(lval->sym, s);
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_str(char* s) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_STR;
-  v->str = malloc(strlen(s) + 1);
-  strcpy(v->str, s);
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_STR;
+  lval->str = malloc(strlen(s) + 1);
+  strcpy(lval->str, s);
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_sexpr(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_SEQ;
-  v->subtype = LIST;
-  v->count = 0;
-  v->node = NULL;
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_SEQ;
+  lval->subtype = LIST;
+  lval->count = 0;
+  lval->node = NULL;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_vector(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_SEQ;
-  v->subtype = VECTOR;
-  v->count = 0;
-  v->node = NULL;
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_SEQ;
+  lval->subtype = VECTOR;
+  lval->count = 0;
+  lval->node = NULL;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_map(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_SEQ;
-  v->subtype = MAP;
-  v->count = 0;
-  v->node = NULL;
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_SEQ;
+  lval->subtype = MAP;
+  lval->count = 0;
+  lval->node = NULL;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_quote(void) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_QUOTE;
-  v->count = 0;
-  v->node = NULL;
-  return v;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_QUOTE;
+  lval->count = 0;
+  lval->node = NULL;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_err(char* fmt, ...) {
-  Lval* v = malloc(sizeof(Lval));
-  v->type = LVAL_ERR;
-  v->subtype = SYS;
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_ERR;
+  lval->subtype = SYS;
   va_list va;
   va_start(va, fmt);
-  v->err = malloc(512);
-  vsnprintf(v->err, 511, fmt, va);
-  v->err = realloc(v->err, strlen(v->err) + 1);
+  lval->err = malloc(512);
+  vsnprintf(lval->err, 511, fmt, va);
+  lval->err = realloc(lval->err, strlen(lval->err) + 1);
 
   va_end(va);
-  return v;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 Lval* make_lval_exception(char* msg) {
-  Lval* v = make_lval_err(msg);
-  v->subtype = USER;
-  return v;
+  Lval* lval = make_lval_err(msg);
+  lval->subtype = USER;
+  lval->tco_env = NULL;
+  return lval;
 }
 
 char* lval_type_to_name2(Lval* lval) {
@@ -177,6 +188,7 @@ Lval* lval_add_child(Lval* lval, Lval* x) {
 }
 
 void lval_del(Lval* lval) {
+  free(lval->tco_env);
   switch (lval->type) {
     case LVAL_NUM:
       break;
@@ -215,6 +227,7 @@ Lval* make_lval_copy(Lval* lval) {
   /* lval_println(lval); */
   x->type = lval->type;
   x->subtype = lval->subtype;
+  x->tco_env = lval->tco_env;
   /* printf("switching\n"); */
   switch (lval->type) {
     case LVAL_FUN:

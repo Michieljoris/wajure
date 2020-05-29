@@ -28,10 +28,10 @@ Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
 }
 
 Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  printf("eval lambda call: \n");
-  lval_println(lval_fun);
-  printf("args:\n");
-  lval_println(sexpr_args);
+  /* printf("eval lambda call: \n"); */
+  /* lval_println(lval_fun); */
+  /* printf("args:\n"); */
+  /* lval_println(sexpr_args); */
 
   /* bind any args */
   int given = sexpr_args->count;
@@ -105,11 +105,11 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     Lval* body = lval_fun->body;
     Lval* ret = NULL;
 
-    printf("Env for fn:\n");
-    lenv_print(lval_fun->env);
+    /* printf("Env for fn:\n"); */
+    /* lenv_print(lval_fun->env); */
 
-    printf("Parent env for fn:\n");
-    lenv_print(lval_fun->env->parent_env);
+    /* printf("Parent env for fn:\n"); */
+    /* lenv_print(lval_fun->env->parent_env); */
 
     /* Eval all exprs of body */
     while (body->count) {
@@ -210,27 +210,37 @@ Lval* eval_sexpr(Lenv* env, Lval* sexpr) {
   }
 }
 
+int i = 0;
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  /* printf("evalling!\n"); */
+  /* printf("evalling! %d\n", i++); */
   /* lval_println(lval); */
-  switch (lval->type) {
-    case LVAL_SYM:
-      return eval_sym(env, lval);
-    case LVAL_SEQ:
-      switch (lval->subtype) {
-        case VECTOR:
-          return eval_vector(env, lval);
-        case LIST:
-          return eval_sexpr(env, lval);
-        case MAP:
-          /* TODO: */
-          return lval;
-        default:
-          lval_del(lval);
-          return make_lval_err("Unknown seq subtype");
-      }
-      break;
-    default:
-      return lval;
+  while (true) {
+    /* printf("eval!!!!\n"); */
+    switch (lval->type) {
+      case LVAL_SYM:
+        return eval_sym(env, lval);
+      case LVAL_SEQ:
+        switch (lval->subtype) {
+          case LIST:
+            lval = eval_sexpr(env, lval);
+            if (lval->tco_env == NULL) return lval;
+            printf("TCO\n");
+            env = lval->tco_env;
+            lval->tco_env = NULL;
+            break;
+          case VECTOR:
+            return eval_vector(env, lval);
+          case MAP:
+            /* TODO: */
+            return lval;
+          default:
+            lval_del(lval);
+            return make_lval_err("Unknown seq subtype");
+        }
+        break;
+      default:
+        return lval;
+    }
   }
+  return lval;
 }

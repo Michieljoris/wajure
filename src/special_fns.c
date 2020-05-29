@@ -64,12 +64,15 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
   if (cond->num) {
     /* TRUE */
     Lval* body_true = lval_pop(sexpr_args, 0);
-    ret = lval_eval(env, body_true);
+    body_true->tco_env = env;
+    ret = body_true;
+    /* ret = lval_eval(env, body_true); */
   } else {
     /* FALSE  */
     if (sexpr_args->count == 2) {
       Lval* body_false = lval_pop(sexpr_args, 1);
-      ret = lval_eval(env, body_false);
+      body_false->tco_env = env;
+      ret = body_false;
     }
   }
   lval_del(sexpr_args);

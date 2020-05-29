@@ -11,6 +11,11 @@ typedef struct lval Lval;
 
 typedef Lval* (*lbuiltin)(Lenv*, Lval*);
 
+struct {
+  Lenv* env;
+  Lval* lval;
+} Tco;
+
 struct lval {
   int type;
   int subtype;
@@ -19,10 +24,10 @@ struct lval {
   char* err;
   char* str;
   char* sym;
+  char* func_name;
 
   /* function */
   lbuiltin fun;
-  char* func_name;
   Lenv* env;
   Lval* formals;
   Lval* body;
@@ -30,6 +35,7 @@ struct lval {
   /* list of lval */
   int count;
   Lval** node;
+  Lenv* tco_env;
 };
 
 struct lenv {
