@@ -1,5 +1,10 @@
 #+TITLE: Todo
 * TODO
+** closures
+** returning partials from fn not working
+** add tests from mal
+** persistent lists
+** maps
 ** stdlib
 ** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
 
@@ -36,13 +41,15 @@ EVAL(ast,env):
 ** keywords
 ** do special form
 ** let special form
-** add tests from mal
 ** hashtable for symbol lookup
 ** immutable map, vector and sets
 ** memory pool
 ** GC
 ** namespaces
 ** call/cc
+** compile to wasm using emscrypten
+** compile to wasm modules such as mempool, gc, hashtable, pers. datastructures
+and link them
 
 * Ch10
  Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.

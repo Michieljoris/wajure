@@ -27,22 +27,16 @@ Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
   return lval;
 }
 
-Lval* eval_sys_call(Lenv* env, Lval* lval_fun, Lval* sexpr) {
-  Lval* evalled_nodes = eval_nodes(env, sexpr, sexpr->count);
-  if (evalled_nodes->type == LVAL_ERR) return evalled_nodes;
-  return lval_fun->fun(env, evalled_nodes);
-}
-
-Lval* eval_special_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  return lval_fun->fun(env, sexpr_args);
-}
-
 Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  /* eval lambda call */
+  printf("eval lambda call: \n");
+  lval_println(lval_fun);
+  printf("args:\n");
+  lval_println(sexpr_args);
+
+  /* bind any args */
   int given = sexpr_args->count;
   int total = lval_fun->formals->count;
 
-  /* bind any args */
   while (sexpr_args->count) {
     /* Check if any formals (params) are left to bind */
     if (lval_fun->formals->count == 0) {
@@ -106,10 +100,16 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
 
   /* Eval body expressions, but only if all params are bound */
   if (lval_fun->formals->count == 0) {
-    lval_fun->env->parent_env = env;
+    /* lval_fun->env->parent_env = env; */
 
     Lval* body = lval_fun->body;
     Lval* ret = NULL;
+
+    printf("Env for fn:\n");
+    lenv_print(lval_fun->env);
+
+    printf("Parent env for fn:\n");
+    lenv_print(lval_fun->env->parent_env);
 
     /* Eval all exprs of body */
     while (body->count) {
@@ -118,6 +118,9 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
         lval_del(lval_fun);
         return ret;
       }
+      /* if (ret->type == LVAL_FUN) { */
+      /*   ret->env->parent_env =  lval_fun->env; */
+      /* } */
       /* if expr is not last one of body discard the result */
       if (body->count) lval_del(ret);
     }
@@ -137,7 +140,10 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   /* lval_println(sexpr_args); */
   /* printf(">>>lambda call on macro :\n"); */
   Lval* bound_macro = eval_lambda_call(env, lval_fun, sexpr_args);
-  if (bound_macro->type == LVAL_ERR) return bound_macro;
+  if (bound_macro->type == LVAL_ERR) {
+    lval_del(lval_fun);
+    return bound_macro;
+  }
   /* printf(">>>result of lambda call on macro :\n"); */
   /* lval_println(bound_macro); */
 
@@ -174,14 +180,25 @@ Lval* eval_sexpr(Lenv* env, Lval* sexpr) {
     lval_del(lval_fun);
     return lval_err;
   }
+  switch (lval_fun->subtype) {
+    case SYS:
+    case LAMBDA:
+      sexpr = eval_nodes(env, sexpr, sexpr->count);
+      if (sexpr->type == LVAL_ERR) {
+        lval_del(lval_fun);
+        return sexpr;
+      }
+    case MACRO:
+    case SPECIAL:
+    default:;
+  }
 
   switch (lval_fun->subtype) {
     case SYS:
-      return eval_sys_call(env, lval_fun, sexpr);
+    case SPECIAL:
+      return lval_fun->fun(env, sexpr);
     case MACRO:
       return eval_macro_call(env, lval_fun, sexpr);
-    case SPECIAL:
-      return eval_special_call(env, lval_fun, sexpr);
     case LAMBDA:
       return eval_lambda_call(env, lval_fun, sexpr);
     default:
@@ -217,30 +234,3 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       return lval;
   }
 }
-
-/* int special_sym = lookup_special_sym(lval->node[0]->sym); */
-/* if (special_sym != -1) { */
-/*   lval_del(lval_pop(lval, 0)); */
-/*   return eval_special(env, special_sym, lval); */
-/* } */
-
-/* Lval* eval_fun(Lenv* env, Lval* sexpr) { */
-/*   sexpr = eval_nodes(env, sexpr, sexpr->count); */
-/*   /\* if error return error!!! *\/ */
-
-/*   /\* first expr should have evalled to a fun*\/ */
-/*   Lval* lval_fun = lval_pop(sexpr, 0); */
-/*   if (lval_fun->type != LVAL_FUN && lval_fun->type != LVAL_MACRO) { */
-/*     lval_del(lval_fun); */
-/*     lval_del(sexpr); */
-/*     return make_lval_err( */
-/*         "sexpr starts with incorrect type. " */
-/*         "Got %s, expected %s.", */
-/*         lval_type_to_name(lval_fun->type), lval_type_to_name(LVAL_FUN)); */
-/*   } */
-
-/*   /\* sexpr has all elements now except for first (a LVAL_FUN) *\/ */
-/*   Lval* lval = lval_call(env, lval_fun, sexpr); */
-/*   lval_del(lval_fun); */
-/*   return lval; */
-/* } */

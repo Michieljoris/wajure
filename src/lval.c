@@ -18,33 +18,12 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   return lval;
 }
 
-Lval* make_lval_special(lbuiltin func, char* func_name) {
-  Lval* lval = malloc(sizeof(Lval));
-  lval->func_name = malloc(strlen(func_name) + 1);
-  strcpy(lval->func_name, func_name);
-  lval->type = LVAL_FUN;
-  lval->subtype = SPECIAL;
-  lval->fun = func;
-  return lval;
-}
-
-Lval* make_lval_lambda(Lval* formals, Lval* body) {
+Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
   Lval* lval = malloc(sizeof(Lval));
   lval->type = LVAL_FUN;
-  lval->subtype = LAMBDA;
-
+  lval->subtype = subtype;
   lval->env = lenv_new();
-  lval->formals = formals;
-  lval->body = body;
-  return lval;
-}
-
-Lval* make_lval_macro(Lval* formals, Lval* body) {
-  Lval* lval = malloc(sizeof(Lval));
-  lval->type = LVAL_FUN;
-  lval->subtype = MACRO;
-
-  lval->env = lenv_new();
+  lval->env->parent_env = env;
   lval->formals = formals;
   lval->body = body;
   return lval;

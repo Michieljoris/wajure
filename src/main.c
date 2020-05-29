@@ -11,12 +11,14 @@
 
 int main(int argc, char** argv) {
   init_grammar();
-  Lenv* env = lenv_new();
-  lenv_add_sys_fns(env);
+  Lenv* root_env = lenv_new();
+  lenv_add_sys_fns(root_env);
+  Lenv* user_env = lenv_new();
+  user_env->parent_env = root_env;
   if (argc >= 2) {
     for (int i = 1; i < argc; ++i) {
       Lval* args = lval_add_child(make_lval_sexpr(), make_lval_str(argv[i]));
-      Lval* x = load_fn(env, args);
+      Lval* x = load_fn(user_env, args);
       printf("Loaded %s\n", argv[i]);
       if (x->type == LVAL_ERR) {
         lval_println(x);
@@ -26,7 +28,8 @@ int main(int argc, char** argv) {
   }
   /* repl(env); */
 
-  lenv_del(env);
+  lenv_del(user_env);
+  lenv_del(root_env);
   grammar_cleanup();
   return 0;
 }

@@ -1,3 +1,22 @@
+(def defmacro (macro [sym params & body]
+                     `(def ~sym (macro ~params ~@body))))
+
+(defmacro defn [sym params & body]
+  `(def ~sym (fn ~params ~@body)))
+
+;; (def foo (fn [y] (fn [x] (+ x y))))
+
+;; (print ((foo 1) 2))
+
+;; closures ====================
+(defn foo [x] (fn [y] (+ x y)))
+
+(def bar (foo 1))
+;; (print bar)
+(print (bar 1))
+;; closures ====================
+
+
 ;; (print (if (- 1 1) (+ 1 1) (+ 2 2)))
 ;; (print (if (- 1 1) (+ 1 1)))
 ;; (print (if (+ 1 1) (+ 1 1)))
@@ -59,15 +78,9 @@
 ;; (def my-defn (macro [sym params & body]
 ;;                     `(fn ~params ~@body)))
 
-(def defmacro (macro [sym params & body]
-                     `(def ~sym (macro ~params ~@body))))
-
-;; (def defn (macro [sym params & body]
-;;                  `(def ~sym (fn ~params ~@body))))
 
 
-(defmacro defn [sym params & body]
-  `(def ~sym (fn ~params ~@body)))
+
 
 
 ;; (print ">>> my-defn")
@@ -114,18 +127,43 @@
 ;;     (print msg))
 ;;   )
 
-(defn foo [] (print "in foo") (throw "exception in foo"))
-(print (try
-   (print "hello")
-   (print "two")
-   (foo)
-   ;; (throw "My error")
-   (print "three")
-   'try-return-value
-   (print "three")
-   (catch Exception foo (print foo) 'catch-return-value)
-   (catch Exception msg (print msg) 'catch-return-value)
-   (finally (print "finally") 'finally-return-value-is-ignored)
 
-   ))
+;;partials ====================
+;; (defn fox [x y] (+ x y))
+
+;; (def partial (fox 1))
+;; (defn some-fn [x] x)
+;; (defn foo [x] (some-fn x) ;; (partial x)
+;;   ;; (fox x)
+;;   )
+
+;; (print (foo 1))
+;; ;; (print bar)
+
+;; (print (partial 1))
+;;partials ====================
+
+;; (print (bar 1))
+
+
+;; (defn foo [x] (fn [y] (+ x y)))
+
+;; (defn bar[x] (foo x))
+;; (print bar)
+;; (print ((bar 1) 2))
+
+
+;; (print (try
+;;    (print "hello")
+;;    (print "two")
+;;    (foo)
+;;    ;; (throw "My error")
+;;    (print "three")
+;;    'try-return-value
+;;    (print "three")
+;;    (catch Exception foo (print foo) 'catch-return-value)
+;;    (catch Exception msg (print msg) 'catch-return-value)
+;;    (finally (print "finally") 'finally-return-value-is-ignored)
+
+;;    ))
 ;; (print (throw "My error 222"))

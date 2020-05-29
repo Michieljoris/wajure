@@ -21,8 +21,6 @@ Lval* eval_def(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_SYM, "def");
   Lval* lval_sym = sexpr_args->node[0];
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
-    /* printf("Warning: var '%s' is already bound in the root env",
-     * lval_sym->sym); */
     printf(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
         "being replaced by: #'user/%s",
@@ -75,16 +73,12 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
     }
   }
   lval_del(sexpr_args);
-  if (ret) {
-    return ret;
-  }
-  return make_lval_sexpr(); /*TODO: should be nil */
+  return ret ? ret : make_lval_sexpr();
 }
 
-Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
-  /* printf("in eval_lambda\n"); */
+Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,
-          "Error: lambda needs at least parameter list")
+          "Error: function needs at least parameter list")
   LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "fn");
 
   for (int i = 0; i < sexpr_args->node[0]->count; ++i) {
@@ -95,9 +89,15 @@ Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
   }
 
   Lval* formals = lval_pop(sexpr_args, 0);
+  return make_lval_lambda(env, formals, sexpr_args, subtype);
+}
 
-  Lval* ret = make_lval_lambda(formals, sexpr_args);
-  return ret;
+Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
+  return eval_lambda_form(env, sexpr_args, LAMBDA);
+}
+
+Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
+  return eval_lambda_form(env, sexpr_args, MACRO);
 }
 
 bool is_fn_call(Lval* lval, char* sym, int min_node_count) {
@@ -204,22 +204,6 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
       ret = arg;
   }
   return ret;
-}
-
-Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
-  LASSERT(sexpr_args, sexpr_args->count >= 1,
-          "Error: defmacro needs at least a parameter list")
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "macro");
-
-  for (int i = 0; i < sexpr_args->node[0]->count; ++i) {
-    LASSERT(sexpr_args, sexpr_args->node[0]->node[i]->type == LVAL_SYM,
-            "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name2(sexpr_args->node[0]->node[i]),
-            lval_type_to_name(LVAL_SYM));
-  }
-
-  Lval* formals = lval_pop(sexpr_args, 0);
-  return make_lval_macro(formals, sexpr_args);
 }
 
 enum { EXPR, CATCH, FINALLY };
@@ -350,50 +334,3 @@ void lenv_add_special_fns(Lenv* env) {
   /* lenv_add_builtin(env, "let", eval_let, SPECIAL); */
   /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */
 }
-
-/* typedef struct { */
-/*   char* key; */
-/*   int val; */
-/* } t_symstruct; */
-
-/* enum { QUOTE, QUASIQUOTE, DEF, LAMBDA, IF, MACRO, MACROEXPAND }; */
-/* static t_symstruct special_syms[] = {{"quote", QUOTE}, */
-/*                                      {"quasiquote", QUASIQUOTE}, */
-/*                                      {"def", DEF}, */
-/*                                      {"fn", LAMBDA}, */
-/*                                      {"if", IF}, */
-/*                                      {"macro", MACRO}, */
-/*                                      {"macroexpand", MACROEXPAND}}; */
-/* long special_syms_count = sizeof(special_syms) / sizeof(t_symstruct); */
-
-/* int lookup_special_sym(char* sym) { */
-/*   for (int i = 0; i < special_syms_count; i++) { */
-/*     if (strcmp(special_syms[i].key, sym) == 0) { */
-/*       return special_syms[i].val; */
-/*     } */
-/*   } */
-/*   return -1; */
-/* } */
-
-/* Lval* eval_special(Lenv* env, long special_sym, Lval* sexpr_args) { */
-/*   switch (special_sym) { */
-/*     case QUOTE: */
-/*       LASSERT_NODE_COUNT(sexpr_args, 1, "quote"); */
-/*       return lval_take(sexpr_args, 0); */
-/*     case QUASIQUOTE: */
-/*       return eval_quasiquote(env, sexpr_args); */
-/*     case DEF: */
-/*       return eval_def(env, sexpr_args); */
-/*     case IF: */
-/*       return eval_if(env, sexpr_args); */
-/*     case LAMBDA: */
-/*       return eval_lambda(env, sexpr_args); */
-/*     case MACROEXPAND: /\* TODO isn't a special form right *\/ */
-/*       return eval_macroexpand(env, sexpr_args); */
-/*     case MACRO: */
-/*       return eval_macro(env, sexpr_args); */
-/*     default: */
-/*       return make_lval_err("%li : not implemented yet!!\n", special_sym);
- */
-/*   } */
-/* } */
