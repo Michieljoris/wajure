@@ -209,6 +209,21 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
+/* TODO: fixup memory mngmnt */
+/* (print (try */
+/*          (try */
+/*            (throw "e1") */
+/*            (catch E e (throw "e2"))) */
+/*          (catch E e "c2"))) */
+
+/* (print (try */
+/*          ;; (print "try") */
+/*          "foo" */
+/*          ;; 123 */
+/*          ;; (throw "e1") */
+/*          ;; (catch E e (print e)) */
+/*          ;; (finally (print "finally")) */
+/*          )) */
 enum { EXPR, CATCH, FINALLY };
 Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   int mode = EXPR;
@@ -222,7 +237,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
     /* lval_println(node); */
     switch (mode) {
       case EXPR:
-        /* printf("in EXPR\n"); */
+        printf("in EXPR\n");
         if (is_fn_call(node, "catch", 1)) {
           /* printf("from EXPR, found catch\n"); */
           mode = CATCH;
@@ -270,14 +285,14 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
         if (ret->type != LVAL_ERR) {
           lval_del(ret);
           ret = lval_eval(env, node);
+          printf("evalling expr node\n");
+          lval_println(ret);
           if (ret->type == LVAL_ERR) {
             if (ret->subtype == SYS) {
               lval_del(sexpr_args);
               return ret;
             }
           }
-        } else {
-          lval_del(node);
         }
         break;
       case CATCH:
@@ -333,7 +348,7 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "try", eval_try, SPECIAL);
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
   /* TODO:  */
-  /* lenv_add_builtin(env, "do", eval_do, SPECIAL); */
-  /* lenv_add_builtin(env, "let", eval_let, SPECIAL); */
+  /* lenv_add_builtin(env, "do", eval_do, SPECIAL); */   /* TCO */
+  /* lenv_add_builtin(env, "let", eval_let, SPECIAL); */ /* TCO */
   /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */
 }

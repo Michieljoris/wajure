@@ -4,9 +4,9 @@
 (defmacro defn [sym params & body]
   `(def ~sym (fn ~params ~@body)))
 
-;; (def foo (fn [y] (fn [x] (+ x y))))
+(def foo (fn [y] (fn [x] (+ x y))))
 
-;; (print ((foo 1) 2))
+(print ((foo 1) 2))
 
 ;; closures ====================
 ;; (defn foo [x] (fn [y] (+ x y)))
@@ -127,18 +127,25 @@
 ;;   ;; (throw "oops")
 ;;   (print "past oops")
 
-(defn recur [n]
-  (if (> n 0)
-    (recur (- n 1))
-    n)
-  )
+;; (defn recur [n]
+;;   (if (> n 0)
+;;     (recur (- n 1))
+;;     n)
+;;   )
 
-(print (recur 10))
+;; (print (recur 10))
 
 ;;   (catch
 ;;     (print "in catch")
 ;;     (print msg))
 ;;   )
+
+;; (def bar 1)
+;; (def foo (fn [n] (if (= n 0) 0 (bar (- n 1)))))
+;; (def bar (fn [n] (if (= n 0) 0 (foo (- n 1)))))
+
+;; (foo 44715)
+;; (foo 50000)
 
 
 ;;partials ====================
@@ -166,11 +173,28 @@
 ;; (print ((bar 1) 2))
 
 
+;; (print (throw "My error 222"))
+
+;; (try (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+;; (print (try
+;;          (try
+;;            (throw "e1")
+;;            (catch E e (throw "e2")))
+;;          (catch E e "c2")))
+;; (print (try
+;;          ;; (print "try")
+;;          "foo"
+;;          ;; 123
+;;          ;; (throw "e1")
+;;          ;; (catch E e (print e))
+;;          ;; (finally (print "finally"))
+;;          ))
+
 ;; (print (try
 ;;    (print "hello")
 ;;    (print "two")
-;;    (foo)
-;;    ;; (throw "My error")
+;;    ;; (foo)
+;;    (throw "My error")
 ;;    (print "three")
 ;;    'try-return-value
 ;;    (print "three")
@@ -179,4 +203,3 @@
 ;;    (finally (print "finally") 'finally-return-value-is-ignored)
 
 ;;    ))
-;; (print (throw "My error 222"))

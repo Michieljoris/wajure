@@ -100,9 +100,12 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
 
   /* Eval body expressions, but only if all params are bound */
   if (lval_fun->formals->count == 0) {
-    /* lval_fun->env->parent_env = env; */
-
     Lval* body = lval_fun->body;
+    env = lval_fun->env;
+
+    free(lval_fun->formals);
+    free(lval_fun);
+
     Lval* ret = NULL;
 
     /* printf("Env for fn:\n"); */
@@ -111,23 +114,25 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     /* printf("Parent env for fn:\n"); */
     /* lenv_print(lval_fun->env->parent_env); */
 
-    /* Eval all exprs of body */
-    while (body->count) {
-      ret = lval_eval(lval_fun->env, lval_pop(body, 0));
-      if (ret->type == LVAL_ERR) {
-        lval_del(lval_fun);
-        return ret;
-      }
-      /* if (ret->type == LVAL_FUN) { */
-      /*   ret->env->parent_env =  lval_fun->env; */
-      /* } */
+    /* Eval all exprs of body but the last one*/
+    while (body->count > 1) {
+      ret = lval_eval(env, lval_pop(body, 0));
+      if (ret->type == LVAL_ERR) return ret;
+
       /* if expr is not last one of body discard the result */
       if (body->count) lval_del(ret);
     }
-    /* if there's no body exprs to eval return empty sexpr */
-    if (!ret) return make_lval_sexpr();
-    /* Return result */
-    return ret;
+    if (body->count) {
+      /* TODO: can't do tco when evalling for macro!!! */
+      /* So add flag or split this fn  */
+      /* ret = lval_pop(body, 0); */
+      /* ret->tco_env = env; */
+      /* return ret; */
+      return lval_eval(env, lval_pop(body, 0));
+    } else {
+      /* if there's no body exprs to eval return empty sexpr */
+      return make_lval_sexpr();
+    }
   } else {
     return lval_fun;
     /* return make_lval_copy(lval_fun); */
@@ -140,10 +145,8 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   /* lval_println(sexpr_args); */
   /* printf(">>>lambda call on macro :\n"); */
   Lval* bound_macro = eval_lambda_call(env, lval_fun, sexpr_args);
-  if (bound_macro->type == LVAL_ERR) {
-    lval_del(lval_fun);
-    return bound_macro;
-  }
+  if (bound_macro->type == LVAL_ERR) return bound_macro;
+
   /* printf(">>>result of lambda call on macro :\n"); */
   /* lval_println(bound_macro); */
 
@@ -224,7 +227,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           case LIST:
             lval = eval_sexpr(env, lval);
             if (lval->tco_env == NULL) return lval;
-            printf("TCO\n");
+            /* printf("TCO\n"); */
             env = lval->tco_env;
             lval->tco_env = NULL;
             break;

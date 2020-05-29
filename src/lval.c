@@ -172,9 +172,9 @@ char* lval_type_to_name(int t) {
     case LIST:
       return "List";
     case VECTOR:
-      return "List";
+      return "Vector";
     case MAP:
-      return "List";
+      return "Map";
     default:
       return "Unknown";
   }
