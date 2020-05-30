@@ -28,7 +28,7 @@ struct lval {
 
   /* function */
   lbuiltin fun;
-  Lenv* env;
+  Lenv* bindings;
   Lval* formals;
   Lval* body;
 

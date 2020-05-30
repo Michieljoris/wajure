@@ -23,8 +23,8 @@ Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
   Lval* lval = malloc(sizeof(Lval));
   lval->type = LVAL_FUN;
   lval->subtype = subtype;
-  lval->env = lenv_new();
-  lval->env->parent_env = env;
+  lval->bindings = lenv_new();
+  lval->bindings->parent_env = env;
   lval->formals = formals;
   lval->body = body;
   lval->tco_env = NULL;
@@ -210,7 +210,7 @@ void lval_del(Lval* lval) {
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
-        lenv_del(lval->env);
+        lenv_del(lval->bindings);
         lval_del(lval->formals);
         lval_del(lval->body);
       }
@@ -237,7 +237,7 @@ Lval* make_lval_copy(Lval* lval) {
       } else {
         /* printf("in lval_copy\n"); */
         /* lval_println(lval); */
-        x->env = make_lenv_copy(lval->env);
+        x->bindings = make_lenv_copy(lval->bindings);
         /* printf("copied ENV\n"); */
         x->formals = make_lval_copy(lval->formals);
         /* printf("copied FORMALS\n"); */

@@ -1,8 +1,25 @@
-(def defmacro (macro [sym params & body]
-                     `(def ~sym (macro ~params ~@body))))
+;; (def defmacro (macro [sym params & body]
+;;                      `(def ~sym (macro ~params ~@body))))
 
-(defmacro defn [sym params & body]
-  `(def ~sym (fn ~params ~@body)))
+;; (defmacro defn [sym params & body]
+;;   `(def ~sym (fn ~params ~@body)))
+
+;; (defmacro foo [x] (list 'print x))
+;; (defmacro bar [y] (print 123) (list 'foo 345))
+
+;; (print "hello")
+
+;; (print (bar 123))
+;; (print (macroexpand '(bar 123)))
+
+
+
+;; (def foo (macro [x] (list 'print x)))
+;; (print foo)
+;; (foo 1)
+
+;; (defn fax [x y] (foo "foo") (+ x y))
+;; (print (macroexpand '(bar 123)))
 
 ;; (def foo (fn [y] (fn [x] (+ x y))))
 
@@ -104,13 +121,6 @@
 
 ;; (print ">>> my-defn")
 ;; (print my-defn)
-(defmacro foo [x] (list 'print x))
-(defmacro bar [y] (list 'foo y) (list 'foo 345))
-
-(print "hello")
-
-;; (defn fax [x y] (foo "foo") (+ x y))
-(print (macroexpand '(bar 123)))
 ;; (print (macroexpand-1 '(bar 123)))
 ;; (print "done");
 
@@ -192,19 +202,29 @@
 ;; (print (throw "My error 222"))
 
 ;; (try (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+;; (try
+;;   (print "before")
+;;   (throw "e1")
+;;   (print "after")
+;;   (catch E e
+;;     (print e)
+;;     (throw "e2")
+;;     ))
+
 ;; (print (try
 ;;          (try
 ;;            (throw "e1")
 ;;            (catch E e (throw "e2")))
 ;;          (catch E e "c2")))
-;; (print (try
-;;          ;; (print "try")
-;;          "foo"
-;;          ;; 123
-;;          ;; (throw "e1")
-;;          ;; (catch E e (print e))
-;;          ;; (finally (print "finally"))
-;;          ))
+
+(print (try
+         ;; (print "try")
+         "foo"
+         ;; 123
+         (throw "e1")
+         (catch E e (print e))
+         (finally (print "finally"))
+         ))
 
 ;; (print (try
 ;;    (print "hello")

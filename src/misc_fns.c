@@ -24,13 +24,10 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       lval_del(lval_pop(lval, 0)); /* discard the symbol */
 
       /* Bind the macro with its args */
-      /* because of TCO  in eval_macro_call it's still unevaluated */
-      Lval* bound_macro = eval_macro_call(lval_fun, lval, WITHOUT_TCO);
+      Lval* bound_macro = eval_lambda_call(lval_fun, lval, WITHOUT_TCO);
 
-      if (bound_macro->type == LVAL_ERR) return bound_macro;
-
+      /* Recursively expand  */
       if (do_recurse) {
-        /* Recursively expand  */
         return macroexpand(env, bound_macro, do_recurse);
       } else {
         return bound_macro;

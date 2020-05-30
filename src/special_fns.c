@@ -66,7 +66,6 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
     Lval* body_true = lval_pop(sexpr_args, 0);
     body_true->tco_env = env;
     ret = body_true;
-    /* ret = lval_eval(env, body_true); */
   } else {
     /* FALSE  */
     if (sexpr_args->count == 2) {
@@ -230,25 +229,37 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   Lval* ret = make_lval_sexpr();
   Lval* node;
 
-  /* while (sexpr_args->count) { */
-  for (int i = 0; i < sexpr_args->count; ++i) {
-    node = sexpr_args->node[i];
+  while (sexpr_args->count) {
+    /* for (int i = 0; i < sexpr_args->count; ++i) { */
+    node = lval_pop(sexpr_args, 0);
+    /* node = sexpr_args->node[i]; */
     /* printf("node: "); */
     /* lval_println(node); */
     switch (mode) {
       case EXPR:
-        printf("in EXPR\n");
+        /* printf("in EXPR\n"); */
+        /* CATCH node =================== */
         if (is_fn_call(node, "catch", 1)) {
           /* printf("from EXPR, found catch\n"); */
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
+            lval_del(lval_pop(node, 0)); /* catch */
+            if (node->count < 2) {
+              lval_del(node);
+              lval_del(ret);
+              lval_del(sexpr_args);
+              return make_lval_err(
+                  "catch clause should have at least an exception type and "
+                  "binding to it");
+            }
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = env;
-            lval_del(lval_pop(node, 0));        /* case */
-            lval_del(lval_pop(node, 0));        /* ignored ( egException) */
+            lval_del(lval_pop(node, 0));        /* ignored ( eg Exception) */
             Lval* lval_sym = lval_pop(node, 0); /* sym to bind msg to */
             if (lval_sym->type != LVAL_SYM) {
               lval_del(lval_sym);
+              lval_del(node);
+              lval_del(ret);
               lval_del(sexpr_args);
               return make_lval_err(
                   "Expected symbol in catch clause to bind exception message "
@@ -258,22 +269,21 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
             lenv_put(catch_env, lval_sym, make_lval_str(ret->err));
             lval_del(lval_sym);
             lval_del(ret);
-            ret = eval_nodes(catch_env, node, node->count);
+            /* lenv_print(catch_env); */
+            ret = eval_list(catch_env, node, WITHOUT_TCO);
+            lenv_del(catch_env);
             if (ret->type == LVAL_ERR) {
-              lenv_del(catch_env);
               lval_del(sexpr_args);
               return ret;
-            }
-            if (ret->count > 0) {
-              ret = lval_take(ret, ret->count - 1);
             }
           }
           continue;
         }
+        /* FINALLY node =================== */
         if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
-          lval_del(lval_pop(node, 0));
-          Lval* finally_ret = eval_nodes(env, node, node->count);
+          lval_del(lval_pop(node, 0)); /* finally */
+          Lval* finally_ret = eval_list(env, node, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
             lval_del(sexpr_args);
@@ -282,29 +292,34 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
           lval_del(finally_ret);
           continue;
         }
+        /* Normal node, but skip if we already have a value that's an error */
         if (ret->type != LVAL_ERR) {
           lval_del(ret);
           ret = lval_eval(env, node);
-          printf("evalling expr node\n");
-          lval_println(ret);
+          /* printf("evalling expr node\n"); */
+          /* lval_println(ret); */
           if (ret->type == LVAL_ERR) {
             if (ret->subtype == SYS) {
               lval_del(sexpr_args);
               return ret;
             }
           }
+        } else {
+          lval_del(node);
         }
+
         break;
       case CATCH:
         /* printf("in CATCH\n"); */
         if (is_fn_call(node, "catch", 1)) {
           printf("Catch clauses after the first one are ignored for now.\n");
+          lval_del(node);
           continue;
         }
         if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
-          lval_del(lval_pop(node, 0));
-          Lval* finally_ret = eval_nodes(env, node, node->count);
+          lval_del(lval_pop(node, 0)); /* finally */
+          Lval* finally_ret = eval_list(env, node, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
             lval_del(sexpr_args);
@@ -319,6 +334,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
       case FINALLY:
         /* printf("in FINALLy\n"); */
         lval_del(sexpr_args);
+        lval_del(node);
         lval_del(ret);
         return make_lval_err("No clause can follow finally in try expression");
     }
@@ -327,7 +343,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
+Lval* eval_do(Lenv* env, Lval* body) { return eval_list(env, body, WITH_TCO); }
 
 Lval* eval_let(Lenv* env, Lval* sexpr_args) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,
@@ -360,7 +376,7 @@ Lval* eval_let(Lenv* env, Lval* sexpr_args) {
     lval_del(lval_sym);
     lval_del(lval);
   }
-  return eval_body(let_env, sexpr_args, WITH_TCO);
+  return eval_list(let_env, sexpr_args, WITH_TCO);
 }
 
 /* Not really a special form */
@@ -386,9 +402,8 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "if", eval_if, SPECIAL); /* TCO */
   lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
-  /* lenv_add_builtin(env, "try", eval_try, SPECIAL); */
+  lenv_add_builtin(env, "try", eval_try, SPECIAL);
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
-  /* TODO:  */
   lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* TCO */
   lenv_add_builtin(env, "let", eval_let, SPECIAL); /* TCO */
 
