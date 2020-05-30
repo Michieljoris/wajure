@@ -27,12 +27,7 @@ Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
   return lval;
 }
 
-Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
-  /* printf("eval lambda call: \n"); */
-  /* lval_println(lval_fun); */
-  /* printf("args:\n"); */
-  /* lval_println(sexpr_args); */
-
+Lval* bind_lambda_formals(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   /* bind any args */
   int given = sexpr_args->count;
   int total = lval_fun->formals->count;
@@ -97,45 +92,58 @@ Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
     lval_del(sym);
     lval_del(val);
   }
+  return lval_fun;
+}
+
+Lval* eval_lambda_body(Lenv* env, Lval* body, bool with_tco) {
+  Lval* ret = NULL;
+
+  /* Eval all exprs of body but the last one*/
+  while (body->count > 1) {
+    ret = lval_eval(env, lval_pop(body, 0));
+    if (ret->type == LVAL_ERR) break;
+
+    /* if expr is not last one of body discard the result */
+    if (body->count) lval_del(ret);
+  }
+  if (body->count && (ret == NULL || ret->type != LVAL_ERR)) {
+    if (with_tco) {
+      ret = lval_pop(body, 0);
+      ret->tco_env = env;
+    } else {
+      Lval* expr = lval_pop(body, 0);
+      ret = lval_eval(env, expr);
+    }
+  }
+
+  lval_del(body);
+  return ret ? ret : make_lval_sexpr();
+}
+
+#define WITH_TCO true
+#define WITHOUT_TCO false
+
+Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
+  /* printf("eval lambda call: \n"); */
+  /* lval_println(lval_fun); */
+  /* printf("args:\n"); */
+  /* lval_println(sexpr_args); */
+
+  /* Bind formals to args */
+  lval_fun = bind_lambda_formals(env, lval_fun, sexpr_args);
+  /* lenv_print(lval_fun->env); */
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   /* Eval body expressions, but only if all params are bound */
   if (lval_fun->formals->count == 0) {
     Lval* body = lval_fun->body;
     env = lval_fun->env;
-
     free(lval_fun->formals);
     free(lval_fun);
 
-    Lval* ret = NULL;
-
-    /* printf("Env for fn:\n"); */
-    /* lenv_print(lval_fun->env); */
-
-    /* printf("Parent env for fn:\n"); */
-    /* lenv_print(lval_fun->env->parent_env); */
-
-    /* Eval all exprs of body but the last one*/
-    while (body->count > 1) {
-      ret = lval_eval(env, lval_pop(body, 0));
-      if (ret->type == LVAL_ERR) return ret;
-
-      /* if expr is not last one of body discard the result */
-      if (body->count) lval_del(ret);
-    }
-    if (body->count) {
-      /* TODO: can't do tco when evalling for macro!!! */
-      /* So add flag or split this fn  */
-      /* ret = lval_pop(body, 0); */
-      /* ret->tco_env = env; */
-      /* return ret; */
-      return lval_eval(env, lval_pop(body, 0));
-    } else {
-      /* if there's no body exprs to eval return empty sexpr */
-      return make_lval_sexpr();
-    }
+    return eval_lambda_body(env, body, WITH_TCO);
   } else {
     return lval_fun;
-    /* return make_lval_copy(lval_fun); */
   }
 }
 
@@ -144,16 +152,26 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args) {
   /* lval_println(lval_fun); */
   /* lval_println(sexpr_args); */
   /* printf(">>>lambda call on macro :\n"); */
-  Lval* bound_macro = eval_lambda_call(env, lval_fun, sexpr_args);
-  if (bound_macro->type == LVAL_ERR) return bound_macro;
 
-  /* printf(">>>result of lambda call on macro :\n"); */
-  /* lval_println(bound_macro); */
+  /* Bind formals to args */
+  lval_fun = bind_lambda_formals(env, lval_fun, sexpr_args);
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
 
-  /* lval_del(sexpr_args); */
-  Lval* ret = lval_eval(env, bound_macro);
-  if (!ret) return make_lval_sexpr();
-  return ret;
+  /* Eval body expressions, but only if all params are bound */
+  if (lval_fun->formals->count == 0) {
+    Lval* body = lval_fun->body;
+    env = lval_fun->env;
+    free(lval_fun->formals);
+    free(lval_fun);
+
+    Lval* bound_macro = eval_lambda_body(env, body, WITHOUT_TCO);
+
+    if (bound_macro->type == LVAL_ERR) return bound_macro;
+
+    return lval_eval(env, bound_macro);
+  } else {
+    return lval_fun;
+  }
 }
 
 Lval* eval_sym(Lenv* env, Lval* lval_sym) {
@@ -213,11 +231,10 @@ Lval* eval_sexpr(Lenv* env, Lval* sexpr) {
   }
 }
 
-int i = 0;
 Lval* lval_eval(Lenv* env, Lval* lval) {
   /* printf("evalling! %d\n", i++); */
   /* lval_println(lval); */
-  while (true) {
+  while (true) { /* TCO */
     /* printf("eval!!!!\n"); */
     switch (lval->type) {
       case LVAL_SYM:
@@ -227,7 +244,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           case LIST:
             lval = eval_sexpr(env, lval);
             if (lval->tco_env == NULL) return lval;
-            /* printf("TCO\n"); */
+            printf("TCO\n");
             env = lval->tco_env;
             lval->tco_env = NULL;
             break;

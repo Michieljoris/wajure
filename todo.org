@@ -1,9 +1,11 @@
 #+TITLE: Todo
+* Implement as much as possible in lispy itself
+Then there's less work for the compiler.
 * TODO
 ** DONE closures
 ** DONE returning partials from fn not working
 ** TCO
-- eval_lambda_cal
+- eval_lambda_call
 - let
 - do
 ** add tests from mal

@@ -7,6 +7,8 @@
 (def foo (fn [y] (fn [x] (+ x y))))
 
 (print ((foo 1) 2))
+;; (def foo (fn [x] x))
+;; (print (foo 1))
 
 ;; closures ====================
 ;; (defn foo [x] (fn [y] (+ x y)))
