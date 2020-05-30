@@ -16,14 +16,19 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
   if (is_lval_type(lval, LVAL_SEQ, LIST) && lval->count > 0 &&
       lval->node[0]->type == LVAL_SYM) {
-    /* Have a peek the eval of that symbol */
+    /* Have a peek at the eval of that symbol */
     Lval* lval_fun = lenv_get(env, lval->node[0]);
+
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUN, MACRO)) {
       lval_del(lval_pop(lval, 0)); /* discard the symbol */
+
       /* Bind the macro with its args */
-      Lval* bound_macro = eval_lambda_call(env, lval_fun, lval);
+      /* because of TCO  in eval_macro_call it's still unevaluated */
+      Lval* bound_macro = eval_macro_call(lval_fun, lval, WITHOUT_TCO);
+
       if (bound_macro->type == LVAL_ERR) return bound_macro;
+
       if (do_recurse) {
         /* Recursively expand  */
         return macroexpand(env, bound_macro, do_recurse);

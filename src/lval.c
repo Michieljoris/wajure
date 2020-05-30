@@ -188,7 +188,6 @@ Lval* lval_add_child(Lval* lval, Lval* x) {
 }
 
 void lval_del(Lval* lval) {
-  free(lval->tco_env);
   switch (lval->type) {
     case LVAL_NUM:
       break;

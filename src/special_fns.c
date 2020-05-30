@@ -81,7 +81,7 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
 
 Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,
-          "Error: function needs at least parameter list")
+          "Error: function needs at least a parameter vector")
   LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "fn");
 
   for (int i = 0; i < sexpr_args->node[0]->count; ++i) {
@@ -327,9 +327,50 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
-Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
+Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
+
+Lval* eval_let(Lenv* env, Lval* sexpr_args) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,
-          "Error: throw needs at a message");
+          "Error: let needs at least binding vector")
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "fn");
+  Lval* bindings = lval_pop(sexpr_args, 0);
+
+  LASSERT(sexpr_args, bindings->count % 2 == 0,
+          "Binding vector for let has odd number of forms");
+
+  Lenv* let_env = lenv_new();
+  let_env->parent_env = env;
+
+  Lval* lval_sym;
+  while (bindings->count) {
+    lval_sym = lval_pop(bindings, 0);
+    LASSERT(sexpr_args, lval_sym->type == LVAL_SYM,
+            "Canot bind non-symbol. Got %s, expected %s.",
+            lval_type_to_name2(lval_sym), lval_type_to_name(LVAL_SYM));
+
+    Lval* lval = lval_eval(env, lval_pop(bindings, 0));
+    if (lval->type == LVAL_ERR) {
+      lval_del(lval_sym);
+      lval_del(bindings);
+      lval_del(sexpr_args);
+      lenv_del(let_env);
+      return lval;
+    }
+    lenv_put(let_env, lval_sym, lval);
+    lval_del(lval_sym);
+    lval_del(lval);
+  }
+  return eval_body(let_env, sexpr_args, WITH_TCO);
+}
+
+/* Not really a special form */
+Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
+  LASSERT(sexpr_args, sexpr_args->count >= 1, "Error: throw needs a message");
+  sexpr_args = eval_nodes(env, sexpr_args, sexpr_args->count);
+  if (sexpr_args->type == LVAL_ERR) {
+    lval_del(sexpr_args);
+    return sexpr_args;
+  }
   LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_STR, "throw");
   char* msg = sexpr_args->node[0]->str;
   Lval* lval_exc = make_lval_exception(msg);
@@ -342,13 +383,15 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "quote", eval_quote, SPECIAL);
   lenv_add_builtin(env, "quasiquote", eval_quasiquote, SPECIAL);
   lenv_add_builtin(env, "def", eval_def, SPECIAL);
-  lenv_add_builtin(env, "if", eval_if, SPECIAL);
+  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* TCO */
   lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
-  lenv_add_builtin(env, "try", eval_try, SPECIAL);
+  /* lenv_add_builtin(env, "try", eval_try, SPECIAL); */
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
   /* TODO:  */
-  /* lenv_add_builtin(env, "do", eval_do, SPECIAL); */   /* TCO */
-  /* lenv_add_builtin(env, "let", eval_let, SPECIAL); */ /* TCO */
+  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* TCO */
+  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* TCO */
+
+  /* Not really needed because we have tco, but for clojure compatibility */
   /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */
 }
