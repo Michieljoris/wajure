@@ -220,7 +220,7 @@ Lval* eval_sexpr(Lenv* env, Lval* list) {
 
 int id;
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  id++;
+  /* id++; */
   /* printf("%d ", id); */
   /* lenv_print(env); */
   /* __printf(">>>>>> "); */
@@ -245,6 +245,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
               /* printf("current tco_env: %p\n", tco_env); */
               /* if (tco_env) lenv_print(tco_env); */
               tco_env = lval->tco_env;
+              lval->tco_env = NULL;
               /* printf("with lval= "); */
               /* lval_println(lval); */
               /* printf("and tco_env = %p\n", tco_env); */

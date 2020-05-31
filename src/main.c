@@ -21,7 +21,6 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
       Lval* args = lval_add_child(make_lval_sexpr(), make_lval_str(argv[i]));
       Lval* x = load_fn(user_env, args);
-      printf("Loaded %s\n", argv[i]);
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }

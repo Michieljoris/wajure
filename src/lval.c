@@ -67,6 +67,17 @@ Lval* make_lval_sexpr(void) {
   return lval;
 }
 
+Lval* make_lval_plist(void) {
+  Lval* lval = malloc(sizeof(Lval));
+  lval->type = LVAL_SEQ;
+  lval->subtype = PLIST;
+  lval->count = 0;
+  /* lval->car = NULL; */
+  /* lval->cdr = NULL; */
+  lval->tco_env = NULL;
+  return lval;
+}
+
 Lval* make_lval_vector(void) {
   Lval* lval = malloc(sizeof(Lval));
   lval->type = LVAL_SEQ;
@@ -215,11 +226,17 @@ void lval_del(Lval* lval) {
         lval_del(lval->body);
       }
       break;
+    case PLIST:
+      printf("how to delete a plist??\n");
+      /* just free the point pointer I'd say, but then do reference counting to
+       * free any cdr */
+      break;
   }
   free(lval);
 }
 
 Lval* make_lval_copy(Lval* lval) {
+  if (lval->type == LVAL_SEQ && lval->subtype == PLIST) return lval;
   /* printf("make_lval_copy\n"); */
   Lval* x = malloc(sizeof(Lval));
   /* printf("make_lval_copy\n"); */
@@ -271,7 +288,6 @@ Lval* make_lval_copy(Lval* lval) {
         x->node[i] = make_lval_copy(lval->node[i]);
       }
       break;
-
     default:
       printf("Don't know how to print %s\n", lval_type_to_name2(lval));
   }

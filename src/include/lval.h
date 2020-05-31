@@ -40,6 +40,12 @@ struct lenv {
   Lval** lvals;
 };
 
+struct {
+  Lval* lval;
+  Lval* cdr;
+  int ref_count;
+} Cell;
+
 /* lval types */
 enum {
   LVAL_NUM,
@@ -57,7 +63,8 @@ enum {
   LIST,
   MAP,
   VECTOR,
-  USER
+  USER,
+  PLIST
 
 };
 
@@ -84,4 +91,6 @@ Lval* lval_pop(Lval* v, int i);
 Lval* lval_take(Lval* v, int i);
 
 Lval* lval_concat(Lval* x, Lval* y);
+
+Lval* make_lval_plist(void);
 #endif  // __LVAL_H_

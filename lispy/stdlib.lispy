@@ -1,19 +1,37 @@
+
 (def defmacro (macro [sym params & body]
                      `(def ~sym (macro ~params ~@body))))
-
-;; (def defn (macro [sym params & body]
-;;                  `(def ~sym (fn ~params ~@body))))
-
 
 (defmacro defn [sym params & body]
   `(def ~sym (fn ~params ~@body)))
 
+(defn debug-on []
+  (debug 1))
 
-(def s 1)
-(def params [x y])
-(def body (list x y))
+(defn debug-off []
+  (debug 0))
 
-`(def ~s (fn ~params ~@body))
+(defmacro when [cond body]
+  `(if ~cond ~body))
+
+(defmacro not [b]
+  `(if ~b 0 1))
+
+(defmacro t [expr expected & str]
+  (when (not=  (eval expr) expected)
+    (do
+      (pr "FAIL:" expr)
+      (pr expr)
+      (pr "Expected:" expected)
+      (pr "Got::" (eval expr)))))
+
+
+;; (defn [test cond]
+;;   {if (eval cond)
+;;    {print cond}
+
+;;    })
+
 
 ;; (defn {unpack f xs}
 ;;   {eval (join (list f) xs)})

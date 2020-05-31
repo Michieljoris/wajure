@@ -53,6 +53,8 @@ READER_MACRO(lval_read_backquote, "`", "quasiquote");
 READER_MACRO(lval_read_tilde, "~", "unquote");
 READER_MACRO(lval_read_tilde_at, "~@", "splice-unquote");
 
+Lval* lval_read_plist(Lval* plist, mpc_ast_t* expression);
+
 Lval* read_expressions(Lval* lval, mpc_ast_t* expressions[],
                        int expression_count);
 
@@ -70,6 +72,8 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   if (strstr(tag, "|tilde|")) return lval_read_tilde(expr_stream);
   if (strstr(tag, "tilde_at")) return lval_read_tilde_at(expr_stream);
   if (strstr(tag, "string")) return lval_read_str(token);
+  /* if (strstr(tag, "plist")) */
+  /*   return lval_read_plist(make_lval_plist(), expression); */
   if (strstr(tag, "sexpr"))
     return read_expressions(make_lval_sexpr(), expression->children,
                             expression->children_num);
@@ -86,6 +90,19 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
     return NULL;
   return make_lval_err("unknown token %s", token);
 }
+
+/* Lval* lval_read_plist(Lval* plist, mpc_ast_t* expression) { */
+/*   Expr_stream expr_stream = {expression->children, expression->children_num,
+ * 0}; */
+/*   Lval* cdr = plist; */
+/*   while (has_next_expr(&expr_stream)) { */
+/*     Lval* next_expression = read_next_expression(&expr_stream); */
+
+/*     if (next_expression) cdr->cdr = next_expression; */
+/*   } */
+/*   Lval* lval = make_lval_sexpr(); */
+/*   return lval; */
+/* } */
 
 Lval* read_expressions(Lval* lval, mpc_ast_t* expressions[],
                        int expression_count) {

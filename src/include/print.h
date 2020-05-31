@@ -5,6 +5,7 @@
 
 void lval_println(Lval* v);
 void lval_print(Lval* lval);
+void lval_pr(Lval* lval);
 void lenv_print(Lenv* e);
 
 #endif  // __PRINT_H_

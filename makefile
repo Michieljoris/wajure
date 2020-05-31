@@ -15,7 +15,7 @@ CFLAGS = -g -std=c99 -Wall -Isrc/include -Ilib/include
 LDFLAGS = -Lout -ledit -lmpc
 
 all: out/lispy
-	out/lispy lispy/test.lispy
+	out/lispy lispy/repl.lispy
 
 # out/lispy lispy/stdlib.lispy lispy/test.lispy
 

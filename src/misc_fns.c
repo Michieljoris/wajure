@@ -52,8 +52,8 @@ Lval* macroexpand_fn(Lenv* env, Lval* sexpr_args) {
 
 Lval* eval_fn(Lenv* env, Lval* sexpr) {
   LASSERT_NODE_COUNT(sexpr, 1, "eval");
-  LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEQ, "eval");
-  LASSERT_NODE_SUBTYPE(sexpr, 0, LIST, "eval");
+  /* LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEQ, "eval"); */
+  /* LASSERT_NODE_SUBTYPE(sexpr, 0, LIST, "eval"); */
   sexpr = lval_take(sexpr, 0);
   return lval_eval(env, sexpr);
 }
@@ -101,6 +101,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
     }
     lval_del(expressions);
 
+    printf("Loaded %s\n", sexpr_args->node[0]->str);
     lval_del(sexpr_args);
     return make_lval_sexpr();
   } else {
@@ -116,6 +117,17 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
 Lval* print_fn(Lenv* env, Lval* sexpr_args) {
   for (int i = 0; i < sexpr_args->count; ++i) {
     lval_print(sexpr_args->node[i]);
+    _putchar(' ');
+  }
+  _putchar('\n');
+  lval_del(sexpr_args);
+
+  return make_lval_sexpr();
+}
+
+Lval* pr_fn(Lenv* env, Lval* sexpr_args) {
+  for (int i = 0; i < sexpr_args->count; ++i) {
+    lval_pr(sexpr_args->node[i]);
     _putchar(' ');
   }
   _putchar('\n');
@@ -141,6 +153,7 @@ void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "exit", exit_fn, SYS);
   lenv_add_builtin(env, "load", load_fn, SYS);
   lenv_add_builtin(env, "print", print_fn, SYS);
+  lenv_add_builtin(env, "pr", pr_fn, SYS);
   lenv_add_builtin(env, "macroexpand", macroexpand_fn, SYS);
   lenv_add_builtin(env, "macroexpand-1", macroexpand_1_fn, SYS);
   lenv_add_builtin(env, "debug", debug_fn, SYS);

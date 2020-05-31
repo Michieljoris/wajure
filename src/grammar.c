@@ -15,6 +15,7 @@ mpc_parser_t* Vector;
 mpc_parser_t* Map;
 mpc_parser_t* Expr;
 mpc_parser_t* Lispy;
+mpc_parser_t* Plist;
 
 void init_grammar() {
   /* Create Some Parsers */
@@ -31,6 +32,7 @@ void init_grammar() {
   Map = mpc_new("map");
   Expr = mpc_new("expr");
   Lispy = mpc_new("lispy");
+  Plist = mpc_new("plist");
   /* Define them with the following Language */
   mpca_lang(MPCA_LANG_DEFAULT,
             "                                    \
@@ -45,16 +47,17 @@ void init_grammar() {
     sexpr   : '(' <expr>* ')' ;                  \
     vector   : '[' <expr>* ']' ;                 \
     map     : '{' <expr>* '}' ;                  \
+    plist     : '<' <expr>* '>' ;                  \
     expr    : <number>  | <quote> | <symbol> | <string> | <tilde_at>    \
-            | <comment> | <sexpr>  | <vector> | <backquote> | <tilde> ;    \
+            | <comment> | <sexpr>  | <vector> | <backquote> | <tilde> | <plist> ;    \
     lispy   : /^/ <expr>* /$/ ;                  \
   ",
             Number, Quote, BackQuote, Tilde, TildeAt, Symbol, Sexpr, Vector,
-            String, Comment, Map, Expr, Lispy);
+            String, Comment, Map, Expr, Lispy, Plist);
 }
 
 void grammar_cleanup() {
   /* Undefine and Delete our Parsers */
-  mpc_cleanup(13, Number, Quote, BackQuote, Tilde, TildeAt, Symbol, String,
-              Comment, Sexpr, Vector, Expr, Map, Lispy);
+  mpc_cleanup(14, Number, Quote, BackQuote, Tilde, TildeAt, Symbol, String,
+              Comment, Sexpr, Vector, Expr, Map, Lispy, Plist);
 }

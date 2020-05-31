@@ -1,32 +1,23 @@
-(def defmacro (macro [sym params & body]
-                     `(def ~sym (macro ~params ~@body))))
+(load "lispy/stdlib.lispy")
+;; (print <1 2 3>)
+(print "hello")
+;; (load "lispy/test_1.lispy")
+;; (load "lispy/test/test_2_eval.lispy")
+;; (load "lispy/test_3.lispy")
+;; (load "lispy/test_4.lispy")
+;; (load "lispy/test_5.lispy")
+;; (load "lispy/test_6.lispy")
+;; (load "lispy/test_7.lispy")
+;; (load "lispy/test_8.lispy")
+;; (load "lispy/test_9.lispy")
 
-(defmacro defn [sym params & body]
-  `(def ~sym (fn ~params ~@body)))
-
-(defn debug-on []
-  (print "Turning debugging on")
-  (debug 1))
-(defn debug-off []
-  (print "Turning debugging off")
-  (debug 0))
 
 ;; (defn foo [x] (debug 1))
-(debug-on)
-(print "hello");
-(debug-off)
+;; (debug-on)
+;; (print "hello");
+;; (debug-off)
+;; (debug-on)
 
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
-(print "hello");
 
 
 ;; (defmacro foo [x] (list 'print x))
