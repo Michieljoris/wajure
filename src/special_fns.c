@@ -76,6 +76,7 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
   }
   lval_del(sexpr_args);
   return ret ? ret : make_lval_sexpr();
+  /* return ret ? lval_eval(env, ret) : make_lval_sexpr(); */
 }
 
 Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
@@ -343,7 +344,9 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) { return eval_list(env, body, WITH_TCO); }
+Lval* eval_do(Lenv* env, Lval* body) {
+  return eval_list(env, body, WITHOUT_TCO);
+}
 
 Lval* eval_let(Lenv* env, Lval* sexpr_args) {
   LASSERT(sexpr_args, sexpr_args->count >= 1,
@@ -399,13 +402,13 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "quote", eval_quote, SPECIAL);
   lenv_add_builtin(env, "quasiquote", eval_quasiquote, SPECIAL);
   lenv_add_builtin(env, "def", eval_def, SPECIAL);
-  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* TCO */
+  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* no TCO! */
   lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
   lenv_add_builtin(env, "try", eval_try, SPECIAL);
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
-  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* TCO */
-  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* TCO */
+  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* no TCO! */
+  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* no TCO! */
 
   /* Not really needed because we have tco, but for clojure compatibility */
   /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */

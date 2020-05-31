@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "debug.h"
 #include "env.h"
 #include "fns.h"
 #include "grammar.h"
@@ -10,6 +11,7 @@
 #include "repl.h"
 
 int main(int argc, char** argv) {
+  set_debug_level(1);
   init_grammar();
   Lenv* root_env = lenv_new();
   lenv_add_sys_fns(root_env);

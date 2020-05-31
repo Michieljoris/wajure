@@ -1,6 +1,7 @@
 #include "misc_fns.h"
 
 #include "assert.h"
+#include "debug.h"
 #include "eval.h"
 #include "grammar.h"
 #include "lval.h"
@@ -115,11 +116,22 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
 Lval* print_fn(Lenv* env, Lval* sexpr_args) {
   for (int i = 0; i < sexpr_args->count; ++i) {
     lval_print(sexpr_args->node[i]);
-    putchar(' ');
+    _putchar(' ');
   }
-  putchar('\n');
+  _putchar('\n');
   lval_del(sexpr_args);
 
+  return make_lval_sexpr();
+}
+
+Lval* debug_fn(Lenv* env, Lval* sexpr_args) {
+  LASSERT_NODE_COUNT(sexpr_args, 1, "debug");
+  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_NUM, "debug");
+  Lval* lval_num = lval_pop(sexpr_args, 0);
+  int num = lval_num->num;
+  printf("debug = %il\n", num);
+  set_debug_level((int)num);
+  /* return sexpr_args; */
   return make_lval_sexpr();
 }
 
@@ -131,4 +143,5 @@ void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "print", print_fn, SYS);
   lenv_add_builtin(env, "macroexpand", macroexpand_fn, SYS);
   lenv_add_builtin(env, "macroexpand-1", macroexpand_1_fn, SYS);
+  lenv_add_builtin(env, "debug", debug_fn, SYS);
 }

@@ -1,8 +1,33 @@
-;; (def defmacro (macro [sym params & body]
-;;                      `(def ~sym (macro ~params ~@body))))
+(def defmacro (macro [sym params & body]
+                     `(def ~sym (macro ~params ~@body))))
 
-;; (defmacro defn [sym params & body]
-;;   `(def ~sym (fn ~params ~@body)))
+(defmacro defn [sym params & body]
+  `(def ~sym (fn ~params ~@body)))
+
+(defn debug-on []
+  (print "Turning debugging on")
+  (debug 1))
+(defn debug-off []
+  (print "Turning debugging off")
+  (debug 0))
+
+;; (defn foo [x] (debug 1))
+(debug-on)
+(print "hello");
+(debug-off)
+
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+(print "hello");
+
 
 ;; (defmacro foo [x] (list 'print x))
 ;; (defmacro bar [y] (print 123) (list 'foo 345))
@@ -11,7 +36,29 @@
 
 ;; (print (bar 123))
 ;; (print (macroexpand '(bar 123)))
+;; (def foo 1)
 
+;; ;; (do (print 1) (do (print 2)))
+;; ;; (let [a 'a] (print a) (let [b 'b] (print a) (print b)))
+;; (print "hello")
+;; (print '(list 1 2 3))
+;; ;; (debug-off 123)
+;; (debug 0)
+
+;; (print "after debug is off")
+
+;; ;; (debug-on 123)
+;; (debug 1)
+
+;; (print "after debug is on")
+
+;; (def recur (fn [i n]
+;;             (if (< i n)
+;;               (recur (+ i 1) n)
+;;               i))
+;;   )
+
+;; (print (recur 0 2))
 
 
 ;; (def foo (macro [x] (list 'print x)))
@@ -217,14 +264,14 @@
 ;;            (catch E e (throw "e2")))
 ;;          (catch E e "c2")))
 
-(print (try
-         ;; (print "try")
-         "foo"
-         ;; 123
-         (throw "e1")
-         (catch E e (print e))
-         (finally (print "finally"))
-         ))
+;; (print (try
+;;          ;; (print "try")
+;;          "foo"
+;;          ;; 123
+;;          (throw "e1")
+;;          (catch E e (print e))
+;;          (finally (print "finally"))
+;;          ))
 
 ;; (print (try
 ;;    (print "hello")

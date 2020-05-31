@@ -11,11 +11,6 @@ typedef struct lval Lval;
 
 typedef Lval* (*lbuiltin)(Lenv*, Lval*);
 
-struct {
-  Lenv* env;
-  Lval* lval;
-} Tco;
-
 struct lval {
   int type;
   int subtype;

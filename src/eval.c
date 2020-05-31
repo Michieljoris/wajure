@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "assert.h"
+#include "debug.h"
 #include "env.h"
 #include "list_fns.h"
 #include "lval.h"
@@ -111,7 +112,13 @@ Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
   if (list->count && (ret == NULL || ret->type != LVAL_ERR)) {
     if (with_tco) {
       ret = lval_pop(list, 0);
+      /* TODO make copy??? */
       ret->tco_env = make_lenv_copy(bindings);
+      /* ret->tco_env = bindings; */
+
+      /* printf("CREATED tco_env: %p\n", ret->tco_env); */
+      /* lenv_print(ret->tco_env); */
+      /* printf("----------\n"); */
     } else {
       Lval* expr = lval_pop(list, 0);
       ret = lval_eval(bindings, expr);
@@ -134,6 +141,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
     Lval* evalled_body =
         eval_list(lval_fun->bindings, lval_fun->body, with_tco);
 
+    /* free(lval_fun); */
     free(lval_fun);
 
     return evalled_body;
@@ -146,6 +154,10 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
                       int with_tco) {
   Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
   expanded_macro->tco_env = env;
+  /* printf("RETURNING MACRO CALL WITH tco_env: %p\n", expanded_macro->tco_env);
+   */
+  /* lenv_print(expanded_macro->tco_env); */
+  /* printf("----------\n"); */
   return expanded_macro;
 }
 
@@ -206,32 +218,73 @@ Lval* eval_sexpr(Lenv* env, Lval* list) {
   }
 }
 
+int id;
 Lval* lval_eval(Lenv* env, Lval* lval) {
+  id++;
+  /* printf("%d ", id); */
+  /* lenv_print(env); */
+  /* __printf(">>>>>> "); */
+  Lval* ret = NULL;
+  Lenv* tco_env = NULL;
   while (true) { /* TCO */
+    /* printf(">"); */
+    /* lval_println(lval); */
+    if (tco_env) env = tco_env;
     switch (lval->type) {
       case LVAL_SYM:
-        return eval_sym(env, lval);
+        ret = eval_sym(env, lval);
+        break;
       case LVAL_SEQ:
         switch (lval->subtype) {
           case LIST:
             lval = eval_sexpr(env, lval);
-            if (lval->tco_env == NULL) return lval;
-            env = lval->tco_env;
-            lval->tco_env = NULL;
+            if (lval->tco_env == NULL) {
+              ret = lval;
+            } else {
+              /* printf("LOOPING!!!!!! %d\n", id); */
+              /* printf("current tco_env: %p\n", tco_env); */
+              /* if (tco_env) lenv_print(tco_env); */
+              tco_env = lval->tco_env;
+              /* printf("with lval= "); */
+              /* lval_println(lval); */
+              /* printf("and tco_env = %p\n", tco_env); */
+              /* lenv_print(tco_env); */
+
+              /* printf("and parent env = %p\n", tco_env->parent_env); */
+              /* lenv_print(tco_env->parent_env); */
+
+              /* printf("------\n"); */
+              continue;
+            }
             break;
           case VECTOR:
-            return eval_vector(env, lval);
+            ret = eval_vector(env, lval);
+            break;
           case MAP:
             /* TODO: */
-            return lval;
+            ret = lval;
+            break;
           default:
             lval_del(lval);
-            return make_lval_err("Unknown seq subtype");
+            ret = make_lval_err("Unknown seq subtype");
         }
         break;
       default:
-        return lval;
+        ret = lval;
     }
+    if (tco_env) {
+      /* printf("tco_env is set!!!!\n"); */
+      /* printf("DELETING tc_env %p\n", tco_env); */
+      /* lenv_print(tco_env); */
+      /* printf("------------\n"); */
+      /* lenv_del(tco_env); */
+    }
+    id--;
+    /* printf("%d ", id); */
+    return ret;
   }
-  return lval;
 }
+/* You can delete existing tco_env if next one is not pointing to it, like in
+ * recursion. */
+/*  When in nested closures, delete whole chain when getting getting out of tco
+ * loop.  */

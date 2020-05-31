@@ -4,7 +4,7 @@ Then there's less work for the compiler.
 * TODO
 ** DONE closures
 ** DONE returning partials from fn not working
-** TCO
+** TCO -> work out freeing tco_env for it!!!!!!
 - eval_lambda_call
 - let
 - do
