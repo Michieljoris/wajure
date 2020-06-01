@@ -6,11 +6,38 @@
 #include "fns.h"
 #include "grammar.h"
 #include "lval.h"
+#include "memory_pool.h"
 #include "misc_fns.h"
 #include "print.h"
 #include "repl.h"
 
+void test_memory_pool() {
+  MemoryPool* mp = create_memory_pool(4, 2, MP_AUTO_RESIZE);
+
+  int* d1 = memory_pool_alloc(mp);
+  *d1 = 111;
+  printf("%d\n", *d1);
+
+  int* d2 = memory_pool_alloc(mp);
+  *d2 = 222;
+  printf("%d\n", *d2);
+
+  memory_pool_debug(mp);
+  /* memory_pool_free(mp, d2); */
+
+  /* memory_pool_debug(mp); */
+
+  int* d3 = memory_pool_alloc(mp);
+  *d3 = 333;
+  printf("%d\n", *d3);
+
+  printf("Done");
+}
+
 int main(int argc, char** argv) {
+  test_memory_pool();
+  return 0;
+
   set_debug_level(1);
   init_grammar();
   Lenv* root_env = lenv_new();
