@@ -86,7 +86,7 @@ int memory_pool_alloc(MemoryPool* memory_pool) {
 }
 
 void memory_pool_free(MemoryPool* memory_pool, int offset) {
-  /* Pointer to element to free*/
+  /* Pointer to element to free up*/
   int* element = (int*)((long int)&memory_pool->data + offset);
   /* Set where element is pointing to the current free_offset */
   *element = memory_pool->free_offset;
