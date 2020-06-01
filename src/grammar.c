@@ -38,7 +38,7 @@ void init_grammar() {
             "                                    \
     number  : /-?[0-9]+/ ;                       \
     quote   : /'/ ;                              \
-    symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ; \
+    symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=!&]+/ ; \
     string  : /\"(\\\\.|[^\"])*\"/ ;             \
     backquote   : /`/ ;                          \
     tilde_at : /~@/ ;                             \
@@ -47,7 +47,7 @@ void init_grammar() {
     sexpr   : '(' <expr>* ')' ;                  \
     vector   : '[' <expr>* ']' ;                 \
     map     : '{' <expr>* '}' ;                  \
-    plist     : '<' <expr>* '>' ;                  \
+    plist   : '<' <expr>* '>' ;                  \
     expr    : <number>  | <quote> | <symbol> | <string> | <tilde_at>    \
             | <comment> | <sexpr>  | <vector> | <backquote> | <tilde> | <plist> ;    \
     lispy   : /^/ <expr>* /$/ ;                  \

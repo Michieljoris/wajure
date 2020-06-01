@@ -72,8 +72,7 @@ Lval* make_lval_plist(void) {
   lval->type = LVAL_SEQ;
   lval->subtype = PLIST;
   lval->count = 0;
-  /* lval->car = NULL; */
-  /* lval->cdr = NULL; */
+  lval->cdr = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -191,13 +190,6 @@ char* lval_type_to_name(int t) {
   }
 }
 
-Lval* lval_add_child(Lval* lval, Lval* x) {
-  lval->count++;
-  lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
-  lval->node[lval->count - 1] = x;
-  return lval;
-}
-
 void lval_del(Lval* lval) {
   switch (lval->type) {
     case LVAL_NUM:
@@ -292,6 +284,13 @@ Lval* make_lval_copy(Lval* lval) {
       printf("Don't know how to print %s\n", lval_type_to_name2(lval));
   }
   return x;
+}
+
+Lval* lval_add_child(Lval* lval, Lval* x) {
+  lval->count++;
+  lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
+  lval->node[lval->count - 1] = x;
+  return lval;
 }
 
 Lval* lval_pop(Lval* lval, int i) {

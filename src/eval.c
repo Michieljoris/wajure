@@ -125,7 +125,6 @@ Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
     }
   }
 
-  lval_del(list);
   return ret ? ret : make_lval_sexpr();
 }
 
@@ -136,13 +135,10 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
 
   /* Eval body expressions, but only if all params are bound */
   if (lval_fun->formals->count == 0) {
-    free(lval_fun->formals);
-
     Lval* evalled_body =
         eval_list(lval_fun->bindings, lval_fun->body, with_tco);
 
-    /* free(lval_fun); */
-    free(lval_fun);
+    lval_del(lval_fun);
 
     return evalled_body;
   } else {

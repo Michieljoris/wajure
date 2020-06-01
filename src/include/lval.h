@@ -31,6 +31,8 @@ struct lval {
   int count;
   Lval** node;
   Lenv* tco_env;
+
+  Lval* cdr;
 };
 
 struct lenv {
@@ -39,12 +41,6 @@ struct lenv {
   char** syms;
   Lval** lvals;
 };
-
-struct {
-  Lval* lval;
-  Lval* cdr;
-  int ref_count;
-} Cell;
 
 /* lval types */
 enum {

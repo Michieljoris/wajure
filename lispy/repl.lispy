@@ -1,8 +1,6 @@
 (load "lispy/stdlib.lispy")
-;; (print <1 2 3>)
-(print "hello")
 ;; (load "lispy/test_1.lispy")
-;; (load "lispy/test/test_2_eval.lispy")
+(load "lispy/test/test_2_eval.lispy")
 ;; (load "lispy/test_3.lispy")
 ;; (load "lispy/test_4.lispy")
 ;; (load "lispy/test_5.lispy")
@@ -277,3 +275,6 @@
 ;;    (finally (print "finally") 'finally-return-value-is-ignored)
 
 ;;    ))
+
+
+;; (def plist = <1 2 3>)
