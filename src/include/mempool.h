@@ -4,7 +4,7 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-typedef struct memory_pool MemoryPool;
+typedef struct memory_pool MemPool;
 
 struct memory_pool {
   uint total_slot_count;  // Num of blocks
@@ -28,14 +28,13 @@ struct memory_pool {
 
 enum { MP_FIXED_SIZE, MP_AUTO_RESIZE };
 
-MemoryPool* create_memory_pool(int slot_size, uint slot_clount,
-                               int auto_resize);
+MemPool* create_mempool(int slot_size, uint slot_clount, int auto_resize);
 
-void free_memory_pool(MemoryPool* memory_pool);
+void free_mempool(MemPool* memory_pool);
 
-void* memory_pool_alloc(MemoryPool* memory_pool);
+void* mempool_alloc(MemPool* memory_pool);
 
-void memory_pool_free(MemoryPool* memory_pool, void* block);
+void mempool_free(MemPool* memory_pool, void* block);
 
-void memory_pool_debug(MemoryPool* mp);
+void mempool_debug(MemPool* mp);
 #endif  // __MEMORY_POOL_H_

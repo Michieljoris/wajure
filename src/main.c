@@ -6,28 +6,28 @@
 #include "fns.h"
 #include "grammar.h"
 #include "lval.h"
-#include "memory_pool.h"
+#include "mempool.h"
 #include "misc_fns.h"
 #include "print.h"
 #include "repl.h"
 
 void test_memory_pool() {
-  MemoryPool* mp = create_memory_pool(4, 2, MP_AUTO_RESIZE);
+  MemPool* mp = create_mempool(4, 2, MP_AUTO_RESIZE);
 
-  int* d1 = memory_pool_alloc(mp);
+  int* d1 = mempool_alloc(mp);
   *d1 = 111;
   printf("%d\n", *d1);
 
-  int* d2 = memory_pool_alloc(mp);
+  int* d2 = mempool_alloc(mp);
   *d2 = 222;
   printf("%d\n", *d2);
 
-  memory_pool_debug(mp);
+  mempool_debug(mp);
   /* memory_pool_free(mp, d2); */
 
   /* memory_pool_debug(mp); */
 
-  int* d3 = memory_pool_alloc(mp);
+  int* d3 = mempool_alloc(mp);
   *d3 = 333;
   printf("%d\n", *d3);
 
