@@ -143,7 +143,7 @@ Lval* debug_fn(Lenv* env, Lval* sexpr_args) {
   int num = lval_num->num;
   printf("debug = %il\n", num);
   set_debug_level((int)num);
-  /* return sexpr_args; */
+  lval_del(sexpr_args);
   return make_lval_sexpr();
 }
 

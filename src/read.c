@@ -2,6 +2,7 @@
 
 #include "lval.h"
 #include "mpc.h"
+#include "plist_fns.h"
 #include "print.h"
 
 typedef struct {
@@ -10,11 +11,32 @@ typedef struct {
   int index;
 } Expr_stream;
 
+int do_ignore(mpc_ast_t* expression) {
+  char* token = expression->contents;
+  char* tag = expression->tag;
+  /* printf("token %s\n", token); */
+  /* printf("tag %s\n", tag); */
+  return (strcmp(tag, "regex") == 0 || strstr(tag, "comment") ||
+          strcmp(token, "(") == 0 || strcmp(token, ")") == 0 ||
+          strcmp(token, "[") == 0 || strcmp(token, "]") == 0 ||
+          strcmp(token, "{") == 0 || strcmp(token, "}") == 0 ||
+          strcmp(token, "<") == 0 || strcmp(token, ">") == 0);
+}
+
 mpc_ast_t* get_next_expr(Expr_stream* expr_stream) {
   return expr_stream->expressions[expr_stream->index++];
 }
 
 bool has_next_expr(Expr_stream* expr_stream) {
+  mpc_ast_t* expression = NULL;
+  while (expr_stream->index < expr_stream->count) {
+    expression = expr_stream->expressions[expr_stream->index];
+    if (do_ignore(expression)) {
+      expr_stream->index++;
+    } else {
+      break;
+    }
+  }
   return expr_stream->index < expr_stream->count;
 }
 
@@ -62,9 +84,8 @@ Lval* read_expressions(Lval* lval, mpc_ast_t* expressions[],
 Lval* read_next_expression(Expr_stream* expr_stream) {
   mpc_ast_t* expression = get_next_expr(expr_stream);
   char* token = expression->contents;
-  /* printf("token %s %s\n", token, expression->tag); */
-
   char* tag = expression->tag;
+  /* printf("token %s TAG: %s\n", token, expression->tag); */
   /* printf("tag: %s\n", tag); */
   if (strstr(tag, "number")) return lval_read_num(token);
   if (strstr(tag, "symbol")) return make_lval_sym(token);
@@ -73,8 +94,9 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   if (strstr(tag, "|tilde|")) return lval_read_tilde(expr_stream);
   if (strstr(tag, "tilde_at")) return lval_read_tilde_at(expr_stream);
   if (strstr(tag, "string")) return lval_read_str(token);
-  /* if (strstr(tag, "plist")) */
-  /*   return lval_read_plist(make_lval_plist(), expression); */
+  if (strstr(tag, "plist")) {
+    return lval_read_plist(make_lval_plist(), expression);
+  }
   if (strstr(tag, "sexpr"))
     return read_expressions(make_lval_sexpr(), expression->children,
                             expression->children_num);
@@ -84,27 +106,27 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   if (strstr(tag, "vector"))
     return read_expressions(make_lval_vector(), expression->children,
                             expression->children_num);
-  if (strcmp(tag, "regex") == 0 || strstr(tag, "comment") ||
-      strcmp(token, "(") == 0 || strcmp(token, ")") == 0 ||
-      strcmp(token, "[") == 0 || strcmp(token, "]") == 0 ||
-      strcmp(token, "{") == 0 || strcmp(token, "") == 0)
-    return NULL;
   return make_lval_err("unknown token %s", token);
 }
 
 Lval* lval_read_plist(Lval* plist, mpc_ast_t* expression) {
   Expr_stream expr_stream = {expression->children, expression->children_num, 0};
-  plist->count = expression->children_num;
-  Lval* cdr = plist;
-  while (has_next_expr(&expr_stream)) {
-    Lval* next_expression = read_next_expression(&expr_stream);
-    if (next_expression) {
-      cdr->cdr = next_expression;
-      cdr = next_expression;
+  Lval* next_expr = NULL;
+  Cell* cell = NULL;
+  if (has_next_expr(&expr_stream)) {
+    next_expr = read_next_expression(&expr_stream);
+    plist->cell = cell = make_cell();
+    cell->car = next_expr;
+    while (has_next_expr(&expr_stream)) {
+      Lval* next_expr = read_next_expression(&expr_stream);
+      Cell* next_cell = make_cell();
+      cell->cdr = next_cell;
+      next_cell->car = next_expr;
+      cell = next_cell;
     }
   }
-  printf("Plist:\n");
-  lval_print(plist);
+  /* lval_println(plist); */
+
   return plist;
 }
 
@@ -114,7 +136,7 @@ Lval* read_expressions(Lval* lval, mpc_ast_t* expressions[],
   Expr_stream expr_stream = {expressions, expression_count, 0};
   while (has_next_expr(&expr_stream)) {
     Lval* next_expr = read_next_expression(&expr_stream);
-    if (next_expr) lval = lval_add_child(lval, next_expr);
+    lval = lval_add_child(lval, next_expr);
   }
   return lval;
 }

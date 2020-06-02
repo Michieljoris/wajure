@@ -11,6 +11,13 @@ typedef struct lval Lval;
 
 typedef Lval* (*lbuiltin)(Lenv*, Lval*);
 
+typedef struct cell Cell;
+
+struct cell {
+  Lval* car;
+  Cell* cdr;
+};
+
 struct lval {
   int type;
   int subtype;
@@ -27,12 +34,12 @@ struct lval {
   Lval* formals;
   Lval* body;
 
-  Lval* cdr;
-
   /* list of lval */
   int count;
   Lval** node;
   Lenv* tco_env;
+
+  Cell* cell;
 };
 
 struct lenv {

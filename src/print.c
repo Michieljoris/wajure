@@ -56,7 +56,16 @@ void lval_fun_print(Lval* lval) {
   }
 }
 
-void lval_plist_print(Lval* lval) { printf("TODO: printing plist\n"); }
+void lval_plist_print(Lval* lval) {
+  _putchar('(');
+  Cell* cell = lval->cell;
+  while (cell) {
+    lval_print(cell->car);
+    cell = cell->cdr;
+    if (cell) _putchar(' ');
+  }
+  _putchar(')');
+}
 
 void lval_print(Lval* lval) {
   /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
@@ -98,6 +107,8 @@ void lval_print(Lval* lval) {
   }
 }
 
+// TODO: this one prints without quotes. Make a proper pprint fn, and make
+// this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
   /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
   switch (lval->type) {
@@ -123,6 +134,9 @@ void lval_pr(Lval* lval) {
           break;
         case VECTOR:
           lval_expr_print(lval, '[', ']');
+          break;
+        case PLIST:
+          lval_plist_print(lval);
           break;
       }
       break;

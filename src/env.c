@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "lval.h"
+#include "mempool.h"
 #include "print.h"
 
 Lenv* lenv_new(void) {

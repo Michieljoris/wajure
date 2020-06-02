@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "lval.h"
+
 /*
  * Adapted from:
  * https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3
@@ -19,7 +21,7 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   mempool->data_pointers = realloc(mempool->data_pointers,
                                    sizeof(void*) * mempool->data_block_count);
   mempool->data_pointers[mempool->data_block_count - 1] =
-      mempool->uninitialised_p = malloc(data_block_size);
+      mempool->uninitialised_p = calloc(1, data_block_size);
 
   mempool->total_slot_count += extra_slot_count;
   mempool->free_slot_count = extra_slot_count;
@@ -30,7 +32,7 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
 }
 
 Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize) {
-  Mempool* mempool = malloc(sizeof(Mempool));
+  Mempool* mempool = calloc(1, sizeof(Mempool));
   mempool->auto_resize = auto_resize;
   mempool->slot_size = slot_size;
   mempool->total_slot_count = mempool->initialised_count =
@@ -48,6 +50,8 @@ void free_mempool(Mempool* mempool) {
 
 // Only initialises a new slot when needed.
 void* mempool_alloc(Mempool* mempool) {
+  /* return malloc(sizeof(Lval)); */
+  /* printf("allocating!!!!\n"); */
   // Resizing
   if (mempool->free_slot_count == 0) {
     if (mempool->auto_resize) {

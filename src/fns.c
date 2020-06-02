@@ -2,6 +2,7 @@
 #include "list_fns.h"
 #include "math_fns.h"
 #include "misc_fns.h"
+#include "plist_fns.h"
 #include "special_fns.h"
 
 void lenv_add_sys_fns(Lenv* env) {
@@ -9,4 +10,5 @@ void lenv_add_sys_fns(Lenv* env) {
   lenv_add_list_fns(env);
   lenv_add_misc_fns(env);
   lenv_add_special_fns(env);
+  lenv_add_plist_fns(env);
 }

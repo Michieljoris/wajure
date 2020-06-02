@@ -261,6 +261,9 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
             /* TODO: */
             ret = lval;
             break;
+          case PLIST:
+            ret = lval;
+            break;
           default:
             lval_del(lval);
             ret = make_lval_err("Unknown seq subtype");

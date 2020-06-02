@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 
-#include "mempool.h"
-#include "plist.h"
+#include "lval_mempool.h"
+#include "plist_fns.h"
 
 int debug_level = 1;
 int* pdebug_level = &debug_level;
@@ -38,7 +38,15 @@ void test_memory_pool() {
 
 void test_plist() {
   printf("Test plist\n");
-  Mempool* mempool = create_mempool(sizeof(Lval), 100, MEMPOOL_AUTO_RESIZE);
-  Lval* plist = make_lval_plist(mempool);
-  lval_println(plist);
+  init_lval_mempool(100);
+  /* Lval* plist = make_lval_plist(); */
+  /* printf("cdr: %p\n", plist->cdr); */
+  /* Lval* lval_num = make_lval_num(123); */
+  /* printf("cdr: %p\n", lval_num->cdr); */
+  /* Lval* result_plist = cons_fn(lval_num, plist); */
+  /* result_plist = cons_fn(lval_num, result_plist); */
+  /* printf("plist cdr: %p\n", plist->cdr); */
+  /* printf("num cdr: %p\n", lval_num->cdr); */
+  /* lval_println(plist); */
+  /* lval_println(result_plist); */
 }
