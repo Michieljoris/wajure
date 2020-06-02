@@ -73,8 +73,8 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   if (strstr(tag, "|tilde|")) return lval_read_tilde(expr_stream);
   if (strstr(tag, "tilde_at")) return lval_read_tilde_at(expr_stream);
   if (strstr(tag, "string")) return lval_read_str(token);
-  if (strstr(tag, "plist"))
-    return lval_read_plist(make_lval_plist(), expression);
+  /* if (strstr(tag, "plist")) */
+  /*   return lval_read_plist(make_lval_plist(), expression); */
   if (strstr(tag, "sexpr"))
     return read_expressions(make_lval_sexpr(), expression->children,
                             expression->children_num);

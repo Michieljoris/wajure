@@ -67,16 +67,6 @@ Lval* make_lval_sexpr(void) {
   return lval;
 }
 
-Lval* make_lval_plist(void) {
-  Lval* lval = malloc(sizeof(Lval));
-  lval->type = LVAL_SEQ;
-  lval->subtype = PLIST;
-  lval->count = 0;
-  lval->cdr = NULL;
-  lval->tco_env = NULL;
-  return lval;
-}
-
 Lval* make_lval_vector(void) {
   Lval* lval = malloc(sizeof(Lval));
   lval->type = LVAL_SEQ;
@@ -137,11 +127,11 @@ char* lval_type_to_name2(Lval* lval) {
     case LVAL_SEQ:
       switch (lval->subtype) {
         case LIST:
-          return "List";
+          return "List (seq)";
         case VECTOR:
-          return "Vector";
+          return "Vector (seq)";
         case MAP:
-          return "Map";
+          return "Map (seq)";
         default:
           return "unknown SEQ subtype";
       }

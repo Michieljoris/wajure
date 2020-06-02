@@ -2,9 +2,6 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
-** DONE closures
-** DONE returning partials from fn not working
-** memory pool
 ** reference counting
 ** persistent lists using memory pool and reference counting
 ** use plists for env and for sexpr nodes
@@ -51,3 +48,8 @@ Create a builtin function read that reads in and converts a string to a Q-expres
 Create a builtin function show that can print the contents of strings as it is (unescaped).
 Create a special value ok to return instead of empty expressions ().
 Add functions to wrap all of C's file handling functions such as fopen and fgets.
+
+* done
+** DONE closures
+** DONE returning partials from fn not working
+** DONE memory pool

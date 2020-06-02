@@ -27,12 +27,12 @@ struct lval {
   Lval* formals;
   Lval* body;
 
+  Lval* cdr;
+
   /* list of lval */
   int count;
   Lval** node;
   Lenv* tco_env;
-
-  Lval* cdr;
 };
 
 struct lenv {
@@ -88,5 +88,4 @@ Lval* lval_take(Lval* v, int i);
 
 Lval* lval_concat(Lval* x, Lval* y);
 
-Lval* make_lval_plist(void);
 #endif  // __LVAL_H_

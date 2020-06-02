@@ -56,7 +56,7 @@ void lval_fun_print(Lval* lval) {
   }
 }
 
-void lval_plist_print(Lval* lval) { printf("printing plist\n"); }
+void lval_plist_print(Lval* lval) { printf("TODO: printing plist\n"); }
 
 void lval_print(Lval* lval) {
   /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */

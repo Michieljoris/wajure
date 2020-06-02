@@ -21,4 +21,7 @@ int* pdebug_level;
 
 #define _putchar(...) \
   if (*pdebug_level) putchar(__VA_ARGS__);
+
+void test_memory_pool();
+void test_plist();
 #endif  // __DEBUG_H_
