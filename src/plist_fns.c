@@ -81,7 +81,7 @@ Lval* pconcat_fn(Lenv* env, Lval* sexpr_args) {
     ret = make_lval_plist();
     Cell* cell = make_cell();
     ret->cell = cell;
-    Cell* last_cell = copy_list(plist1->cell, cell, NULL);
+    Cell* last_cell = copy_cells(plist1->cell, cell, NULL);
     last_cell->cdr = plist2->cell;
   }
   lval_del(sexpr_args);

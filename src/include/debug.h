@@ -24,4 +24,5 @@ int* pdebug_level;
 
 void test_memory_pool();
 void test_plist();
+void test_list();
 #endif  // __DEBUG_H_

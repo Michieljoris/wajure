@@ -6,14 +6,14 @@
 #include "env.h"
 #include "fns.h"
 #include "grammar.h"
+#include "lispy_mempool.h"
 #include "lval.h"
-#include "lval_mempool.h"
 #include "misc_fns.h"
 #include "print.h"
 #include "repl.h"
 
 void run(int argc, char** argv) {
-  init_lval_mempool(1000);
+  init_lispy_mempools(100, 100, 100);
   init_grammar();
   Lenv* root_env = lenv_new();
   lenv_add_sys_fns(root_env);
