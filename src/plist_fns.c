@@ -4,25 +4,7 @@
 #include "assert.h"
 #include "env.h"
 #include "lval.h"
-#include "lval_mempool.h"
-#include "mempool.h"
 #include "print.h"
-
-Cell* make_cell() {
-  Cell* cell = mempool_alloc(lval_mempool);
-  cell->car = NULL;
-  cell->cdr = NULL;
-  return cell;
-}
-
-Lval* make_lval_plist() {
-  Lval* lval = mempool_alloc(lval_mempool);
-  lval->type = LVAL_SEQ;
-  lval->subtype = PLIST;
-  lval->tco_env = NULL;
-  lval->cell = NULL;
-  return lval;
-}
 
 Lval* cons_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 2, "cons");
@@ -50,7 +32,7 @@ Lval* pfirst_fn(Lenv* env, Lval* sexpr_args) {
     if (ret->subtype == PLIST) {
       // Make an another plist to point at car of plist
       ret = make_lval_plist();
-      ret->cell = cell->car->cell;
+      ret->cell = ((Lval*)(cell->car))->cell;
     }
   }
   lval_del(sexpr_args);
@@ -84,20 +66,6 @@ Lval* prest_fn(Lenv* env, Lval* sexpr_args) {
   return plist2;
 }
 
-Cell* copy_list(Cell* from_cell, Cell* to_cell) {
-  Cell* prev_cell = to_cell;
-  to_cell->car = from_cell->car;
-  from_cell = from_cell->cdr;
-  while (from_cell) {
-    to_cell = make_cell();
-    to_cell->car = from_cell->car;
-    prev_cell->cdr = to_cell;
-    prev_cell = to_cell;
-    from_cell = from_cell->cdr;
-  }
-  return to_cell;
-}
-
 Lval* pconcat_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 2, "rest");
   LASSERT_NODE_SUBTYPE(sexpr_args, 0, PLIST, "rest");
@@ -113,7 +81,7 @@ Lval* pconcat_fn(Lenv* env, Lval* sexpr_args) {
     ret = make_lval_plist();
     Cell* cell = make_cell();
     ret->cell = cell;
-    Cell* last_cell = copy_list(plist1->cell, cell);
+    Cell* last_cell = copy_list(plist1->cell, cell, NULL);
     last_cell->cdr = plist2->cell;
   }
   lval_del(sexpr_args);

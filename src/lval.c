@@ -6,6 +6,8 @@
 #include <string.h>
 
 #include "env.h"
+#include "lval_mempool.h"
+#include "mempool.h"
 #include "print.h"
 
 Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
@@ -315,4 +317,13 @@ Lval* lval_concat(Lval* x, Lval* y) {
   /* Delete the empty 'y' and return 'x' */
   lval_del(y);
   return x;
+}
+
+Lval* make_lval_plist() {
+  Lval* lval = mempool_alloc(lval_mempool);
+  lval->type = LVAL_SEQ;
+  lval->subtype = PLIST;
+  lval->tco_env = NULL;
+  lval->cell = NULL;
+  return lval;
 }

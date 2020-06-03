@@ -2,6 +2,8 @@
 #define __LVAL_H_
 #include <stdbool.h>
 
+#include "list.h"
+
 struct lenv;
 struct lval;
 
@@ -10,13 +12,6 @@ typedef struct lenv Lenv;
 typedef struct lval Lval;
 
 typedef Lval* (*lbuiltin)(Lenv*, Lval*);
-
-typedef struct cell Cell;
-
-struct cell {
-  Lval* car;
-  Cell* cdr;
-};
 
 struct lval {
   int type;
@@ -44,9 +39,7 @@ struct lval {
 
 struct lenv {
   Lenv* parent_env;
-  int count;
-  char** syms;
-  Lval** lvals;
+  Cell* kv;
 };
 
 /* lval types */
@@ -94,5 +87,8 @@ Lval* lval_pop(Lval* v, int i);
 Lval* lval_take(Lval* v, int i);
 
 Lval* lval_concat(Lval* x, Lval* y);
+
+Cell* make_cell();
+Lval* make_lval_plist();
 
 #endif  // __LVAL_H_
