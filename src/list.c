@@ -93,6 +93,7 @@ Cell* list_concat(Cell* list1, Cell* list2) {
 }
 
 void list_print(Cell* cell, void print(void*), char* seperator) {
+  if (!cell || !cell->car) return;
   while (cell) {
     print(cell->car);
     cell = cell->cdr;
@@ -102,35 +103,30 @@ void list_print(Cell* cell, void print(void*), char* seperator) {
 }
 
 // Association list ========================================
-void* alist_get(Cell* alist, int key_cmp(void*)) {
+Cell* find_node(Cell* alist, int cmp_key(void*, void*), void* key) {
+  if (!alist || !alist->car) return NULL;
   while (alist) {
     Cell* pair = (Cell*)alist->car;
-    if (key_cmp(pair->car)) {
-      return pair->cdr;
-    }
+    if (cmp_key(pair->car, key)) return alist;
     alist = alist->cdr;
   }
   return NULL;
 }
 
-int key_is_bound(Cell* alist, int key_cmp(void*)) {
-  return alist_get(alist, key_cmp) ? 1 : 0;
+void* alist_get(Cell* alist, int cmp_key(void*, void*), void* key) {
+  Cell* node = find_node(alist, cmp_key, key);
+  if (node) return ((Cell*)node->car)->cdr;
+  return NULL;
 }
 
-Cell* find_node(Cell* alist, int key_cmp(void*, void*), void* key) {
-  if (alist && !alist->car) return NULL;
-  while (alist) {
-    Cell* pair = (Cell*)alist->car;
-    if (key_cmp(pair->car, key)) return alist;
-    alist = alist->cdr;
-  }
-  return NULL;
+int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
+  return find_node(alist, cmp_key, key) ? 1 : 0;
 }
 
 // Mutable
-void alist_assoc(Cell* alist, int key_cmp(void*, void*), void* key,
+void alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
                  void* value) {
-  Cell* node = find_node(alist, key_cmp, key);
+  Cell* node = find_node(alist, cmp_key, key);
   if (node) {
     ((Cell*)node->car)->cdr = value;
   } else {
@@ -161,9 +157,9 @@ Cell* alist_prepend(Cell* alist, void* key, void* value) {
 }
 
 // passoc: copy path to cell
-Cell* alist_passoc(Cell* alist, int key_cmp(void*, void*), void* key,
+Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key,
                    void* value) {
-  Cell* node = find_node(alist, key_cmp, key);
+  Cell* node = find_node(alist, cmp_key, key);
   if (node) {
     Cell* new_head = make_cell();
     Cell* tail = copy_cells(alist, new_head, node);

@@ -75,6 +75,7 @@ void test_list() {
   list_print(list_concat(list, list2), print_char_cell, ",");
   printf("done\n");
   Cell* alist = list_new();
+
   alist_assoc(alist, cmp, "foo", "bar");
   alist_assoc(alist, cmp, "fox", "foz");
   alist_assoc(alist, cmp, "2a", "3");
@@ -98,5 +99,9 @@ void test_list() {
   printf("alist3-------------------------:\n");
   list_print(alist3, print_pair, ", ");
 
+  printf("printing empty list\n");
+  list_print(list_new(), print_pair, "\n");
   printf("done again\n");
+  printf("%s\n", (char*)alist_get(alist3, cmp, "foo"));
+  printf("%d\n", alist_has_key(alist3, cmp, "foo"));
 }

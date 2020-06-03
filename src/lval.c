@@ -6,9 +6,8 @@
 #include <string.h>
 
 #include "env.h"
-#include "lval_mempool.h"
-#include "mempool.h"
-#include "print.h"
+#include "io.h"
+#include "lispy_mempool.h"
 
 Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   Lval* lval = calloc(1, sizeof(Lval));
@@ -246,7 +245,7 @@ Lval* make_lval_copy(Lval* lval) {
       } else {
         /* printf("in lval_copy\n"); */
         /* lval_println(lval); */
-        x->bindings = make_lenv_copy(lval->bindings);
+        x->bindings = lenv_copy(lval->bindings);
         /* printf("copied ENV\n"); */
         x->formals = make_lval_copy(lval->formals);
         /* printf("copied FORMALS\n"); */
@@ -320,7 +319,7 @@ Lval* lval_concat(Lval* x, Lval* y) {
 }
 
 Lval* make_lval_plist() {
-  Lval* lval = mempool_alloc(lval_mempool);
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = PLIST;
   lval->tco_env = NULL;

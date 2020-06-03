@@ -2,9 +2,8 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
-** reference counting
-** persistent lists using memory pool and reference counting
 ** use plists for env and for sexpr nodes
+** reference counting
 ** TCO -> work out freeing tco_env for it!!!!!!
 - eval_lambda_call
 - let
@@ -19,13 +18,17 @@ Then there's less work for the compiler.
 *** DONE do special form
 *** DONE let special form
 *** loop, recur
-** hashtable for symbol lookup
-** hamt and pvector
+** hamt for symbol lookup and lispy maps
+** pvector
 ** namespaces
 ** call/cc
 ** compile to wasm using emscrypten
-** compile to wasm modules such as mempool, gc, hashtable, pers. datastructures
-and link them
+and link them to compiled lispy code
+runtime includes:
+- env mechanism
+- builtin fns
+- interpreter for eval??
+- certainly for any inbuilt repl
 
 * Ch10
  Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
@@ -49,7 +52,9 @@ Create a builtin function show that can print the contents of strings as it is (
 Create a special value ok to return instead of empty expressions ().
 Add functions to wrap all of C's file handling functions such as fopen and fgets.
 
+
 * done
 ** DONE closures
 ** DONE returning partials from fn not working
 ** DONE memory pool
+** DONE persistend list with mem pool

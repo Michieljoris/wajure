@@ -113,7 +113,7 @@ Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
     if (with_tco) {
       ret = lval_pop(list, 0);
       /* TODO make copy??? */
-      ret->tco_env = make_lenv_copy(bindings);
+      ret->tco_env = lenv_copy(bindings);
       /* ret->tco_env = bindings; */
 
       /* printf("CREATED tco_env: %p\n", ret->tco_env); */

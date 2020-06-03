@@ -4,68 +4,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "io.h"
+#include "lispy_mempool.h"
 #include "lval.h"
-#include "lval_mempool.h"
-#include "mempool.h"
-#include "print.h"
-
-/* Lenv* lenv_new(void) { */
-/*   Lenv* env = malloc(sizeof(Lenv)); */
-/*   env->parent_env = NULL; */
-/*   env->count = 0; */
-/*   env->syms = NULL; */
-/*   env->lvals = NULL; */
-/*   return env; */
-/* } */
 
 Lenv* lenv_new(void) {
-  Lenv* env = mempool_alloc(lval_mempool);
+  Lenv* env = lalloc(LENV);
   env->parent_env = NULL;
-  env->kv = NULL;
+  env->kv = list_new();
   return env;
 }
 
-Lenv* make_lenv_copy(Lenv* env) {
-  Lenv* env_copy = mempool_alloc(lval_mempool);
+// Mutable
+Lenv* lenv_copy(Lenv* env) {
+  Lenv* env_copy = lalloc(LENV);
   env_copy->parent_env = env->parent_env;
+  env->kv = list_copy(env->kv, NULL);
+  return env_copy;
+}
 
-  // persistent;
+// Persistent;
+Lenv* lenv_pcopy(Lenv* env) {
+  Lenv* env_copy = lalloc(LENV);
+  env_copy->parent_env = env->parent_env;
   env_copy->kv = env->kv;
   return env_copy;
-  // mutable
-
-  /*   env_copy->count = env->count; */
-  /*   /\* env_copy->syms = malloc(sizeof(char*) * env->count); *\/ */
-  /*   /\* env_copy->lvals = malloc(sizeof(Lval*) * env->count); *\/ */
-  /*   for (int i = 0; i < env->count; ++i) { */
-  /*     env_copy->syms[i] = malloc(sizeof(strlen(env_copy->syms[i]) + 1)); */
-  /*     strcpy(env_copy->syms[i], env->syms[i]); */
-  /*     env_copy->lvals[i] = make_lval_copy(env->lvals[i]); */
-  /*   } */
-  /*   return env_copy; */
-  return env;
 }
 
 void lenv_del(Lenv* e) {
-  /* for (int i = 0; i < e->count; i++) { */
-  /*   free(e->syms[i]); */
-  /*   lval_del(e->lvals[i]); */
-  /* } */
-  /* free(e->syms); */
-  /* free(e->lvals); */
-  /* free(e); */
+  list_free(e->kv);
+  lfree(LENV, e);
 }
 
+int is_eq_str(void* k, void* v) { return strcmp((char*)k, (char*)v) == 0; }
+
 Lval* lenv_get(Lenv* env, Lval* lval_sym) {
-  Lval* ret = NULL;
-  while (env->kv) {
-    Lval* lval = env->kv->car;
-    env->kv = env->kv->cdr;
-    if (strcmp(lval->sym, lval_sym->sym) == 0) {
-      ret = env->kv->car;
-      break;
-    }
-  }
+  Lval* ret = alist_get(env->kv, is_eq_str, lval_sym->sym);
   if (!ret && env->parent_env) {
     return lenv_get(env->parent_env, lval_sym);
   }
@@ -79,77 +53,20 @@ Lenv* get_root_env(Lenv* env) {
   return env;
 }
 
-Cell* find_sym(Lenv* env, Lval* lval_sym) {
-  while (env->kv) {
-    Lval* lval = env->kv->car;
-    if (strcmp(lval->sym, lval_sym->sym) == 0) return env->kv;
-    env->kv = env->kv->cdr;
-  }
-  return NULL;
-}
-
 int lenv_is_bound(Lenv* env, Lval* lval_sym) {
-  return find_sym(env, lval_sym) ? 1 : 0;
+  return alist_has_key(env->kv, is_eq_str, lval_sym->sym) ? 1 : 0;
 }
 
 // Mutable
-Lenv* lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
-  Cell* cell = find_sym(env, lval_sym);
-  if (cell) {
-    cell = cell->cdr;
-    lval_del(cell->car);
-    cell->car = lval;
-  } else {
-    Cell* old_head = env->kv;
-    cell = make_cell();
-    env->kv = cell;
-    cell->car = lval_sym;
-    cell->cdr = make_cell();
-    cell->car = lval;
-    cell->cdr = old_head;
-  }
-  return NULL;
+void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
+  alist_assoc(env->kv, is_eq_str, lval_sym->sym, lval);
 }
 
 // Persistent
-Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
-  Lenv* env2 = lenv_new();
-  Cell* cell = NULL;
-  env2->parent_env = env->parent_env;
-  // V1: just stick it in front of the lookup list
-  Cell* old_head = env->kv;
-  cell = make_cell();
-  env2->kv = cell;
-  cell->car = lval_sym;
-  cell->cdr = make_cell();
-  cell->car = lval;
-  cell->cdr = old_head;
-  return env2;
-
-  // V2 copy path to cell
-  /* cell = find_sym(env, lval_sym); */
-  /* if (cell) { */
-  /*   Cell* new_head = make_cell(); */
-  /*   env2->kv = new_head; */
-  /*   Cell* tail = copy_list(env->kv, new_head, cell); */
-  /*   Cell* new_sym_cell = make_cell(); */
-  /*   tail->cdr = new_sym_cell; */
-  /*   new_sym_cell->car = lval_sym; */
-  /*   Cell* new_lval_cell = make_cell(); */
-  /*   new_sym_cell->cdr = new_lval_cell; */
-  /*   new_lval_cell->car = lval; */
-  /*   new_lval_cell->cdr = cell->cdr->cdr; */
-  /*   return env2; */
-  /* } else { */
-  /*   Cell* old_head = env->kv; */
-  /*   cell = make_cell(); */
-  /*   env2->kv = cell; */
-  /*   cell->car = lval_sym; */
-  /*   cell->cdr = make_cell(); */
-  /*   cell->car = lval; */
-  /*   cell->cdr = old_head; */
-  /*   return env2; */
-  /* } */
+void lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
+  Cell* kv = alist_passoc(env->kv, is_eq_str, lval_sym->sym, lval);
+  list_free(env->kv);
+  env->kv = kv;
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func, int subtype) {

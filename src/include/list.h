@@ -26,8 +26,9 @@ Cell* list_last(Cell* list);
 Cell* make_pair(void* key, void* value);
 
 // Association list
-void* alist_get(Cell* alist, int key_cmp(void*));
-int key_is_bound(Cell* alist, int key_cmp(void*));
+
+void* alist_get(Cell* alist, int key_cmp(void*, void*), void* key);
+int alist_has_key(Cell* alist, int key_cmp(void*, void*), void* key);
 // Mutable
 void alist_assoc(Cell* alist, int key_cmp(void*, void*), void* key,
                  void* value);
