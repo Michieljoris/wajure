@@ -13,7 +13,6 @@ Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell) {
   to_cell->car = from_cell->car;
   from_cell = from_cell->cdr;
   while (from_cell != till_cell) {
-    printf("copy_cells\n");
     to_cell = make_cell();
     to_cell->car = from_cell->car;
     prev_cell->cdr = to_cell;

@@ -34,4 +34,5 @@ void run(int argc, char** argv) {
   lenv_del(user_env);
   lenv_del(root_env);
   grammar_cleanup();
+  free_lispy_mempools();
 }

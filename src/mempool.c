@@ -44,7 +44,7 @@ Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize) {
 
 void free_mempool(Mempool* mempool) {
   while (mempool->data_block_count--)
-    free(mempool->data_pointers[mempool->data_block_count - 1]);
+    free(mempool->data_pointers[mempool->data_block_count]);
   free(mempool);
 }
 

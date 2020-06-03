@@ -165,10 +165,9 @@ void lval_println(Lval* v) {
   _putchar('\n');
 }
 
-void lenv_print(Lenv* env) {
-  for (int i = 0; i < env->count; ++i) {
-    _printf("%s:", env->syms[i]);
-    lval_println(env->lvals[i]);
-  }
-  return;
+void print_kv(void* pair) {
+  printf("%s: ", (char*)((Cell*)pair)->car);
+  lval_print((Lval*)((Cell*)pair)->cdr);
 }
+
+void lenv_print(Lenv* env) { list_print(env->kv, print_kv, "\n"); }

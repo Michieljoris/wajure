@@ -10,7 +10,7 @@
 #include "lispy_mempool.h"
 
 Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->func_name = calloc(1, strlen(func_name) + 1);
   strcpy(lval->func_name, func_name);
   lval->type = LVAL_FUN;
@@ -21,7 +21,7 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
 }
 
 Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_FUN;
   lval->subtype = subtype;
   lval->bindings = lenv_new();
@@ -33,7 +33,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
 }
 
 Lval* make_lval_num(long x) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_NUM;
   lval->num = x;
   lval->tco_env = NULL;
@@ -41,7 +41,7 @@ Lval* make_lval_num(long x) {
 }
 
 Lval* make_lval_sym(char* s) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SYM;
   lval->sym = calloc(1, strlen(s) + 1);
   strcpy(lval->sym, s);
@@ -50,7 +50,7 @@ Lval* make_lval_sym(char* s) {
 }
 
 Lval* make_lval_str(char* s) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_STR;
   lval->str = calloc(1, strlen(s) + 1);
   strcpy(lval->str, s);
@@ -59,7 +59,7 @@ Lval* make_lval_str(char* s) {
 }
 
 Lval* make_lval_sexpr(void) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = LIST;
   lval->count = 0;
@@ -69,7 +69,7 @@ Lval* make_lval_sexpr(void) {
 }
 
 Lval* make_lval_vector(void) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = VECTOR;
   lval->count = 0;
@@ -79,7 +79,7 @@ Lval* make_lval_vector(void) {
 }
 
 Lval* make_lval_map(void) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = MAP;
   lval->count = 0;
@@ -89,7 +89,7 @@ Lval* make_lval_map(void) {
 }
 
 Lval* make_lval_quote(void) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_QUOTE;
   lval->count = 0;
   lval->node = NULL;
@@ -98,7 +98,7 @@ Lval* make_lval_quote(void) {
 }
 
 Lval* make_lval_err(char* fmt, ...) {
-  Lval* lval = calloc(1, sizeof(Lval));
+  Lval* lval = lalloc(LVAL);
   lval->type = LVAL_ERR;
   lval->subtype = SYS;
   va_list va;
@@ -228,7 +228,7 @@ void lval_del(Lval* lval) {
 Lval* make_lval_copy(Lval* lval) {
   if (lval->type == LVAL_SEQ && lval->subtype == PLIST) return lval;
   /* printf("make_lval_copy\n"); */
-  Lval* x = calloc(1, sizeof(Lval));
+  Lval* x = lalloc(LVAL);
   /* printf("make_lval_copy\n"); */
   /* lval_println(lval); */
   x->type = lval->type;
