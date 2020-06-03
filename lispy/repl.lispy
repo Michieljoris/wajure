@@ -7,6 +7,7 @@
 ;; (print (plist 1 2 3 4 5 ))
 ;; (print (prest (prest (plist   ))))
 (def foo (fn [x] x))
+(def bar 123)
 (print-env)
 (print (foo 123))
 ;; (print (pfirst (prest (pconcat (plist 1 2) (plist 3 4)))))
