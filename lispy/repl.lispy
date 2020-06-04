@@ -1,5 +1,11 @@
 (load "lispy/stdlib.lispy")
-(load "lispy/test/test_2_eval.lispy")
+
+(t (+ 1 2) 3)
+;; (load "lispy/test/test_2_eval.lispy")
+;; (defmacro x [] [1 '(+ 1 1) 3]) (print (x))
+(print (let [x 1] x))
+(def foo (fn [x] x))
+(print (foo 1))
 ;; (print <1 4 5>)
 ;; (print (pfirst < <1 2> 4 5>))
 ;; (print (cons 123 < <1 2> 4 5>))

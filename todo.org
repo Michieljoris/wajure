@@ -3,6 +3,17 @@
 Then there's less work for the compiler.
 * TODO
 ** use plists for env and for sexpr nodes
+- Can't use nodes for collections since the node field needs reallocing. Can't do that with fixed pool memory
+So we must use lists for those. Perhaps we can use hamt and pvector if we need maps and vectors.
+- We want lispy lists persistent.
+-
+- ? Should env be a palist? Instead of just an alist? So persistent?
+    in other words, when setting values in the env do we overwrite if existing? Or treat the env as persistent.
+- ? When do we throw environments away?
+  When does env get created?
+  -> on let (the local bindings)
+  -> when evaluating lambda (the param bindings)
+  -> in catch
 ** reference counting
 ** TCO -> work out freeing tco_env for it!!!!!!
 - eval_lambda_call

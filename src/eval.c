@@ -160,6 +160,9 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
   /* lval_println(lval_fun); */
   /* printf("Expanded macro:\n"); */
   /* lval_println(expanded_macro); */
+
+  // After the macro is expanded they close over the environment where they are
+  // executed
   expanded_macro->tco_env = env;
   /* printf("RETURNING MACRO CALL WITH tco_env: %p\n", expanded_macro->tco_env);
    */
@@ -180,7 +183,10 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 
 Lval* eval_sexpr(Lenv* env, Lval* list) {
   Lval* lval_err;
-  if (list->count == 0) return list;
+  if (list->count == 0) {
+    // TODO: release list here
+    return make_lval_sexpr();
+  }
   list = eval_nodes(env, list, 1);
 
   if (list->type == LVAL_ERR) return list;
@@ -245,6 +251,11 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
         switch (lval->subtype) {
           case LIST:
             lval = eval_sexpr(env, lval);
+            if (lval->num == 123) {
+              printf("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOPS!!!!!!!!\n");
+              lval_println(lval);
+            }
+            // TODO: release tco_env!!!!
             if (lval->tco_env == NULL) {
               ret = lval;
             } else {
@@ -252,7 +263,9 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
               /* printf("current tco_env: %p\n", tco_env); */
               /* if (tco_env) lenv_print(tco_env); */
               tco_env = lval->tco_env;
-              lval->tco_env = NULL;
+              /* tco_env = lval->tco_env; */
+              /* lval->tco_env = NULL; */
+              lval->num = 123;
               /* printf("with lval= "); */
               /* lval_println(lval); */
               /* printf("and tco_env = %p\n", tco_env); */
@@ -284,8 +297,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
         ret = lval;
     }
     if (tco_env) {
-      /* printf("tco_env is set!!!!\n"); */
-      /* printf("DELETING tc_env %p\n", tco_env); */
+      /* printf("SHOULD BE RELEASING tc_env %p\n", tco_env); */
       /* lenv_print(tco_env); */
       /* printf("------------\n"); */
       /* lenv_del(tco_env); */

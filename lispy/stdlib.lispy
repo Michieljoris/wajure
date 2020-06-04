@@ -23,7 +23,8 @@
       (pr "FAIL:" expr)
       (pr expr)
       (pr "Expected:" expected)
-      (pr "Got::" (eval expr)))))
+      (pr "Got::" (eval expr))
+      123)))
 
 
 ;; (defn [test cond]

@@ -92,6 +92,9 @@ Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
   }
 
   Lval* formals = lval_pop(sexpr_args, 0);
+
+  // Creates lambda lval and sets the parent_env of its env field (bindings) to
+  // the passed in env
   return make_lval_lambda(env, formals, sexpr_args, subtype);
 }
 
@@ -99,6 +102,8 @@ Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
   return eval_lambda_form(env, sexpr_args, LAMBDA);
 }
 
+// When macros are defined they close over the environment where they are
+// defined.
 Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
   return eval_lambda_form(env, sexpr_args, MACRO);
 }
@@ -209,21 +214,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
   return ret;
 }
 
-/* TODO: fixup memory mngmnt */
-/* (print (try */
-/*          (try */
-/*            (throw "e1") */
-/*            (catch E e (throw "e2"))) */
-/*          (catch E e "c2"))) */
-
-/* (print (try */
-/*          ;; (print "try") */
-/*          "foo" */
-/*          ;; 123 */
-/*          ;; (throw "e1") */
-/*          ;; (catch E e (print e)) */
-/*          ;; (finally (print "finally")) */
-/*          )) */
+/* Implemented as a little state machine */
 enum { EXPR, CATCH, FINALLY };
 Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   int mode = EXPR;

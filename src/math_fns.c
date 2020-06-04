@@ -1,10 +1,10 @@
 #include "math_fns.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include "assert.h"
 #include "env.h"
+#include "lib.c"
 #include "lval.h"
 
 static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
