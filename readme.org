@@ -6,7 +6,7 @@ Removed qexpr and added quoting instead.
 
 Added some more features as discussed in https://github.com/kanaka/mal such as tco, macros, closures and try/catch/throw.
 
-Tests (wip) are also mal repo.
+Tests (wip) are also from mal repo.
 
 Memory pool is adapted from
 https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3,
@@ -19,9 +19,13 @@ reallocating.
 Env is a association list.
 
 *** Run
-make
+make (also runs the binary, with repl.lispy as arg)
+
+Alternatively:
+
 out/lispy lispy/repl.lispy
 
+There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
 *** TODO:
 
@@ -33,11 +37,11 @@ out/lispy lispy/repl.lispy
   Would be nice:
 
 - persistent vectors and maps, but plists could function as such
-- namespaces, keywords, loop/recur, atoms, meta data, multimethods
+- namespaces, keywords, loop/recur, atoms, meta data, multimethods, nil, true, false, sets, seq abstraction
 - interpreter/compiler in lispy!
 
 Plan is when memory management is under control with memory pools and reference counting to slowly build a compiler to webassembly and/or llvm IR.
 *** references
 **** memorypool
-https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3,
-http://www.pinksquirrellabs.com/blog/2018/01/31/-fixed-memory-pool-design
+- https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3,
+- http://www.pinksquirrellabs.com/blog/2018/01/31/-fixed-memory-pool-design

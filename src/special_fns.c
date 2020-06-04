@@ -166,7 +166,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
   lval->node = processed_nodes->node;
   /* And clean up processed nodes */
   processed_nodes->count = 0;
-  free(processed_nodes);
+  /* free(processed_nodes); */
   return lval;
 }
 

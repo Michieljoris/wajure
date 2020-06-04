@@ -130,15 +130,18 @@ Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
   /* Bind formals to args */
+  /* printf("eval lambda call: "); */
+  /* lval_println(lval_fun); */
   lval_fun = bind_lambda_formals(lval_fun, sexpr_args);
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   /* Eval body expressions, but only if all params are bound */
   if (lval_fun->formals->count == 0) {
+    /* printf("bindings:  "); */
+    /* lenv_print(lval_fun->bindings); */
+    /* printf("----\n"); */
     Lval* evalled_body =
         eval_list(lval_fun->bindings, lval_fun->body, with_tco);
-
-    lval_del(lval_fun);
 
     return evalled_body;
   } else {
@@ -148,12 +151,20 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
                       int with_tco) {
+  /* printf(">>>>>>>>>>>>>>>>>evalling macro call\n"); */
+  /* lval_println(lval_fun); */
+  /* lval_println(sexpr_args); */
+  /* printf("Expanding..\n"); */
   Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
+  /* printf("Original lval_fun: "); */
+  /* lval_println(lval_fun); */
+  /* printf("Expanded macro:\n"); */
+  /* lval_println(expanded_macro); */
   expanded_macro->tco_env = env;
   /* printf("RETURNING MACRO CALL WITH tco_env: %p\n", expanded_macro->tco_env);
    */
   /* lenv_print(expanded_macro->tco_env); */
-  /* printf("----------\n"); */
+  /* printf("<<<<<<<<<<<<<<<<<<<<<<<<<\n"); */
   return expanded_macro;
 }
 

@@ -1,9 +1,7 @@
 #include "mempool.h"
 
-#include <stdio.h>
+#include <io.h>
 #include <stdlib.h>
-
-#include "lval.h"
 
 /*
  * Adapted from:
@@ -31,9 +29,11 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   return data_block_size;
 }
 
-Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize) {
+Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
+                        Log log) {
   Mempool* mempool = calloc(1, sizeof(Mempool));
   mempool->auto_resize = auto_resize;
+  mempool->log = log;
   mempool->slot_size = slot_size;
   mempool->total_slot_count = mempool->initialised_count =
       mempool->data_block_count = 0;
@@ -50,15 +50,14 @@ void free_mempool(Mempool* mempool) {
 
 // Only initialises a new slot when needed.
 void* mempool_alloc(Mempool* mempool) {
-  /* return malloc(sizeof(Lval)); */
-  /* printf("allocating!!!!\n"); */
   // Resizing
   if (mempool->free_slot_count == 0) {
     if (mempool->auto_resize) {
-      printf("MEMPOOL: out of memory, resizing to %i\n",
-             add_data_block(mempool, mempool->total_slot_count * 2));
+      mempool->log("MEMPOOL: data block full, resizing from %i slots to %i\n",
+                   mempool->total_slot_count, mempool->total_slot_count * 2);
+      add_data_block(mempool, mempool->total_slot_count);
     } else {
-      printf("MEMPOOL: out of memory, resizing is disabled!!!\n");
+      mempool->log("MEMPOOL: out of memory, resizing is disabled!!!\n");
       return NULL;
     }
   }

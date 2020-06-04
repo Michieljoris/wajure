@@ -6,6 +6,8 @@ typedef unsigned char uchar;
 
 typedef struct memory_pool Mempool;
 
+typedef void (*Log)(char* fmt, ...);
+
 struct memory_pool {
   uint total_slot_count;  // Num of slots
   uint slot_size;         // Size of each slot
@@ -19,16 +21,14 @@ struct memory_pool {
                           // initialised in latest data block
   uint initialised_count;
   int auto_resize;
-
-  // OBSOLETE:
-  // void* end_of_data_p;    // Address of first byte *after* latest data block
-  // void* data_p;  // Address of beginning of latest mallocated memory pool
+  Log log;
+  /* void* (*log)(Mempool*, char*); */
 };
 
 enum { MEMPOOL_FIXED_SIZE, MEMPOOL_AUTO_RESIZE };
 
-Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize);
-
+Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
+                        Log log);
 void free_mempool(Mempool* memory_pool);
 
 void* mempool_alloc(Mempool* memory_pool);
