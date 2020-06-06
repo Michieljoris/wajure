@@ -9,36 +9,7 @@
 #include "io.h"
 #include "lispy_mempool.h"
 
-Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
-  Lval* lval = lalloc(LVAL);
-  lval->func_name = calloc(1, strlen(func_name) + 1);
-  strcpy(lval->func_name, func_name);
-  lval->type = LVAL_FUNCTION;
-  lval->subtype = subtype;
-  lval->fun = func;
-  lval->tco_env = NULL;
-  return lval;
-}
-
-Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
-  Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_FUNCTION;
-  lval->subtype = subtype;
-  lval->bindings = lenv_new();
-  lval->bindings->parent_env = env;
-  lval->formals = formals;
-  lval->body = body;
-  lval->tco_env = NULL;
-  return lval;
-}
-
-Lval* make_lval_num(long x) {
-  Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_NUM;
-  lval->num = x;
-  lval->tco_env = NULL;
-  return lval;
-}
+/* SYMBOL */
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc(LVAL);
@@ -49,14 +20,7 @@ Lval* make_lval_sym(char* s) {
   return lval;
 }
 
-Lval* make_lval_str(char* s) {
-  Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_STR;
-  lval->str = calloc(1, strlen(s) + 1);
-  strcpy(lval->str, s);
-  lval->tco_env = NULL;
-  return lval;
-}
+/* COLLECTION */
 
 Lval* make_lval_sexpr(void) {
   Lval* lval = lalloc(LVAL);
@@ -85,6 +49,55 @@ Lval* make_lval_map(void) {
   return lval;
 }
 
+/* LITERAL */
+
+Lval* make_lval_num(long x) {
+  Lval* lval = lalloc(LVAL);
+  lval->type = LVAL_NUM;
+  lval->num = x;
+  lval->tco_env = NULL;
+  return lval;
+}
+
+Lval* make_lval_str(char* s) {
+  Lval* lval = lalloc(LVAL);
+  lval->type = LVAL_STR;
+  lval->str = calloc(1, strlen(s) + 1);
+  strcpy(lval->str, s);
+  lval->tco_env = NULL;
+  return lval;
+}
+
+/* FUNCTION */
+
+// SYSTEM and SPECIAL
+Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
+  Lval* lval = lalloc(LVAL);
+  lval->func_name = calloc(1, strlen(func_name) + 1);
+  strcpy(lval->func_name, func_name);
+  lval->type = LVAL_FUNCTION;
+  lval->subtype = subtype;
+  lval->fun = func;
+  lval->tco_env = NULL;
+  return lval;
+}
+
+// LAMBDA and MACRO
+Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
+  Lval* lval = lalloc(LVAL);
+  lval->type = LVAL_FUNCTION;
+  lval->subtype = subtype;
+  lval->bindings = lenv_new();
+  lval->bindings->parent_env = env;
+  lval->formals = formals;
+  lval->body = body;
+  lval->tco_env = NULL;
+  return lval;
+}
+
+/* ERROR */
+
+// System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_ERR;
@@ -100,6 +113,7 @@ Lval* make_lval_err(char* fmt, ...) {
   return lval;
 }
 
+// User error
 Lval* make_lval_exception(char* msg) {
   Lval* lval = make_lval_err(msg);
   lval->subtype = USER;
