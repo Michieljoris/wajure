@@ -49,7 +49,7 @@ enum {
   LVAL_QUOTE,
   LVAL_ERR,
   LVAL_SYM,
-  LVAL_SEQ,
+  LVAL_COLLECTION,
   LVAL_FUN,
   LVAL_STR,
   /* subtypes */

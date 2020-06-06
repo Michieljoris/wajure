@@ -20,12 +20,12 @@ Lval* rest_fn(Lenv* e, Lval* sexpr_args) {
 
   Lval* lval = lval_take(sexpr_args, 0);
   int type = lval->type;
-  if (!(type == LVAL_SEQ))
+  if (!(type == LVAL_COLLECTION))
     return make_lval_err("first only works on list, vector or map, not a %s",
                          lval_type_to_name2(lval));
 
   lval_del(lval_pop(lval, 0));
-  lval->type = LVAL_SEQ;
+  lval->type = LVAL_COLLECTION;
   lval->subtype = LIST;
   return lval;
 }

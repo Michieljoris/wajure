@@ -109,7 +109,7 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
 }
 
 bool is_fn_call(Lval* lval, char* sym, int min_node_count) {
-  return lval->type == LVAL_SEQ && lval->subtype == LIST &&
+  return lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
          lval->count >= min_node_count && lval->node[0]->type == LVAL_SYM &&
          strcmp(lval->node[0]->sym, sym) == 0;
 }
@@ -156,7 +156,8 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
       processed_nodes = lval_concat(processed_nodes, splice_unquoted_eval);
     } else {
       /* if node is a list apply quasiquote recursively */
-      if (node->type == LVAL_SEQ) node = eval_quasiquote_nodes(env, node);
+      if (node->type == LVAL_COLLECTION)
+        node = eval_quasiquote_nodes(env, node);
       if (node->type == LVAL_ERR) {
         lval_del(lval);
         lval_del(processed_nodes);
@@ -184,7 +185,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
   /* lval_println(arg); */
   Lval* ret = NULL;
   switch (arg->type) {
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       switch (arg->subtype) {
         case LIST:
           if (is_fn_call(arg, "unquote", 2)) {

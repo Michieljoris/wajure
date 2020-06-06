@@ -89,7 +89,7 @@ int lval_eq(Lval* x, Lval* y) {
       } else {
         return lval_eq(x->formals, y->formals) && lval_eq(x->body, y->body);
       }
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       if (x->count != y->count) {
         return 0;
       }

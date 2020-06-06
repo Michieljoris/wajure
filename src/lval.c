@@ -60,7 +60,7 @@ Lval* make_lval_str(char* s) {
 
 Lval* make_lval_sexpr(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SEQ;
+  lval->type = LVAL_COLLECTION;
   lval->subtype = LIST;
   lval->cell = NULL;
   lval->tco_env = NULL;
@@ -69,7 +69,7 @@ Lval* make_lval_sexpr(void) {
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SEQ;
+  lval->type = LVAL_COLLECTION;
   lval->subtype = VECTOR;
   lval->cell = NULL;
   lval->tco_env = NULL;
@@ -78,7 +78,7 @@ Lval* make_lval_vector(void) {
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SEQ;
+  lval->type = LVAL_COLLECTION;
   lval->subtype = MAP;
   lval->cell = NULL;
   lval->tco_env = NULL;
@@ -121,7 +121,7 @@ char* lval_type_to_name2(Lval* lval) {
       return "Number";
     case LVAL_SYM:
       return "Symbol";
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       switch (lval->subtype) {
         case PLIST:
           return "Plist (seq)";
@@ -160,7 +160,7 @@ char* lval_type_to_name(int t) {
       return "Number";
     case LVAL_SYM:
       return "Symbol";
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       return "Seq";
     case LVAL_ERR:
       return "Error";
@@ -197,7 +197,7 @@ void lval_del(Lval* lval) {
     case LVAL_ERR:
       free(lval->err);
       break;
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       list_free(lval->cell);
       break;
     case LVAL_FUN:
@@ -220,7 +220,7 @@ void lval_del(Lval* lval) {
 }
 
 Lval* make_lval_copy(Lval* lval) {
-  if (lval->type == LVAL_SEQ && lval->subtype == PLIST) return lval;
+  if (lval->type == LVAL_COLLECTION && lval->subtype == PLIST) return lval;
   /* printf("make_lval_copy\n"); */
   Lval* x = lalloc(LVAL);
   /* printf("make_lval_copy\n"); */
@@ -265,7 +265,7 @@ Lval* make_lval_copy(Lval* lval) {
       x->sym = calloc(1, strlen(lval->sym) + 1);
       strcpy(x->sym, lval->sym);
       break;
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       /* printf("copying seq\n"); */
       x->count = lval->count;
       x->node = calloc(1, sizeof(Lval*) * x->count);
@@ -314,7 +314,7 @@ Lval* lval_concat(Lval* x, Lval* y) {
 
 Lval* make_lval_plist() {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SEQ;
+  lval->type = LVAL_COLLECTION;
   lval->subtype = PLIST;
   lval->tco_env = NULL;
   lval->cell = NULL;

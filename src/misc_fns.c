@@ -15,7 +15,7 @@ bool is_lval_type(Lval* lval, int type, int subtype) {
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
-  if (is_lval_type(lval, LVAL_SEQ, LIST) && lval->count > 0 &&
+  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && lval->count > 0 &&
       lval->node[0]->type == LVAL_SYM) {
     /* Have a peek at the eval of that symbol */
     Lval* lval_fun = lenv_get(env, lval->node[0]);

@@ -239,7 +239,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       case LVAL_SYM:
         return eval_sym(env, lval);
         break;
-      case LVAL_SEQ:
+      case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
             lval = eval_sexpr(env, lval);

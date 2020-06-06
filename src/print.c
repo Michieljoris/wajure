@@ -82,7 +82,7 @@ void lval_print(Lval* lval) {
     case LVAL_STR:
       lval_print_str(lval);
       break;
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
           lval_expr_print(lval, '(', ')');
@@ -124,7 +124,7 @@ void lval_pr(Lval* lval) {
     case LVAL_STR:
       lval_pr_str(lval);
       break;
-    case LVAL_SEQ:
+    case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
           lval_expr_print(lval, '(', ')');
