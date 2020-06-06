@@ -13,7 +13,7 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   Lval* lval = lalloc(LVAL);
   lval->func_name = calloc(1, strlen(func_name) + 1);
   strcpy(lval->func_name, func_name);
-  lval->type = LVAL_FUN;
+  lval->type = LVAL_FUNCTION;
   lval->subtype = subtype;
   lval->fun = func;
   lval->tco_env = NULL;
@@ -22,7 +22,7 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
 
 Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_FUN;
+  lval->type = LVAL_FUNCTION;
   lval->subtype = subtype;
   lval->bindings = lenv_new();
   lval->bindings->parent_env = env;
@@ -42,7 +42,7 @@ Lval* make_lval_num(long x) {
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SYM;
+  lval->type = LVAL_SYMBOL;
   lval->sym = calloc(1, strlen(s) + 1);
   strcpy(lval->sym, s);
   lval->tco_env = NULL;
@@ -85,14 +85,6 @@ Lval* make_lval_map(void) {
   return lval;
 }
 
-Lval* make_lval_quote(void) {
-  Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_QUOTE;
-  lval->cell = NULL;
-  lval->tco_env = NULL;
-  return lval;
-}
-
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_ERR;
@@ -119,7 +111,7 @@ char* lval_type_to_name2(Lval* lval) {
   switch (lval->type) {
     case LVAL_NUM:
       return "Number";
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       return "Symbol";
     case LVAL_COLLECTION:
       switch (lval->subtype) {
@@ -136,7 +128,7 @@ char* lval_type_to_name2(Lval* lval) {
       }
     case LVAL_ERR:
       return "Error";
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       switch (lval->subtype) {
         case SYS:
           return "System Function";
@@ -158,13 +150,13 @@ char* lval_type_to_name(int t) {
   switch (t) {
     case LVAL_NUM:
       return "Number";
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       return "Symbol";
     case LVAL_COLLECTION:
       return "Seq";
     case LVAL_ERR:
       return "Error";
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       return "Function";
     case LVAL_STR:
       return "String";
@@ -191,7 +183,7 @@ void lval_del(Lval* lval) {
     case LVAL_STR:
       free(lval->str);
       break;
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       free(lval->sym);
       break;
     case LVAL_ERR:
@@ -200,7 +192,7 @@ void lval_del(Lval* lval) {
     case LVAL_COLLECTION:
       list_free(lval->cell);
       break;
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
@@ -231,7 +223,7 @@ Lval* make_lval_copy(Lval* lval) {
   /* printf("making copy, cdr: %p\n", lval->cdr); */
   /* printf("switching\n"); */
   switch (lval->type) {
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         x->fun = lval->fun;
         x->func_name = calloc(1, strlen(lval->func_name) + 1);
@@ -261,7 +253,7 @@ Lval* make_lval_copy(Lval* lval) {
       x->str = calloc(1, strlen(lval->str) + 1);
       strcpy(x->str, lval->str);
       break;
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       x->sym = calloc(1, strlen(lval->sym) + 1);
       strcpy(x->sym, lval->sym);
       break;

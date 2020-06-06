@@ -192,11 +192,11 @@ Lval* eval_sexpr(Lenv* env, Lval* list) {
   if (list->type == LVAL_ERR) return list;
 
   Lval* lval_fun = lval_pop(list, 0);
-  if (lval_fun->type != LVAL_FUN) {
+  if (lval_fun->type != LVAL_FUNCTION) {
     lval_err = make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
-        lval_type_to_name2(lval_fun), lval_type_to_name(LVAL_FUN));
+        lval_type_to_name2(lval_fun), lval_type_to_name(LVAL_FUNCTION));
     lval_del(list);
     lval_del(lval_fun);
     return lval_err;
@@ -236,7 +236,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   while (true) { /* TCO */
     if (tco_env) env = tco_env;
     switch (lval->type) {
-      case LVAL_SYM:
+      case LVAL_SYMBOL:
         return eval_sym(env, lval);
         break;
       case LVAL_COLLECTION:

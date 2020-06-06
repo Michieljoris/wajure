@@ -18,7 +18,7 @@ Lval* eval_quote(Lenv* env, Lval* sexpr_args) {
 
 Lval* eval_def(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 2, "def");
-  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_SYM, "def");
+  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_SYMBOL, "def");
   Lval* lval_sym = sexpr_args->node[0];
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
     printf(
@@ -85,10 +85,10 @@ Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
   LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "fn");
 
   for (int i = 0; i < sexpr_args->node[0]->count; ++i) {
-    LASSERT(sexpr_args, sexpr_args->node[0]->node[i]->type == LVAL_SYM,
+    LASSERT(sexpr_args, sexpr_args->node[0]->node[i]->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
             lval_type_to_name2(sexpr_args->node[0]->node[i]),
-            lval_type_to_name(LVAL_SYM));
+            lval_type_to_name(LVAL_SYMBOL));
   }
 
   Lval* formals = lval_pop(sexpr_args, 0);
@@ -110,7 +110,7 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
 
 bool is_fn_call(Lval* lval, char* sym, int min_node_count) {
   return lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-         lval->count >= min_node_count && lval->node[0]->type == LVAL_SYM &&
+         lval->count >= min_node_count && lval->node[0]->type == LVAL_SYMBOL &&
          strcmp(lval->node[0]->sym, sym) == 0;
 }
 
@@ -249,7 +249,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
             catch_env->parent_env = env;
             lval_del(lval_pop(node, 0));        /* ignored ( eg Exception) */
             Lval* lval_sym = lval_pop(node, 0); /* sym to bind msg to */
-            if (lval_sym->type != LVAL_SYM) {
+            if (lval_sym->type != LVAL_SYMBOL) {
               lval_del(lval_sym);
               lval_del(node);
               lval_del(ret);
@@ -355,9 +355,9 @@ Lval* eval_let(Lenv* env, Lval* sexpr_args) {
   Lval* lval_sym;
   while (bindings->count) {
     lval_sym = lval_pop(bindings, 0);
-    LASSERT(sexpr_args, lval_sym->type == LVAL_SYM,
+    LASSERT(sexpr_args, lval_sym->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name2(lval_sym), lval_type_to_name(LVAL_SYM));
+            lval_type_to_name2(lval_sym), lval_type_to_name(LVAL_SYMBOL));
 
     Lval* lval = lval_eval(env, lval_pop(bindings, 0));
     if (lval->type == LVAL_ERR) {

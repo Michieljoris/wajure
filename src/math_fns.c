@@ -79,11 +79,11 @@ int lval_eq(Lval* x, Lval* y) {
       return (x->num == y->num);
     case LVAL_ERR:
       return (strcmp(x->err, y->err) == 0);
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       return (strcmp(x->sym, y->sym) == 0);
     case LVAL_STR:
       return (strcmp(x->str, y->str) == 0);
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       if (x->fun || y->fun) {
         return x->fun == y->fun;
       } else {

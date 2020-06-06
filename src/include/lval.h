@@ -45,14 +45,13 @@ struct lenv {
 
 /* lval types */
 enum {
-  LVAL_NUM,
-  LVAL_QUOTE,
-  LVAL_ERR,
-  LVAL_SYM,
+  LVAL_SYMBOL,
   LVAL_COLLECTION,
-  LVAL_FUN,
-  LVAL_STR,
+  LVAL_FUNCTION,
+  LVAL_ERR,
   /* subtypes */
+  LVAL_NUM,
+  LVAL_STR,
   SYS,
   MACRO,
   SPECIAL,

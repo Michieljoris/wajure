@@ -76,7 +76,7 @@ void lval_print(Lval* lval) {
     case LVAL_ERR:
       _printf("Error: %s", lval->err);
       break;
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       _printf("%s", lval->sym);
       break;
     case LVAL_STR:
@@ -98,7 +98,7 @@ void lval_print(Lval* lval) {
           break;
       }
       break;
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       lval_fun_print(lval);
       break;
     default:
@@ -118,7 +118,7 @@ void lval_pr(Lval* lval) {
     case LVAL_ERR:
       _printf("Error: %s", lval->err);
       break;
-    case LVAL_SYM:
+    case LVAL_SYMBOL:
       _printf("%s", lval->sym);
       break;
     case LVAL_STR:
@@ -140,7 +140,7 @@ void lval_pr(Lval* lval) {
           break;
       }
       break;
-    case LVAL_FUN:
+    case LVAL_FUNCTION:
       lval_fun_print(lval);
       break;
     default:
