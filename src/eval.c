@@ -231,80 +231,43 @@ Lval* eval_sexpr(Lenv* env, Lval* list) {
   }
 }
 
-int id;
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  /* id++; */
-  /* printf("%d ", id); */
-  /* lenv_print(env); */
-  /* __printf(">>>>>> "); */
-  Lval* ret = NULL;
   Lenv* tco_env = NULL;
   while (true) { /* TCO */
-    /* printf(">"); */
-    /* lval_println(lval); */
     if (tco_env) env = tco_env;
     switch (lval->type) {
       case LVAL_SYM:
-        ret = eval_sym(env, lval);
+        return eval_sym(env, lval);
         break;
       case LVAL_SEQ:
         switch (lval->subtype) {
           case LIST:
             lval = eval_sexpr(env, lval);
-            if (lval->num == 123) {
-              printf("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOPS!!!!!!!!\n");
-              lval_println(lval);
-            }
-            // TODO: release tco_env!!!!
             if (lval->tco_env == NULL) {
-              ret = lval;
+              return lval;
             } else {
-              /* printf("LOOPING!!!!!! %d\n", id); */
-              /* printf("current tco_env: %p\n", tco_env); */
-              /* if (tco_env) lenv_print(tco_env); */
               tco_env = lval->tco_env;
-              /* tco_env = lval->tco_env; */
-              /* lval->tco_env = NULL; */
-              lval->num = 123;
-              /* printf("with lval= "); */
-              /* lval_println(lval); */
-              /* printf("and tco_env = %p\n", tco_env); */
-              /* lenv_print(tco_env); */
-
-              /* printf("and parent env = %p\n", tco_env->parent_env); */
-              /* lenv_print(tco_env->parent_env); */
-
-              /* printf("------\n"); */
               continue;
             }
             break;
           case VECTOR:
-            ret = eval_vector(env, lval);
+            return eval_vector(env, lval);
             break;
           case MAP:
             /* TODO: */
-            ret = lval;
+            return lval;
             break;
           case PLIST:
-            ret = lval;
+            return lval;
             break;
           default:
             lval_del(lval);
-            ret = make_lval_err("Unknown seq subtype");
+            return make_lval_err("Unknown seq subtype");
         }
         break;
       default:
-        ret = lval;
+        return lval;
     }
-    if (tco_env) {
-      /* printf("SHOULD BE RELEASING tc_env %p\n", tco_env); */
-      /* lenv_print(tco_env); */
-      /* printf("------------\n"); */
-      /* lenv_del(tco_env); */
-    }
-    id--;
-    /* printf("%d ", id); */
-    return ret;
   }
 }
 /* You can delete existing tco_env if next one is not pointing to it, like in
