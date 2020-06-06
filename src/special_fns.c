@@ -39,7 +39,7 @@ Lval* eval_def(Lenv* env, Lval* sexpr_args) {
   }
   lenv_put(env, lval_sym, lval);
   lval_del(sexpr_args);
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 Lval* eval_if(Lenv* env, Lval* sexpr_args) {
@@ -52,10 +52,10 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
     lval_del(sexpr_args);
     return cond;
   }
-  if (cond->type != LVAL_NUM) {
+  if (cond->subtype != NUM) {
     Lval* lval_err =
         make_lval_err("if passed incorrect type for cond, got %s, expected %s",
-                      lval_type_to_name2(cond), lval_type_to_name(LVAL_NUM));
+                      lval_type_to_name2(cond), lval_type_to_name(NUM));
     lval_del(cond);
     lval_del(sexpr_args);
     return lval_err;
@@ -75,7 +75,7 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
     }
   }
   lval_del(sexpr_args);
-  return ret ? ret : make_lval_sexpr();
+  return ret ? ret : make_lval_list();
   /* return ret ? lval_eval(env, ret) : make_lval_sexpr(); */
 }
 
@@ -129,7 +129,7 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
 
 Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
   /* a place to store processed nodes */
-  Lval* processed_nodes = make_lval_sexpr();
+  Lval* processed_nodes = make_lval_list();
   while (lval->count) {
     /* Take the first of the remaining nodes*/
     Lval* node = lval_pop(lval, 0);
@@ -219,7 +219,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
 enum { EXPR, CATCH, FINALLY };
 Lval* eval_try(Lenv* env, Lval* sexpr_args) {
   int mode = EXPR;
-  Lval* ret = make_lval_sexpr();
+  Lval* ret = make_lval_list();
   Lval* node;
 
   while (sexpr_args->count) {
@@ -263,7 +263,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
             lval_del(lval_sym);
             lval_del(ret);
             /* lenv_print(catch_env); */
-            ret = eval_list(catch_env, node, WITHOUT_TCO);
+            ret = eval_body(catch_env, node, WITHOUT_TCO);
             lenv_del(catch_env);
             if (ret->type == LVAL_ERR) {
               lval_del(sexpr_args);
@@ -276,7 +276,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
         if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
           lval_del(lval_pop(node, 0)); /* finally */
-          Lval* finally_ret = eval_list(env, node, WITHOUT_TCO);
+          Lval* finally_ret = eval_body(env, node, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
             lval_del(sexpr_args);
@@ -312,7 +312,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
         if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
           lval_del(lval_pop(node, 0)); /* finally */
-          Lval* finally_ret = eval_list(env, node, WITHOUT_TCO);
+          Lval* finally_ret = eval_body(env, node, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
             lval_del(sexpr_args);
@@ -337,7 +337,7 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
 }
 
 Lval* eval_do(Lenv* env, Lval* body) {
-  return eval_list(env, body, WITHOUT_TCO);
+  return eval_body(env, body, WITHOUT_TCO);
 }
 
 Lval* eval_let(Lenv* env, Lval* sexpr_args) {
@@ -371,7 +371,7 @@ Lval* eval_let(Lenv* env, Lval* sexpr_args) {
     lval_del(lval_sym);
     lval_del(lval);
   }
-  return eval_list(let_env, sexpr_args, WITH_TCO);
+  return eval_body(let_env, sexpr_args, WITH_TCO);
 }
 
 /* Not really a special form */
@@ -382,7 +382,7 @@ Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
     lval_del(sexpr_args);
     return sexpr_args;
   }
-  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_STR, "throw");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STR, "throw");
   char* msg = sexpr_args->node[0]->str;
   Lval* lval_exc = make_lval_exception(msg);
   lval_del(sexpr_args);

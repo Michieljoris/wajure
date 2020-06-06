@@ -21,7 +21,7 @@ void run(int argc, char** argv) {
   user_env->parent_env = root_env;
   if (argc >= 2) {
     for (int i = 1; i < argc; ++i) {
-      Lval* args = lval_add_child(make_lval_sexpr(), make_lval_str(argv[i]));
+      Lval* args = lval_add_child(make_lval_list(), make_lval_str(argv[i]));
       Lval* x = load_fn(user_env, args);
       if (x->type == LVAL_ERR) {
         lval_println(x);

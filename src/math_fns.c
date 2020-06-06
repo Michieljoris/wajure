@@ -9,7 +9,7 @@
 
 static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->node[i]->type != LVAL_NUM) {
+    if (sexpr->node[i]->subtype != NUM) {
       lval_del(sexpr);
       return make_lval_err("Expected number but got %s",
                            lval_type_to_name2(sexpr->node[0]));
@@ -56,8 +56,8 @@ Lval* div_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "/", sexpr); }
 #define MATH_FN(fn_name, operator_str, operator)                     \
   Lval* fn_name(Lenv* env, Lval* sexpr_args) {                       \
     LASSERT_NODE_COUNT(sexpr_args, 2, operator_str);                 \
-    LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_NUM, operator_str);        \
-    LASSERT_NODE_TYPE(sexpr_args, 1, LVAL_NUM, operator_str);        \
+    LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUM, operator_str);          \
+    LASSERT_NODE_SUBTYPE(sexpr_args, 1, NUM, operator_str);          \
     Lval* num = make_lval_num(                                       \
         sexpr_args->node[0]->num operator sexpr_args->node[1]->num); \
     lval_del(sexpr_args);                                            \
@@ -75,20 +75,8 @@ int lval_eq(Lval* x, Lval* y) {
   }
 
   switch (x->type) {
-    case LVAL_NUM:
-      return (x->num == y->num);
-    case LVAL_ERR:
-      return (strcmp(x->err, y->err) == 0);
     case LVAL_SYMBOL:
       return (strcmp(x->sym, y->sym) == 0);
-    case LVAL_STR:
-      return (strcmp(x->str, y->str) == 0);
-    case LVAL_FUNCTION:
-      if (x->fun || y->fun) {
-        return x->fun == y->fun;
-      } else {
-        return lval_eq(x->formals, y->formals) && lval_eq(x->body, y->body);
-      }
     case LVAL_COLLECTION:
       if (x->count != y->count) {
         return 0;
@@ -99,6 +87,24 @@ int lval_eq(Lval* x, Lval* y) {
         }
       }
       return 1;
+    case LVAL_LITERAL: {
+      case NUM:
+        return (x->num == y->num);
+      case STR:
+        return (strcmp(x->str, y->str) == 0);
+      default:
+        printf("Warning: comparing instances of type '%s' is not implemented\n",
+               lval_type_to_name2(x));
+        return 0;
+    }
+    case LVAL_FUNCTION:
+      if (x->fun || y->fun) {
+        return x->fun == y->fun;
+      } else {
+        return lval_eq(x->params, y->params) && lval_eq(x->body, y->body);
+      }
+    case LVAL_ERR:
+      return (strcmp(x->err, y->err) == 0);
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
          lval_type_to_name2(x));

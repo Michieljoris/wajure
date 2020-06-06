@@ -61,7 +61,7 @@ Lval* eval_fn(Lenv* env, Lval* sexpr) {
 Lval* print_env_fn(Lenv* e, Lval* sexpr) {
   lenv_print(e);
   lval_del(sexpr);
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 bool exit_repl = false;
@@ -69,12 +69,12 @@ bool exit_repl = false;
 Lval* exit_fn(Lenv* e, Lval* sexpr) {
   lval_del(sexpr);
   exit_repl = true;
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 Lval* load_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 1, "load");
-  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_STR, "load");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STR, "load");
 
   mpc_result_t result;
   if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
@@ -85,7 +85,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
     mpc_ast_t* t = result.output;
 
     Lval* expressions =
-        read_expressions(make_lval_sexpr(), t->children, t->children_num);
+        read_expressions(make_lval_list(), t->children, t->children_num);
     mpc_ast_delete(result.output);
     /* printf("exrp count:%d\n", expressions->count); */
     while (expressions->count) {
@@ -103,7 +103,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
 
     printf("Loaded %s\n", sexpr_args->node[0]->str);
     lval_del(sexpr_args);
-    return make_lval_sexpr();
+    return make_lval_list();
   } else {
     char* err_msg = mpc_err_string(result.error);
     mpc_err_delete(result.error);
@@ -122,7 +122,7 @@ Lval* print_fn(Lenv* env, Lval* sexpr_args) {
   _putchar('\n');
   lval_del(sexpr_args);
 
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 Lval* pr_fn(Lenv* env, Lval* sexpr_args) {
@@ -133,18 +133,18 @@ Lval* pr_fn(Lenv* env, Lval* sexpr_args) {
   _putchar('\n');
   lval_del(sexpr_args);
 
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 Lval* debug_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 1, "debug");
-  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_NUM, "debug");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUM, "debug");
   Lval* lval_num = lval_pop(sexpr_args, 0);
   int num = lval_num->num;
   printf("debug = %il\n", num);
   set_debug_level((int)num);
   lval_del(sexpr_args);
-  return make_lval_sexpr();
+  return make_lval_list();
 }
 
 void lenv_add_misc_fns(Lenv* env) {

@@ -1,8 +1,20 @@
+;; (def defmacro (macro [sym params & body]
+;;                      `(def ~sym (macro ~params ~@body))))
+
+;; (defmacro defn [sym params & body]
+;;   `(def ~sym (fn ~params ~@body)))
+
+;; (defmacro m [x] `(print ~x))
+;; (m 1)
+
+;; (def foo (fn [x] x))
+;; (foo 1)
+
 (load "lispy/stdlib.lispy")
+(load "lispy/test/test_2_eval.lispy")
 
 (t (+ 1 2) 3)
-;; (load "lispy/test/test_2_eval.lispy")
-;; (defmacro x [] [1 '(+ 1 1) 3]) (print (x))
+;; ;; (defmacro x [] [1 '(+ 1 1) 3]) (print (x))
 (print (let [x 1] x))
 (def foo (fn [x] x))
 (print (foo 1))

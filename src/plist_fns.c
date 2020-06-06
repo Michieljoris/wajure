@@ -36,7 +36,7 @@ Lval* pfirst_fn(Lenv* env, Lval* sexpr_args) {
     }
   }
   lval_del(sexpr_args);
-  return ret ? ret : make_lval_sexpr();
+  return ret ? ret : make_lval_list();
 }
 
 Lval* plist_fn(Lenv* env, Lval* sexpr_args) {

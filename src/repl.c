@@ -21,7 +21,7 @@ void repl(Lenv* env) {
       mpc_ast_t* t = result.output;
 
       Lval* expressions =
-          read_expressions(make_lval_sexpr(), t->children, t->children_num);
+          read_expressions(make_lval_list(), t->children, t->children_num);
       mpc_ast_delete(result.output);
       while (expressions->count) {
         Lval* expr = lval_pop(expressions, 0);

@@ -65,7 +65,7 @@ Lval* read_next_expression(Expr_stream* expr_stream);
     if (!next_expression)                                                   \
       return make_lval_err("The reader macro \"%s\" has nothing to quote.", \
                            reader_token);                                   \
-    Lval* lval = make_lval_sexpr();                                         \
+    Lval* lval = make_lval_list();                                          \
     lval = lval_add_child(lval, make_lval_sym(lispy_fn));                   \
     lval = lval_add_child(lval, next_expression);                           \
     return lval;                                                            \
@@ -98,7 +98,7 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
     return lval_read_plist(make_lval_plist(), expression);
   }
   if (strstr(tag, "sexpr"))
-    return read_expressions(make_lval_sexpr(), expression->children,
+    return read_expressions(make_lval_list(), expression->children,
                             expression->children_num);
   if (strstr(tag, "map"))
     return read_expressions(make_lval_map(), expression->children,

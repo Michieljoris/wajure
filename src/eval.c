@@ -28,55 +28,55 @@ Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
   return lval;
 }
 
-Lval* bind_lambda_formals(Lval* lval_fun, Lval* sexpr_args) {
+Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   /* bind any args */
-  int given = sexpr_args->count;
-  int total = lval_fun->formals->count;
+  int given = arg_list->count;
+  int total = lval_fun->params->count;
 
-  while (sexpr_args->count) {
+  while (arg_list->count) {
     /* Check if any formals (params) are left to bind */
-    if (lval_fun->formals->count == 0) {
+    if (lval_fun->params->count == 0) {
       lval_del(lval_fun);
-      lval_del(sexpr_args);
+      lval_del(arg_list);
       return make_lval_err(
           "Function passed too many args. Got %i, expected %i.", given, total);
     }
 
     /* Pop a parameter symbol */
-    Lval* sym = lval_pop(lval_fun->formals, 0);
+    Lval* sym = lval_pop(lval_fun->params, 0);
 
     /* Process symbol if it's a & and break out of while loop */
     if (strcmp(sym->sym, "&") == 0) {
       /* if the param is & there should be exactly one formal left  */
-      if (lval_fun->formals->count != 1) {
+      if (lval_fun->params->count != 1) {
         lval_del(lval_fun);
-        lval_del(sexpr_args);
+        lval_del(arg_list);
         return make_lval_err(
             "Function format invalid. "
             "Symbol '&' not followed by single symbol.");
       }
       /* Bind last param with rest of args */
-      Lval* rest_sym = lval_pop(lval_fun->formals, 0);
-      lenv_put(lval_fun->bindings, rest_sym, list_fn(NULL, sexpr_args));
+      Lval* rest_sym = lval_pop(lval_fun->params, 0);
+      lenv_put(lval_fun->bindings, rest_sym, list_fn(NULL, arg_list));
       lval_del(sym);
       lval_del(rest_sym);
       /* Break out of while loop because all args are bound now */
       break;
     }
     /* Bind sym with arg */
-    Lval* val = lval_pop(sexpr_args, 0);
+    Lval* val = lval_pop(arg_list, 0);
     lenv_put(lval_fun->bindings, sym, val);
     lval_del(sym);
     lval_del(val);
   }
 
-  lval_del(sexpr_args);
+  lval_del(arg_list);
 
   /* If there's still formals unbound and next one is & */
-  if (lval_fun->formals->count > 0 &&
-      strcmp(lval_fun->formals->node[0]->sym, "&") == 0) {
+  if (lval_fun->params->count > 0 &&
+      strcmp(lval_fun->params->node[0]->sym, "&") == 0) {
     /* The & needs to be followed by exactly one symbol */
-    if (lval_fun->formals->count != 2) {
+    if (lval_fun->params->count != 2) {
       Lval* lval_err = make_lval_err(
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
@@ -84,10 +84,10 @@ Lval* bind_lambda_formals(Lval* lval_fun, Lval* sexpr_args) {
       return lval_err;
     }
 
-    lval_del(lval_pop(lval_fun->formals, 0)); /* pop and free & */
+    lval_del(lval_pop(lval_fun->params, 0)); /* pop and free & */
     /* and bind last symbol to empty list */
-    Lval* sym = lval_pop(lval_fun->formals, 0);
-    Lval* val = make_lval_sexpr();
+    Lval* sym = lval_pop(lval_fun->params, 0);
+    Lval* val = make_lval_list();
     lenv_put(lval_fun->bindings, sym, val);
     lval_del(sym);
     lval_del(val);
@@ -96,7 +96,8 @@ Lval* bind_lambda_formals(Lval* lval_fun, Lval* sexpr_args) {
   return lval_fun;
 }
 
-Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
+Lval* eval_body(Lenv* bindings, Lval* list, bool with_tco) {
+  /* printf("eval body\n"); */
   Lval* ret = NULL;
 
   /* Eval all exprs of body but the last one (if with_tco is true)*/
@@ -122,27 +123,35 @@ Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
     } else {
       Lval* expr = lval_pop(list, 0);
       ret = lval_eval(bindings, expr);
+      /* printf("RET ="); */
+      /* lval_println(ret); */
     }
   }
 
-  return ret ? ret : make_lval_sexpr();
+  return ret ? ret : make_lval_list();
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
   /* Bind formals to args */
   /* printf("eval lambda call: "); */
   /* lval_println(lval_fun); */
-  lval_fun = bind_lambda_formals(lval_fun, sexpr_args);
+  lval_fun = bind_lambda_params(lval_fun, sexpr_args);
+  /* printf("evalled formals\n"); */
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   /* Eval body expressions, but only if all params are bound */
-  if (lval_fun->formals->count == 0) {
+  if (lval_fun->params->count == 0) {
     /* printf("bindings:  "); */
     /* lenv_print(lval_fun->bindings); */
-    /* printf("----\n"); */
+    /* printf("--------------evalling body:"); */
+    /* lval_println(lval_fun->body); */
     Lval* evalled_body =
-        eval_list(lval_fun->bindings, lval_fun->body, with_tco);
+        eval_body(lval_fun->bindings, lval_fun->body, with_tco);
 
+    /* printf("--------------evalled body: :"); */
+    /* lval_println(evalled_body); */
+    /* printf("evalled body tco env: :"); */
+    /* lenv_print(evalled_body->tco_env); */
     return evalled_body;
   } else {
     return lval_fun;
@@ -158,7 +167,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
   Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
   /* printf("Original lval_fun: "); */
   /* lval_println(lval_fun); */
-  /* printf("Expanded macro:\n"); */
+  /* printf */ ("Expanded macro:\n");
   /* lval_println(expanded_macro); */
 
   // After the macro is expanded they close over the environment where they are
@@ -171,9 +180,13 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
   return expanded_macro;
 }
 
-Lval* eval_sym(Lenv* env, Lval* lval_sym) {
-  Lval* lval_resolved_sym = lenv_get(env, lval_sym);
-  lval_del(lval_sym);
+Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
+  /* printf("eval_symbol: symbol :"); */
+  /* lval_println(lval_symbol); */
+  /* lenv_print(env); */
+  /* lenv_print(env->parent_env); */
+  Lval* lval_resolved_sym = lenv_get(env, lval_symbol);
+  lval_del(lval_symbol);
   return lval_resolved_sym;
 }
 
@@ -181,13 +194,16 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
   return eval_nodes(env, lval_vector, lval_vector->count);
 }
 
-Lval* eval_sexpr(Lenv* env, Lval* list) {
+// We've got a list. We expect first node to be a fn call, and the rest args to
+// the fn.
+Lval* eval_fn_call(Lenv* env, Lval* list) {
+  /* printf("evalling fn call\n"); */
   Lval* lval_err;
   if (list->count == 0) {
     // TODO: release list here
-    return make_lval_sexpr();
+    return make_lval_list();  // empty;
   }
-  list = eval_nodes(env, list, 1);
+  list = eval_nodes(env, list, 1);  // eval first node
 
   if (list->type == LVAL_ERR) return list;
 
@@ -213,7 +229,7 @@ Lval* eval_sexpr(Lenv* env, Lval* list) {
     case SPECIAL:
     default:;
   }
-
+  /* printf("evalled the arguments of fn\n"); */
   switch (lval_fun->subtype) {
     case SYS:
     case SPECIAL:
@@ -237,18 +253,17 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     if (tco_env) env = tco_env;
     switch (lval->type) {
       case LVAL_SYMBOL:
-        return eval_sym(env, lval);
+        return eval_symbol(env, lval);
         break;
       case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
-            lval = eval_sexpr(env, lval);
-            if (lval->tco_env == NULL) {
-              return lval;
-            } else {
+            lval = eval_fn_call(env, lval);
+            if (lval->tco_env != NULL) {
               tco_env = lval->tco_env;
               continue;
             }
+            return lval;
             break;
           case VECTOR:
             return eval_vector(env, lval);

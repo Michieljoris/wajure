@@ -34,7 +34,7 @@ void lval_fun_print(Lval* lval) {
       break;
     case LAMBDA:
       _printf("(fn ");
-      lval_print(lval->formals);
+      lval_print(lval->params);
       _putchar(' ');
       for (int i = 0; i < lval->body->count; i++) {
         lval_print(lval->body->node[i]);
@@ -43,7 +43,7 @@ void lval_fun_print(Lval* lval) {
       break;
     case MACRO:
       _printf("(macro ");
-      lval_print(lval->formals);
+      lval_print(lval->params);
       _putchar(' ');
       for (int i = 0; i < lval->body->count; i++) {
         lval_print(lval->body->node[i]);
@@ -70,17 +70,8 @@ void lval_plist_print(Lval* lval) {
 void lval_print(Lval* lval) {
   /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
   switch (lval->type) {
-    case LVAL_NUM:
-      _printf("%li", lval->num);
-      break;
-    case LVAL_ERR:
-      _printf("Error: %s", lval->err);
-      break;
     case LVAL_SYMBOL:
       _printf("%s", lval->sym);
-      break;
-    case LVAL_STR:
-      lval_print_str(lval);
       break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
@@ -96,10 +87,25 @@ void lval_print(Lval* lval) {
         case PLIST:
           lval_plist_print(lval);
           break;
+        default:
+          _printf("unknown lval subtype %s\n",
+                  lval_type_to_name(lval->subtype));
       }
       break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUM:
+          _printf("%li", lval->num);
+          break;
+        case STR:
+          lval_print_str(lval);
+          break;
+      }
     case LVAL_FUNCTION:
       lval_fun_print(lval);
+      break;
+    case LVAL_ERR:
+      _printf("Error: %s", lval->err);
       break;
     default:
       _printf("unknown lval type %d, %s\n", lval->type,
@@ -112,17 +118,8 @@ void lval_print(Lval* lval) {
 void lval_pr(Lval* lval) {
   /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
   switch (lval->type) {
-    case LVAL_NUM:
-      _printf("%li", lval->num);
-      break;
-    case LVAL_ERR:
-      _printf("Error: %s", lval->err);
-      break;
     case LVAL_SYMBOL:
       _printf("%s", lval->sym);
-      break;
-    case LVAL_STR:
-      lval_pr_str(lval);
       break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
@@ -138,10 +135,25 @@ void lval_pr(Lval* lval) {
         case PLIST:
           lval_plist_print(lval);
           break;
+        default:
+          _printf("unknown lval subtype %s\n",
+                  lval_type_to_name(lval->subtype));
       }
       break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUM:
+          _printf("%li", lval->num);
+          break;
+        case STR:
+          lval_pr_str(lval);
+          break;
+      }
     case LVAL_FUNCTION:
       lval_fun_print(lval);
+      break;
+    case LVAL_ERR:
+      _printf("Error: %s", lval->err);
       break;
     default:
       _printf("unknown lval type %d, %s\n", lval->type,
@@ -170,4 +182,11 @@ void print_kv(void* pair) {
   lval_print((Lval*)((Cell*)pair)->cdr);
 }
 
-void lenv_print(Lenv* env) { list_print(env->kv, print_kv, "\n"); }
+void lenv_print(Lenv* env) {
+  printf("In lenv_print:\n");
+  if (env->parent_env) {
+    list_print(env->kv, print_kv, "\n");
+  } else {
+    printf("ROOT env!!! \n");
+  }
+}

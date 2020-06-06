@@ -26,7 +26,7 @@ struct lval {
   /* function */
   lbuiltin fun;
   Lenv* bindings;
-  Lval* formals;
+  Lval* params;
   /* Cell* formals; */  //????
   Lval* body;
 
@@ -47,11 +47,12 @@ struct lenv {
 enum {
   LVAL_SYMBOL,
   LVAL_COLLECTION,
+  LVAL_LITERAL,
   LVAL_FUNCTION,
   LVAL_ERR,
   /* subtypes */
-  LVAL_NUM,
-  LVAL_STR,
+  NUM,
+  STR,
   SYS,
   MACRO,
   SPECIAL,
@@ -68,7 +69,7 @@ Lval* make_lval_num(long x);
 Lval* make_lval_quote(void);
 Lval* make_lval_sym(char* s);
 Lval* make_lval_str(char* s);
-Lval* make_lval_sexpr(void);
+Lval* make_lval_list(void);
 Lval* make_lval_map(void);
 Lval* make_lval_vector(void);
 Lval* make_lval_fun(lbuiltin func, char* func_name, int type);

@@ -22,7 +22,7 @@ Lval* make_lval_sym(char* s) {
 
 /* COLLECTION */
 
-Lval* make_lval_sexpr(void) {
+Lval* make_lval_list(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_COLLECTION;
   lval->subtype = LIST;
@@ -53,7 +53,8 @@ Lval* make_lval_map(void) {
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_NUM;
+  lval->type = LVAL_LITERAL;
+  lval->subtype = NUM;
   lval->num = x;
   lval->tco_env = NULL;
   return lval;
@@ -61,7 +62,8 @@ Lval* make_lval_num(long x) {
 
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_STR;
+  lval->type = LVAL_LITERAL;
+  lval->subtype = STR;
   lval->str = calloc(1, strlen(s) + 1);
   strcpy(lval->str, s);
   lval->tco_env = NULL;
@@ -89,7 +91,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
   lval->subtype = subtype;
   lval->bindings = lenv_new();
   lval->bindings->parent_env = env;
-  lval->formals = formals;
+  lval->params = formals;
   lval->body = body;
   lval->tco_env = NULL;
   return lval;
@@ -123,8 +125,6 @@ Lval* make_lval_exception(char* msg) {
 
 char* lval_type_to_name2(Lval* lval) {
   switch (lval->type) {
-    case LVAL_NUM:
-      return "Number";
     case LVAL_SYMBOL:
       return "Symbol";
     case LVAL_COLLECTION:
@@ -138,10 +138,15 @@ char* lval_type_to_name2(Lval* lval) {
         case MAP:
           return "Map (seq)";
         default:
-          return "unknown SEQ subtype";
+          return "unknown collection subtype";
       }
-    case LVAL_ERR:
-      return "Error";
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUM:
+          return "Number";
+        case STR:
+          return "String";
+      }
     case LVAL_FUNCTION:
       switch (lval->subtype) {
         case SYS:
@@ -153,8 +158,8 @@ char* lval_type_to_name2(Lval* lval) {
         case MACRO:
           return "Macro";
       }
-    case LVAL_STR:
-      return "String";
+    case LVAL_ERR:
+      return "Error";
     default:
       return "Unknown";
   }
@@ -162,7 +167,9 @@ char* lval_type_to_name2(Lval* lval) {
 
 char* lval_type_to_name(int t) {
   switch (t) {
-    case LVAL_NUM:
+    case LVAL_LITERAL:
+      return "Literal";
+    case NUM:
       return "Number";
     case LVAL_SYMBOL:
       return "Symbol";
@@ -172,7 +179,7 @@ char* lval_type_to_name(int t) {
       return "Error";
     case LVAL_FUNCTION:
       return "Function";
-    case LVAL_STR:
+    case STR:
       return "String";
     case LIST:
       return "List";
@@ -192,81 +199,51 @@ void lval_del(Lval* lval) {
   /* printf("freeing: "); */
   /* lval_println(lval); */
   switch (lval->type) {
-    case LVAL_NUM:
-      break;
-    case LVAL_STR:
-      free(lval->str);
-      break;
     case LVAL_SYMBOL:
       free(lval->sym);
       break;
-    case LVAL_ERR:
-      free(lval->err);
-      break;
     case LVAL_COLLECTION:
       list_free(lval->cell);
+      break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUM:
+          break;
+        case STR:
+          free(lval->str);
+          break;
+        default:
+          printf("Can't delete unknown literal subtype: %d\n", lval->subtype);
+      }
       break;
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
         lenv_del(lval->bindings);
-        lval_del(lval->formals);
+        lval_del(lval->params);
         lval_del(lval->body);
       }
       break;
-    case PLIST:
-      printf("how to delete a plist??\n");
-      list_free(lval->cell);
-      /* just free the point pointer I'd say, but then do reference counting to
-       * free any cdr */
+    case LVAL_ERR:
+      free(lval->err);
       break;
+    default:
+      printf("Can't delete unknown type: %d\n", lval->type);
   }
   free(lval);
 }
 
 Lval* make_lval_copy(Lval* lval) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == PLIST) return lval;
-  /* printf("make_lval_copy\n"); */
-  Lval* x = lalloc(LVAL);
-  /* printf("make_lval_copy\n"); */
+  /* printf("make_lval_copy: "); */
   /* lval_println(lval); */
+  /* printf("lval type and subtye %d %d\n", lval->type, lval->subtype); */
+  Lval* x = lalloc(LVAL);
   x->type = lval->type;
   x->subtype = lval->subtype;
   x->tco_env = lval->tco_env;
-  /* printf("making copy, cdr: %p\n", lval->cdr); */
-  /* printf("switching\n"); */
   switch (lval->type) {
-    case LVAL_FUNCTION:
-      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
-        x->fun = lval->fun;
-        x->func_name = calloc(1, strlen(lval->func_name) + 1);
-        strcpy(x->func_name, lval->func_name);
-      } else {
-        /* printf("in lval_copy\n"); */
-        /* lval_println(lval); */
-        x->bindings = lenv_copy(lval->bindings);
-        /* printf("copied ENV\n"); */
-        x->formals = make_lval_copy(lval->formals);
-        /* printf("copied FORMALS\n"); */
-        /* lval_println(lval->body); */
-        /* printf("%s\n", lval_type_to_name(lval->body->type)); */
-        x->body = make_lval_copy(lval->body);
-        /* printf("copied BODY\n"); */
-      }
-      break;
-    case LVAL_NUM:
-      x->num = lval->num;
-      break;
-
-    case LVAL_ERR:
-      x->err = calloc(1, strlen(lval->err) + 1);
-      strcpy(x->err, lval->err);
-      break;
-    case LVAL_STR:
-      x->str = calloc(1, strlen(lval->str) + 1);
-      strcpy(x->str, lval->str);
-      break;
     case LVAL_SYMBOL:
       x->sym = calloc(1, strlen(lval->sym) + 1);
       strcpy(x->sym, lval->sym);
@@ -279,9 +256,49 @@ Lval* make_lval_copy(Lval* lval) {
         x->node[i] = make_lval_copy(lval->node[i]);
       }
       break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUM:
+          x->num = lval->num;
+          break;
+        case STR:
+          x->str = calloc(1, strlen(lval->str) + 1);
+          strcpy(x->str, lval->str);
+          break;
+        default:
+          return make_lval_err(
+              "Don't know how to copy unknown literal subtype :%d\n",
+              lval->subtype);
+      }
+      break;
+    case LVAL_FUNCTION:
+      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
+        x->fun = lval->fun;
+        x->func_name = calloc(1, strlen(lval->func_name) + 1);
+        strcpy(x->func_name, lval->func_name);
+      } else {
+        /* printf("in lval_copy\n"); */
+        /* lval_println(lval); */
+        x->bindings = lenv_copy(lval->bindings);
+        /* printf("copied ENV\n"); */
+        x->params = make_lval_copy(lval->params);
+        /* printf("copied FORMALS\n"); */
+        /* lval_println(lval->body); */
+        /* printf("%s\n", lval_type_to_name(lval->body->type)); */
+        x->body = make_lval_copy(lval->body);
+        /* printf("copied BODY\n"); */
+      }
+      break;
+    case LVAL_ERR:
+      x->err = calloc(1, strlen(lval->err) + 1);
+      strcpy(x->err, lval->err);
+      break;
     default:
-      printf("Don't know how to print %s\n", lval_type_to_name2(lval));
+      printf("Don't know how to copy unknown lval type: %s\n",
+             lval_type_to_name2(lval));
   }
+  /* printf("returning x:"); */
+  /* lval_println(x); */
   return x;
 }
 
