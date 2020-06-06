@@ -1,8 +1,9 @@
 #ifndef __LIB_H_
 #define __LIB_H_
 
-#include <stdarg.h>
-#include <stdlib.h>
+#include <stdarg.h>  //va_start, va_list
+#include <stdio.h>   //printf, puts
+#include <stdlib.h>  //malloc, calloc, realloc
 
 typedef unsigned int uint;
 /* typedef unsigned int size_t; */

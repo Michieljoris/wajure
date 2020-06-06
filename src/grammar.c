@@ -3,10 +3,12 @@
 #include "mpc.h"
 
 mpc_parser_t* Number;
+
 mpc_parser_t* Quote;
 mpc_parser_t* BackQuote;
 mpc_parser_t* TildeAt;
 mpc_parser_t* Tilde;
+
 mpc_parser_t* Symbol;
 mpc_parser_t* String;
 mpc_parser_t* Comment;
@@ -37,9 +39,9 @@ void init_grammar() {
   mpca_lang(MPCA_LANG_DEFAULT,
             "                                    \
     number  : /-?[0-9]+/ ;                       \
-    quote   : /'/ ;                              \
     symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=!&]+/ ; \
     string  : /\"(\\\\.|[^\"])*\"/ ;             \
+    quote   : /'/ ;                              \
     backquote   : /`/ ;                          \
     tilde_at : /~@/ ;                             \
     tilde   : /~/ ;                              \

@@ -72,6 +72,51 @@ Lval* exit_fn(Lenv* e, Lval* sexpr) {
   return make_lval_list();
 }
 
+/* Lval* load_fn2(Lenv* e, Lval* arg_list) { */
+/*   LASSERT_NODE_COUNT(arg_list, 1, "load"); */
+/*   LASSERT_NODE_SUBTYPE(arg_list, 0, STRING, "load"); */
+
+/*   /\* Open file and check it exists *\/ */
+/*   FILE* f = fopen(arg_list->node[0]->str, "rb"); */
+/*   if (f == NULL) { */
+/*     Lval* err = */
+/*         make_lval_err("Could not load Library %s", arg_list->node[0]->str);
+ */
+/*     lval_del(arg_list); */
+/*     return err; */
+/*   } */
+
+/*   /\* Read File Contents *\/ */
+/*   fseek(f, 0, SEEK_END); */
+/*   long length = ftell(f); */
+/*   fseek(f, 0, SEEK_SET); */
+/*   char* input = calloc(length + 1, 1); */
+/*   fread(input, 1, length, f); */
+/*   fclose(f); */
+/*   /\* Read from input to create an S-Expr *\/ */
+/*   int pos = 0; */
+/*   Lval* expr = lval_read_expr(input, &pos, '\0'); */
+/*   free(input); */
+
+/*   /\* Evaluate all expressions contained in S-Expr *\/ */
+/*   if (expr->type != LVAL_ERR) { */
+/*     while (expr->count) { */
+/*       Lval* x = lval_eval(e, lval_pop(expr, 0)); */
+/*       if (x->type == LVAL_ERR) { */
+/*         lval_println(x); */
+/*       } */
+/*       lval_del(x); */
+/*     } */
+/*   } else { */
+/*     lval_println(expr); */
+/*   } */
+
+/*   lval_del(expr); */
+/*   lval_del(arg_list); */
+
+/*   return make_lval_list(); */
+/* } */
+
 Lval* load_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 1, "load");
   LASSERT_NODE_SUBTYPE(sexpr_args, 0, STRING, "load");
@@ -87,6 +132,7 @@ Lval* load_fn(Lenv* env, Lval* sexpr_args) {
     Lval* expressions =
         read_expressions(make_lval_list(), t->children, t->children_num);
     mpc_ast_delete(result.output);
+
     /* printf("exrp count:%d\n", expressions->count); */
     while (expressions->count) {
       Lval* expr = lval_pop(expressions, 0);
