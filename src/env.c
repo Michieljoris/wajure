@@ -1,10 +1,7 @@
 #include <env.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "io.h"
+#include "lib.h"
 #include "lispy_mempool.h"
 #include "lval.h"
 
@@ -36,7 +33,7 @@ void lenv_del(Lenv* e) {
   lfree(LENV, e);
 }
 
-int is_eq_str(void* k, void* v) { return strcmp((char*)k, (char*)v) == 0; }
+int is_eq_str(void* k, void* v) { return _strcmp((char*)k, (char*)v) == 0; }
 
 Lval* lenv_get(Lenv* env, Lval* lval_sym) {
   Lval* ret = alist_get(env->kv, is_eq_str, lval_sym->sym);

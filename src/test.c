@@ -1,7 +1,5 @@
-#include <stdlib.h>
-#include <string.h>
-
 #include "io.h"
+#include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
 #include "plist_fns.h"
@@ -49,7 +47,7 @@ void print_char_cell(void* value) { printf("%s", (char*)value); }
 void print_pair(void* pair) {
   printf("%s: %s", (char*)((Cell*)pair)->car, (char*)((Cell*)pair)->cdr);
 }
-int cmp(void* k, void* v) { return strcmp((char*)k, (char*)v) == 0; }
+int cmp(void* k, void* v) { return _strcmp((char*)k, (char*)v) == 0; }
 
 void test_list() {
   init_lispy_mempools(1, 1, 100);

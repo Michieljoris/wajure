@@ -1,9 +1,8 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
-#include <stdio.h>
-
 #include "env.h"
+#include "io.h"
 #include "print.h"
 
 void set_debug_level(int level);

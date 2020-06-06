@@ -1,10 +1,9 @@
 #include "math_fns.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include "assert.h"
 #include "env.h"
+#include "io.h"
+#include "lib.h"
 #include "lval.h"
 
 static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
@@ -17,22 +16,22 @@ static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
   }
   Lval* result = lval_pop(sexpr, 0);
 
-  if ((strcmp(op, "-") == 0) && sexpr->count == 0) {
+  if ((_strcmp(op, "-") == 0) && sexpr->count == 0) {
     result->num = -result->num;
   }
 
   while (sexpr->count > 0) {
     Lval* operand = lval_pop(sexpr, 0);
-    if (strcmp(op, "+") == 0) {
+    if (_strcmp(op, "+") == 0) {
       result->num += operand->num;
     }
-    if (strcmp(op, "-") == 0) {
+    if (_strcmp(op, "-") == 0) {
       result->num -= operand->num;
     }
-    if (strcmp(op, "*") == 0) {
+    if (_strcmp(op, "*") == 0) {
       result->num *= operand->num;
     }
-    if (strcmp(op, "/") == 0) {
+    if (_strcmp(op, "/") == 0) {
       if (operand->num == 0) {
         lval_del(result);
         lval_del(operand);
@@ -76,7 +75,7 @@ int lval_eq(Lval* x, Lval* y) {
 
   switch (x->type) {
     case LVAL_SYMBOL:
-      return (strcmp(x->sym, y->sym) == 0);
+      return (_strcmp(x->sym, y->sym) == 0);
     case LVAL_COLLECTION:
       if (x->count != y->count) {
         return 0;
@@ -91,7 +90,7 @@ int lval_eq(Lval* x, Lval* y) {
       case NUMBER:
         return (x->num == y->num);
       case STRING:
-        return (strcmp(x->str, y->str) == 0);
+        return (_strcmp(x->str, y->str) == 0);
       default:
         printf("Warning: comparing instances of type '%s' is not implemented\n",
                lval_type_to_name2(x));
@@ -104,7 +103,7 @@ int lval_eq(Lval* x, Lval* y) {
         return lval_eq(x->params, y->params) && lval_eq(x->body, y->body);
       }
     case LVAL_ERR:
-      return (strcmp(x->err, y->err) == 0);
+      return (_strcmp(x->err, y->err) == 0);
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
          lval_type_to_name2(x));
@@ -114,11 +113,11 @@ int lval_eq(Lval* x, Lval* y) {
 Lval* cmp_fn(Lenv* env, Lval* sexpr_args, char* operator) {
   LASSERT_NODE_COUNT(sexpr_args, 2, operator);
   int result;
-  if (strcmp(operator, "=") == 0) {
+  if (_strcmp(operator, "=") == 0) {
     result = lval_eq(sexpr_args->node[0], sexpr_args->node[1]);
   }
 
-  if (strcmp(operator, "not=") == 0) {
+  if (_strcmp(operator, "not=") == 0) {
     result = !lval_eq(sexpr_args->node[0], sexpr_args->node[1]);
   }
   lval_del(sexpr_args);

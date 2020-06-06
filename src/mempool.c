@@ -1,7 +1,7 @@
 #include "mempool.h"
 
-#include <io.h>
-#include <stdlib.h>
+#include "io.h"
+#include "lib.h"
 
 /*
  * Adapted from:

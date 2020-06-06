@@ -1,12 +1,10 @@
 #include "eval.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "assert.h"
 #include "debug.h"
 #include "env.h"
+#include "io.h"
+#include "lib.h"
 #include "list_fns.h"
 #include "lval.h"
 #include "misc_fns.h"
@@ -46,7 +44,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
     Lval* sym = lval_pop(lval_fun->params, 0);
 
     /* Process symbol if it's a & and break out of while loop */
-    if (strcmp(sym->sym, "&") == 0) {
+    if (_strcmp(sym->sym, "&") == 0) {
       /* if the param is & there should be exactly one formal left  */
       if (lval_fun->params->count != 1) {
         lval_del(lval_fun);
@@ -74,7 +72,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 
   /* If there's still formals unbound and next one is & */
   if (lval_fun->params->count > 0 &&
-      strcmp(lval_fun->params->node[0]->sym, "&") == 0) {
+      _strcmp(lval_fun->params->node[0]->sym, "&") == 0) {
     /* The & needs to be followed by exactly one symbol */
     if (lval_fun->params->count != 2) {
       Lval* lval_err = make_lval_err(
@@ -96,7 +94,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   return lval_fun;
 }
 
-Lval* eval_body(Lenv* bindings, Lval* list, bool with_tco) {
+Lval* eval_body(Lenv* bindings, Lval* list, int with_tco) {
   /* printf("eval body\n"); */
   Lval* ret = NULL;
 
@@ -249,7 +247,7 @@ Lval* eval_fn_call(Lenv* env, Lval* list) {
 
 Lval* lval_eval(Lenv* env, Lval* lval) {
   Lenv* tco_env = NULL;
-  while (true) { /* TCO */
+  while (1) { /* TCO */
     if (tco_env) env = tco_env;
     switch (lval->type) {
       case LVAL_SYMBOL:

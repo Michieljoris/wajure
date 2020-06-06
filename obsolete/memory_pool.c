@@ -8,8 +8,8 @@
  * */
 #include "memory_pool.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "io.h"
+#include "lib.h"
 
 void* normalize_pointer(MemoryPool* memory_pool, void* pointer_or_offset) {
   if (memory_pool->auto_resize)

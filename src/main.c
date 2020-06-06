@@ -1,6 +1,5 @@
-#include <stdio.h>
-
 #include "debug.h"
+#include "io.h"
 #include "run.h"
 #include "test.h"
 

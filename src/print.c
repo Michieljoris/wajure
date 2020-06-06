@@ -1,11 +1,9 @@
 #include "print.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "debug.h"
 #include "env.h"
+#include "io.h"
+#include "lib.h"
 #include "lval.h"
 #include "mpc.h"
 

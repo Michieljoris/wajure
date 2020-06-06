@@ -1,10 +1,7 @@
 #include "lispy_mempool.h"
 
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "io.h"
+#include "lib.h"
 #include "lval.h"
 #include "mempool.h"
 
@@ -22,7 +19,7 @@ void lispy_mempool_log(int type, char* msg) {
     va_start(va, fmt);                      \
     char* msg = malloc(512);                \
     vsnprintf(msg, 511, fmt, va);           \
-    msg = realloc(msg, strlen(msg) + 1);    \
+    msg = realloc(msg, _strlen(msg) + 1);   \
     lispy_mempool_log(type, msg);           \
   }
 

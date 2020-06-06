@@ -1,9 +1,8 @@
 #ifndef __IO_H_
 #define __IO_H_
 
-#include <stdio.h>
-
 #include "debug.h"
+#include "lib.h"
 
 #define printf(...) \
   if (*pdebug_level) printf(__VA_ARGS__);

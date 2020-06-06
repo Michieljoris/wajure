@@ -1,6 +1,5 @@
 #ifndef __LVAL_H_
 #define __LVAL_H_
-#include <stdbool.h>
 
 #include "list.h"
 

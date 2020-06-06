@@ -1,11 +1,9 @@
 #include "run.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "env.h"
 #include "fns.h"
 #include "grammar.h"
+#include "io.h"
 #include "lispy_mempool.h"
 #include "lval.h"
 #include "misc_fns.h"

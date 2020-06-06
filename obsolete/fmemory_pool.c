@@ -1,9 +1,9 @@
 /* http://www.pinksquirrellabs.com/blog/2018/01/31/-fixed-memory-pool-design/ */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "fmemory_pool.h"
+
+#include "io.h"
+#include "lib.h"
 
 typedef unsigned int uint;
 

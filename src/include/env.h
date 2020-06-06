@@ -1,8 +1,6 @@
 #ifndef __ENV_H_
 #define __ENV_H_
 
-#include <stdbool.h>
-
 #include "lval.h"
 
 enum { ROOT_ENV, LOCAL_ENV };

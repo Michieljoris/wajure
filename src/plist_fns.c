@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "assert.h"
 #include "env.h"
+#include "io.h"
 #include "lval.h"
 #include "print.h"
 

@@ -1,12 +1,10 @@
 #include "special_fns.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "assert.h"
 #include "env.h"
 #include "eval.h"
+#include "io.h"
+#include "lib.h"
 #include "list_fns.h"
 #include "lval.h"
 #include "print.h"
@@ -108,10 +106,10 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
   return eval_lambda_form(env, sexpr_args, MACRO);
 }
 
-bool is_fn_call(Lval* lval, char* sym, int min_node_count) {
+int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   return lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
          lval->count >= min_node_count && lval->node[0]->type == LVAL_SYMBOL &&
-         strcmp(lval->node[0]->sym, sym) == 0;
+         _strcmp(lval->node[0]->sym, sym) == 0;
 }
 
 Lval* eval_unquote(Lenv* env, Lval* lval) {

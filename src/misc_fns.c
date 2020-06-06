@@ -9,7 +9,7 @@
 #include "print.h"
 #include "read.h"
 
-bool is_lval_type(Lval* lval, int type, int subtype) {
+int is_lval_type(Lval* lval, int type, int subtype) {
   return lval->type == type && lval->subtype == subtype;
 }
 
@@ -64,11 +64,11 @@ Lval* print_env_fn(Lenv* e, Lval* sexpr) {
   return make_lval_list();
 }
 
-bool exit_repl = false;
+int exit_repl = 0;
 
 Lval* exit_fn(Lenv* e, Lval* sexpr) {
   lval_del(sexpr);
-  exit_repl = true;
+  exit_repl = 1;
   return make_lval_list();
 }
 

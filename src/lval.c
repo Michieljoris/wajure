@@ -1,12 +1,8 @@
 #include "lval.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "env.h"
 #include "io.h"
+#include "lib.h"
 #include "lispy_mempool.h"
 
 /* SYMBOL */
@@ -14,8 +10,8 @@
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SYMBOL;
-  lval->sym = calloc(1, strlen(s) + 1);
-  strcpy(lval->sym, s);
+  lval->sym = calloc(1, _strlen(s) + 1);
+  _strcpy(lval->sym, s);
   lval->tco_env = NULL;
   return lval;
 }
@@ -64,8 +60,8 @@ Lval* make_lval_str(char* s) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_LITERAL;
   lval->subtype = STRING;
-  lval->str = calloc(1, strlen(s) + 1);
-  strcpy(lval->str, s);
+  lval->str = calloc(1, _strlen(s) + 1);
+  _strcpy(lval->str, s);
   lval->tco_env = NULL;
   return lval;
 }
@@ -75,8 +71,8 @@ Lval* make_lval_str(char* s) {
 // SYSTEM and SPECIAL
 Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   Lval* lval = lalloc(LVAL);
-  lval->func_name = calloc(1, strlen(func_name) + 1);
-  strcpy(lval->func_name, func_name);
+  lval->func_name = calloc(1, _strlen(func_name) + 1);
+  _strcpy(lval->func_name, func_name);
   lval->type = LVAL_FUNCTION;
   lval->subtype = subtype;
   lval->fun = func;
@@ -108,7 +104,7 @@ Lval* make_lval_err(char* fmt, ...) {
   va_start(va, fmt);
   lval->err = calloc(1, 512);
   vsnprintf(lval->err, 511, fmt, va);
-  lval->err = realloc(lval->err, strlen(lval->err) + 1);
+  lval->err = realloc(lval->err, _strlen(lval->err) + 1);
 
   va_end(va);
   lval->tco_env = NULL;
@@ -245,8 +241,8 @@ Lval* make_lval_copy(Lval* lval) {
   x->tco_env = lval->tco_env;
   switch (lval->type) {
     case LVAL_SYMBOL:
-      x->sym = calloc(1, strlen(lval->sym) + 1);
-      strcpy(x->sym, lval->sym);
+      x->sym = calloc(1, _strlen(lval->sym) + 1);
+      _strcpy(x->sym, lval->sym);
       break;
     case LVAL_COLLECTION:
       /* printf("copying seq\n"); */
@@ -262,8 +258,8 @@ Lval* make_lval_copy(Lval* lval) {
           x->num = lval->num;
           break;
         case STRING:
-          x->str = calloc(1, strlen(lval->str) + 1);
-          strcpy(x->str, lval->str);
+          x->str = calloc(1, _strlen(lval->str) + 1);
+          _strcpy(x->str, lval->str);
           break;
         default:
           return make_lval_err(
@@ -274,8 +270,8 @@ Lval* make_lval_copy(Lval* lval) {
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         x->fun = lval->fun;
-        x->func_name = calloc(1, strlen(lval->func_name) + 1);
-        strcpy(x->func_name, lval->func_name);
+        x->func_name = calloc(1, _strlen(lval->func_name) + 1);
+        _strcpy(x->func_name, lval->func_name);
       } else {
         /* printf("in lval_copy\n"); */
         /* lval_println(lval); */
@@ -290,8 +286,8 @@ Lval* make_lval_copy(Lval* lval) {
       }
       break;
     case LVAL_ERR:
-      x->err = calloc(1, strlen(lval->err) + 1);
-      strcpy(x->err, lval->err);
+      x->err = calloc(1, _strlen(lval->err) + 1);
+      _strcpy(x->err, lval->err);
       break;
     default:
       printf("Don't know how to copy unknown lval type: %s\n",
@@ -311,8 +307,8 @@ Lval* lval_add_child(Lval* lval, Lval* x) {
 
 Lval* lval_pop(Lval* lval, int i) {
   Lval* x = lval->node[i];
-  memmove(&lval->node[i], &lval->node[i + 1],
-          sizeof(Lval*) * (lval->count - i - 1));
+  _memmove(&lval->node[i], &lval->node[i + 1],
+           sizeof(Lval*) * (lval->count - i - 1));
   lval->count--;
   lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
   return x;

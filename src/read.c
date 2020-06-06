@@ -1,5 +1,4 @@
-#include <stdlib.h>
-
+#include "lib.h"
 #include "lval.h"
 #include "mpc.h"
 #include "plist_fns.h"
@@ -16,18 +15,18 @@ int do_ignore(mpc_ast_t* expression) {
   char* tag = expression->tag;
   /* printf("token %s\n", token); */
   /* printf("tag %s\n", tag); */
-  return (strcmp(tag, "regex") == 0 || strstr(tag, "comment") ||
-          strcmp(token, "(") == 0 || strcmp(token, ")") == 0 ||
-          strcmp(token, "[") == 0 || strcmp(token, "]") == 0 ||
-          strcmp(token, "{") == 0 || strcmp(token, "}") == 0 ||
-          strcmp(token, "<") == 0 || strcmp(token, ">") == 0);
+  return (_strcmp(tag, "regex") == 0 || _strstr(tag, "comment") ||
+          _strcmp(token, "(") == 0 || _strcmp(token, ")") == 0 ||
+          _strcmp(token, "[") == 0 || _strcmp(token, "]") == 0 ||
+          _strcmp(token, "{") == 0 || _strcmp(token, "}") == 0 ||
+          _strcmp(token, "<") == 0 || _strcmp(token, ">") == 0);
 }
 
 mpc_ast_t* get_next_expr(Expr_stream* expr_stream) {
   return expr_stream->expressions[expr_stream->index++];
 }
 
-bool has_next_expr(Expr_stream* expr_stream) {
+int has_next_expr(Expr_stream* expr_stream) {
   mpc_ast_t* expression = NULL;
   while (expr_stream->index < expr_stream->count) {
     expression = expr_stream->expressions[expr_stream->index];
@@ -87,23 +86,23 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
   char* tag = expression->tag;
   /* printf("token %s TAG: %s\n", token, expression->tag); */
   /* printf("tag: %s\n", tag); */
-  if (strstr(tag, "number")) return lval_read_num(token);
-  if (strstr(tag, "symbol")) return make_lval_sym(token);
-  if (strstr(tag, "|quote|")) return lval_read_quote(expr_stream);
-  if (strstr(tag, "backquote")) return lval_read_backquote(expr_stream);
-  if (strstr(tag, "|tilde|")) return lval_read_tilde(expr_stream);
-  if (strstr(tag, "tilde_at")) return lval_read_tilde_at(expr_stream);
-  if (strstr(tag, "string")) return lval_read_str(token);
-  if (strstr(tag, "plist")) {
+  if (_strstr(tag, "number")) return lval_read_num(token);
+  if (_strstr(tag, "symbol")) return make_lval_sym(token);
+  if (_strstr(tag, "|quote|")) return lval_read_quote(expr_stream);
+  if (_strstr(tag, "backquote")) return lval_read_backquote(expr_stream);
+  if (_strstr(tag, "|tilde|")) return lval_read_tilde(expr_stream);
+  if (_strstr(tag, "tilde_at")) return lval_read_tilde_at(expr_stream);
+  if (_strstr(tag, "string")) return lval_read_str(token);
+  if (_strstr(tag, "plist")) {
     return lval_read_plist(make_lval_plist(), expression);
   }
-  if (strstr(tag, "sexpr"))
+  if (_strstr(tag, "list"))
     return read_expressions(make_lval_list(), expression->children,
                             expression->children_num);
-  if (strstr(tag, "map"))
+  if (_strstr(tag, "map"))
     return read_expressions(make_lval_map(), expression->children,
                             expression->children_num);
-  if (strstr(tag, "vector"))
+  if (_strstr(tag, "vector"))
     return read_expressions(make_lval_vector(), expression->children,
                             expression->children_num);
   return make_lval_err("unknown token %s", token);

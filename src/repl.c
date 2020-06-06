@@ -1,10 +1,10 @@
 #include <editline/history.h>
 #include <editline/readline.h>
-#include <stdio.h>
 
 #include "env.h"
 #include "eval.h"
 #include "grammar.h"
+#include "io.h"
 #include "lval.h"
 #include "misc_fns.h"
 #include "print.h"
