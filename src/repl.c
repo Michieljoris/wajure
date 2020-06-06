@@ -18,10 +18,9 @@ void repl(Lenv* env) {
 
     mpc_result_t result;
     if (mpc_parse("<stdin>", input, Lispy, &result)) {
-      mpc_ast_t* t = result.output;
+      mpc_ast_t* mpc_ast = result.output;
 
-      Lval* expressions =
-          read_expressions(make_lval_list(), t->children, t->children_num);
+      Lval* expressions = read_list(make_lval_list(), mpc_ast);
       mpc_ast_delete(result.output);
       while (expressions->count) {
         Lval* expr = lval_pop(expressions, 0);

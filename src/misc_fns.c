@@ -58,16 +58,16 @@ Lval* eval_fn(Lenv* env, Lval* sexpr) {
   return lval_eval(env, sexpr);
 }
 
-Lval* print_env_fn(Lenv* e, Lval* sexpr) {
-  lenv_print(e);
+Lval* print_env_fn(Lenv* env, Lval* sexpr) {
+  lenv_print(env);
   lval_del(sexpr);
   return make_lval_list();
 }
 
 int exit_repl = 0;
 
-Lval* exit_fn(Lenv* e, Lval* sexpr) {
-  lval_del(sexpr);
+Lval* exit_fn(Lenv* e, Lval* arg_list) {
+  lval_del(arg_list);
   exit_repl = 1;
   return make_lval_list();
 }
@@ -117,68 +117,65 @@ Lval* exit_fn(Lenv* e, Lval* sexpr) {
 /*   return make_lval_list(); */
 /* } */
 
-Lval* load_fn(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "load");
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STRING, "load");
+Lval* load_fn(Lenv* env, Lval* arg_list) {
+  LASSERT_NODE_COUNT(arg_list, 1, "load");
+  LASSERT_NODE_SUBTYPE(arg_list, 0, STRING, "load");
 
   mpc_result_t result;
-  if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
+  if (mpc_parse_contents(arg_list->node[0]->str, Lispy, &result)) {
     /* printf("parsed again\n"); */
     /* mpc_ast_print(result.output); */
 
     /* parse contents into list of expressions */
-    mpc_ast_t* t = result.output;
+    mpc_ast_t* mpc_ast = result.output;
 
-    Lval* expressions =
-        read_expressions(make_lval_list(), t->children, t->children_num);
+    Lval* lval_list = read_list(make_lval_list(), mpc_ast);
     mpc_ast_delete(result.output);
+    /* lval_println(lval_list); */
 
     /* printf("exrp count:%d\n", expressions->count); */
-    while (expressions->count) {
-      Lval* expr = lval_pop(expressions, 0);
-      /* lval_println(expr); */
-      /* lval_del(expr); */
-
-      Lval* x = lval_eval(env, expr);
+    Cell* cell = lval_list->list;
+    while (cell) {
+      Lval* x = lval_eval(env, (Lval*)cell->car);
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }
-      lval_del(x);
+      cell = cell->cdr;
     }
-    lval_del(expressions);
-
-    printf("Loaded %s\n", sexpr_args->node[0]->str);
-    lval_del(sexpr_args);
+    printf("Loaded %s\n", arg_list->node[0]->str);
+    lval_del(lval_list);
     return make_lval_list();
   } else {
     char* err_msg = mpc_err_string(result.error);
     mpc_err_delete(result.error);
     Lval* err = make_lval_err("Couldn't load library %s", err_msg);
     free(err_msg);
-    lval_del(sexpr_args);
+    lval_del(arg_list);
     return err;
   }
 }
 
-Lval* print_fn(Lenv* env, Lval* sexpr_args) {
-  for (int i = 0; i < sexpr_args->count; ++i) {
-    lval_print(sexpr_args->node[i]);
+Lval* print_fn(Lenv* env, Lval* arg_list) {
+  Cell* cell = arg_list->list;
+  while (cell) {
+    lval_print(cell->car);
     _putchar(' ');
+    cell = cell->cdr;
   }
   _putchar('\n');
-  lval_del(sexpr_args);
-
+  lval_del(arg_list);
   return make_lval_list();
 }
 
-Lval* pr_fn(Lenv* env, Lval* sexpr_args) {
-  for (int i = 0; i < sexpr_args->count; ++i) {
-    lval_pr(sexpr_args->node[i]);
+Lval* pr_fn(Lenv* env, Lval* arg_list) {
+  Cell* cell = arg_list->list;
+  while (cell) {
+    lval_pr(cell->car);
     _putchar(' ');
+    cell = cell->cdr;
   }
   _putchar('\n');
-  lval_del(sexpr_args);
-
+  lval_del(arg_list);
   return make_lval_list();
 }
 

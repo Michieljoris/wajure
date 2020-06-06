@@ -39,7 +39,7 @@ void init_grammar() {
   mpca_lang(MPCA_LANG_DEFAULT,
             "                                    \
     number  : /-?[0-9]+/ ;                       \
-    symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=!&]+/ ; \
+    symbol  : /[<>a-zA-Z0-9_+\\-*\\/\\\\=!&]+/ ; \
     string  : /\"(\\\\.|[^\"])*\"/ ;             \
     quote   : /'/ ;                              \
     backquote   : /`/ ;                          \
@@ -49,7 +49,6 @@ void init_grammar() {
     list   : '(' <expr>* ')' ;                  \
     vector   : '[' <expr>* ']' ;                 \
     map     : '{' <expr>* '}' ;                  \
-    plist   : '<' <expr>* '>' ;                  \
     expr    : <number>  | <quote> | <symbol> | <string> | <tilde_at>    \
             | <comment> | <list>  | <vector> | <backquote> | <tilde> | <plist> ;    \
     lispy   : /^/ <expr>* /$/ ;                  \

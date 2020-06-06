@@ -8,6 +8,20 @@
     return err;                                    \
   }
 
+#define LASSERT_LIST_COUNT(lval_list, expected_count, fn_name) \
+  int __count = list_count(lval_list->list);                   \
+  LASSERT(lval_list, __count == expected_count,                \
+          "Function '%s' passed wrong number of args, "        \
+          "got %i, expected %i",                               \
+          fn_name, __count, expected_count);
+
+#define LASSERT_TYPE(lval_list, lval, expected_type, fn_name, index) \
+  LASSERT(lval_list, lval->type == expected_type,                    \
+          "Function '%s' passed incorrect type for arg %d, "         \
+          "got %s, expected %s",                                     \
+          fn_name, index, lval_type_to_name2(lval),                  \
+          lval_type_to_name(expected_type));
+
 #define LASSERT_NODE_COUNT(sexpr, expected_count, fn_name) \
   LASSERT(sexpr, sexpr->count == expected_count,           \
           "Function '%s' passed wrong number of args, "    \

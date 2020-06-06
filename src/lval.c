@@ -22,7 +22,7 @@ Lval* make_lval_list(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_COLLECTION;
   lval->subtype = LIST;
-  lval->cell = NULL;
+  lval->list = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -31,7 +31,7 @@ Lval* make_lval_vector(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_COLLECTION;
   lval->subtype = VECTOR;
-  lval->cell = NULL;
+  lval->list = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -40,7 +40,7 @@ Lval* make_lval_map(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_COLLECTION;
   lval->subtype = MAP;
-  lval->cell = NULL;
+  lval->list = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -199,7 +199,7 @@ void lval_del(Lval* lval) {
       free(lval->sym);
       break;
     case LVAL_COLLECTION:
-      list_free(lval->cell);
+      list_free(lval->list);
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
@@ -336,6 +336,6 @@ Lval* make_lval_plist() {
   lval->type = LVAL_COLLECTION;
   lval->subtype = PLIST;
   lval->tco_env = NULL;
-  lval->cell = NULL;
+  lval->list = NULL;
   return lval;
 }

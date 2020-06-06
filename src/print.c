@@ -7,8 +7,6 @@
 #include "lval.h"
 #include "mpc.h"
 
-static void lval_expr_print(Lval* v, char open, char close);
-
 /* void lval_print_str(Lval* v) { */
 /*   putchar('"'); */
 /*   /\* Loop over the characters in the string *\/ */
@@ -69,15 +67,15 @@ void lval_fun_print(Lval* lval) {
   }
 }
 
-void lval_plist_print(Lval* lval) {
-  _putchar('(');
-  Cell* cell = lval->cell;
+void lval_collection_print(Lval* lval, char open, char close) {
+  _putchar(open);
+  Cell* cell = lval->list;
   while (cell) {
     lval_print(cell->car);
     cell = cell->cdr;
     if (cell) _putchar(' ');
   }
-  _putchar(')');
+  _putchar(close);
 }
 
 void lval_print(Lval* lval) {
@@ -89,16 +87,13 @@ void lval_print(Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          lval_expr_print(lval, '(', ')');
+          lval_collection_print(lval, '(', ')');
           break;
         case MAP:
-          lval_expr_print(lval, '{', '}');
+          lval_collection_print(lval, '{', '}');
           break;
         case VECTOR:
-          lval_expr_print(lval, '[', ']');
-          break;
-        case PLIST:
-          lval_plist_print(lval);
+          lval_collection_print(lval, '[', ']');
           break;
         default:
           _printf("unknown lval subtype %s\n",
@@ -129,60 +124,11 @@ void lval_print(Lval* lval) {
 // TODO: this one prints without quotes. Make a proper pprint fn, and make
 // this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
-  /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
-  switch (lval->type) {
-    case LVAL_SYMBOL:
-      _printf("%s", lval->sym);
-      break;
-    case LVAL_COLLECTION:
-      switch (lval->subtype) {
-        case LIST:
-          lval_expr_print(lval, '(', ')');
-          break;
-        case MAP:
-          lval_expr_print(lval, '{', '}');
-          break;
-        case VECTOR:
-          lval_expr_print(lval, '[', ']');
-          break;
-        case PLIST:
-          lval_plist_print(lval);
-          break;
-        default:
-          _printf("unknown lval subtype %s\n",
-                  lval_type_to_name(lval->subtype));
-      }
-      break;
-    case LVAL_LITERAL:
-      switch (lval->subtype) {
-        case NUMBER:
-          _printf("%li", lval->num);
-          break;
-        case STRING:
-          lval_pr_str(lval);
-          break;
-      }
-    case LVAL_FUNCTION:
-      lval_fun_print(lval);
-      break;
-    case LVAL_ERR:
-      _printf("Error: %s", lval->err);
-      break;
-    default:
-      _printf("unknown lval type %d, %s\n", lval->type,
-              lval_type_to_name(lval->type));
+  if (lval->type == STRING) {
+    lval_pr_str(lval);
+    return;
   }
-}
-
-static void lval_expr_print(Lval* v, char open, char close) {
-  _putchar(open);
-  for (int i = 0; i < v->count; i++) {
-    lval_print(v->node[i]);
-    if (i != (v->count - 1)) {
-      _putchar(' ');
-    }
-  }
-  _putchar(close);
+  lval_print(lval);
 }
 
 void lval_println(Lval* v) {

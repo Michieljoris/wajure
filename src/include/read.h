@@ -4,8 +4,6 @@
 #include "lval.h"
 #include "mpc.h"
 
-/* Lval* lval_read(mpc_ast_t* t); */
-Lval* read_expressions(Lval* lval, mpc_ast_t* expressions[],
-                       int expression_count);
+Lval* read_list(Lval* list, mpc_ast_t* expression);
 
 #endif  // __READ_H_

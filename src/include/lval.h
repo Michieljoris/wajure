@@ -34,7 +34,7 @@ struct lval {
   Lval** node;
   Lenv* tco_env;
 
-  Cell* cell;
+  Cell* list;
 };
 
 struct lenv {

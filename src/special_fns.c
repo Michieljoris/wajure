@@ -9,15 +9,15 @@
 #include "lval.h"
 #include "print.h"
 
-Lval* eval_quote(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "quote");
-  return lval_take(sexpr_args, 0);
+Lval* eval_quote(Lenv* env, Lval* arg_list) {
+  LASSERT_LIST_COUNT(arg_list, 1, "quote");
+  return arg_list->list->car;
 }
 
-Lval* eval_def(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 2, "def");
-  LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_SYMBOL, "def");
-  Lval* lval_sym = sexpr_args->node[0];
+Lval* eval_def(Lenv* env, Lval* arg_list) {
+  LASSERT_LIST_COUNT(arg_list, 2, "def");
+  Lval* lval_sym = list_first(arg_list->list);
+  LASSERT_TYPE(arg_list, lval_sym, LVAL_SYMBOL, "def", 0);
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
     printf(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
@@ -25,18 +25,18 @@ Lval* eval_def(Lenv* env, Lval* sexpr_args) {
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
   }
 
-  Lval* lval = lval_pop(sexpr_args, 1);
+  Lval* lval = list_first(list_rest(arg_list->list));
 
   /* lval_println(lval); */
   lval = lval_eval(env, lval);
 
   /* lval_println(lval); */
   if (lval->type == LVAL_ERR) {
-    lval_del(sexpr_args);
+    lval_del(arg_list);
     return lval;
   }
   lenv_put(env, lval_sym, lval);
-  lval_del(sexpr_args);
+  lval_del(arg_list);
   return make_lval_list();
 }
 
@@ -373,17 +373,17 @@ Lval* eval_let(Lenv* env, Lval* sexpr_args) {
 }
 
 /* Not really a special form */
-Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
-  LASSERT(sexpr_args, sexpr_args->count >= 1, "Error: throw needs a message");
-  sexpr_args = eval_nodes(env, sexpr_args, sexpr_args->count);
-  if (sexpr_args->type == LVAL_ERR) {
-    lval_del(sexpr_args);
-    return sexpr_args;
+Lval* eval_throw(Lenv* env, Lval* arg_list) {
+  LASSERT(arg_list, arg_list->count >= 1, "Error: throw needs a message");
+  arg_list = eval_nodes(env, arg_list);
+  if (arg_list->type == LVAL_ERR) {
+    lval_del(arg_list);
+    return arg_list;
   }
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STRING, "throw");
-  char* msg = sexpr_args->node[0]->str;
+  LASSERT_NODE_SUBTYPE(arg_list, 0, STRING, "throw");
+  char* msg = arg_list->node[0]->str;
   Lval* lval_exc = make_lval_exception(msg);
-  lval_del(sexpr_args);
+  lval_del(arg_list);
   return lval_exc;
 }
 
