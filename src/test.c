@@ -7,26 +7,26 @@
 #include "plist_fns.h"
 
 void test_mempool() {
-  Mempool* mp = create_mempool(4, 2, MEMPOOL_AUTO_RESIZE);
+  /* Mempool* mp = create_mempool(4, 2, MEMPOOL_AUTO_RESIZE); */
 
-  int* d1 = mempool_alloc(mp);
-  *d1 = 111;
-  printf("%d\n", *d1);
+  /* int* d1 = mempool_alloc(mp); */
+  /* *d1 = 111; */
+  /* printf("%d\n", *d1); */
 
-  int* d2 = mempool_alloc(mp);
-  *d2 = 222;
-  printf("%d\n", *d2);
+  /* int* d2 = mempool_alloc(mp); */
+  /* *d2 = 222; */
+  /* printf("%d\n", *d2); */
 
-  mempool_debug(mp);
-  /* memory_pool_free(mp, d2); */
+  /* mempool_debug(mp); */
+  /* /\* memory_pool_free(mp, d2); *\/ */
 
-  /* memory_pool_debug(mp); */
+  /* /\* memory_pool_debug(mp); *\/ */
 
-  int* d3 = mempool_alloc(mp);
-  *d3 = 333;
-  printf("%d\n", *d3);
+  /* int* d3 = mempool_alloc(mp); */
+  /* *d3 = 333; */
+  /* printf("%d\n", *d3); */
 
-  printf("Done");
+  /* printf("Done"); */
 }
 
 void test_plist() {

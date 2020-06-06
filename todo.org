@@ -6,14 +6,20 @@ Then there's less work for the compiler.
 - Can't use nodes for collections since the node field needs reallocing. Can't do that with fixed pool memory
 So we must use lists for those. Perhaps we can use hamt and pvector if we need maps and vectors.
 - We want lispy lists persistent.
+- If we don't copy lvals from env they'll have to be immutable.
+- when env is created it should be a snapshot. Any modifications to it shouldn't affect any closures already bound.
+  ->> so they have to be immutable as well.
 -
-- ? Should env be a palist? Instead of just an alist? So persistent?
+- ? Should env be a palist? Instead of just an alist? So persistent? Well, persistent, see last point
     in other words, when setting values in the env do we overwrite if existing? Or treat the env as persistent.
 - ? When do we throw environments away?
+  We throw closures, not envs away when the fn that uses is goes out of scope!!!
   When does env get created?
   -> on let (the local bindings)
   -> when evaluating lambda (the param bindings)
   -> in catch
+- >>>>>>> So all should be persistent (or copied over) and big Q remains: when do we release lvals???
+
 ** reference counting
 ** TCO -> work out freeing tco_env for it!!!!!!
 - eval_lambda_call

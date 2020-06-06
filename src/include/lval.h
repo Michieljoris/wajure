@@ -27,6 +27,7 @@ struct lval {
   lbuiltin fun;
   Lenv* bindings;
   Lval* formals;
+  /* Cell* formals; */  //????
   Lval* body;
 
   /* list of lval */

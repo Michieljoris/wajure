@@ -62,8 +62,7 @@ Lval* make_lval_sexpr(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = LIST;
-  lval->count = 0;
-  lval->node = NULL;
+  lval->cell = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -72,8 +71,7 @@ Lval* make_lval_vector(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = VECTOR;
-  lval->count = 0;
-  lval->node = NULL;
+  lval->cell = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -82,8 +80,7 @@ Lval* make_lval_map(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_SEQ;
   lval->subtype = MAP;
-  lval->count = 0;
-  lval->node = NULL;
+  lval->cell = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -91,8 +88,7 @@ Lval* make_lval_map(void) {
 Lval* make_lval_quote(void) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_QUOTE;
-  lval->count = 0;
-  lval->node = NULL;
+  lval->cell = NULL;
   lval->tco_env = NULL;
   return lval;
 }
@@ -202,10 +198,7 @@ void lval_del(Lval* lval) {
       free(lval->err);
       break;
     case LVAL_SEQ:
-      for (int i = 0; i < lval->count; i++) {
-        lval_del(lval->node[i]);
-      }
-      free(lval->node);
+      list_free(lval->cell);
       break;
     case LVAL_FUN:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
@@ -218,6 +211,7 @@ void lval_del(Lval* lval) {
       break;
     case PLIST:
       printf("how to delete a plist??\n");
+      list_free(lval->cell);
       /* just free the point pointer I'd say, but then do reference counting to
        * free any cdr */
       break;

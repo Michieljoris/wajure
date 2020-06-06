@@ -4,7 +4,7 @@
 #include "mempool.h"
 
 enum { LVAL, LENV, CELL };
-char* cell_types[] = {"LVAL", "LENV", "CELL"};
+char* slot_types[3];
 
 Mempool* lval_mempool;
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count);

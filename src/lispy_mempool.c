@@ -10,8 +10,10 @@
 
 Mempool** mempools;
 
+char* slot_types[] = {"LVAL", "LENV", "CELL"};
+
 void lispy_mempool_log(int type, char* msg) {
-  printf("%s %s", cell_types[type], msg);
+  printf("%s %s", slot_types[type], msg);
 }
 
 #define MEMPOOL_LOG(TYPE, type)             \
