@@ -52,10 +52,10 @@ Lval* eval_if(Lenv* env, Lval* sexpr_args) {
     lval_del(sexpr_args);
     return cond;
   }
-  if (cond->subtype != NUM) {
+  if (cond->subtype != NUMBER) {
     Lval* lval_err =
         make_lval_err("if passed incorrect type for cond, got %s, expected %s",
-                      lval_type_to_name2(cond), lval_type_to_name(NUM));
+                      lval_type_to_name2(cond), lval_type_to_name(NUMBER));
     lval_del(cond);
     lval_del(sexpr_args);
     return lval_err;
@@ -382,7 +382,7 @@ Lval* eval_throw(Lenv* env, Lval* sexpr_args) {
     lval_del(sexpr_args);
     return sexpr_args;
   }
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STR, "throw");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STRING, "throw");
   char* msg = sexpr_args->node[0]->str;
   Lval* lval_exc = make_lval_exception(msg);
   lval_del(sexpr_args);

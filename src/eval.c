@@ -167,7 +167,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
   Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
   /* printf("Original lval_fun: "); */
   /* lval_println(lval_fun); */
-  /* printf */ ("Expanded macro:\n");
+  /* printf  ("Expanded macro:\n"); */
   /* lval_println(expanded_macro); */
 
   // After the macro is expanded they close over the environment where they are

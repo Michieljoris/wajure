@@ -9,7 +9,7 @@
 
 static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
   for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->node[i]->subtype != NUM) {
+    if (sexpr->node[i]->subtype != NUMBER) {
       lval_del(sexpr);
       return make_lval_err("Expected number but got %s",
                            lval_type_to_name2(sexpr->node[0]));
@@ -56,8 +56,8 @@ Lval* div_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "/", sexpr); }
 #define MATH_FN(fn_name, operator_str, operator)                     \
   Lval* fn_name(Lenv* env, Lval* sexpr_args) {                       \
     LASSERT_NODE_COUNT(sexpr_args, 2, operator_str);                 \
-    LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUM, operator_str);          \
-    LASSERT_NODE_SUBTYPE(sexpr_args, 1, NUM, operator_str);          \
+    LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUMBER, operator_str);       \
+    LASSERT_NODE_SUBTYPE(sexpr_args, 1, NUMBER, operator_str);       \
     Lval* num = make_lval_num(                                       \
         sexpr_args->node[0]->num operator sexpr_args->node[1]->num); \
     lval_del(sexpr_args);                                            \
@@ -88,9 +88,9 @@ int lval_eq(Lval* x, Lval* y) {
       }
       return 1;
     case LVAL_LITERAL: {
-      case NUM:
+      case NUMBER:
         return (x->num == y->num);
-      case STR:
+      case STRING:
         return (strcmp(x->str, y->str) == 0);
       default:
         printf("Warning: comparing instances of type '%s' is not implemented\n",

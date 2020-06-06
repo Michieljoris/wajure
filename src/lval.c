@@ -54,7 +54,7 @@ Lval* make_lval_map(void) {
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_LITERAL;
-  lval->subtype = NUM;
+  lval->subtype = NUMBER;
   lval->num = x;
   lval->tco_env = NULL;
   return lval;
@@ -63,7 +63,7 @@ Lval* make_lval_num(long x) {
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_LITERAL;
-  lval->subtype = STR;
+  lval->subtype = STRING;
   lval->str = calloc(1, strlen(s) + 1);
   strcpy(lval->str, s);
   lval->tco_env = NULL;
@@ -142,9 +142,9 @@ char* lval_type_to_name2(Lval* lval) {
       }
     case LVAL_LITERAL:
       switch (lval->subtype) {
-        case NUM:
+        case NUMBER:
           return "Number";
-        case STR:
+        case STRING:
           return "String";
       }
     case LVAL_FUNCTION:
@@ -169,7 +169,7 @@ char* lval_type_to_name(int t) {
   switch (t) {
     case LVAL_LITERAL:
       return "Literal";
-    case NUM:
+    case NUMBER:
       return "Number";
     case LVAL_SYMBOL:
       return "Symbol";
@@ -179,7 +179,7 @@ char* lval_type_to_name(int t) {
       return "Error";
     case LVAL_FUNCTION:
       return "Function";
-    case STR:
+    case STRING:
       return "String";
     case LIST:
       return "List";
@@ -207,9 +207,9 @@ void lval_del(Lval* lval) {
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
-        case NUM:
+        case NUMBER:
           break;
-        case STR:
+        case STRING:
           free(lval->str);
           break;
         default:
@@ -258,10 +258,10 @@ Lval* make_lval_copy(Lval* lval) {
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
-        case NUM:
+        case NUMBER:
           x->num = lval->num;
           break;
-        case STR:
+        case STRING:
           x->str = calloc(1, strlen(lval->str) + 1);
           strcpy(x->str, lval->str);
           break;

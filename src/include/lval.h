@@ -51,8 +51,8 @@ enum {
   LVAL_FUNCTION,
   LVAL_ERR,
   /* subtypes */
-  NUM,
-  STR,
+  NUMBER,
+  STRING,
   SYS,
   MACRO,
   SPECIAL,

@@ -94,10 +94,10 @@ void lval_print(Lval* lval) {
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
-        case NUM:
+        case NUMBER:
           _printf("%li", lval->num);
           break;
-        case STR:
+        case STRING:
           lval_print_str(lval);
           break;
       }
@@ -142,10 +142,10 @@ void lval_pr(Lval* lval) {
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
-        case NUM:
+        case NUMBER:
           _printf("%li", lval->num);
           break;
-        case STR:
+        case STRING:
           lval_pr_str(lval);
           break;
       }

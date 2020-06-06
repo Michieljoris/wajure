@@ -74,7 +74,7 @@ Lval* exit_fn(Lenv* e, Lval* sexpr) {
 
 Lval* load_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 1, "load");
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STR, "load");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, STRING, "load");
 
   mpc_result_t result;
   if (mpc_parse_contents(sexpr_args->node[0]->str, Lispy, &result)) {
@@ -138,7 +138,7 @@ Lval* pr_fn(Lenv* env, Lval* sexpr_args) {
 
 Lval* debug_fn(Lenv* env, Lval* sexpr_args) {
   LASSERT_NODE_COUNT(sexpr_args, 1, "debug");
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUM, "debug");
+  LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUMBER, "debug");
   Lval* lval_num = lval_pop(sexpr_args, 0);
   int num = lval_num->num;
   printf("debug = %il\n", num);
