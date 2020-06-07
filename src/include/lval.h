@@ -78,13 +78,9 @@ Lval* make_lval_exception(char* msg);
 char* lval_type_to_name(int t);
 char* lval_type_to_name2(Lval* lval);
 
-Lval* lval_add_child(Lval* v, Lval* x);
 void lval_del(Lval* v);
 Lval* make_lval_copy(Lval* v);
 Lval* lval_pop(Lval* v, int i);
-Lval* lval_take(Lval* v, int i);
-
-Lval* lval_concat(Lval* x, Lval* y);
 
 Cell* make_cell();
 

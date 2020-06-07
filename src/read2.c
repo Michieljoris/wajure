@@ -167,7 +167,7 @@ Lval* lval_read_expr(char* s, int* i, char end) {
       lval_del(x);
       return y;
     } else {
-      lval_add_child(x, y);
+      /* lval_add_child(x, y); */
     }
   }
 

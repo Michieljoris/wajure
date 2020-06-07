@@ -294,36 +294,12 @@ Lval* make_lval_copy(Lval* lval) {
   return x;
 }
 
-Lval* lval_add_child(Lval* lval, Lval* x) {
-  lval->count++;
-  lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
-  lval->node[lval->count - 1] = x;
-  return lval;
-}
-
 Lval* lval_pop(Lval* lval, int i) {
   Lval* x = lval->node[i];
   _memmove(&lval->node[i], &lval->node[i + 1],
            sizeof(Lval*) * (lval->count - i - 1));
   lval->count--;
   lval->node = realloc(lval->node, sizeof(Lval*) * lval->count);
-  return x;
-}
-
-Lval* lval_take(Lval* v, int i) {
-  Lval* x = lval_pop(v, i);
-  lval_del(v);
-  return x;
-}
-
-Lval* lval_concat(Lval* x, Lval* y) {
-  /* For each cell in 'y' add it to 'x' */
-  while (y->count) {
-    x = lval_add_child(x, lval_pop(y, 0));
-  }
-
-  /* Delete the empty 'y' and return 'x' */
-  lval_del(y);
   return x;
 }
 

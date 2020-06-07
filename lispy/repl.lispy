@@ -14,7 +14,18 @@
 (print (first '(2 3)))
 (print (rest '()))
 (print (list '() 1 2 'a))
-(print (concat '(1 )))
+(print (concat '(1 ) '(2 3)))
+
+
+;; (print (try (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2")))
+(try
+  (print "before")
+  (throw "e1")
+  (print "after")
+  (catch E e
+    (print e)
+    ;; (throw "e2")
+    ))
 
 ;; (print (eval 1))
 ;; (print `~@(print 1))

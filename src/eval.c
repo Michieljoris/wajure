@@ -114,7 +114,7 @@ Lval* eval_body(Lenv* bindings, Lval* list, int with_tco) {
   Lval* ret = NULL;
 
   /* Eval all exprs of body but the last one (if with_tco is true)*/
-  while (list->count > 1) {
+  while (list_count(list->list) > 1) {
     ret = lval_eval(bindings, lval_pop(list, 0));
     if (ret->type == LVAL_ERR) break;
 
