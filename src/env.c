@@ -44,8 +44,7 @@ Lval* lenv_get(Lenv* env, Lval* lval_sym) {
   /* lenv_print(env); */
   /* printf("Resolved:"); */
   /* lval_println(ret); */
-  return ret ? make_lval_copy(ret)
-             : make_lval_err("unbound symbol '%s'", lval_sym->sym);
+  return ret ? ret : make_lval_err("unbound symbol '%s'", lval_sym->sym);
 }
 
 Lenv* get_root_env(Lenv* env) {

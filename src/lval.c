@@ -81,13 +81,13 @@ Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
 }
 
 // LAMBDA and MACRO
-Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype) {
+Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   Lval* lval = lalloc(LVAL);
   lval->type = LVAL_FUNCTION;
   lval->subtype = subtype;
   lval->bindings = lenv_new();
   lval->bindings->parent_env = env;
-  lval->params = formals;
+  lval->params = params;
   lval->body = body;
   lval->tco_env = NULL;
   return lval;
@@ -232,8 +232,8 @@ void lval_del(Lval* lval) {
 
 Lval* make_lval_copy(Lval* lval) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == PLIST) return lval;
-  /* printf("make_lval_copy: "); */
-  /* lval_println(lval); */
+  printf("make_lval_copy:\n");
+  lval_println(lval);
   /* printf("lval type and subtye %d %d\n", lval->type, lval->subtype); */
   Lval* x = lalloc(LVAL);
   x->type = lval->type;
@@ -338,4 +338,23 @@ Lval* make_lval_plist() {
   lval->tco_env = NULL;
   lval->list = NULL;
   return lval;
+}
+
+Cell* iter = NULL;
+
+void init_iter() { iter = make_cell(); }
+void cleanup_iter() { lfree(CELL, iter); }
+
+Cell* iter_new(Lval* lval_list) {
+  Cell* cell = make_cell();
+  cell->car = lval_list->list;
+  return cell;
+}
+
+Lval* iter_next(Cell* iterator) {
+  if (!iterator->car) return NIL;
+  Cell* p = iterator->car;
+  Lval* next_lval = p->car;
+  iterator->car = p->cdr;
+  return next_lval;
 }

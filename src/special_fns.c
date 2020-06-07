@@ -5,95 +5,176 @@
 #include "eval.h"
 #include "io.h"
 #include "lib.h"
+#include "lispy_mempool.h"
 #include "list_fns.h"
 #include "lval.h"
 #include "print.h"
 
+#define LASSERT_LIST_COUNT2(fn_name, arg_list, min_count, max_count, arg) \
+  if (!arg) {                                                             \
+    int __count = list_count(arg_list->list);                             \
+    return make_lval_err(                                                 \
+        "Function '%s' passed wrong number of args, "                     \
+        "got %i, expected %i",                                            \
+        _fn_name, __count, _min_count);                                   \
+  }
+
+#define ITER_NEW_MIN_MAX(fn_name, min_count, max_count)          \
+  char* _fn_name = fn_name;                                      \
+  int _min_count = min_count;                                    \
+  int _max_count = max_count;                                    \
+  int _expected_count = min_count == max_count ? min_count : -1; \
+  Cell* i = iter_new(arg_list);                                  \
+  int _index = 0;                                                \
+  Lval* arg = NIL;
+
+#define ITER_NEW(fn_name) ITER_NEW_MIN_MAX(fn_name, -1, 1);
+#define ITER_NEW_N(fn_name, n) ITER_NEW_MIN_MAX(fn_name, n, n);
+#define ITER_NEW_MIN(fn_name, min_count) \
+  ITER_NEW_MIN_MAX(fn_name, min_count, -1);
+
+#define LASSERT_TYPE2(fn_name, arg_list, index, expected_type, \
+                      expected_subtype, lval)                  \
+  LASSERT(arg_list,                                            \
+          lval->type == expected_type &&                       \
+              lval->subtype == (long int)expected_subtype,     \
+          "Function '%s' passed incorrect type for arg %d, "   \
+          "got %s, expected %s",                               \
+          fn_name, index, lval_type_to_name2(lval),            \
+          lval_type_to_name(expected_type));
+
+Lval* next_arg(int do_expect, Cell* i, char* _fn_name, int _min_count,
+               int _max_count, int _expected_count, int* _index,
+               Lval* arg_list) {
+  if (!i) return NIL;
+  Lval* arg = iter_next(i);
+  if (do_expect) {
+    if (!arg) {
+      int _count = list_count(arg_list->list);
+      if (_expected_count >= 0 && *_index < _expected_count) {
+        return make_lval_err(
+            "function '%s' passed wrong number of args, "
+            "got %i, expected %i",
+            _fn_name, _count, _expected_count);
+      }
+      if (_min_count >= 0 && *_index < _min_count) {
+        int _count = list_count(arg_list->list);
+        return make_lval_err(
+            "function '%s' passed wrong number of args, "
+            "got %i, expected at least %i",
+            _fn_name, _count, _min_count);
+      }
+    }
+    (*_index)++;
+    return arg;
+  } else {
+    if (arg) {
+      if (_expected_count >= 0 && *_index >= _expected_count) {
+        int _count = list_count(arg_list->list);
+        return make_lval_err(
+            "Function '%s' passed wrong number of args, "
+            "got %i, expected %i",
+            _fn_name, _count, _expected_count);
+      }
+      if (_max_count >= 0 && *_index >= _max_count) {
+        int _count = list_count(arg_list->list);
+        return make_lval_err(
+            "Function '%s' passed wrong number of args, "
+            "got %i, expected between %i and %i",
+            _fn_name, _count, _min_count, _max_count);
+      }
+    }
+    return NIL;
+  }
+}
+
+#define ITER_NEXT()                                                       \
+  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count, \
+                 &_index, arg_list);                                      \
+  if (arg && arg->type == LVAL_ERR) return arg;
+
+#define ITER_NEXT_TYPE(expected_type, expected_subtype)                      \
+  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count,    \
+                 &_index, arg_list);                                         \
+  if (arg->type == LVAL_ERR) return arg;                                     \
+  LASSERT_TYPE2(_fn_name, arg_list, _index, expected_type, expected_subtype, \
+                arg);
+
+#define ITER_END()                                                        \
+  arg = next_arg(0, i, _fn_name, _min_count, _max_count, _expected_count, \
+                 &_index, arg_list);                                      \
+  if (arg) return arg; /*error */
+
 Lval* eval_quote(Lenv* env, Lval* arg_list) {
-  LASSERT_LIST_COUNT(arg_list, 1, "quote");
-  return arg_list->list->car;
+  ITER_NEW_N("quote", 1);
+  ITER_NEXT();
+  Lval* ret = arg;
+  ITER_END();
+  return ret;
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
-  LASSERT_LIST_COUNT(arg_list, 2, "def");
-  Lval* lval_sym = list_first(arg_list->list);
-  LASSERT_TYPE(arg_list, lval_sym, LVAL_SYMBOL, "def", 0);
+  ITER_NEW_N("def", 2);
+  ITER_NEXT_TYPE(LVAL_SYMBOL, NIL);
+  Lval* lval_sym = arg;
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
     printf(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
         "being replaced by: #'user/%s",
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
   }
-
-  Lval* lval = list_first(list_rest(arg_list->list));
-
-  /* lval_println(lval); */
+  ITER_NEXT();
+  Lval* lval = arg;
+  ITER_END();
   lval = lval_eval(env, lval);
-
-  /* lval_println(lval); */
-  if (lval->type == LVAL_ERR) {
-    lval_del(arg_list);
-    return lval;
-  }
+  if (lval->type == LVAL_ERR) return lval;
   lenv_put(env, lval_sym, lval);
   lval_del(arg_list);
   return make_lval_list();
 }
 
-Lval* eval_if(Lenv* env, Lval* sexpr_args) {
-  LASSERT(sexpr_args, sexpr_args->count == 2 || sexpr_args->count == 3,
-          "Expecting either 2 or 3 arguments to if, got %d", sexpr_args->count);
-  /* COND */
-  Lval* cond = lval_pop(sexpr_args, 0);
-  cond = lval_eval(env, cond);
-  if (cond->type == LVAL_ERR) {
-    lval_del(sexpr_args);
-    return cond;
-  }
-  if (cond->subtype != NUMBER) {
-    Lval* lval_err =
-        make_lval_err("if passed incorrect type for cond, got %s, expected %s",
-                      lval_type_to_name2(cond), lval_type_to_name(NUMBER));
-    lval_del(cond);
-    lval_del(sexpr_args);
-    return lval_err;
-  }
+Lval* eval_if(Lenv* env, Lval* arg_list) {
+  ITER_NEW_MIN_MAX("if", 2, 3);
+  ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER);
+  Lval* cond = lval_eval(env, arg);
+  if (cond->type == LVAL_ERR) return cond;
   Lval* ret = NULL;
-  if (cond->num) {
-    /* TRUE */
-    Lval* body_true = lval_pop(sexpr_args, 0);
-    body_true->tco_env = env;
-    ret = body_true;
-  } else {
-    /* FALSE  */
-    if (sexpr_args->count == 2) {
-      Lval* body_false = lval_pop(sexpr_args, 1);
-      body_false->tco_env = env;
-      ret = body_false;
-    }
+  if (cond->num) { /* TRUE */
+    ITER_NEXT();
+    ret = arg;
+    ITER_NEXT();
+  } else { /* FALSE  */
+    ITER_NEXT();
+    ITER_NEXT();
+    ret = arg;
   }
-  lval_del(sexpr_args);
-  return ret ? ret : make_lval_list();
-  /* return ret ? lval_eval(env, ret) : make_lval_sexpr(); */
+  ITER_END();
+  if (ret) {
+    ret->tco_env = env;
+    return ret;
+  }
+  return make_lval_list();
 }
 
-Lval* eval_lambda_form(Lenv* env, Lval* sexpr_args, int subtype) {
-  LASSERT(sexpr_args, sexpr_args->count >= 1,
-          "Error: function needs at least a parameter vector")
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, VECTOR, "fn");
+Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
+  ITER_NEW_MIN("fn", 1)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
+  Lval* lval_params = arg;
 
-  for (int i = 0; i < sexpr_args->node[0]->count; ++i) {
-    LASSERT(sexpr_args, sexpr_args->node[0]->node[i]->type == LVAL_SYMBOL,
+  Cell* param = arg->list;
+  while (param) {
+    LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name2(sexpr_args->node[0]->node[i]),
-            lval_type_to_name(LVAL_SYMBOL));
+            lval_type_to_name2(param->car), lval_type_to_name(LVAL_SYMBOL));
+    param = param->cdr;
   }
 
-  Lval* formals = lval_pop(sexpr_args, 0);
-
-  // Creates lambda lval and sets the parent_env of its env field (bindings) to
-  // the passed in env
-  return make_lval_lambda(env, formals, sexpr_args, subtype);
+  // Creates lambda lval and sets the parent_env of its env field (bindings)
+  // to the passed in env
+  Lval* lval_body = make_lval_list();
+  lval_body->list = list_rest(arg_list->list);
+  Lval* fn = make_lval_lambda(env, lval_params, lval_body, subtype);
+  return fn;
 }
 
 Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
@@ -108,7 +189,8 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   return lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-         lval->count >= min_node_count && lval->node[0]->type == LVAL_SYMBOL &&
+         list_count(lval->list) >= min_node_count &&
+         lval->node[0]->type == LVAL_SYMBOL &&
          _strcmp(lval->node[0]->sym, sym) == 0;
 }
 
@@ -190,11 +272,11 @@ Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
             ret = eval_unquote(env, arg);
             break;
           }
-          LASSERT(
-              sexpr_args, !is_fn_call(arg, "splice-unquote", 2),
-              "Trying to splice unquote a %s. Can only use splice unquote in a "
-              "quasiquoted list",
-              lval_type_to_name2(arg->node[1]));
+          LASSERT(sexpr_args, !is_fn_call(arg, "splice-unquote", 2),
+                  "Trying to splice unquote a %s. Can only use splice "
+                  "unquote in a "
+                  "quasiquoted list",
+                  lval_type_to_name2(arg->node[1]));
 
           ret = eval_quasiquote_nodes(env, arg);
           break;
@@ -321,7 +403,8 @@ Lval* eval_try(Lenv* env, Lval* sexpr_args) {
         }
         lval_del(sexpr_args);
         return make_lval_err(
-            "Only catch or finally clause can follow catch in try expression");
+            "Only catch or finally clause can follow catch in try "
+            "expression");
       case FINALLY:
         /* printf("in FINALLy\n"); */
         lval_del(sexpr_args);

@@ -1,5 +1,11 @@
-;; (def a 1 2)
-(print (quote (a b c)))
+(def a 1)
+(print a)
+(print (quote a))
+(print (if 0 1))
+(def f (fn [x] x))
+(print f)
+;; (print (if 0 2 3))
+
 ;; (print (quote (+ 1 2 3 4)))
 
 ;; (print (+))

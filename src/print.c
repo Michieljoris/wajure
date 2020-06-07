@@ -38,6 +38,17 @@ void lval_pr_str(Lval* lval) {
   free(escaped);
 }
 
+void lval_collection_print(Lval* lval, char open, char close) {
+  if (open) _putchar(open);
+  Cell* cell = lval->list;
+  while (cell) {
+    lval_print(cell->car);
+    cell = cell->cdr;
+    if (cell) _putchar(' ');
+  }
+  if (close) _putchar(close);
+}
+
 void lval_fun_print(Lval* lval) {
   switch (lval->subtype) {
     case SYS:
@@ -47,9 +58,7 @@ void lval_fun_print(Lval* lval) {
       _printf("(fn ");
       lval_print(lval->params);
       _putchar(' ');
-      for (int i = 0; i < lval->body->count; i++) {
-        lval_print(lval->body->node[i]);
-      }
+      lval_collection_print(lval->body, 0, 0);
       _putchar(')');
       break;
     case MACRO:
@@ -65,17 +74,6 @@ void lval_fun_print(Lval* lval) {
       _printf("<function %s>", lval->func_name);
       break;
   }
-}
-
-void lval_collection_print(Lval* lval, char open, char close) {
-  _putchar(open);
-  Cell* cell = lval->list;
-  while (cell) {
-    lval_print(cell->car);
-    cell = cell->cdr;
-    if (cell) _putchar(' ');
-  }
-  _putchar(close);
 }
 
 void lval_print(Lval* lval) {
