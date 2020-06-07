@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "eval.h"
 #include "grammar.h"
+#include "iter.h"
 #include "lval.h"
 #include "mpc.h"
 #include "print.h"
@@ -15,18 +16,21 @@ int is_lval_type(Lval* lval, int type, int subtype) {
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
-  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && lval->count > 0 &&
-      lval->node[0]->type == LVAL_SYMBOL) {
+  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && list_count(lval->list) > 0 &&
+      ((Lval*)(lval->list->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
-    Lval* lval_fun = lenv_get(env, lval->node[0]);
+    Lval* lval_fun = lenv_get(env, lval->list->car);
 
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
-      lval_del(lval_pop(lval, 0)); /* discard the symbol */
-
+      Lval* arg_list = make_lval_list();
+      arg_list->list = lval->list->cdr;
       /* Bind the macro with its args */
-      Lval* bound_macro = eval_lambda_call(lval_fun, lval, WITHOUT_TCO);
-
+      Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
+      // release fun and args
+      if (bound_macro->type == LVAL_ERR) {
+        return bound_macro;
+      }
       /* Recursively expand  */
       if (do_recurse) {
         return macroexpand(env, bound_macro, do_recurse);
@@ -38,29 +42,33 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   return lval;
 }
 
-Lval* macroexpand_1_fn(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "macroexpand");
-  Lval* lval = lval_take(sexpr_args, 0);
+Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("macroexpand-1", 1)
+  ITER_NEXT
+  Lval* lval = arg;
+  ITER_END
   return macroexpand(env, lval, 0);
 }
 
-Lval* macroexpand_fn(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "macroexpand");
-  Lval* lval = lval_take(sexpr_args, 0);
+Lval* macroexpand_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("macroexpand", 1)
+  ITER_NEXT
+  Lval* lval = arg;
+  ITER_END
   return macroexpand(env, lval, 1);
 }
 
-Lval* eval_fn(Lenv* env, Lval* sexpr) {
-  LASSERT_NODE_COUNT(sexpr, 1, "eval");
-  /* LASSERT_NODE_TYPE(sexpr, 0, LVAL_SEQ, "eval"); */
-  /* LASSERT_NODE_SUBTYPE(sexpr, 0, LIST, "eval"); */
-  sexpr = lval_take(sexpr, 0);
-  return lval_eval(env, sexpr);
+Lval* eval_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("eval", 1)
+  ITER_NEXT
+  Lval* lval = arg;
+  ITER_END
+  return lval_eval(env, lval);
 }
 
-Lval* print_env_fn(Lenv* env, Lval* sexpr) {
+Lval* print_env_fn(Lenv* env, Lval* arg_list) {
   lenv_print(env);
-  lval_del(sexpr);
+  lval_del(arg_list);
   return make_lval_list();
 }
 
@@ -118,11 +126,13 @@ Lval* exit_fn(Lenv* e, Lval* arg_list) {
 /* } */
 
 Lval* load_fn(Lenv* env, Lval* arg_list) {
-  LASSERT_NODE_COUNT(arg_list, 1, "load");
-  LASSERT_NODE_SUBTYPE(arg_list, 0, STRING, "load");
+  ITER_NEW_N("load", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
 
   mpc_result_t result;
-  if (mpc_parse_contents(arg_list->node[0]->str, Lispy, &result)) {
+  Lval* lval_str = arg;
+  ITER_END
+  if (mpc_parse_contents(lval_str->str, Lispy, &result)) {
     /* printf("parsed again\n"); */
     /* mpc_ast_print(result.output); */
 
@@ -142,7 +152,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       }
       cell = cell->cdr;
     }
-    printf("Loaded %s\n", arg_list->node[0]->str);
+    printf("Loaded %s\n", lval_str->str);
     lval_del(lval_list);
     return make_lval_list();
   } else {
@@ -156,37 +166,41 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
-  Cell* cell = arg_list->list;
-  while (cell) {
-    lval_print(cell->car);
+  ITER_NEW("print")
+  ITER_NEXT
+  while (arg) {
+    lval_print(arg);
     _putchar(' ');
-    cell = cell->cdr;
+    ITER_NEXT
   }
+  ITER_END
   _putchar('\n');
   lval_del(arg_list);
   return make_lval_list();
 }
 
 Lval* pr_fn(Lenv* env, Lval* arg_list) {
-  Cell* cell = arg_list->list;
-  while (cell) {
-    lval_pr(cell->car);
+  ITER_NEW("print")
+  ITER_NEXT
+  while (arg) {
+    lval_pr(arg);
     _putchar(' ');
-    cell = cell->cdr;
+    ITER_NEXT
   }
+  ITER_END
   _putchar('\n');
   lval_del(arg_list);
   return make_lval_list();
 }
 
-Lval* debug_fn(Lenv* env, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "debug");
-  LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUMBER, "debug");
-  Lval* lval_num = lval_pop(sexpr_args, 0);
-  int num = lval_num->num;
+Lval* debug_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("debug", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
+  int num = arg->num;
+  ITER_END
   printf("debug = %il\n", num);
   set_debug_level((int)num);
-  lval_del(sexpr_args);
+  lval_del(arg_list);
   return make_lval_list();
 }
 
