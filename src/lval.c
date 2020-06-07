@@ -125,8 +125,6 @@ char* lval_type_to_name2(Lval* lval) {
       return "Symbol";
     case LVAL_COLLECTION:
       switch (lval->subtype) {
-        case PLIST:
-          return "Plist (seq)";
         case LIST:
           return "List (seq)";
         case VECTOR:
@@ -179,8 +177,6 @@ char* lval_type_to_name(int t) {
       return "String";
     case LIST:
       return "List";
-    case PLIST:
-      return "Plist";
     case VECTOR:
       return "Vector";
     case MAP:
@@ -231,7 +227,7 @@ void lval_del(Lval* lval) {
 }
 
 Lval* make_lval_copy(Lval* lval) {
-  if (lval->type == LVAL_COLLECTION && lval->subtype == PLIST) return lval;
+  if (lval->type == LVAL_COLLECTION) return lval;
   printf("make_lval_copy:\n");
   lval_println(lval);
   /* printf("lval type and subtye %d %d\n", lval->type, lval->subtype); */
@@ -329,15 +325,6 @@ Lval* lval_concat(Lval* x, Lval* y) {
   /* Delete the empty 'y' and return 'x' */
   lval_del(y);
   return x;
-}
-
-Lval* make_lval_plist() {
-  Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_COLLECTION;
-  lval->subtype = PLIST;
-  lval->tco_env = NULL;
-  lval->list = NULL;
-  return lval;
 }
 
 Cell* iter_new(Lval* lval_list) {

@@ -2,7 +2,6 @@
 #include "lispy_mempool.h"
 #include "lval.h"
 #include "mpc.h"
-#include "plist_fns.h"
 #include "print.h"
 
 typedef struct {

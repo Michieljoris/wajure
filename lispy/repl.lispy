@@ -10,6 +10,11 @@
 (print (< 1 1))
 (print (= '(1 (2 4)) '(1 (2 3))))
 (print (eval '(+ 1 1)))
+(print (cons 1 '(2 3)))
+(print (first '(2 3)))
+(print (rest '()))
+(print (list '() 1 2 'a))
+(print (concat '(1 )))
 
 ;; (print (eval 1))
 ;; (print `~@(print 1))

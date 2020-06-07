@@ -45,4 +45,8 @@ void free_lispy_mempools() {
 }
 
 void* lalloc(int type) { return mempool_alloc(mempools[type]); }
-void lfree(int type, void* slot) { return mempool_free(mempools[type], slot); }
+void lfree(int type, void* slot) {
+  /* printf("freeing %d\n", type); */
+  mempool_free(mempools[type], slot);
+  /* printf("done %d\n", type); */
+}

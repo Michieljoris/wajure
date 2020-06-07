@@ -92,10 +92,23 @@ Cell* list_cons(void* cons, Cell* list) {
   new_head->cdr = list;
   return new_head;
 }
-void* list_first(Cell* list) { return list->car; }
-Cell* list_rest(Cell* list) { return list->cdr; }
+void* list_first(Cell* list) {
+  if (list)
+    return list->car;
+  else
+    return list;
+}
+
+Cell* list_rest(Cell* list) {
+  if (list)
+    return list->cdr;
+  else
+    return list;
+}
+
 Cell* list_concat(Cell* list1, Cell* list2) {
   if (!list1) return list2;
+  if (!list2) return list2;
   Cell* tail = list_last(list1);
   tail->cdr = list2;
   return list1;

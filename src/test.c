@@ -2,7 +2,6 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
-#include "plist_fns.h"
 
 void test_mempool() {
   /* Mempool* mp = create_mempool(4, 2, MEMPOOL_AUTO_RESIZE); */

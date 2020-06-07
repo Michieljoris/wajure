@@ -59,9 +59,7 @@ enum {
   LIST,
   MAP,
   VECTOR,
-  USER,
-  PLIST
-
+  USER
 };
 
 Lval* make_lval_num(long x);
@@ -89,7 +87,6 @@ Lval* lval_take(Lval* v, int i);
 Lval* lval_concat(Lval* x, Lval* y);
 
 Cell* make_cell();
-Lval* make_lval_plist();
 
 Cell* iter_new(Lval* lval_list);
 Lval* iter_next(Cell* iterator);
