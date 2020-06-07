@@ -1,6 +1,13 @@
 #include "io.h"
 #include "lispy_mempool.h"
 
+Cell* list_new() { return make_cell(); }
+
+void list_free(Cell* cell) {
+  // Ref counting should get rid of rest of list
+  lfree(CELL, cell);
+}
+
 Cell* make_cell() {
   Cell* cell = lalloc(CELL);
   cell->car = NULL;
@@ -8,6 +15,8 @@ Cell* make_cell() {
   return cell;
 }
 
+// Copies from_cell list to to_cell list, until and excluding till_cell. Returns
+// last cell in copied list
 Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell) {
   Cell* prev_cell = to_cell;
   to_cell->car = from_cell->car;
@@ -22,8 +31,8 @@ Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell) {
   return to_cell;
 }
 
-Cell* list_new() { return make_cell(); }
-
+// Creates a new list, copies list starting at cell to this list, till and
+// excluding till_cell. Returns head of new list.
 Cell* list_copy(Cell* cell, Cell* till_cell) {
   if (!cell) return cell;
   Cell* new_head = make_cell();
@@ -31,12 +40,9 @@ Cell* list_copy(Cell* cell, Cell* till_cell) {
   return new_head;
 }
 
-void list_free(Cell* cell) {
-  // Ref counting should get rid of rest of list
-  lfree(CELL, cell);
-}
-
-Cell* list_get(Cell* list, void* key, int cmp(void*, void*)) {
+// Finds and returns the cell in list for which cmp returns true. cmp fn
+// receives passed in key and each successive cell.
+Cell* list_get(Cell* list, int cmp(void*, void*), void* key) {
   while (list) {
     if (cmp(key, list->car)) {
       return list;
@@ -46,6 +52,7 @@ Cell* list_get(Cell* list, void* key, int cmp(void*, void*)) {
   return NULL;
 }
 
+// Returns the nth cell in list.
 void* list_nth(Cell* list, int n) {
   Cell* ret = NULL;
   int counter = 0;
@@ -58,6 +65,7 @@ void* list_nth(Cell* list, int n) {
   return ret;
 }
 
+// Returns the last cell in the list
 Cell* list_last(Cell* list) {
   while (list) {
     if (!list->cdr) return list;
@@ -66,6 +74,7 @@ Cell* list_last(Cell* list) {
   return list;
 }
 
+// Returns number of cells in list
 int list_count(Cell* list) {
   int i = 0;
   while (list) {
@@ -76,6 +85,7 @@ int list_count(Cell* list) {
   return i;
 }
 
+// Conses cons to list. Returns new head.
 Cell* list_cons(void* cons, Cell* list) {
   Cell* new_head = make_cell();
   new_head->car = cons;
@@ -102,7 +112,10 @@ void list_print(Cell* cell, void print(void*), char* seperator) {
 }
 
 // Association list ========================================
-Cell* find_node(Cell* alist, int cmp_key(void*, void*), void* key) {
+
+// Finds and returns cell for the appropriate association pair in alist for key.
+// cmp fn receives passed in key and the key for each successive association.
+Cell* find_cell(Cell* alist, int cmp_key(void*, void*), void* key) {
   if (!alist || !alist->car) return NULL;
   while (alist) {
     Cell* pair = (Cell*)alist->car;
@@ -112,20 +125,24 @@ Cell* find_node(Cell* alist, int cmp_key(void*, void*), void* key) {
   return NULL;
 }
 
+// Finds and returns associated value in alist for key. cmp fn receives passed
+// in key and the key for each successive association.
 void* alist_get(Cell* alist, int cmp_key(void*, void*), void* key) {
-  Cell* node = find_node(alist, cmp_key, key);
-  if (node) return ((Cell*)node->car)->cdr;
+  Cell* cell = find_cell(alist, cmp_key, key);
+  if (cell) return ((Cell*)cell->car)->cdr;
   return NULL;
 }
 
+// Returns 1 if alist has key
 int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
-  return find_node(alist, cmp_key, key) ? 1 : 0;
+  return find_cell(alist, cmp_key, key) ? 1 : 0;
 }
 
-// Mutable
+// Mutates passed in alist. Replaces value if key is found, otherwise appends
+// alist with new association pair
 void alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
                  void* value) {
-  Cell* node = find_node(alist, cmp_key, key);
+  Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     ((Cell*)node->car)->cdr = value;
   } else {
@@ -147,7 +164,7 @@ void alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
 // Persistent association list ========================================
 Cell* alist_pcopy(Cell* palist) { return palist; }
 
-// prepend: just stick it in front of the lookup list
+// Conses kv value pair to alist. Returns new head.
 Cell* alist_prepend(Cell* alist, void* key, void* value) {
   Cell* pair = make_cell();
   pair->car = key;
@@ -155,10 +172,10 @@ Cell* alist_prepend(Cell* alist, void* key, void* value) {
   return list_cons(pair, alist);
 }
 
-// passoc: copy path to cell
+// Immutable version of alist_assoc. Returns new alist;
 Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key,
                    void* value) {
-  Cell* node = find_node(alist, cmp_key, key);
+  Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     Cell* new_head = make_cell();
     Cell* tail = copy_cells(alist, new_head, node);

@@ -4,112 +4,18 @@
 #include "env.h"
 #include "eval.h"
 #include "io.h"
+#include "iter.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list_fns.h"
 #include "lval.h"
 #include "print.h"
 
-#define LASSERT_LIST_COUNT2(fn_name, arg_list, min_count, max_count, arg) \
-  if (!arg) {                                                             \
-    int __count = list_count(arg_list->list);                             \
-    return make_lval_err(                                                 \
-        "Function '%s' passed wrong number of args, "                     \
-        "got %i, expected %i",                                            \
-        _fn_name, __count, _min_count);                                   \
-  }
-
-#define ITER_NEW_MIN_MAX(fn_name, min_count, max_count)          \
-  char* _fn_name = fn_name;                                      \
-  int _min_count = min_count;                                    \
-  int _max_count = max_count;                                    \
-  int _expected_count = min_count == max_count ? min_count : -1; \
-  Cell* i = iter_new(arg_list);                                  \
-  int _index = 0;                                                \
-  Lval* arg = NIL;
-
-#define ITER_NEW(fn_name) ITER_NEW_MIN_MAX(fn_name, -1, 1);
-#define ITER_NEW_N(fn_name, n) ITER_NEW_MIN_MAX(fn_name, n, n);
-#define ITER_NEW_MIN(fn_name, min_count) \
-  ITER_NEW_MIN_MAX(fn_name, min_count, -1);
-
-#define LASSERT_TYPE2(fn_name, arg_list, index, expected_type, \
-                      expected_subtype, lval)                  \
-  LASSERT(arg_list,                                            \
-          lval->type == expected_type &&                       \
-              lval->subtype == (long int)expected_subtype,     \
-          "Function '%s' passed incorrect type for arg %d, "   \
-          "got %s, expected %s",                               \
-          fn_name, index, lval_type_to_name2(lval),            \
-          lval_type_to_name(expected_type));
-
-Lval* next_arg(int do_expect, Cell* i, char* _fn_name, int _min_count,
-               int _max_count, int _expected_count, int* _index,
-               Lval* arg_list) {
-  if (!i) return NIL;
-  Lval* arg = iter_next(i);
-  if (do_expect) {
-    if (!arg) {
-      int _count = list_count(arg_list->list);
-      if (_expected_count >= 0 && *_index < _expected_count) {
-        return make_lval_err(
-            "function '%s' passed wrong number of args, "
-            "got %i, expected %i",
-            _fn_name, _count, _expected_count);
-      }
-      if (_min_count >= 0 && *_index < _min_count) {
-        int _count = list_count(arg_list->list);
-        return make_lval_err(
-            "function '%s' passed wrong number of args, "
-            "got %i, expected at least %i",
-            _fn_name, _count, _min_count);
-      }
-    }
-    (*_index)++;
-    return arg;
-  } else {
-    if (arg) {
-      if (_expected_count >= 0 && *_index >= _expected_count) {
-        int _count = list_count(arg_list->list);
-        return make_lval_err(
-            "Function '%s' passed wrong number of args, "
-            "got %i, expected %i",
-            _fn_name, _count, _expected_count);
-      }
-      if (_max_count >= 0 && *_index >= _max_count) {
-        int _count = list_count(arg_list->list);
-        return make_lval_err(
-            "Function '%s' passed wrong number of args, "
-            "got %i, expected between %i and %i",
-            _fn_name, _count, _min_count, _max_count);
-      }
-    }
-    return NIL;
-  }
-}
-
-#define ITER_NEXT()                                                       \
-  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count, \
-                 &_index, arg_list);                                      \
-  if (arg && arg->type == LVAL_ERR) return arg;
-
-#define ITER_NEXT_TYPE(expected_type, expected_subtype)                      \
-  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count,    \
-                 &_index, arg_list);                                         \
-  if (arg->type == LVAL_ERR) return arg;                                     \
-  LASSERT_TYPE2(_fn_name, arg_list, _index, expected_type, expected_subtype, \
-                arg);
-
-#define ITER_END()                                                        \
-  arg = next_arg(0, i, _fn_name, _min_count, _max_count, _expected_count, \
-                 &_index, arg_list);                                      \
-  if (arg) return arg; /*error */
-
 Lval* eval_quote(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("quote", 1);
-  ITER_NEXT();
+  ITER_NEXT;
   Lval* ret = arg;
-  ITER_END();
+  ITER_END;
   return ret;
 }
 
@@ -123,9 +29,9 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
         "being replaced by: #'user/%s",
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
   }
-  ITER_NEXT();
+  ITER_NEXT;
   Lval* lval = arg;
-  ITER_END();
+  ITER_END;
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
   lenv_put(env, lval_sym, lval);
@@ -140,15 +46,15 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   if (cond->type == LVAL_ERR) return cond;
   Lval* ret = NULL;
   if (cond->num) { /* TRUE */
-    ITER_NEXT();
+    ITER_NEXT;
     ret = arg;
-    ITER_NEXT();
+    ITER_NEXT;
   } else { /* FALSE  */
-    ITER_NEXT();
-    ITER_NEXT();
+    ITER_NEXT;
+    ITER_NEXT;
     ret = arg;
   }
-  ITER_END();
+  ITER_END;
   if (ret) {
     ret->tco_env = env;
     return ret;
@@ -188,109 +94,119 @@ Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
 }
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
-  return lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-         list_count(lval->list) >= min_node_count &&
-         lval->node[0]->type == LVAL_SYMBOL &&
-         _strcmp(lval->node[0]->sym, sym) == 0;
+  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
+      list_count(lval->list) >= min_node_count) {
+    lval = lval->list->car;
+    return lval->type == LVAL_SYMBOL && _strcmp(lval->sym, sym) == 0;
+  }
+  return 0;
 }
 
 Lval* eval_unquote(Lenv* env, Lval* lval) {
-  LASSERT_NODE_COUNT(lval, 2, "unquote");
-  return lval_eval(env, lval_take(lval, 1));
+  LASSERT_LIST_COUNT(lval, lval->list->cdr, 1, "unquote");
+  return lval_eval(env, lval->list->cdr->car);
 }
 
 Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
-  LASSERT_NODE_COUNT(lval, 2, "splice-unquote");
-  Lval* ret = lval_eval(env, lval_take(lval, 1));
+  LASSERT_LIST_COUNT(lval, lval->list->cdr, 1, "splice-unquote");
+  Lval* ret = lval_eval(env, lval->list->cdr->car);
   if (ret->type == LVAL_ERR) return ret;
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
   return ret;
 }
 
-Lval* eval_quasiquote_nodes(Lenv* env, Lval* lval) {
-  /* a place to store processed nodes */
-  Lval* processed_nodes = make_lval_list();
-  while (lval->count) {
+Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
+  /* a place to store processed cells */
+  Lval* evalled_list = make_lval_list();
+  ITER_NEW("quasiquote")
+  ITER_NEXT
+  Cell** lp;
+  lp = &evalled_list->list;
+  Cell* new_cell;
+  while (arg) {
     /* Take the first of the remaining nodes*/
-    Lval* node = lval_pop(lval, 0);
-    if (is_fn_call(node, "unquote", 2)) {
+    if (is_fn_call(arg, "unquote", 2)) {
       /* Eval if node is unquoted */
-      Lval* unquoted_lval = eval_unquote(env, node);
+      Lval* unquoted_lval = eval_unquote(env, arg);
       if (unquoted_lval->type == LVAL_ERR) {
-        lval_del(lval);
-        lval_del(processed_nodes);
+        lval_del(arg);
+        lval_del(evalled_list);
+        ITER_END
         return unquoted_lval;
       }
       /* And add to processed nodes */
-      lval_add_child(processed_nodes, unquoted_lval);
+      new_cell = make_cell();
+      new_cell->car = unquoted_lval;
+      *lp = new_cell;
+      lp = &(new_cell->cdr);
 
-    } else if (is_fn_call(node, "splice-unquote", 2)) {
+    } else if (is_fn_call(arg, "splice-unquote", 2)) {
       /* Eval if node is splice unquoted */
-      Lval* splice_unquoted_eval = eval_splice_unquote(env, node);
+      Lval* splice_unquoted_eval = eval_splice_unquote(env, arg);
       if (splice_unquoted_eval->type == LVAL_ERR) {
-        lval_del(lval);
-        lval_del(processed_nodes);
+        lval_del(arg_list);
+        lval_del(evalled_list);
+        ITER_END
         return splice_unquoted_eval;
       }
       /* And concat to processed nodes */
-      processed_nodes = lval_concat(processed_nodes, splice_unquoted_eval);
+      *lp = splice_unquoted_eval->list;
+      Cell* last_cell = list_last(splice_unquoted_eval->list);
+      lp = &(last_cell->cdr);
     } else {
       /* if node is a list apply quasiquote recursively */
-      if (node->type == LVAL_COLLECTION)
-        node = eval_quasiquote_nodes(env, node);
-      if (node->type == LVAL_ERR) {
-        lval_del(lval);
-        lval_del(processed_nodes);
-        return node;
+
+      if (arg->type == LVAL_COLLECTION) arg = eval_quasiquote_nodes(env, arg);
+      if (arg->type == LVAL_ERR) {
+        lval_del(arg_list);
+        lval_del(evalled_list);
+        ITER_END
+        return arg;
       }
-      /* And add to processed nodes */
-      lval_add_child(processed_nodes, node);
+      new_cell = make_cell();
+      new_cell->car = arg;
+      *lp = new_cell;
+      lp = &(new_cell->cdr);
     }
+    ITER_NEXT
   }
-  /* Point lval->node to processed nodes */
-  lval->count = processed_nodes->count;
-  lval->node = processed_nodes->node;
-  /* And clean up processed nodes */
-  processed_nodes->count = 0;
-  /* free(processed_nodes); */
-  return lval;
+  ITER_END
+  return evalled_list;
 }
 
 /* Symbols/Lists/Vectors/Sets/Maps */
-Lval* eval_quasiquote(Lenv* env, Lval* sexpr_args) {
-  /* printf("quasiquote-----\n"); */
-  LASSERT_NODE_COUNT(sexpr_args, 1, "quasiquote");
-  Lval* arg = lval_take(sexpr_args, 0);
-  /* printf("arg:\n"); */
-  /* lval_println(arg); */
+Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("quasiquote", 1)
+  ITER_NEXT
+  Lval* qq_arg = arg;
+  ITER_END;
   Lval* ret = NULL;
-  switch (arg->type) {
+  switch (qq_arg->type) {
     case LVAL_COLLECTION:
-      switch (arg->subtype) {
+      switch (qq_arg->subtype) {
         case LIST:
-          if (is_fn_call(arg, "unquote", 2)) {
-            ret = eval_unquote(env, arg);
+          if (is_fn_call(qq_arg, "unquote", 2)) {
+            ret = eval_unquote(env, qq_arg);
             break;
           }
-          LASSERT(sexpr_args, !is_fn_call(arg, "splice-unquote", 2),
+          LASSERT(arg_list, !is_fn_call(qq_arg, "splice-unquote", 2),
                   "Trying to splice unquote a %s. Can only use splice "
                   "unquote in a "
                   "quasiquoted list",
-                  lval_type_to_name2(arg->node[1]));
-
-          ret = eval_quasiquote_nodes(env, arg);
+                  lval_type_to_name2(qq_arg->list->cdr->car));
+          ret = eval_quasiquote_nodes(env, qq_arg);
           break;
         case VECTOR:
-          ret = eval_quasiquote_nodes(env, arg);
+          ret = eval_quasiquote_nodes(env, qq_arg);
           break;
         case MAP:
 
           /* todo  */
-          ret = arg;
+          ret = qq_arg;
       }
       break;
     default: /* symbols, strings, numbers etc */
-      ret = arg;
+      ret = qq_arg;
   }
   return ret;
 }

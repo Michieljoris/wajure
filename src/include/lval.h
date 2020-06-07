@@ -91,9 +91,8 @@ Lval* lval_concat(Lval* x, Lval* y);
 Cell* make_cell();
 Lval* make_lval_plist();
 
-void init_iter();
 Cell* iter_new(Lval* lval_list);
 Lval* iter_next(Cell* iterator);
-void cleanup_iter();
+void iter_end(Cell* iterator);
 
 #endif  // __LVAL_H_

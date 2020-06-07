@@ -340,15 +340,10 @@ Lval* make_lval_plist() {
   return lval;
 }
 
-Cell* iter = NULL;
-
-void init_iter() { iter = make_cell(); }
-void cleanup_iter() { lfree(CELL, iter); }
-
 Cell* iter_new(Lval* lval_list) {
-  Cell* cell = make_cell();
-  cell->car = lval_list->list;
-  return cell;
+  Cell* iterator = make_cell();
+  iterator->car = lval_list->list;
+  return iterator;
 }
 
 Lval* iter_next(Cell* iterator) {
@@ -358,3 +353,5 @@ Lval* iter_next(Cell* iterator) {
   iterator->car = p->cdr;
   return next_lval;
 }
+
+void iter_end(Cell* iterator) { lfree(CELL, iterator); }

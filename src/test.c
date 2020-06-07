@@ -61,7 +61,7 @@ void test_list() {
   list = list_cons("4", list);
   list_print(list, print_char_cell, ",");
   list_print(list2, print_char_cell, ",");
-  Cell* cell = list_get(list, "1", cmp);
+  Cell* cell = list_get(list, cmp, "1");
   printf("%s\n", (char*)cell->car);
   printf("%s\n", (char*)cell->car);
   printf("%s\n", (char*)list_nth(list2, 0));

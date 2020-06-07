@@ -1,4 +1,5 @@
 #include "lib.h"
+#include "lispy_mempool.h"
 #include "lval.h"
 #include "mpc.h"
 #include "plist_fns.h"
@@ -57,16 +58,19 @@ static Lval* lval_read_num(char* token) {
 
 Lval* read_next_expression(Expr_stream* expr_stream);
 
-#define READER_MACRO(fn, reader_token, lispy_fn)                            \
-  static Lval* fn(Expr_stream* expr_stream) {                               \
-    Lval* next_expression = read_next_expression(expr_stream);              \
-    if (!next_expression)                                                   \
-      return make_lval_err("The reader macro \"%s\" has nothing to quote.", \
-                           reader_token);                                   \
-    Lval* lval = make_lval_list();                                          \
-    lval = lval_add_child(lval, make_lval_sym(lispy_fn));                   \
-    lval = lval_add_child(lval, next_expression);                           \
-    return lval;                                                            \
+#define READER_MACRO(fn, reader_token, lispy_fn)                              \
+  static Lval* fn(Expr_stream* expr_stream) {                                 \
+    Lval* next_expression = read_next_expression(expr_stream);                \
+    if (!next_expression)                                                     \
+      return make_lval_err(                                                   \
+          "The reader macro \"%s\" has nothing to (un)quote.", reader_token); \
+    Lval* lval = make_lval_list();                                            \
+    Cell* cell = make_cell();                                                 \
+    lval->list = cell;                                                        \
+    cell->car = make_lval_sym(lispy_fn);                                      \
+    cell->cdr = make_cell();                                                  \
+    cell->cdr->car = next_expression;                                         \
+    return lval;                                                              \
   }
 
 READER_MACRO(lval_read_quote, "'", "quote");
@@ -98,21 +102,16 @@ Lval* read_next_expression(Expr_stream* expr_stream) {
 Lval* read_list(Lval* lval_list, mpc_ast_t* expression) {
   /* printf("read_list\n"); */
   Expr_stream expr_stream = {expression->children, expression->children_num, 0};
-  Lval* next_expr = NULL;
-  Cell* cell = NULL;
-  if (has_next_expr(&expr_stream)) {
-    next_expr = read_next_expression(&expr_stream);
-    lval_list->list = cell = make_cell();
-    cell->car = next_expr;
-    while (has_next_expr(&expr_stream)) {
-      Lval* next_expr = read_next_expression(&expr_stream);
-      Cell* next_cell = make_cell();
-      cell->cdr = next_cell;
-      next_cell->car = next_expr;
-      cell = next_cell;
-    }
+  Cell** address_of_last_pointer;
+  address_of_last_pointer = &lval_list->list;
+
+  while (has_next_expr(&expr_stream)) {
+    Lval* next_expr = read_next_expression(&expr_stream);
+    Cell* next_cell = make_cell();
+    *address_of_last_pointer = next_cell;
+    address_of_last_pointer = &((*address_of_last_pointer)->cdr);
+    next_cell->car = next_expr;
   }
   /* lval_println(lval_list); */
-
   return lval_list;
 }

@@ -3,13 +3,14 @@
 #include "assert.h"
 #include "env.h"
 #include "io.h"
+#include "iter.h"
 #include "lib.h"
 #include "lval.h"
 
 static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
-  Cell* cell = arg_list->list;
+  ITER_NEW(operator)
+  ITER_NEXT
   int result;
-  Lval* lval_num;
   switch (*operator) {
     case '+':
       result = 0;
@@ -19,55 +20,58 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
       break;
     case '-':
     case '/':
-      if (!cell) {
+      if (!arg) {
+        ITER_END
         return make_lval_err(
             "Math operation %s needs at least one argument", operator);
       }
-      lval_num = cell->car;
-      if (!cell->cdr) {
-        if (lval_num->subtype != NUMBER) {
+      if (!i->cdr) {
+        if (arg->subtype != NUMBER) {
+          ITER_END
           return make_lval_err("Expected number but got %s",
-                               lval_type_to_name2(cell->car));
+                               lval_type_to_name2(arg));
         }
-        if (*operator== '/' && lval_num->num == 0)
+        if (*operator== '/' && arg->num == 0) {
+          ITER_END
           return make_lval_err("Division by number zero");
-        return *operator== '-' ? make_lval_num(-lval_num->num)
-                               : make_lval_num(1 / lval_num->num);
+        }
+        return *operator== '-' ? make_lval_num(-arg->num)
+                               : make_lval_num(1 / arg->num);
       }
-      result = lval_num->num;
-      cell = cell->cdr;
+      result = arg->num;
       break;
     default:
+      ITER_END
       return make_lval_err("Unsupported math operation: %s", operator);
   }
-
-  while (cell) {
-    lval_num = cell->car;
-    if (lval_num->subtype != NUMBER) {
+  while (arg) {
+    if (arg->subtype != NUMBER) {
       return make_lval_err("Expected number but got %s",
-                           lval_type_to_name2(cell->car));
+                           lval_type_to_name2(arg));
     }
     switch (*operator) {
       case '+':
-        result += lval_num->num;
+        result += arg->num;
         break;
       case '*':
-        result *= lval_num->num;
+        result *= arg->num;
         break;
       case '-':
-        result -= lval_num->num;
+        result -= arg->num;
         break;
       case '/':
-        if (lval_num->num == 0) {
-          lval_del(lval_num);
+        if (arg->num == 0) {
+          lval_del(arg);
+          ITER_END
           return make_lval_err("Division by number zero");
           break;
         }
-        result /= lval_num->num;
+        result /= arg->num;
         break;
     }
-    cell = cell->cdr;
+    ITER_NEXT
   }
+  ITER_END
   return make_lval_num(result);
 }
 
@@ -76,16 +80,18 @@ Lval* sub_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "-", arg_list); }
 Lval* mul_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "*", arg_list); }
 Lval* div_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "/", arg_list); }
 
-// TODO: make proper assert macros for arg_lists
-/* LASSERT_NODE_COUNT(sexpr_args, 2, operator_str);                 \ */
-/* LASSERT_NODE_SUBTYPE(sexpr_args, 0, NUMBER, operator_str);       \ */
-/* LASSERT_NODE_SUBTYPE(sexpr_args, 1, NUMBER, operator_str);       \ */
 #define MATH_FN(fn_name, operator_str, operator)                        \
   Lval* fn_name(Lenv* env, Lval* arg_list) {                            \
-    Lval* first_arg = (Lval*)(arg_list->list->car);                     \
-    Lval* second_arg = ((Lval*)(arg_list->list->cdr->car));             \
+    ITER_NEW_N(operator_str, 2)                                         \
+    ITER_NEXT                                                           \
+    LASSERT_TYPE(fn_name, arg_list, 0, LVAL_LITERAL, NUMBER, arg)       \
+    Lval* first_arg = arg;                                              \
+    ITER_NEXT                                                           \
+    LASSERT_TYPE(fn_name, arg_list, 1, LVAL_LITERAL, NUMBER, arg)       \
+    Lval* second_arg = arg;                                             \
     Lval* num = make_lval_num(first_arg->num operator second_arg->num); \
     lval_del(arg_list);                                                 \
+    ITER_END                                                            \
     return num;                                                         \
   }
 
@@ -98,22 +104,23 @@ int lval_eq(Lval* x, Lval* y) {
   if (x->type != y->type) {
     return 0;
   }
-
   switch (x->type) {
     case LVAL_SYMBOL:
       return (_strcmp(x->sym, y->sym) == 0);
     case LVAL_COLLECTION:
-      return x == y ? 1 : 0;
-      // TODO: make proper comparison!!!
-      /* if (x->count != y->count) { */
-      /*   return 0; */
-      /* } */
-      /* for (int i = 0; i < x->count; ++i) { */
-      /*   if (!lval_eq(x->node[i], y->node[i])) { */
-      /*     return 0; */
-      /*   } */
-      /* } */
-      /* return 1; */
+      if (list_count(x->list) != list_count(y->list)) {
+        return 0;
+      }
+      Cell* xl = x->list;
+      Cell* yl = y->list;
+      while (xl) {
+        if (!lval_eq(xl->car, yl->car)) {
+          return 0;
+        }
+        xl = xl->cdr;
+        yl = yl->cdr;
+      }
+      return 1;
     case LVAL_LITERAL: {
       case NUMBER:
         return (x->num == y->num);
@@ -139,16 +146,20 @@ int lval_eq(Lval* x, Lval* y) {
 }
 
 Lval* cmp_fn(Lenv* env, Lval* arg_list, char* operator) {
-  /* LASSERT_NODE_COUNT(arg_list, 2, operator); */
+  ITER_NEW_N(operator, 2)
+  ITER_NEXT
+  Lval* first_arg = arg;
+  ITER_NEXT
+  Lval* second_arg = arg;
   int result;
   if (_strcmp(operator, "=") == 0) {
-    result = lval_eq(list_first(arg_list->list), list_nth(arg_list->list, 1));
+    result = lval_eq(first_arg, second_arg);
   }
-
   if (_strcmp(operator, "not=") == 0) {
-    result = !lval_eq(list_first(arg_list->list), list_nth(arg_list->list, 1));
+    result = !lval_eq(first_arg, second_arg);
   }
   lval_del(arg_list);
+  ITER_END
   return make_lval_num(result);
 }
 

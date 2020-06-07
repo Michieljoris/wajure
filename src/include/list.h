@@ -11,7 +11,7 @@ struct cell {
 Cell* list_new(void);
 Cell* list_copy(Cell* cell, Cell* till_cell);
 void list_free(Cell* cell);
-Cell* list_get(Cell* list, void* key, int cmp(void*, void*));
+Cell* list_get(Cell* list, int cmp(void*, void*), void* key);
 
 int list_count(Cell* list);
 void* list_nth(Cell* list, int n);
