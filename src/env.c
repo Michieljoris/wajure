@@ -29,7 +29,8 @@ Lenv* lenv_pcopy(Lenv* env) {
 }
 
 void lenv_del(Lenv* e) {
-  list_free(e->kv);
+  if (e->kv)
+    list_free(e->kv);
   lfree(LENV, e);
 }
 

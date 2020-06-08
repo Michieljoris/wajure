@@ -34,7 +34,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_END;
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
-  lenv_put(env, lval_sym, lval);
+  lenv_put(get_root_env(env), lval_sym, lval);
   lval_del(arg_list);
   return make_lval_list();
 }
@@ -341,27 +341,25 @@ Lval* eval_do(Lenv* env, Lval* body) {
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
-  ITER_NEW("let")
-  ITER_NEXT
-  Lval* bindings = arg;
+  Cell* a = iter_new(arg_list);
+  Lval* bindings = iter_next(a);
   LASSERT_TYPE("let", arg_list, 0, LVAL_COLLECTION, VECTOR, bindings);
-
   LASSERT(arg_list, list_count(bindings->head) % 2 == 0,
           "Binding vector for let has odd number of forms");
 
   Lenv* let_env = lenv_new();
   let_env->parent_env = env;
 
-  ITER_NEXT
-  while (arg) {
-    Lval* lval_sym = arg;
+  Cell* b = iter_new(bindings);
+  Lval* lval_sym = iter_next(b);
+  while (lval_sym) {
     LASSERT(arg_list, lval_sym->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
             lval_type_to_name(lval_sym),
             lval_type_constant_to_name(LVAL_SYMBOL));
 
-    ITER_NEXT
-    Lval* lval = lval_eval(env, arg);
+    Lval* lval = iter_next(b);
+    lval = lval_eval(let_env, lval);
     if (lval->type == LVAL_ERR) {
       lval_del(lval_sym);
       lval_del(bindings);
@@ -369,13 +367,16 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
       lenv_del(let_env);
       return lval;
     }
-    lenv_put(let_env, lval_sym, lval);
+    let_env = lenv_assoc(let_env, lval_sym, lval);
     lval_del(lval_sym);
     lval_del(lval);
-    ITER_NEXT
+    lval_sym = iter_next(b);
   }
-  ITER_END
-  return eval_body(let_env, arg_list, WITH_TCO);
+  iter_end(b);
+  Lval* body = make_lval_list();
+  body->head = iter_cell(a);
+  iter_end(a);
+  return eval_body(let_env, body, WITH_TCO);
 }
 
 /* Not really a special form */

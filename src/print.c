@@ -7,21 +7,6 @@
 #include "lval.h"
 #include "mpc.h"
 
-/* void lval_print_str(Lval* v) { */
-/*   putchar('"'); */
-/*   /\* Loop over the characters in the string *\/ */
-/*   for (int i = 0; i < strlen(v->str); i++) { */
-/*     if (strchr(lval_str_escapable, v->str[i])) { */
-/*       /\* If the character is escapable then escape it *\/ */
-/*       printf("%s", lval_str_escape(v->str[i])); */
-/*     } else { */
-/*       /\* Otherwise print character as it is *\/ */
-/*       putchar(v->str[i]); */
-/*     } */
-/*   } */
-/*   putchar('"'); */
-/* } */
-
 void lval_print_str(Lval* lval) {
   char* escaped = malloc(strlen(lval->str) + 1);
   strcpy(escaped, lval->str);

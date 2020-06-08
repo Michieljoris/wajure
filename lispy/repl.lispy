@@ -1,6 +1,9 @@
-(load "lispy/stdlib.lispy")
-(load "lispy/test/test_2_eval.lispy")
-;; (print (when 1 0))
+;; (load "lispy/stdlib.lispy")
+;; (load "lispy/test/test_2_eval.lispy")
+;; (print 1)
+(+ 1 1)
+;; (print 2)
+;; (let [a '(1 2) b (fn [] a) a 'foo] (print (b)))
 
 ;; (print (macroexpand '(t (+ 1 2) 3)))
 ;; (print (not= 1 1))

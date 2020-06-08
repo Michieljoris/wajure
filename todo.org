@@ -2,9 +2,16 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
-** use lists for env and for sexpr nodes
-- Can't use nodes for collections since the node field needs reallocing. Can't do that with fixed pool memory
+** reference counting
+*** TCO -> work out freeing tco_env for it!!!!!!
+- eval_lambda_call
+- let
+- do
+*** thoughts:
+- Can't use nodes for collections since the node field needs reallocing. Can't do that with my fixed pool memory since you wouldn't get contiguous blocks
+
 So we must use lists for those. Perhaps we can use hamt and pvector if we need maps and vectors.
+
 - We want lispy lists persistent.
 - If we don't copy lvals from env they'll have to be immutable.
 - when env is created it should be a snapshot. Any modifications to it shouldn't affect any closures already bound.
@@ -25,11 +32,6 @@ So we must use lists for those. Perhaps we can use hamt and pvector if we need m
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
-** reference counting
-*** TCO -> work out freeing tco_env for it!!!!!!
-- eval_lambda_call
-- let
-- do
 ** add rest of tests from mal
 ** More
 *** maps
