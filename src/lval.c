@@ -152,11 +152,11 @@ char* lval_type_to_name(Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return "List (seq)";
+          return "List (coll)";
         case VECTOR:
-          return "Vector (seq)";
+          return "Vector (coll)";
         case MAP:
-          return "Map (seq)";
+          return "Map (coll)";
         default:
           return "unknown collection subtype";
       }
@@ -225,6 +225,10 @@ void lval_del(Lval* lval) {
   free(lval);
 }
 
+//TODO: make new ds for iter: but for now: cdr points to the cell for which the
+//lval was returned in the last call to iter_next, car points to the cell that
+//points to the lval that will be returned by the next iter_next call, it it
+//exists.
 Cell* iter_new(Lval* lval_list) {
   Cell* iterator = make_cell();
   iterator->car = lval_list->head;
@@ -236,10 +240,19 @@ Cell* iter_cell(Cell* iterator) {
   return iterator->car;
 }
 
+Cell* iter_current_cell(Cell* iterator) {
+  if (!iterator->cdr) return NIL;
+  return iterator->cdr;
+}
+
 Lval* iter_next(Cell* iterator) {
-  if (!iterator->car) return NIL;
+  if (!iterator->car) {
+    iterator->cdr = NIL; //current cell
+    return NIL;
+   }
   Cell* p = iterator->car;
   Lval* next_lval = p->car;
+  iterator->cdr = p; //current cell
   iterator->car = p->cdr;
   return next_lval;
 }

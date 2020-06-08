@@ -122,7 +122,7 @@ void lval_print(Lval* lval) {
 // TODO: this one prints without quotes. Make a proper pprint fn, and make
 // this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
-  if (lval->type == STRING) {
+  if (lval->subtype == STRING) {
     lval_pr_str(lval);
     return;
   }
@@ -140,7 +140,6 @@ void print_kv(void* pair) {
 }
 
 void lenv_print(Lenv* env) {
-  printf("In lenv_print:\n");
   if (env->parent_env) {
     list_print(env->kv, print_kv, "\n");
   } else {

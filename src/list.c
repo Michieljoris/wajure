@@ -151,38 +151,30 @@ int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
   return find_cell(alist, cmp_key, key) ? 1 : 0;
 }
 
-// Mutates passed in alist. Replaces value if key is found, otherwise appends
-// alist with new association pair
-void alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
+// Mutates passed in alist. Replaces value if key is found, otherwise prepends
+// alist with new association pair. Returns new head.
+Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
                  void* value) {
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     ((Cell*)node->car)->cdr = value;
+    return alist;
   } else {
-    Cell* tail = list_last(alist);
-    Cell* cell = NULL;
-    if (!tail->car)
-      cell = alist;
-    else {
-      cell = make_cell();
-      tail->cdr = cell;
-    }
-    Cell* pair = make_cell();
-    cell->car = pair;
-    pair->car = key;
-    pair->cdr = value;
+    return alist_prepend(alist, key, value);
   }
 }
 
 // Persistent association list ========================================
-Cell* alist_pcopy(Cell* palist) { return palist; }
 
 // Conses kv value pair to alist. Returns new head.
 Cell* alist_prepend(Cell* alist, void* key, void* value) {
   Cell* pair = make_cell();
   pair->car = key;
   pair->cdr = value;
-  return list_cons(pair, alist);
+  Cell* alist2 = list_cons(pair, alist);
+  /* printf("alist  %p\n", alist); */
+  /* printf("alist2 cdr %p\n", alist2->cdr); */
+  return alist2;
 }
 
 // Immutable version of alist_assoc. Returns new alist;

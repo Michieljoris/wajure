@@ -20,11 +20,10 @@
 (defmacro t [expr expected & str]
   (when (not=  (eval expr) expected)
     (do
-      (pr "FAIL:" expr)
+      (pr "FAIL:")
       (pr expr)
       (pr "Expected:" expected)
-      (pr "Got::" (eval expr))
-      123)))
+      (pr "Got::" (eval expr)))))
 
 
 ;; (defn [test cond]

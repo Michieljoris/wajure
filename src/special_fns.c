@@ -41,9 +41,10 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
 
 Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN_MAX("if", 2, 3);
-  ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER);
+  ITER_NEXT;
   Lval* cond = lval_eval(env, arg);
   if (cond->type == LVAL_ERR) return cond;
+  LASSERT_TYPE("if", arg_list, 0, LVAL_LITERAL, NUMBER, cond)
   Lval* ret = NULL;
   if (cond->num) { /* TRUE */
     ITER_NEXT;

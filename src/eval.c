@@ -47,12 +47,13 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 
   /* Pop a parameter symbol */
   Cell* p = iter_new(lval_fun->params);
-  Lval* param = iter_next(p);
+  Lval* param = NIL;
 
   Lenv* bindings = lval_fun->bindings;
 
   // Try to bind all the arg in arg_list
   while (arg) {
+    param = iter_next(p);
     /* Return error if we've got an arg but not a param */
     if (!param) {
       return make_lval_err(
@@ -70,7 +71,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
             "Symbol '&' not followed by single symbol.");
       }
       Lval* rest_args = make_lval_list();
-      rest_args->head = iter_cell(a);
+      rest_args->head = iter_current_cell(a);
       /* Bind last param with rest of args */
       bindings = lenv_assoc(bindings, param, rest_args);
       /* Break out of while loop because all args are bound now */
@@ -79,12 +80,13 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
     /* Bind sym with arg */
     bindings = lenv_assoc(bindings, param, arg);
     arg = iter_next(a);
-    param = iter_next(p);
   }
   iter_end(a);
 
+  param = iter_next(p);
   /* If there's still params unbound and next one is & */
   if (param && _strcmp(param->sym, "&") == 0) {
+
     param = iter_next(p);  // rest param
     /* The & needs to be followed by exactly one symbol */
     if (!param) {
@@ -98,11 +100,13 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 
     /* and bind last symbol to empty list */
     Lval* empty_lval_list = make_lval_list();
-    lenv_put(bindings, param, empty_lval_list);
+    bindings = lenv_assoc(bindings, param, empty_lval_list);
+    iter_next(p);
   }
 
-  Lval* params = make_lval_list();
-  params->head = iter_cell(p);
+  Lval* params = make_lval_vector();
+  params->head = iter_current_cell(p);
+  iter_end(p);
   return make_lval_lambda(bindings, params, lval_fun->body, LAMBDA);
 }
 
@@ -110,14 +114,17 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
   Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
   Lval* ret = NULL;
-
   /* Eval all exprs of body but the last one (if with_tco is true)*/
   while (lval) {
-    if (!iter_peek(i)) {
-      if (with_tco) break;
-    } else {
+    if (iter_peek(i)) {
       /* if expr is not last one of body discard the result */
       lval_del(ret);
+    } else {
+      if (with_tco) {
+        ret = lval;
+        ret->tco_env = env;
+        break;
+       }
     }
     ret = lval_eval(env, lval);
     if (ret->type == LVAL_ERR) break;
@@ -129,8 +136,22 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
   return ret ? ret : make_lval_list();
 }
 
-Lval* eval_lambda_call2(Lval* lval_fun, Lval* arg_list, int with_tco) {
-  /* Bind formals to args */
+Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
+
+  if (lval_fun->params->head) {
+    return make_lval_err("Macro needs all its params bound");
+  }
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
+  Lval* expanded_macro =
+      eval_body(lval_fun->bindings, lval_fun->body, WITHOUT_TCO);
+
+  // Expanded macro closes over the environment where it is executed
+  expanded_macro->tco_env = env;
+  return expanded_macro;
+}
+
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
   lval_fun = bind_lambda_params(lval_fun, arg_list);
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
@@ -145,52 +166,8 @@ Lval* eval_lambda_call2(Lval* lval_fun, Lval* arg_list, int with_tco) {
   }
 }
 
-Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list) {
-  lval_fun = bind_lambda_params(lval_fun, arg_list);
-
-  if (lval_fun->params->head) {
-    return make_lval_err("Macro needs all its params bound");
-  }
-  if (lval_fun->type == LVAL_ERR) return lval_fun;
-  Lval* expanded_macro =
-      eval_body(lval_fun->bindings, lval_fun->body, WITHOUT_TCO);
-
-  /* Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
-   */
-  // After the macro is expanded they close over the environment where they are
-  // executed
-  expanded_macro->tco_env = env;
-  return expanded_macro;
-}
-
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
-  /* Bind formals to args */
-  /* printf("eval lambda call: "); */
-  /* lval_println(lval_fun); */
-  lval_fun = bind_lambda_params(lval_fun, arg_list);
-  /* printf("evalled formals\n"); */
-  if (lval_fun->type == LVAL_ERR) return lval_fun;
-
-  /* Eval body expressions, but only if all params are bound */
-  if (lval_fun->params->count == 0) {
-    /* printf("bindings:  "); */
-    /* lenv_print(lval_fun->bindings); */
-    /* printf("--------------evalling body:"); */
-    /* lval_println(lval_fun->body); */
-    Lval* evalled_body =
-        eval_body(lval_fun->bindings, lval_fun->body, with_tco);
-
-    /* printf("--------------evalled body: :"); */
-    /* lval_println(evalled_body); */
-    /* printf("evalled body tco env: :"); */
-    /* lenv_print(evalled_body->tco_env); */
-    return evalled_body;
-  } else {
-    return lval_fun;
-  }
-}
-
-Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list, int with_tco) {
+Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list,
+                       int with_tco) {
   /* printf(">>>>>>>>>>>>>>>>>evalling macro call\n"); */
   /* lval_println(lval_fun); */
   /* lval_println(arg_list); */
@@ -230,8 +207,8 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
 Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
-  printf("evalling fn call: ");
-  lval_println(lval_list);
+  /* printf("evalling fn call: "); */
+  /* lval_println(lval_list); */
   Lval* lval_err;
   if (lval_list->head == NIL) {
     // TODO: release list here
@@ -275,7 +252,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       return ret;
     }
     case MACRO:
-      return eval_macro_call(env, lval_fun, arg_list, WITH_TCO);
+      return eval_macro_call(env, lval_fun, arg_list);
     case LAMBDA:
       return eval_lambda_call(lval_fun, arg_list, WITH_TCO);
     default:

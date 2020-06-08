@@ -30,7 +30,7 @@ Cell* make_pair(void* key, void* value);
 void* alist_get(Cell* alist, int key_cmp(void*, void*), void* key);
 int alist_has_key(Cell* alist, int key_cmp(void*, void*), void* key);
 // Mutable
-void alist_assoc(Cell* alist, int key_cmp(void*, void*), void* key,
+Cell* alist_assoc(Cell* alist, int key_cmp(void*, void*), void* key,
                  void* value);
 
 // Persistent association list

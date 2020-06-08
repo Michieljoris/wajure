@@ -8,7 +8,7 @@
 Lenv* lenv_new(void) {
   Lenv* env = lalloc(LENV);
   env->parent_env = NULL;
-  env->kv = list_new();
+  env->kv = NIL;
   return env;
 }
 
@@ -60,13 +60,14 @@ int lenv_is_bound(Lenv* env, Lval* lval_sym) {
 
 // Mutable
 void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
-  alist_assoc(env->kv, is_eq_str, lval_sym->sym, lval);
+  env->kv = alist_assoc(env->kv, is_eq_str, lval_sym->sym, lval);
 }
 
 // Persistent
 Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
-  lenv_del(env);
+  next_env->parent_env = env->parent_env;
+  /* lenv_del(env); */
   next_env->kv = alist_passoc(env->kv, is_eq_str, lval_sym->sym, lval);
   return next_env;
 }
