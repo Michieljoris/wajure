@@ -7,6 +7,7 @@
 #include "iter.h"
 #include "lval.h"
 #include "mpc.h"
+#include "mpc_read.h"
 #include "print.h"
 #include "read.h"
 
@@ -80,52 +81,54 @@ Lval* exit_fn(Lenv* e, Lval* arg_list) {
   return make_lval_list();
 }
 
-/* Lval* load_fn2(Lenv* e, Lval* arg_list) { */
-/*   LASSERT_NODE_COUNT(arg_list, 1, "load"); */
-/*   LASSERT_NODE_SUBTYPE(arg_list, 0, STRING, "load"); */
-
-/*   /\* Open file and check it exists *\/ */
-/*   FILE* f = fopen(arg_list->node[0]->str, "rb"); */
-/*   if (f == NULL) { */
-/*     Lval* err = */
-/*         make_lval_err("Could not load Library %s", arg_list->node[0]->str);
- */
-/*     lval_del(arg_list); */
-/*     return err; */
-/*   } */
-
-/*   /\* Read File Contents *\/ */
-/*   fseek(f, 0, SEEK_END); */
-/*   long length = ftell(f); */
-/*   fseek(f, 0, SEEK_SET); */
-/*   char* input = calloc(length + 1, 1); */
-/*   fread(input, 1, length, f); */
-/*   fclose(f); */
-/*   /\* Read from input to create an S-Expr *\/ */
-/*   int pos = 0; */
-/*   Lval* expr = lval_read_expr(input, &pos, '\0'); */
-/*   free(input); */
-
-/*   /\* Evaluate all expressions contained in S-Expr *\/ */
-/*   if (expr->type != LVAL_ERR) { */
-/*     while (expr->count) { */
-/*       Lval* x = lval_eval(e, lval_pop(expr, 0)); */
-/*       if (x->type == LVAL_ERR) { */
-/*         lval_println(x); */
-/*       } */
-/*       lval_del(x); */
-/*     } */
-/*   } else { */
-/*     lval_println(expr); */
-/*   } */
-
-/*   lval_del(expr); */
-/*   lval_del(arg_list); */
-
-/*   return make_lval_list(); */
-/* } */
-
 Lval* load_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("load", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
+
+  /* Open file and check it exists */
+  FILE* f = fopen(arg->str, "rb");
+  if (f == NULL) {
+    Lval* err = make_lval_err("Could not load Library %s", arg->str);
+    lval_del(arg_list);
+    return err;
+  }
+  ITER_END
+
+  /* Read File Contents */
+  fseek(f, 0, SEEK_END);
+  long length = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  char* input = calloc(length + 1, 1);
+  fread(input, 1, length, f);
+  fclose(f);
+  /* Read from input to create an S-Expr */
+  int pos = 0;
+  Lval* lval_list = lval_read_list(input, &pos, '\0');
+  free(input);
+  /* lval_println(lval_list); */
+  /* Evaluate all expressions contained in S-Expr */
+  if (lval_list->type != LVAL_ERR) {
+    Cell* i = iter_new(lval_list);
+    Lval* lval = iter_next(i);
+    while (lval) {
+      Lval* x = lval_eval(env, lval);
+      if (x->type == LVAL_ERR) {
+        lval_println(x);
+      }
+      lval_del(x);
+      lval = iter_next(i);
+    }
+  } else {
+    lval_println(lval_list);
+  }
+
+  lval_del(lval_list);
+  lval_del(arg_list);
+
+  return make_lval_list();
+}
+
+Lval* mpc_load_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
 
@@ -209,6 +212,7 @@ void lenv_add_misc_fns(Lenv* env) {
   lenv_add_builtin(env, "print-env", print_env_fn, SYS);
   lenv_add_builtin(env, "exit", exit_fn, SYS);
   lenv_add_builtin(env, "load", load_fn, SYS);
+  lenv_add_builtin(env, "mpc_load", mpc_load_fn, SYS);
   lenv_add_builtin(env, "print", print_fn, SYS);
   lenv_add_builtin(env, "pr", pr_fn, SYS);
   lenv_add_builtin(env, "macroexpand", macroexpand_fn, SYS);

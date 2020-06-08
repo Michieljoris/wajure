@@ -2,8 +2,6 @@
 #define __READ_H_
 
 #include "lval.h"
-#include "mpc.h"
-
-Lval* read_list(Lval* list, mpc_ast_t* expression);
+Lval* lval_read_list(char* s, int* i, char end);
 
 #endif  // __READ_H_

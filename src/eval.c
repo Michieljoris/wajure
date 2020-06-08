@@ -16,28 +16,25 @@ Lval* lval_eval(Lenv* e, Lval* v);
 
 Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   Lval* new_list = make_lval_list();
-  if (lval_list->list) {
-    Cell* from_cell = lval_list->list;
-    Cell* last_cell;
-    Cell* to_cell = NIL;
-    Cell* dummy = last_cell = make_cell();
-    do {
-      Lval* lval = lval_eval(env, (Lval*)from_cell->car);
-      if (lval->type == LVAL_ERR) {
-        lval_del(lval_list);
-        lval_del(new_list);
-        return lval;
-      }
-      to_cell = make_cell();
-      last_cell->cdr = to_cell;
-      last_cell = to_cell;
-      to_cell->car = lval;
-      from_cell = from_cell->cdr;
-    } while (from_cell);
-    lval_del(lval_list);
-    new_list->list = dummy->cdr;
-    lfree(CELL, dummy);
+  Cell* i = iter_new(lval_list);
+  Lval* lval = iter_next(i);
+  Cell** lp = &(new_list->list);
+  while (lval) {
+    Lval* x = lval_eval(env, lval);
+    if (x->type == LVAL_ERR) {
+      lval_del(lval_list);
+      lval_del(new_list);
+      return x;
+    }
+    Cell* next_cell = make_cell();
+    *lp = next_cell;
+    lp = &(next_cell->cdr);
+    next_cell->car = x;
+    lval = iter_next(i);
   }
+
+  lval_del(lval_list);
+
   return new_list;
 }
 
@@ -191,7 +188,9 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
-  return eval_nodes(env, lval_vector);
+  lval_vector = eval_nodes(env, lval_vector);
+  lval_vector->subtype = VECTOR;
+  return lval_vector;
 }
 
 // We've got a list. We expect first node to be a fn call, and the rest args to
@@ -234,6 +233,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
     default:;
   }
   /* printf("evalled the arguments of fn\n"); */
+  /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
     case SYS:
     case SPECIAL: {
