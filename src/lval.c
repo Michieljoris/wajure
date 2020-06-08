@@ -317,4 +317,11 @@ Lval* iter_next(Cell* iterator) {
   return next_lval;
 }
 
+Lval* iter_peek(Cell* iterator) {
+  if (!iterator->car) return NIL;
+  Cell* p = iterator->car;
+  Lval* next_lval = p->car;
+  return next_lval;
+}
+
 void iter_end(Cell* iterator) { lfree(CELL, iterator); }

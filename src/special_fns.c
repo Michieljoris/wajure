@@ -227,10 +227,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
     /* lval_println(node); */
     switch (mode) {
       case EXPR:
-        printf("in EXPR\n");
+        /* printf("in EXPR\n"); */
         /* CATCH node =================== */
         if (is_fn_call(node, "catch", 1)) {
-          printf("from EXPR, found catch\n");
+          /* printf("from EXPR, found catch\n"); */
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
             if (list_count(node->list) < 3) {

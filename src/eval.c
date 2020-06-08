@@ -109,36 +109,23 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   return lval_fun;
 }
 
-Lval* eval_body(Lenv* bindings, Lval* list, int with_tco) {
-  /* printf("eval body\n"); */
+Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
+  Cell* i = iter_new(list);
+  Lval* lval = iter_next(i);
   Lval* ret = NULL;
 
   /* Eval all exprs of body but the last one (if with_tco is true)*/
-  while (list_count(list->list) > 1) {
-    ret = lval_eval(bindings, lval_pop(list, 0));
+  while (lval) {
+    if (!iter_peek(i)) {
+      if (with_tco) break;
+    } else {
+      /* if expr is not last one of body discard the result */
+      lval_del(ret);
+    }
+    ret = lval_eval(env, lval);
     if (ret->type == LVAL_ERR) break;
 
-    /* if expr is not last one of body discard the result */
-    if (list->count) lval_del(ret);
-  }
-
-  /* Eval (or not) the last node in list */
-  if (list->count && (ret == NULL || ret->type != LVAL_ERR)) {
-    if (with_tco) {
-      ret = lval_pop(list, 0);
-      /* TODO make copy??? */
-      ret->tco_env = lenv_copy(bindings);
-      /* ret->tco_env = bindings; */
-
-      /* printf("CREATED tco_env: %p\n", ret->tco_env); */
-      /* lenv_print(ret->tco_env); */
-      /* printf("----------\n"); */
-    } else {
-      Lval* expr = lval_pop(list, 0);
-      ret = lval_eval(bindings, expr);
-      /* printf("RET ="); */
-      /* lval_println(ret); */
-    }
+    lval = iter_next(i);
   }
 
   return ret ? ret : make_lval_list();

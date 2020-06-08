@@ -10,7 +10,7 @@
 static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
   ITER_NEW(operator)
   ITER_NEXT
-  int result;
+  long int result;
   switch (*operator) {
     case '+':
       result = 0;
@@ -25,7 +25,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
         return make_lval_err(
             "Math operation %s needs at least one argument", operator);
       }
-      if (!i->cdr) {
+      if (!iter_peek(i)) {
         if (arg->subtype != NUMBER) {
           ITER_END
           return make_lval_err("Expected number but got %s",
@@ -44,6 +44,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
       ITER_END
       return make_lval_err("Unsupported math operation: %s", operator);
   }
+  ITER_NEXT
   while (arg) {
     if (arg->subtype != NUMBER) {
       return make_lval_err("Expected number but got %s",

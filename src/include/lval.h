@@ -87,5 +87,6 @@ Cell* make_cell();
 Cell* iter_new(Lval* lval_list);
 Lval* iter_next(Cell* iterator);
 void iter_end(Cell* iterator);
+Lval* iter_peek(Cell* iterator);
 
 #endif  // __LVAL_H_
