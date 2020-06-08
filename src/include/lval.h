@@ -1,6 +1,7 @@
 #ifndef __LVAL_H_
 #define __LVAL_H_
-#include <stdbool.h>
+
+#include "list.h"
 
 struct lenv;
 struct lval;
@@ -24,34 +25,33 @@ struct lval {
   /* function */
   lbuiltin fun;
   Lenv* bindings;
-  Lval* formals;
+  Lval* params;
+  /* Cell* formals; */  //????
   Lval* body;
-
-  Lval* cdr;
 
   /* list of lval */
   int count;
   Lval** node;
   Lenv* tco_env;
+
+  Cell* head;
 };
 
 struct lenv {
   Lenv* parent_env;
-  int count;
-  char** syms;
-  Lval** lvals;
+  Cell* kv;
 };
 
 /* lval types */
 enum {
-  LVAL_NUM,
-  LVAL_QUOTE,
+  LVAL_SYMBOL,
+  LVAL_COLLECTION,
+  LVAL_LITERAL,
+  LVAL_FUNCTION,
   LVAL_ERR,
-  LVAL_SYM,
-  LVAL_SEQ,
-  LVAL_FUN,
-  LVAL_STR,
   /* subtypes */
+  NUMBER,
+  STRING,
   SYS,
   MACRO,
   SPECIAL,
@@ -59,16 +59,14 @@ enum {
   LIST,
   MAP,
   VECTOR,
-  USER,
-  PLIST
-
+  USER
 };
 
 Lval* make_lval_num(long x);
 Lval* make_lval_quote(void);
 Lval* make_lval_sym(char* s);
 Lval* make_lval_str(char* s);
-Lval* make_lval_sexpr(void);
+Lval* make_lval_list(void);
 Lval* make_lval_map(void);
 Lval* make_lval_vector(void);
 Lval* make_lval_fun(lbuiltin func, char* func_name, int type);
@@ -77,15 +75,17 @@ Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
 Lval* make_lval_exception(char* msg);
 
-char* lval_type_to_name(int t);
-char* lval_type_to_name2(Lval* lval);
+char* lval_type_constant_to_name(int t);
+char* lval_type_to_name(Lval* lval);
 
-Lval* lval_add_child(Lval* v, Lval* x);
 void lval_del(Lval* v);
-Lval* make_lval_copy(Lval* v);
-Lval* lval_pop(Lval* v, int i);
-Lval* lval_take(Lval* v, int i);
+Cell* make_cell();
 
-Lval* lval_concat(Lval* x, Lval* y);
+Cell* iter_new(Lval* lval_list);
+Cell* iter_cell(Cell* iterator);
+Cell* iter_current_cell(Cell* iterator);
+Lval* iter_next(Cell* iterator);
+void iter_end(Cell* iterator);
+Lval* iter_peek(Cell* iterator);
 
 #endif  // __LVAL_H_

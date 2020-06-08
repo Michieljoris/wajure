@@ -9,4 +9,5 @@ void lenv_add_sys_fns(Lenv* env) {
   lenv_add_list_fns(env);
   lenv_add_misc_fns(env);
   lenv_add_special_fns(env);
+  /* lenv_add_plist_fns(env); */
 }

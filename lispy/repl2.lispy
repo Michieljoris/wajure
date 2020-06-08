@@ -1,0 +1,373 @@
+
+;; (load "lispy/stdlib.lispy")
+;; (load "lispy/test/test_2_eval.lispy")
+
+;; (load "lispy/test_1.lispy")
+;; (load "lispy/test_3.lispy")
+;; (load "lispy/test_4.lispy")
+;; (load "lispy/test_5.lispy")
+;; (load "lispy/test_6.lispy")
+;; (load "lispy/test_7.lispy")
+;; (load "lispy/test_8.lispy")
+;; (load "lispy/test_9.lispy")
+
+
+;; (defn foo [x] (debug 1))
+;; (debug-on)
+;; (print "hello");
+;; (debug-off)
+;; (debug-on)
+
+
+
+;; (defmacro foo [x] (list 'print x))
+;; (defmacro bar [y] (print 123) (list 'foo 345))
+
+;; (print "hello")
+
+;; (print (bar 123))
+;; (print (macroexpand '(bar 123)))
+;; (def foo 1)
+
+;; ;; (do (print 1) (do (print 2)))
+;; ;; (let [a 'a] (print a) (let [b 'b] (print a) (print b)))
+;; (print "hello")
+;; (print '(list 1 2 3))
+;; ;; (debug-off 123)
+;; (debug 0)
+
+;; (print "after debug is off")
+
+;; ;; (debug-on 123)
+;; (debug 1)
+
+;; (print "after debug is on")
+
+;; (def recur (fn [i n]
+;;             (if (< i n)
+;;               (recur (+ i 1) n)
+;;               i))
+;;   )
+
+;; (print (recur 0 2))
+
+
+;; (def foo (macro [x] (list 'print x)))
+;; (print foo)
+;; (foo 1)
+
+;; (defn fax [x y] (foo "foo") (+ x y))
+;; (print (macroexpand '(bar 123)))
+
+;; (def foo (fn [y] (fn [x] (+ x y))))
+
+;; (print ((foo 1) 2))
+;; (print (do
+;;    (print 1)
+;;    (print 2)
+;;    'foo))
+;; (def foo "oops")
+
+;; (print (let [foo 1
+;;              bar 2
+;;              ]
+;;          (print foo)
+;;          ;; (print bar)
+;;          'let-return-value))
+;; (def foo (fn [x] x))
+;; (print (foo 1))
+
+;; closures ====================
+;; (defn foo [x] (fn [y] (+ x y)))
+
+;; (def bar (foo 1))
+;; (print bar)
+;; (print (bar 1))
+;; (def foo 1)
+;; (print foo)
+;; (def bar (fn [x] x))
+;; (defn baz [x] x)
+;; (print (baz 123))
+;; closures ====================
+
+
+;; (print (if (- 1 1) (+ 1 1) (+ 2 2)))
+;; (print (if (- 1 1) (+ 1 1)))
+;; (print (if (+ 1 1) (+ 1 1)))
+
+;; (def foo (fn [x y] (+ x y)))
+;; (print (foo 1 2))
+;; 'foo
+;; `foo
+;; ~foo
+;; ~@foo
+;; (print (eval '(+ 1 1)))
+
+;; (print [1 2 3])
+;; (print (list 1 2 3))
+;; (print (first (list 1 2 3)))
+;; (print (first '(1 2 3)))
+;; (print (first [2 3 4]))
+;; (print (first [3 4]))
+;; (print (first 1))
+;; (print (rest (list 1 2 3)))
+;; (print (rest [2 3 4]))
+;; (print (rest (list 1 2 3)))
+;; (print (concat (list -1) '(a b) [1 2] [3 4]))
+
+;; `foo
+;; (print `(bar))
+;; (def foo 123)
+;; (print `~foo)
+;; (print `~@foo)
+;; (def a [1 2 3])
+;; (print `(123 ~a))
+;; (print `(123 ~@a))
+;; (print `(foo ~(list 1 2 `(bar ~a))))
+;; (print `(foo ~foo 123 "str" ~@a 456 ~@a))
+
+;; (defmacro my-macro [x y] `(print ~x) `(print 2))
+;; (defmacro my-macro [x])
+
+;; (def defn (macro [s paramrint bar)
+;; (bar "hello")
+;; (def m (macro [x]  `(print ~x)))
+;; (print m)
+
+;; (print [1 2 (+ 1 2)])
+;; (print (m (+ 1 1)))
+;; (print-env 1)
+;; (def foo (fn [& x] (print x)))
+;; (foo 1234)
+;; (def baaaaaaaaaaaaar 1)
+;; (def fox (macro  [x y] `(print ~x)))
+;; ;; (macro [x])
+;; (print fox)
+;; (fox "123")
+;; (print-env)
+;; (print a)
+;; (m "123")
+
+
+;; (def my-defn (macro [sym params & body]
+;;                     `(fn ~params ~@body)))
+
+
+
+
+
+
+;; (print ">>> my-defn")
+;; (print my-defn)
+;; (print (macroexpand-1 '(bar 123)))
+;; (print "done");
+
+
+;; (def fax (fn [x y] (+ 1 2) (+ 3 4)))
+;; (print (bar 6))
+;; (eval
+;;  '(def fax (fn [x y] (print x) (print y))))
+;; (fax 1 2)
+;; (def foo "foo")
+;; (def bar (list 1 2 3) )
+;; (print '`(list ~foo (list ~bar)))
+;; (print (quasiquote (list (unquote foo)
+;;                          (list (unquote bar)))))
+;; (print `(list 1 2))
+;; (print (quasiquote ((unquote foo) (splice-unquote bar))))
+;; (def foo (list 1 2))
+;; (print '`~@foo)
+
+;; (print `~@foo)
+;; (print "hello")
+
+;; (print (if 1 (print 'TRUE) (print 'FALSE)))
+;; (defn foo [x y & z] (+ x y))
+;; (def bar (foo 1))
+;; (print bar)
+;; (print (bar 2))
+;; (1 2)
+;; (try
+;;   ;; (throw "oops")
+;;   (print "past oops")
+
+;; (defn recur [n]
+;;   (if (> n 0)
+;;     (recur (- n 1))
+;;     n)
+;;   )
+
+;; (print (recur 10))
+
+;;   (catch
+;;     (print "in catch")
+;;     (print msg))
+;;   )
+
+;; (def bar 1)
+;; (def foo (fn [n] (if (= n 0) 0 (bar (- n 1)))))
+;; (def bar (fn [n] (if (= n 0) 0 (foo (- n 1)))))
+
+;; (foo 44715)
+;; (foo 50000)
+
+
+;;partials ====================
+;; (defn fox [x y] (+ x y))
+
+;; (def partial (fox 1))
+;; (defn some-fn [x] x)
+;; (defn foo [x] (some-fn x) ;; (partial x)
+;;   ;; (fox x)
+;;   )
+
+;; (print (foo 1))
+;; ;; (print bar)
+
+;; (print (partial 1))
+;;partials ====================
+
+;; (print (bar 1))
+
+
+;; (defn foo [x] (fn [y] (+ x y)))
+
+;; (defn bar[x] (foo x))
+;; (print bar)
+;; (print ((bar 1) 2))
+
+
+;; (print (throw "My error 222"))
+
+;; (try (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+;; (try
+;;   (print "before")
+;;   (throw "e1")
+;;   (print "after")
+;;   (catch E e
+;;     (print e)
+;;     (throw "e2")
+;;     ))
+
+;; (print (try
+;;          (try
+;;            (throw "e1")
+;;            (catch E e (throw "e2")))
+;;          (catch E e "c2")))
+
+;; (print (try
+;;          ;; (print "try")
+;;          "foo"
+;;          ;; 123
+;;          (throw "e1")
+;;          (catch E e (print e))
+;;          (finally (print "finally"))
+;;          ))
+
+;; (print (try
+;;    (print "hello")
+;;    (print "two")
+;;    ;; (foo)
+;;    (throw "My error")
+;;    (print "three")
+;;    'try-return-value
+;;    (print "three")
+;;    (catch Exception foo (print foo) 'catch-return-value)
+;;    (catch Exception msg (print msg) 'catch-return-value)
+;;    (finally (print "finally") 'finally-return-value-is-ignored)
+
+;;    ))
+
+
+;; (def plist = <1 2 3>)
+
+(def a 1)
+;; (def s '(1 2 ~a))
+(print a)
+;; (print `a)
+;; (print (if 0 1))
+;; (def f (fn [x] x))
+;; (print f)
+;; (print `(a (a ~a)))
+;; (print (= 1 1))
+;; (print (< 1 1))
+;; (print (= '(1 (2 4)) '(1 (2 3))))
+;; (print (eval '(+ 1 1)))
+;; (print (cons 1 '(2 3)))
+;; (print (first '(2 3)))
+;; (print (rest '()))
+;; (print (list '() 1 2 'a))
+;; (print (concat '(1 ) '(2 3)))
+;; (print (foo 1))
+;; (try "t1" (catch e "c1"))
+;; (throw "e1")
+;; (print (try (try "t1" (throw "t1") (catch E e  (throw "foo"))) (catch E e "c2")))
+;; (try
+;;   (print "before")
+;;   (throw "e1")
+;;   (print "after")
+;;   (catch E e
+;;     (print e)
+;;     ;; (throw "e2")
+;;     ))
+;; (print (do 123 456))
+;; (print "div:" (/ 0))
+
+;; (print (eval 1))
+;; (print `~@(print 1))
+;; `(print a ~a (print a ~a 123))
+;; (print (if 0 2 3))
+
+;; (print (quote (+ 1 2 3 4)))
+
+;; (print (+))
+;; (print (- 4))
+;; (print (/ 30 4))
+;; (print (>= 3 3))
+;; (lenv_print)
+;; (def defmacro (macro [sym params & body]
+;;                      `(def ~sym (macro ~params ~@body))))
+
+;; (defmacro defn [sym params & body]
+;;   `(def ~sym (fn ~params ~@body)))
+
+;; (defmacro m [x] `(print ~x))
+;; (m 1)
+
+;; (def foo (fn [x] x))
+;; (foo 1)
+
+;; (load "lispy/stdlib.lispy")
+;; (load "lispy/test/test_2_eval.lispy")
+
+;; (t (+ 1 2) 3)
+;; ;; (defmacro x [] [1 '(+ 1 1) 3]) (print (x))
+;; (print (let [x 1] x))
+;; (def foo (fn [x] x))
+;; (print (foo 1))
+;; (print <1 4 5>)
+;; (print (pfirst < <1 2> 4 5>))
+;; (print (cons 123 < <1 2> 4 5>))
+;; (print (cons 123 <>))
+;; (print (plist 1 2 3 4 5 ))
+;; (print (prest (prest (plist   ))))
+;; (def foo (fn [x]
+;;            (pr "in foo")
+;;            (print-env)
+;;            x))
+;; (def bar 123)
+;; (print-env)
+;; (print (foo 123))
+;; (print (pfirst (prest (pconcat (plist 1 2) (plist 3 4)))))
+;; ;; (print '(1 2 3))
+
+
+
+;; (def s <1 2 3>)
+;; (pr "s:")
+;; (print s)
+;; (def t (cons 0 s))
+;; (pr "s:")
+;; (print s)
+;; (pr "t:")
+;; (print t)

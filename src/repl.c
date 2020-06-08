@@ -1,14 +1,14 @@
 #include <editline/history.h>
 #include <editline/readline.h>
-#include <stdio.h>
 
 #include "env.h"
 #include "eval.h"
 #include "grammar.h"
+#include "io.h"
 #include "lval.h"
 #include "misc_fns.h"
+#include "mpc_read.h"
 #include "print.h"
-#include "read.h"
 
 void repl(Lenv* env) {
   /*  puts("Press Ctrl+c to Exit\n"); */
@@ -18,13 +18,13 @@ void repl(Lenv* env) {
 
     mpc_result_t result;
     if (mpc_parse("<stdin>", input, Lispy, &result)) {
-      mpc_ast_t* t = result.output;
+      mpc_ast_t* mpc_ast = result.output;
 
-      Lval* expressions =
-          read_expressions(make_lval_sexpr(), t->children, t->children_num);
+      Lval* expressions = read_list(make_lval_list(), mpc_ast);
       mpc_ast_delete(result.output);
       while (expressions->count) {
-        Lval* expr = lval_pop(expressions, 0);
+        // TODO: fix up repl
+        Lval* expr = NULL;  // lval_pop(expressions, 0);
         Lval* x = lval_eval(env, expr);
         lval_println(x);
         lval_del(x);

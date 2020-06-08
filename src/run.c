@@ -1,17 +1,18 @@
 #include "run.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "env.h"
 #include "fns.h"
 #include "grammar.h"
+#include "io.h"
+#include "lispy_mempool.h"
+#include "list.h"
 #include "lval.h"
 #include "misc_fns.h"
 #include "print.h"
 #include "repl.h"
 
 void run(int argc, char** argv) {
+  init_lispy_mempools(100, 100, 100);
   init_grammar();
   Lenv* root_env = lenv_new();
   lenv_add_sys_fns(root_env);
@@ -19,8 +20,10 @@ void run(int argc, char** argv) {
   user_env->parent_env = root_env;
   if (argc >= 2) {
     for (int i = 1; i < argc; ++i) {
-      Lval* args = lval_add_child(make_lval_sexpr(), make_lval_str(argv[i]));
-      Lval* x = load_fn(user_env, args);
+      Lval* arg_list = make_lval_list();
+      arg_list->head = make_cell();
+      arg_list->head->car = make_lval_str(argv[i]);
+      Lval* x = load_fn(user_env, arg_list);
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }
@@ -32,4 +35,5 @@ void run(int argc, char** argv) {
   lenv_del(user_env);
   lenv_del(root_env);
   grammar_cleanup();
+  free_lispy_mempools();
 }

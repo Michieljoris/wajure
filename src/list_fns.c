@@ -1,52 +1,88 @@
-#include "list_fns.h"
-
 #include "assert.h"
 #include "env.h"
-#include "eval.h"
+#include "io.h"
+#include "iter.h"
+#include "list.h"
 #include "lval.h"
+#include "print.h"
 
-Lval* list_fn(Lenv* e, Lval* sexpr) { return sexpr; }
-
-Lval* first_fn(Lenv* e, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "first");
-  LASSERT_IS_LIST_TYPE(sexpr_args, 0, "first");
-
-  Lval* lval = lval_take(sexpr_args, 0);
-  return lval_take(lval, 0);
+Lval* cons_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("cons", 2)
+  ITER_NEXT
+  Lval* x = arg;
+  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  Lval* lval_list = arg;
+  ITER_END
+  Lval* lval_list2 = make_lval_list();
+  lval_list2->head = list_cons(x, lval_list->head);
+  lval_del(arg_list);
+  return lval_list2;
 }
 
-Lval* rest_fn(Lenv* e, Lval* sexpr_args) {
-  LASSERT_NODE_COUNT(sexpr_args, 1, "rest");
-
-  Lval* lval = lval_take(sexpr_args, 0);
-  int type = lval->type;
-  if (!(type == LVAL_SEQ))
-    return make_lval_err("first only works on list, vector or map, not a %s",
-                         lval_type_to_name2(lval));
-
-  lval_del(lval_pop(lval, 0));
-  lval->type = LVAL_SEQ;
-  lval->subtype = LIST;
-  return lval;
+Lval* first_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("first", 1)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  Lval* lval_list = arg;
+  ITER_END
+  Lval* lval = list_first(lval_list->head);
+  lval_del(arg_list);
+  ITER_END
+  return lval ? lval : make_lval_list();
 }
 
-Lval* concat_fn(Lenv* e, Lval* sexpr_args) {
-  for (int i = 0; i < sexpr_args->count; i++) {
-    LASSERT_IS_LIST_TYPE(sexpr_args, i, "concat");
-  }
-  Lval* lval = lval_pop(sexpr_args, 0);
+Lval* rest_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("rest", 1)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  Lval* lval_list = arg;
+  ITER_END
+  Lval* lval_list2 = make_lval_list();
+  lval_list2->head = list_rest(lval_list->head);
+  lval_del(arg_list);
+  return lval_list2;
+}
 
-  while (sexpr_args->count) {
-    lval = lval_concat(lval, lval_pop(sexpr_args, 0));
+Lval* list_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW("list")
+  ITER_NEXT
+  Lval* lval_list = make_lval_list();
+  Cell** lp = &(lval_list->head);
+  while (arg) {
+    Cell* next_cell = make_cell();
+    next_cell->car = arg;
+    *lp = next_cell;
+    lp = &(next_cell->cdr);
+    ITER_NEXT
   }
+  ITER_END
+  lval_del(arg_list);
+  return lval_list;
+}
 
-  lval_del(sexpr_args);
-  return lval;
+Lval* concat_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("concat", 2)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  Lval* lval_list1 = arg;
+  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  Lval* lval_list2 = arg;
+  ITER_END
+
+  Lval* lval_list = NULL;
+  if (!lval_list1->head)
+    lval_list = lval_list2;
+  else if (!lval_list2->head)
+    lval_list = lval_list1;
+  else {
+    lval_list = make_lval_list();
+    lval_list->head = list_concat(lval_list1->head, lval_list2->head);
+  }
+  lval_del(arg_list);
+  return lval_list;
 }
 
 void lenv_add_list_fns(Lenv* env) {
-  lenv_add_builtin(env, "list", list_fn, SYS);
+  lenv_add_builtin(env, "cons", cons_fn, SYS);
   lenv_add_builtin(env, "first", first_fn, SYS);
+  lenv_add_builtin(env, "list", list_fn, SYS);
   lenv_add_builtin(env, "rest", rest_fn, SYS);
   lenv_add_builtin(env, "concat", concat_fn, SYS);
 }

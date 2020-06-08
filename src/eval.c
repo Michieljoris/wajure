@@ -1,12 +1,13 @@
 #include "eval.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "assert.h"
 #include "debug.h"
 #include "env.h"
+#include "io.h"
+#include "iter.h"
+#include "lib.h"
+#include "lispy_mempool.h"
+#include "list.h"
 #include "list_fns.h"
 #include "lval.h"
 #include "misc_fns.h"
@@ -14,131 +15,150 @@
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
-Lval* eval_nodes(Lenv* env, Lval* lval, int count) {
-  /* eval nodes */
-  for (int i = 0; i < count; i++) {
-    lval->node[i] = lval_eval(env, lval->node[i]);
-  }
-  /* error checking */
-  for (int i = 0; i < count; i++) {
-    if (lval->node[i]->type == LVAL_ERR) {
-      return lval_take(lval, i);
+Lval* eval_nodes(Lenv* env, Lval* lval_list) {
+  Lval* new_list = make_lval_list();
+  Cell* i = iter_new(lval_list);
+  Lval* lval = iter_next(i);
+  Cell** lp = &(new_list->head);
+  while (lval) {
+    Lval* x = lval_eval(env, lval);
+    if (x->type == LVAL_ERR) {
+      lval_del(lval_list);
+      lval_del(new_list);
+      iter_end(i);
+      return x;
     }
+    Cell* next_cell = make_cell();
+    *lp = next_cell;
+    lp = &(next_cell->cdr);
+    next_cell->car = x;
+    lval = iter_next(i);
   }
-  return lval;
+  iter_end(i);
+  lval_del(lval_list);
+
+  return new_list;
 }
 
-Lval* bind_lambda_formals(Lval* lval_fun, Lval* sexpr_args) {
-  /* bind any args */
-  int given = sexpr_args->count;
-  int total = lval_fun->formals->count;
+Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
+  /* Pop an arg */
+  Cell* a = iter_new(arg_list);
+  Lval* arg = iter_next(a);
 
-  while (sexpr_args->count) {
-    /* Check if any formals (params) are left to bind */
-    if (lval_fun->formals->count == 0) {
-      lval_del(lval_fun);
-      lval_del(sexpr_args);
+  /* Pop a parameter symbol */
+  Cell* p = iter_new(lval_fun->params);
+  Lval* param = NIL;
+
+  Lenv* bindings = lval_fun->bindings;
+
+  // Try to bind all the arg in arg_list
+  while (arg) {
+    param = iter_next(p);
+    /* Return error if we've got an arg but not a param */
+    if (!param) {
       return make_lval_err(
-          "Function passed too many args. Got %i, expected %i.", given, total);
+          "Function passed too many args. Got %i, expected %i.",
+          list_count(arg_list->head), list_count(lval_fun->params->head));
     }
 
-    /* Pop a parameter symbol */
-    Lval* sym = lval_pop(lval_fun->formals, 0);
-
     /* Process symbol if it's a & and break out of while loop */
-    if (strcmp(sym->sym, "&") == 0) {
+    if (_strcmp(param->sym, "&") == 0) {
+      param = iter_next(p);
       /* if the param is & there should be exactly one formal left  */
-      if (lval_fun->formals->count != 1) {
-        lval_del(lval_fun);
-        lval_del(sexpr_args);
+      if (!param || iter_peek(p)) {
         return make_lval_err(
             "Function format invalid. "
             "Symbol '&' not followed by single symbol.");
       }
+      Lval* rest_args = make_lval_list();
+      rest_args->head = iter_current_cell(a);
       /* Bind last param with rest of args */
-      Lval* rest_sym = lval_pop(lval_fun->formals, 0);
-      lenv_put(lval_fun->bindings, rest_sym, list_fn(NULL, sexpr_args));
-      lval_del(sym);
-      lval_del(rest_sym);
+      bindings = lenv_assoc(bindings, param, rest_args);
       /* Break out of while loop because all args are bound now */
       break;
     }
     /* Bind sym with arg */
-    Lval* val = lval_pop(sexpr_args, 0);
-    lenv_put(lval_fun->bindings, sym, val);
-    lval_del(sym);
-    lval_del(val);
+    bindings = lenv_assoc(bindings, param, arg);
+    arg = iter_next(a);
   }
+  iter_end(a);
 
-  lval_del(sexpr_args);
+  param = iter_next(p);
+  /* If there's still params unbound and next one is & */
+  if (param && _strcmp(param->sym, "&") == 0) {
 
-  /* If there's still formals unbound and next one is & */
-  if (lval_fun->formals->count > 0 &&
-      strcmp(lval_fun->formals->node[0]->sym, "&") == 0) {
+    param = iter_next(p);  // rest param
     /* The & needs to be followed by exactly one symbol */
-    if (lval_fun->formals->count != 2) {
+    if (!param) {
       Lval* lval_err = make_lval_err(
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
-      lval_del(lval_fun);
+      iter_end(p);
+      lfree(LENV, bindings);
       return lval_err;
     }
 
-    lval_del(lval_pop(lval_fun->formals, 0)); /* pop and free & */
     /* and bind last symbol to empty list */
-    Lval* sym = lval_pop(lval_fun->formals, 0);
-    Lval* val = make_lval_sexpr();
-    lenv_put(lval_fun->bindings, sym, val);
-    lval_del(sym);
-    lval_del(val);
+    Lval* empty_lval_list = make_lval_list();
+    bindings = lenv_assoc(bindings, param, empty_lval_list);
+    iter_next(p);
   }
 
-  return lval_fun;
+  Lval* params = make_lval_vector();
+  params->head = iter_current_cell(p);
+  iter_end(p);
+  return make_lval_lambda(bindings, params, lval_fun->body, LAMBDA);
 }
 
-Lval* eval_list(Lenv* bindings, Lval* list, bool with_tco) {
+Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
+  Cell* i = iter_new(list);
+  Lval* lval = iter_next(i);
   Lval* ret = NULL;
-
   /* Eval all exprs of body but the last one (if with_tco is true)*/
-  while (list->count > 1) {
-    ret = lval_eval(bindings, lval_pop(list, 0));
+  while (lval) {
+    if (iter_peek(i)) {
+      /* if expr is not last one of body discard the result */
+      lval_del(ret);
+    } else {
+      if (with_tco) {
+        ret = lval;
+        ret->tco_env = env;
+        break;
+       }
+    }
+    ret = lval_eval(env, lval);
     if (ret->type == LVAL_ERR) break;
 
-    /* if expr is not last one of body discard the result */
-    if (list->count) lval_del(ret);
+    lval = iter_next(i);
   }
+  iter_end(i);
 
-  /* Eval (or not) the last node in list */
-  if (list->count && (ret == NULL || ret->type != LVAL_ERR)) {
-    if (with_tco) {
-      ret = lval_pop(list, 0);
-      /* TODO make copy??? */
-      ret->tco_env = make_lenv_copy(bindings);
-      /* ret->tco_env = bindings; */
-
-      /* printf("CREATED tco_env: %p\n", ret->tco_env); */
-      /* lenv_print(ret->tco_env); */
-      /* printf("----------\n"); */
-    } else {
-      Lval* expr = lval_pop(list, 0);
-      ret = lval_eval(bindings, expr);
-    }
-  }
-
-  return ret ? ret : make_lval_sexpr();
+  return ret ? ret : make_lval_list();
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
-  /* Bind formals to args */
-  lval_fun = bind_lambda_formals(lval_fun, sexpr_args);
+Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
+
+  if (lval_fun->params->head) {
+    return make_lval_err("Macro needs all its params bound");
+  }
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
+  Lval* expanded_macro =
+      eval_body(lval_fun->bindings, lval_fun->body, WITHOUT_TCO);
+
+  // Expanded macro closes over the environment where it is executed
+  expanded_macro->tco_env = env;
+  return expanded_macro;
+}
+
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   /* Eval body expressions, but only if all params are bound */
-  if (lval_fun->formals->count == 0) {
+  if (!lval_fun->params->head) {
     Lval* evalled_body =
-        eval_list(lval_fun->bindings, lval_fun->body, with_tco);
-
-    lval_del(lval_fun);
+        eval_body(lval_fun->bindings, lval_fun->body, with_tco);
 
     return evalled_body;
   } else {
@@ -146,139 +166,137 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
   }
 }
 
-Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
-                      int with_tco) {
-  Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
+Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list,
+                       int with_tco) {
+  /* printf(">>>>>>>>>>>>>>>>>evalling macro call\n"); */
+  /* lval_println(lval_fun); */
+  /* lval_println(arg_list); */
+  /* printf("Expanding..\n"); */
+  Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
+  /* printf("Original lval_fun: "); */
+  /* lval_println(lval_fun); */
+  /* printf  ("Expanded macro:\n"); */
+  /* lval_println(expanded_macro); */
+
+  // After the macro is expanded they close over the environment where they are
+  // executed
   expanded_macro->tco_env = env;
   /* printf("RETURNING MACRO CALL WITH tco_env: %p\n", expanded_macro->tco_env);
    */
   /* lenv_print(expanded_macro->tco_env); */
-  /* printf("----------\n"); */
+  /* printf("<<<<<<<<<<<<<<<<<<<<<<<<<\n"); */
   return expanded_macro;
 }
 
-Lval* eval_sym(Lenv* env, Lval* lval_sym) {
-  Lval* lval_resolved_sym = lenv_get(env, lval_sym);
-  lval_del(lval_sym);
+Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
+  /* printf("eval_symbol: symbol :"); */
+  /* lval_println(lval_symbol); */
+  /* lenv_print(env); */
+  /* lenv_print(env->parent_env); */
+  Lval* lval_resolved_sym = lenv_get(env, lval_symbol);
+  lval_del(lval_symbol);
   return lval_resolved_sym;
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
-  return eval_nodes(env, lval_vector, lval_vector->count);
+  lval_vector = eval_nodes(env, lval_vector);
+  lval_vector->subtype = VECTOR;
+  return lval_vector;
 }
 
-Lval* eval_sexpr(Lenv* env, Lval* list) {
+// We've got a list. We expect first node to be a fn call, and the rest args to
+// the fn.
+Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
+  /* printf("evalling fn call: "); */
+  /* lval_println(lval_list); */
   Lval* lval_err;
-  if (list->count == 0) return list;
-  list = eval_nodes(env, list, 1);
+  if (lval_list->head == NIL) {
+    // TODO: release list here
+    return make_lval_list();  // empty;
+  }
 
-  if (list->type == LVAL_ERR) return list;
+  Lval* lval_fun =
+      lval_eval(env, list_first(lval_list->head));  // eval first node
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
 
-  Lval* lval_fun = lval_pop(list, 0);
-  if (lval_fun->type != LVAL_FUN) {
+  if (lval_fun->type != LVAL_FUNCTION) {
     lval_err = make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
-        lval_type_to_name2(lval_fun), lval_type_to_name(LVAL_FUN));
-    lval_del(list);
+        lval_type_to_name(lval_fun), lval_type_constant_to_name(LVAL_FUNCTION));
+    lval_del(lval_list);
     lval_del(lval_fun);
     return lval_err;
   }
+
+  Lval* arg_list = make_lval_list();
+  arg_list->head = list_rest(lval_list->head);
   switch (lval_fun->subtype) {
     case SYS:
     case LAMBDA:
-      list = eval_nodes(env, list, list->count);
-      if (list->type == LVAL_ERR) {
+      arg_list = eval_nodes(env, arg_list);
+      if (arg_list->type == LVAL_ERR) {
         lval_del(lval_fun);
-        return list;
+        return arg_list;
       }
     case MACRO:
     case SPECIAL:
     default:;
   }
-
+  /* printf("evalled the arguments of fn\n"); */
+  /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
     case SYS:
-    case SPECIAL:
-      return lval_fun->fun(env, list);
+    case SPECIAL: {
+      Lval* ret = lval_fun->fun(env, arg_list);
+      return ret;
+    }
     case MACRO:
-      return eval_macro_call(env, lval_fun, list, WITH_TCO);
+      return eval_macro_call(env, lval_fun, arg_list);
     case LAMBDA:
-      return eval_lambda_call(lval_fun, list, WITH_TCO);
+      return eval_lambda_call(lval_fun, arg_list, WITH_TCO);
     default:
       lval_err = make_lval_err("Unknown fun subtype %d for %s",
                                lval_fun->subtype, lval_fun->func_name);
-      lval_del(list);
+      lval_del(arg_list);
       lval_del(lval_fun);
       return lval_err;
   }
 }
 
-int id;
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  /* id++; */
-  /* printf("%d ", id); */
-  /* lenv_print(env); */
-  /* __printf(">>>>>> "); */
-  Lval* ret = NULL;
   Lenv* tco_env = NULL;
-  while (true) { /* TCO */
-    /* printf(">"); */
-    /* lval_println(lval); */
+  while (1) { /* TCO */
     if (tco_env) env = tco_env;
     switch (lval->type) {
-      case LVAL_SYM:
-        ret = eval_sym(env, lval);
+      case LVAL_SYMBOL:
+        return eval_symbol(env, lval);
         break;
-      case LVAL_SEQ:
+      case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
-            lval = eval_sexpr(env, lval);
-            if (lval->tco_env == NULL) {
-              ret = lval;
-            } else {
-              /* printf("LOOPING!!!!!! %d\n", id); */
-              /* printf("current tco_env: %p\n", tco_env); */
-              /* if (tco_env) lenv_print(tco_env); */
+            lval = eval_fn_call(env, lval);
+            if (lval->tco_env != NULL) {
               tco_env = lval->tco_env;
-              lval->tco_env = NULL;
-              /* printf("with lval= "); */
-              /* lval_println(lval); */
-              /* printf("and tco_env = %p\n", tco_env); */
-              /* lenv_print(tco_env); */
-
-              /* printf("and parent env = %p\n", tco_env->parent_env); */
-              /* lenv_print(tco_env->parent_env); */
-
-              /* printf("------\n"); */
               continue;
             }
+            return lval;
             break;
           case VECTOR:
-            ret = eval_vector(env, lval);
+            return eval_vector(env, lval);
             break;
           case MAP:
             /* TODO: */
-            ret = lval;
+            return lval;
             break;
           default:
             lval_del(lval);
-            ret = make_lval_err("Unknown seq subtype");
+            return make_lval_err("Unknown seq subtype");
         }
         break;
       default:
-        ret = lval;
+        return lval;
     }
-    if (tco_env) {
-      /* printf("tco_env is set!!!!\n"); */
-      /* printf("DELETING tc_env %p\n", tco_env); */
-      /* lenv_print(tco_env); */
-      /* printf("------------\n"); */
-      /* lenv_del(tco_env); */
-    }
-    id--;
-    /* printf("%d ", id); */
-    return ret;
   }
 }
 /* You can delete existing tco_env if next one is not pointing to it, like in

@@ -1,67 +1,99 @@
 #include "math_fns.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include "assert.h"
 #include "env.h"
+#include "io.h"
+#include "iter.h"
+#include "lib.h"
 #include "lval.h"
 
-static Lval* op_fn(Lenv* e, char* op, Lval* sexpr) {
-  for (int i = 0; i < sexpr->count; i++) {
-    if (sexpr->node[i]->type != LVAL_NUM) {
-      lval_del(sexpr);
-      return make_lval_err("Expected number but got %s",
-                           lval_type_to_name2(sexpr->node[0]));
-    }
-  }
-  Lval* result = lval_pop(sexpr, 0);
-
-  if ((strcmp(op, "-") == 0) && sexpr->count == 0) {
-    result->num = -result->num;
-  }
-
-  while (sexpr->count > 0) {
-    Lval* operand = lval_pop(sexpr, 0);
-    if (strcmp(op, "+") == 0) {
-      result->num += operand->num;
-    }
-    if (strcmp(op, "-") == 0) {
-      result->num -= operand->num;
-    }
-    if (strcmp(op, "*") == 0) {
-      result->num *= operand->num;
-    }
-    if (strcmp(op, "/") == 0) {
-      if (operand->num == 0) {
-        lval_del(result);
-        lval_del(operand);
-        result = make_lval_err("Division by operand zero");
-        break;
+static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
+  ITER_NEW(operator)
+  ITER_NEXT
+  long int result;
+  switch (*operator) {
+    case '+':
+      result = 0;
+      break;
+    case '*':
+      result = 1;
+      break;
+    case '-':
+    case '/':
+      if (!arg) {
+        ITER_END
+        return make_lval_err(
+            "Math operation %s needs at least one argument", operator);
       }
-      result->num /= operand->num;
-    }
-
-    lval_del(operand);
+      if (!iter_peek(i)) {
+        if (arg->subtype != NUMBER) {
+          ITER_END
+          return make_lval_err("Expected number but got %s",
+                               lval_type_to_name(arg));
+        }
+        if (*operator== '/' && arg->num == 0) {
+          ITER_END
+          return make_lval_err("Division by number zero");
+        }
+        return *operator== '-' ? make_lval_num(-arg->num)
+                               : make_lval_num(1 / arg->num);
+      }
+      result = arg->num;
+      ITER_NEXT
+      break;
+    default:
+      ITER_END
+      return make_lval_err("Unsupported math operation: %s", operator);
   }
-  lval_del(sexpr);
-  return result;
+  while (arg) {
+    if (arg->subtype != NUMBER) {
+      return make_lval_err("Expected number but got %s",
+                           lval_type_to_name(arg));
+    }
+    switch (*operator) {
+      case '+':
+        result += arg->num;
+        break;
+      case '*':
+        result *= arg->num;
+        break;
+      case '-':
+        result -= arg->num;
+        break;
+      case '/':
+        if (arg->num == 0) {
+          lval_del(arg);
+          ITER_END
+          return make_lval_err("Division by number zero");
+          break;
+        }
+        result /= arg->num;
+        break;
+    }
+    ITER_NEXT
+  }
+  ITER_END
+  return make_lval_num(result);
 }
 
-Lval* add_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "+", sexpr); }
-Lval* sub_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "-", sexpr); }
-Lval* mul_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "*", sexpr); }
-Lval* div_fn(Lenv* e, Lval* sexpr) { return op_fn(e, "/", sexpr); }
+Lval* add_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "+", arg_list); }
+Lval* sub_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "-", arg_list); }
+Lval* mul_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "*", arg_list); }
+Lval* div_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "/", arg_list); }
 
-#define MATH_FN(fn_name, operator_str, operator)                     \
-  Lval* fn_name(Lenv* env, Lval* sexpr_args) {                       \
-    LASSERT_NODE_COUNT(sexpr_args, 2, operator_str);                 \
-    LASSERT_NODE_TYPE(sexpr_args, 0, LVAL_NUM, operator_str);        \
-    LASSERT_NODE_TYPE(sexpr_args, 1, LVAL_NUM, operator_str);        \
-    Lval* num = make_lval_num(                                       \
-        sexpr_args->node[0]->num operator sexpr_args->node[1]->num); \
-    lval_del(sexpr_args);                                            \
-    return num;                                                      \
+#define MATH_FN(fn_name, operator_str, operator)                        \
+  Lval* fn_name(Lenv* env, Lval* arg_list) {                            \
+    ITER_NEW_N(operator_str, 2)                                         \
+    ITER_NEXT                                                           \
+    LASSERT_TYPE(fn_name, arg_list, 0, LVAL_LITERAL, NUMBER, arg)       \
+    Lval* first_arg = arg;                                              \
+    ITER_NEXT                                                           \
+    LASSERT_TYPE(fn_name, arg_list, 1, LVAL_LITERAL, NUMBER, arg)       \
+    Lval* second_arg = arg;                                             \
+    Lval* num = make_lval_num(first_arg->num operator second_arg->num); \
+    lval_del(arg_list);                                                 \
+    ITER_END                                                            \
+    return num;                                                         \
   }
 
 MATH_FN(gt_fn, ">", >);
@@ -73,58 +105,69 @@ int lval_eq(Lval* x, Lval* y) {
   if (x->type != y->type) {
     return 0;
   }
-
   switch (x->type) {
-    case LVAL_NUM:
-      return (x->num == y->num);
-    case LVAL_ERR:
-      return (strcmp(x->err, y->err) == 0);
-    case LVAL_SYM:
-      return (strcmp(x->sym, y->sym) == 0);
-    case LVAL_STR:
-      return (strcmp(x->str, y->str) == 0);
-    case LVAL_FUN:
+    case LVAL_SYMBOL:
+      return (_strcmp(x->sym, y->sym) == 0);
+    case LVAL_COLLECTION:
+      if (list_count(x->head) != list_count(y->head)) {
+        return 0;
+      }
+      Cell* xl = x->head;
+      Cell* yl = y->head;
+      while (xl) {
+        if (!lval_eq(xl->car, yl->car)) {
+          return 0;
+        }
+        xl = xl->cdr;
+        yl = yl->cdr;
+      }
+      return 1;
+    case LVAL_LITERAL: {
+      case NUMBER:
+        return (x->num == y->num);
+      case STRING:
+        return (_strcmp(x->str, y->str) == 0);
+      default:
+        printf("Warning: comparing instances of type '%s' is not implemented\n",
+               lval_type_to_name(x));
+        return 0;
+    }
+    case LVAL_FUNCTION:
       if (x->fun || y->fun) {
         return x->fun == y->fun;
       } else {
-        return lval_eq(x->formals, y->formals) && lval_eq(x->body, y->body);
+        return lval_eq(x->params, y->params) && lval_eq(x->body, y->body);
       }
-    case LVAL_SEQ:
-      if (x->count != y->count) {
-        return 0;
-      }
-      for (int i = 0; i < x->count; ++i) {
-        if (!lval_eq(x->node[i], y->node[i])) {
-          return 0;
-        }
-      }
-      return 1;
+    case LVAL_ERR:
+      return (_strcmp(x->err, y->err) == 0);
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
-         lval_type_to_name2(x));
+         lval_type_to_name(x));
   return 0;
 }
 
-Lval* cmp_fn(Lenv* env, Lval* sexpr_args, char* operator) {
-  LASSERT_NODE_COUNT(sexpr_args, 2, operator);
+Lval* cmp_fn(Lenv* env, Lval* arg_list, char* operator) {
+  ITER_NEW_N(operator, 2)
+  ITER_NEXT
+  Lval* first_arg = arg;
+  ITER_NEXT
+  Lval* second_arg = arg;
   int result;
-  if (strcmp(operator, "=") == 0) {
-    result = lval_eq(sexpr_args->node[0], sexpr_args->node[1]);
+  if (_strcmp(operator, "=") == 0) {
+    result = lval_eq(first_arg, second_arg);
   }
-
-  if (strcmp(operator, "not=") == 0) {
-    result = !lval_eq(sexpr_args->node[0], sexpr_args->node[1]);
+  if (_strcmp(operator, "not=") == 0) {
+    result = !lval_eq(first_arg, second_arg);
   }
-  lval_del(sexpr_args);
+  lval_del(arg_list);
+  ITER_END
   return make_lval_num(result);
 }
 
-Lval* eq_fn(Lenv* env, Lval* sexpr_args) {
-  return cmp_fn(env, sexpr_args, "=");
-}
+Lval* eq_fn(Lenv* env, Lval* arg_list) { return cmp_fn(env, arg_list, "="); }
 
-Lval* not_eq_fn(Lenv* env, Lval* sexpr_args) {
-  return cmp_fn(env, sexpr_args, "not=");
+Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
+  return cmp_fn(env, arg_list, "not=");
 }
 
 void lenv_add_math_fns(Lenv* env) {

@@ -1,15 +1,26 @@
 #include "print.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "debug.h"
 #include "env.h"
+#include "io.h"
+#include "lib.h"
 #include "lval.h"
 #include "mpc.h"
 
-static void lval_expr_print(Lval* v, char open, char close);
+/* void lval_print_str(Lval* v) { */
+/*   putchar('"'); */
+/*   /\* Loop over the characters in the string *\/ */
+/*   for (int i = 0; i < strlen(v->str); i++) { */
+/*     if (strchr(lval_str_escapable, v->str[i])) { */
+/*       /\* If the character is escapable then escape it *\/ */
+/*       printf("%s", lval_str_escape(v->str[i])); */
+/*     } else { */
+/*       /\* Otherwise print character as it is *\/ */
+/*       putchar(v->str[i]); */
+/*     } */
+/*   } */
+/*   putchar('"'); */
+/* } */
 
 void lval_print_str(Lval* lval) {
   char* escaped = malloc(strlen(lval->str) + 1);
@@ -27,6 +38,17 @@ void lval_pr_str(Lval* lval) {
   free(escaped);
 }
 
+void lval_collection_print(Lval* lval, char open, char close) {
+  if (open) _putchar(open);
+  Cell* cell = lval->head;
+  while (cell) {
+    lval_print(cell->car);
+    cell = cell->cdr;
+    if (cell) _putchar(' ');
+  }
+  if (close) _putchar(close);
+}
+
 void lval_fun_print(Lval* lval) {
   switch (lval->subtype) {
     case SYS:
@@ -34,16 +56,14 @@ void lval_fun_print(Lval* lval) {
       break;
     case LAMBDA:
       _printf("(fn ");
-      lval_print(lval->formals);
+      lval_print(lval->params);
       _putchar(' ');
-      for (int i = 0; i < lval->body->count; i++) {
-        lval_print(lval->body->node[i]);
-      }
+      lval_collection_print(lval->body, 0, 0);
       _putchar(')');
       break;
     case MACRO:
       _printf("(macro ");
-      lval_print(lval->formals);
+      lval_print(lval->params);
       _putchar(' ');
       for (int i = 0; i < lval->body->count; i++) {
         lval_print(lval->body->node[i]);
@@ -56,94 +76,57 @@ void lval_fun_print(Lval* lval) {
   }
 }
 
-void lval_plist_print(Lval* lval) { printf("TODO: printing plist\n"); }
-
 void lval_print(Lval* lval) {
-  /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
+  /* _printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
   switch (lval->type) {
-    case LVAL_NUM:
-      _printf("%li", lval->num);
+    case LVAL_SYMBOL:
+      _printf("%s", lval->sym);
+      break;
+    case LVAL_COLLECTION:
+      switch (lval->subtype) {
+        case LIST:
+          lval_collection_print(lval, '(', ')');
+          break;
+        case MAP:
+          lval_collection_print(lval, '{', '}');
+          break;
+        case VECTOR:
+          lval_collection_print(lval, '[', ']');
+          break;
+        default:
+          _printf("unknown lval subtype %s\n",
+                  lval_type_constant_to_name(lval->subtype));
+      }
+      break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUMBER:
+          _printf("%li", lval->num);
+          break;
+        case STRING:
+          lval_print_str(lval);
+          break;
+      }
+    case LVAL_FUNCTION:
+      lval_fun_print(lval);
       break;
     case LVAL_ERR:
       _printf("Error: %s", lval->err);
       break;
-    case LVAL_SYM:
-      _printf("%s", lval->sym);
-      break;
-    case LVAL_STR:
-      lval_print_str(lval);
-      break;
-    case LVAL_SEQ:
-      switch (lval->subtype) {
-        case LIST:
-          lval_expr_print(lval, '(', ')');
-          break;
-        case MAP:
-          lval_expr_print(lval, '{', '}');
-          break;
-        case VECTOR:
-          lval_expr_print(lval, '[', ']');
-          break;
-        case PLIST:
-          lval_plist_print(lval);
-          break;
-      }
-      break;
-    case LVAL_FUN:
-      lval_fun_print(lval);
-      break;
     default:
       _printf("unknown lval type %d, %s\n", lval->type,
-              lval_type_to_name(lval->type));
+              lval_type_constant_to_name(lval->type));
   }
 }
 
+// TODO: this one prints without quotes. Make a proper pprint fn, and make
+// this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
-  /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
-  switch (lval->type) {
-    case LVAL_NUM:
-      _printf("%li", lval->num);
-      break;
-    case LVAL_ERR:
-      _printf("Error: %s", lval->err);
-      break;
-    case LVAL_SYM:
-      _printf("%s", lval->sym);
-      break;
-    case LVAL_STR:
-      lval_pr_str(lval);
-      break;
-    case LVAL_SEQ:
-      switch (lval->subtype) {
-        case LIST:
-          lval_expr_print(lval, '(', ')');
-          break;
-        case MAP:
-          lval_expr_print(lval, '{', '}');
-          break;
-        case VECTOR:
-          lval_expr_print(lval, '[', ']');
-          break;
-      }
-      break;
-    case LVAL_FUN:
-      lval_fun_print(lval);
-      break;
-    default:
-      _printf("unknown lval type %d, %s\n", lval->type,
-              lval_type_to_name(lval->type));
+  if (lval->subtype == STRING) {
+    lval_pr_str(lval);
+    return;
   }
-}
-
-static void lval_expr_print(Lval* v, char open, char close) {
-  _putchar(open);
-  for (int i = 0; i < v->count; i++) {
-    lval_print(v->node[i]);
-    if (i != (v->count - 1)) {
-      _putchar(' ');
-    }
-  }
-  _putchar(close);
+  lval_print(lval);
 }
 
 void lval_println(Lval* v) {
@@ -151,10 +134,15 @@ void lval_println(Lval* v) {
   _putchar('\n');
 }
 
+void print_kv(void* pair) {
+  printf("%s: ", (char*)((Cell*)pair)->car);
+  lval_print((Lval*)((Cell*)pair)->cdr);
+}
+
 void lenv_print(Lenv* env) {
-  for (int i = 0; i < env->count; ++i) {
-    _printf("%s:", env->syms[i]);
-    lval_println(env->lvals[i]);
+  if (env->parent_env) {
+    list_print(env->kv, print_kv, "\n");
+  } else {
+    printf("ROOT env!!! \n");
   }
-  return;
 }

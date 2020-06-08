@@ -1,55 +1,50 @@
 #include <env.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
+#include "io.h"
+#include "lib.h"
+#include "lispy_mempool.h"
 #include "lval.h"
-#include "print.h"
 
 Lenv* lenv_new(void) {
-  Lenv* env = malloc(sizeof(Lenv));
+  Lenv* env = lalloc(LENV);
   env->parent_env = NULL;
-  env->count = 0;
-  env->syms = NULL;
-  env->lvals = NULL;
+  env->kv = NIL;
   return env;
 }
 
-Lenv* make_lenv_copy(Lenv* env) {
-  Lenv* env_copy = malloc(sizeof(Lenv));
+// Mutable
+Lenv* lenv_copy(Lenv* env) {
+  Lenv* env_copy = lalloc(LENV);
   env_copy->parent_env = env->parent_env;
-  env_copy->count = env->count;
-  env_copy->syms = malloc(sizeof(char*) * env->count);
-  env_copy->lvals = malloc(sizeof(Lval*) * env->count);
-  for (int i = 0; i < env->count; ++i) {
-    env_copy->syms[i] = malloc(sizeof(strlen(env_copy->syms[i]) + 1));
-    strcpy(env_copy->syms[i], env->syms[i]);
-    env_copy->lvals[i] = make_lval_copy(env->lvals[i]);
-  }
+  env_copy->kv = list_copy(env->kv, NULL);
+  return env_copy;
+}
+
+// Persistent;
+Lenv* lenv_pcopy(Lenv* env) {
+  Lenv* env_copy = lalloc(LENV);
+  env_copy->parent_env = env->parent_env;
+  env_copy->kv = env->kv;
   return env_copy;
 }
 
 void lenv_del(Lenv* e) {
-  for (int i = 0; i < e->count; i++) {
-    free(e->syms[i]);
-    lval_del(e->lvals[i]);
-  }
-  free(e->syms);
-  free(e->lvals);
-  free(e);
+  list_free(e->kv);
+  lfree(LENV, e);
 }
 
+int is_eq_str(void* k, void* v) { return _strcmp((char*)k, (char*)v) == 0; }
+
 Lval* lenv_get(Lenv* env, Lval* lval_sym) {
-  for (int i = 0; i < env->count; i++) {
-    if (strcmp(env->syms[i], lval_sym->sym) == 0) {
-      return make_lval_copy(env->lvals[i]);
-    }
-  }
-  if (env->parent_env) {
+  Lval* ret = alist_get(env->kv, is_eq_str, lval_sym->sym);
+  if (!ret && env->parent_env) {
     return lenv_get(env->parent_env, lval_sym);
   }
-  return make_lval_err("unbound symbol '%s'", lval_sym->sym);
+  /* printf("In env:\n"); */
+  /* lenv_print(env); */
+  /* printf("Resolved:"); */
+  /* lval_println(ret); */
+  return ret ? ret : make_lval_err("unbound symbol '%s'", lval_sym->sym);
 }
 
 Lenv* get_root_env(Lenv* env) {
@@ -59,40 +54,22 @@ Lenv* get_root_env(Lenv* env) {
   return env;
 }
 
-int find_str_index(char** strs, int count, char* str) {
-  for (int i = 0; i < count; ++i) {
-    if (strcmp(strs[i], str) == 0) {
-      return i;
-    }
-  }
-  return -1;
+int lenv_is_bound(Lenv* env, Lval* lval_sym) {
+  return alist_has_key(env->kv, is_eq_str, lval_sym->sym) ? 1 : 0;
 }
 
-bool lenv_is_bound(Lenv* env, Lval* lval_sym) {
-  char* sym = lval_sym->sym;
-  return find_str_index(env->syms, env->count, sym) != -1;
-}
-
+// Mutable
 void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
-  char* sym = lval_sym->sym;
-  int sym_index = find_str_index(env->syms, env->count, sym);
+  env->kv = alist_assoc(env->kv, is_eq_str, lval_sym->sym, lval);
+}
 
-  if (sym_index != -1) {
-    lval_del(env->lvals[sym_index]);
-    env->lvals[sym_index] = make_lval_copy(lval);
-    return;
-  }
-  env->count++;
-  env->lvals = realloc(env->lvals, sizeof(Lval*) * env->count);
-  env->syms = realloc(env->syms, sizeof(char*) * env->count);
-
-  /* printf("in lenv_put: count %d\n", env->count); */
-  /* lval_println(lval); */
-  Lval* copy = make_lval_copy(lval);
-  /* printf("in lenv_put\n"); */
-  env->lvals[env->count - 1] = copy;
-  env->syms[env->count - 1] = malloc(strlen(lval_sym->sym) + 1);
-  strcpy(env->syms[env->count - 1], lval_sym->sym);
+// Persistent
+Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
+  Lenv* next_env = lenv_new();
+  next_env->parent_env = env->parent_env;
+  /* lenv_del(env); */
+  next_env->kv = alist_passoc(env->kv, is_eq_str, lval_sym->sym, lval);
+  return next_env;
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func, int subtype) {
@@ -102,6 +79,4 @@ void lenv_add_builtin(Lenv* env, char* name, lbuiltin func, int subtype) {
   }
   Lval* lval_fun = make_lval_fun(func, name, subtype);
   lenv_put(env, lval_sym, lval_fun);
-  lval_del(lval_sym);
-  lval_del(lval_fun);
 }
