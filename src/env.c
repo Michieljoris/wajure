@@ -64,10 +64,11 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
 }
 
 // Persistent
-void lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
-  Cell* kv = alist_passoc(env->kv, is_eq_str, lval_sym->sym, lval);
-  list_free(env->kv);
-  env->kv = kv;
+Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
+  Lenv* next_env = lenv_new();
+  lenv_del(env);
+  next_env->kv = alist_passoc(env->kv, is_eq_str, lval_sym->sym, lval);
+  return next_env;
 }
 
 void lenv_add_builtin(Lenv* env, char* name, lbuiltin func, int subtype) {

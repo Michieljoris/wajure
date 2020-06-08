@@ -34,7 +34,7 @@ struct lval {
   Lval** node;
   Lenv* tco_env;
 
-  Cell* list;
+  Cell* head;
 };
 
 struct lenv {
@@ -75,16 +75,14 @@ Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
 Lval* make_lval_exception(char* msg);
 
-char* lval_type_to_name(int t);
-char* lval_type_to_name2(Lval* lval);
+char* lval_type_constant_to_name(int t);
+char* lval_type_to_name(Lval* lval);
 
 void lval_del(Lval* v);
-Lval* make_lval_copy(Lval* v);
-Lval* lval_pop(Lval* v, int i);
-
 Cell* make_cell();
 
 Cell* iter_new(Lval* lval_list);
+Cell* iter_cell(Cell* iterator);
 Lval* iter_next(Cell* iterator);
 void iter_end(Cell* iterator);
 Lval* iter_peek(Cell* iterator);

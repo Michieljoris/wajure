@@ -23,7 +23,8 @@ void repl(Lenv* env) {
       Lval* expressions = read_list(make_lval_list(), mpc_ast);
       mpc_ast_delete(result.output);
       while (expressions->count) {
-        Lval* expr = lval_pop(expressions, 0);
+        // TODO: fix up repl
+        Lval* expr = NULL;  // lval_pop(expressions, 0);
         Lval* x = lval_eval(env, expr);
         lval_println(x);
         lval_del(x);

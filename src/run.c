@@ -21,8 +21,8 @@ void run(int argc, char** argv) {
   if (argc >= 2) {
     for (int i = 1; i < argc; ++i) {
       Lval* arg_list = make_lval_list();
-      arg_list->list = make_cell();
-      arg_list->list->car = make_lval_str(argv[i]);
+      arg_list->head = make_cell();
+      arg_list->head->car = make_lval_str(argv[i]);
       Lval* x = load_fn(user_env, arg_list);
       if (x->type == LVAL_ERR) {
         lval_println(x);

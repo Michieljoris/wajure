@@ -21,7 +21,6 @@ So we must use lists for those. Perhaps we can use hamt and pvector if we need m
   -> in catch
 - >>>>>>> So all should be persistent (or copied over) and big Q remains: when do we release lvals???
 
-** replace mpc
 ** put ifdefs in for system libs
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
@@ -82,3 +81,4 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 ** DONE returning partials from fn not working
 ** DONE memory pool
 ** DONE persistend list with mem pool
+** DONE replace mpc

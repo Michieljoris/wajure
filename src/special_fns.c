@@ -67,49 +67,52 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
   Lval* lval_params = arg;
 
-  Cell* param = arg->list;
+  Cell* param = arg->head;
   while (param) {
     LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name2(param->car), lval_type_to_name(LVAL_SYMBOL));
+            lval_type_to_name(param->car),
+            lval_type_constant_to_name(LVAL_SYMBOL));
     param = param->cdr;
   }
 
   // Creates lambda lval and sets the parent_env of its env field (bindings)
   // to the passed in env
   Lval* lval_body = make_lval_list();
-  lval_body->list = list_rest(arg_list->list);
-  Lval* fn = make_lval_lambda(env, lval_params, lval_body, subtype);
+  lval_body->head = list_rest(arg_list->head);
+  Lenv* closure = lenv_new();
+  closure->parent_env = env;
+  Lval* fn = make_lval_lambda(closure, lval_params, lval_body, subtype);
   return fn;
 }
 
-Lval* eval_lambda(Lenv* env, Lval* sexpr_args) {
-  return eval_lambda_form(env, sexpr_args, LAMBDA);
+Lval* eval_lambda(Lenv* env, Lval* arg_list) {
+  return eval_lambda_form(env, arg_list, LAMBDA);
 }
 
 // When macros are defined they close over the environment where they are
 // defined.
-Lval* eval_macro(Lenv* env, Lval* sexpr_args) {
-  return eval_lambda_form(env, sexpr_args, MACRO);
+Lval* eval_macro(Lenv* env, Lval* arg_list) {
+  return eval_lambda_form(env, arg_list, MACRO);
 }
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-      list_count(lval->list) >= min_node_count) {
-    lval = lval->list->car;
+      list_count(lval->head) >= min_node_count) {
+    lval = lval->head->car;
     return lval->type == LVAL_SYMBOL && _strcmp(lval->sym, sym) == 0;
   }
   return 0;
 }
 
 Lval* eval_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->list->cdr, 1, "unquote");
-  return lval_eval(env, lval->list->cdr->car);
+  LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "unquote");
+  return lval_eval(env, lval->head->cdr->car);
 }
 
 Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->list->cdr, 1, "splice-unquote");
-  Lval* ret = lval_eval(env, lval->list->cdr->car);
+  LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "splice-unquote");
+  Lval* ret = lval_eval(env, lval->head->cdr->car);
   if (ret->type == LVAL_ERR) return ret;
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
   return ret;
@@ -121,7 +124,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
   ITER_NEW("quasiquote")
   ITER_NEXT
   Cell** lp;
-  lp = &evalled_list->list;
+  lp = &evalled_list->head;
   Cell* new_cell;
   while (arg) {
     /* Take the first of the remaining nodes*/
@@ -150,8 +153,8 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
         return splice_unquoted_eval;
       }
       /* And concat to processed nodes */
-      *lp = splice_unquoted_eval->list;
-      Cell* last_cell = list_last(splice_unquoted_eval->list);
+      *lp = splice_unquoted_eval->head;
+      Cell* last_cell = list_last(splice_unquoted_eval->head);
       lp = &(last_cell->cdr);
     } else {
       /* if node is a list apply quasiquote recursively */
@@ -193,7 +196,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
                   "Trying to splice unquote a %s. Can only use splice "
                   "unquote in a "
                   "quasiquoted list",
-                  lval_type_to_name2(qq_arg->list->cdr->car));
+                  lval_type_to_name(qq_arg->head->cdr->car));
           ret = eval_quasiquote_nodes(env, qq_arg);
           break;
         case VECTOR:
@@ -220,9 +223,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   Lval* node;
   ITER_NEXT
   while (arg) {
-    /* for (int i = 0; i < sexpr_args->count; ++i) { */
     node = arg;
-    /* node = sexpr_args->node[i]; */
     /* printf("node: "); */
     /* lval_println(node); */
     switch (mode) {
@@ -233,7 +234,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           /* printf("from EXPR, found catch\n"); */
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
-            if (list_count(node->list) < 3) {
+            if (list_count(node->head) < 3) {
               lval_del(ret);
               lval_del(arg_list);
               return make_lval_err(
@@ -242,7 +243,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             }
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = env;
-            Lval* lval_sym = list_nth(node->list, 2); /* sym to bind msg to */
+            Lval* lval_sym = list_nth(node->head, 2); /* sym to bind msg to */
             if (lval_sym->type != LVAL_SYMBOL) {
               lval_del(lval_sym);
               lval_del(ret);
@@ -256,7 +257,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             lval_del(lval_sym);
             lval_del(ret);
             Lval* body = make_lval_list();
-            body->list = list_rest(list_rest(list_rest(node->list)));
+            body->head = list_rest(list_rest(list_rest(node->head)));
             /* lenv_print(catch_env); */
             /* lval_println(body); */
             ret = eval_body(catch_env, body, WITHOUT_TCO);
@@ -271,7 +272,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         else if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
           Lval* body = make_lval_list();
-          body->list = list_rest(node->list);
+          body->head = list_rest(node->head);
           Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
@@ -304,7 +305,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         } else if (is_fn_call(node, "finally", 1)) {
           mode = FINALLY;
           Lval* body = make_lval_list();
-          body->list = list_rest(node->list);
+          body->head = list_rest(node->head);
           Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
             lval_del(ret);
@@ -337,14 +338,14 @@ Lval* eval_do(Lenv* env, Lval* body) {
 }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
-  LASSERT(arg_list, list_count(arg_list->list) >= 1,
+  LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
   ITER_NEW("let")
   ITER_NEXT
   Lval* bindings = arg;
   LASSERT_TYPE("let", arg_list, 0, LVAL_COLLECTION, VECTOR, bindings);
 
-  LASSERT(arg_list, list_count(bindings->list) % 2 == 0,
+  LASSERT(arg_list, list_count(bindings->head) % 2 == 0,
           "Binding vector for let has odd number of forms");
 
   Lenv* let_env = lenv_new();
@@ -355,7 +356,8 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
     Lval* lval_sym = arg;
     LASSERT(arg_list, lval_sym->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name2(lval_sym), lval_type_to_name(LVAL_SYMBOL));
+            lval_type_to_name(lval_sym),
+            lval_type_constant_to_name(LVAL_SYMBOL));
 
     ITER_NEXT
     Lval* lval = lval_eval(env, arg);
@@ -377,14 +379,14 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
 /* Not really a special form */
 Lval* eval_throw(Lenv* env, Lval* arg_list) {
-  LASSERT(arg_list, list_count(arg_list->list) >= 1,
+  LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: throw needs a message");
   arg_list = eval_nodes(env, arg_list);
   if (arg_list->type == LVAL_ERR) {
     lval_del(arg_list);
     return arg_list;
   }
-  Lval* lval_str = arg_list->list->car;
+  Lval* lval_str = arg_list->head->car;
   LASSERT_TYPE("throw", arg_list, 0, LVAL_LITERAL, STRING, lval_str);
   char* msg = lval_str->str;
   Lval* lval_exc = make_lval_exception(msg);

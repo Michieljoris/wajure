@@ -40,7 +40,7 @@ void lval_pr_str(Lval* lval) {
 
 void lval_collection_print(Lval* lval, char open, char close) {
   if (open) _putchar(open);
-  Cell* cell = lval->list;
+  Cell* cell = lval->head;
   while (cell) {
     lval_print(cell->car);
     cell = cell->cdr;
@@ -77,7 +77,7 @@ void lval_fun_print(Lval* lval) {
 }
 
 void lval_print(Lval* lval) {
-  /* _printf("in lval print %s\n", lval_type_to_name2(lval)); */
+  /* _printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
       _printf("%s", lval->sym);
@@ -95,7 +95,7 @@ void lval_print(Lval* lval) {
           break;
         default:
           _printf("unknown lval subtype %s\n",
-                  lval_type_to_name(lval->subtype));
+                  lval_type_constant_to_name(lval->subtype));
       }
       break;
     case LVAL_LITERAL:
@@ -115,7 +115,7 @@ void lval_print(Lval* lval) {
       break;
     default:
       _printf("unknown lval type %d, %s\n", lval->type,
-              lval_type_to_name(lval->type));
+              lval_type_constant_to_name(lval->type));
   }
 }
 

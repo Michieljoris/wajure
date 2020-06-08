@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "env.h"
 #include "io.h"
+#include "iter.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
@@ -18,12 +19,13 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   Lval* new_list = make_lval_list();
   Cell* i = iter_new(lval_list);
   Lval* lval = iter_next(i);
-  Cell** lp = &(new_list->list);
+  Cell** lp = &(new_list->head);
   while (lval) {
     Lval* x = lval_eval(env, lval);
     if (x->type == LVAL_ERR) {
       lval_del(lval_list);
       lval_del(new_list);
+      iter_end(i);
       return x;
     }
     Cell* next_cell = make_cell();
@@ -32,78 +34,76 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
     next_cell->car = x;
     lval = iter_next(i);
   }
-
+  iter_end(i);
   lval_del(lval_list);
 
   return new_list;
 }
 
 Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
-  /* bind any args */
-  int given = arg_list->count;
-  int total = lval_fun->params->count;
+  /* Pop an arg */
+  Cell* a = iter_new(arg_list);
+  Lval* arg = iter_next(a);
 
-  while (arg_list->count) {
-    /* Check if any formals (params) are left to bind */
-    if (lval_fun->params->count == 0) {
-      lval_del(lval_fun);
-      lval_del(arg_list);
+  /* Pop a parameter symbol */
+  Cell* p = iter_new(lval_fun->params);
+  Lval* param = iter_next(p);
+
+  Lenv* bindings = lval_fun->bindings;
+
+  // Try to bind all the arg in arg_list
+  while (arg) {
+    /* Return error if we've got an arg but not a param */
+    if (!param) {
       return make_lval_err(
-          "Function passed too many args. Got %i, expected %i.", given, total);
+          "Function passed too many args. Got %i, expected %i.",
+          list_count(arg_list->head), list_count(lval_fun->params->head));
     }
 
-    /* Pop a parameter symbol */
-    Lval* sym = lval_pop(lval_fun->params, 0);
-
     /* Process symbol if it's a & and break out of while loop */
-    if (_strcmp(sym->sym, "&") == 0) {
+    if (_strcmp(param->sym, "&") == 0) {
+      param = iter_next(p);
       /* if the param is & there should be exactly one formal left  */
-      if (lval_fun->params->count != 1) {
-        lval_del(lval_fun);
-        lval_del(arg_list);
+      if (!param || iter_peek(p)) {
         return make_lval_err(
             "Function format invalid. "
             "Symbol '&' not followed by single symbol.");
       }
+      Lval* rest_args = make_lval_list();
+      rest_args->head = iter_cell(a);
       /* Bind last param with rest of args */
-      Lval* rest_sym = lval_pop(lval_fun->params, 0);
-      lenv_put(lval_fun->bindings, rest_sym, list_fn(NULL, arg_list));
-      lval_del(sym);
-      lval_del(rest_sym);
+      bindings = lenv_assoc(bindings, param, rest_args);
       /* Break out of while loop because all args are bound now */
       break;
     }
     /* Bind sym with arg */
-    Lval* val = lval_pop(arg_list, 0);
-    lenv_put(lval_fun->bindings, sym, val);
-    lval_del(sym);
-    lval_del(val);
+    bindings = lenv_assoc(bindings, param, arg);
+    arg = iter_next(a);
+    param = iter_next(p);
   }
+  iter_end(a);
 
-  lval_del(arg_list);
-
-  /* If there's still formals unbound and next one is & */
-  if (lval_fun->params->count > 0 &&
-      _strcmp(lval_fun->params->node[0]->sym, "&") == 0) {
+  /* If there's still params unbound and next one is & */
+  if (param && _strcmp(param->sym, "&") == 0) {
+    param = iter_next(p);  // rest param
     /* The & needs to be followed by exactly one symbol */
-    if (lval_fun->params->count != 2) {
+    if (!param) {
       Lval* lval_err = make_lval_err(
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
-      lval_del(lval_fun);
+      iter_end(p);
+      lfree(LENV, bindings);
       return lval_err;
     }
 
-    lval_del(lval_pop(lval_fun->params, 0)); /* pop and free & */
     /* and bind last symbol to empty list */
-    Lval* sym = lval_pop(lval_fun->params, 0);
-    Lval* val = make_lval_list();
-    lenv_put(lval_fun->bindings, sym, val);
-    lval_del(sym);
-    lval_del(val);
+    Lval* empty_lval_list = make_lval_list();
+    lenv_put(bindings, param, empty_lval_list);
   }
 
-  return lval_fun;
+  Lval* params = make_lval_list();
+  params->head = iter_cell(p);
+  return make_lval_lambda(bindings, params, lval_fun->body, LAMBDA);
 }
 
 Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
@@ -124,15 +124,50 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
 
     lval = iter_next(i);
   }
+  iter_end(i);
 
   return ret ? ret : make_lval_list();
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
+Lval* eval_lambda_call2(Lval* lval_fun, Lval* arg_list, int with_tco) {
+  /* Bind formals to args */
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
+
+  /* Eval body expressions, but only if all params are bound */
+  if (!lval_fun->params->head) {
+    Lval* evalled_body =
+        eval_body(lval_fun->bindings, lval_fun->body, with_tco);
+
+    return evalled_body;
+  } else {
+    return lval_fun;
+  }
+}
+
+Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list) {
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
+
+  if (lval_fun->params->head) {
+    return make_lval_err("Macro needs all its params bound");
+  }
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
+  Lval* expanded_macro =
+      eval_body(lval_fun->bindings, lval_fun->body, WITHOUT_TCO);
+
+  /* Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
+   */
+  // After the macro is expanded they close over the environment where they are
+  // executed
+  expanded_macro->tco_env = env;
+  return expanded_macro;
+}
+
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
   /* Bind formals to args */
   /* printf("eval lambda call: "); */
   /* lval_println(lval_fun); */
-  lval_fun = bind_lambda_params(lval_fun, sexpr_args);
+  lval_fun = bind_lambda_params(lval_fun, arg_list);
   /* printf("evalled formals\n"); */
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
@@ -155,13 +190,12 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* sexpr_args, int with_tco) {
   }
 }
 
-Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* sexpr_args,
-                      int with_tco) {
+Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list, int with_tco) {
   /* printf(">>>>>>>>>>>>>>>>>evalling macro call\n"); */
   /* lval_println(lval_fun); */
-  /* lval_println(sexpr_args); */
+  /* lval_println(arg_list); */
   /* printf("Expanding..\n"); */
-  Lval* expanded_macro = eval_lambda_call(lval_fun, sexpr_args, WITHOUT_TCO);
+  Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
   /* printf("Original lval_fun: "); */
   /* lval_println(lval_fun); */
   /* printf  ("Expanded macro:\n"); */
@@ -199,27 +233,27 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   printf("evalling fn call: ");
   lval_println(lval_list);
   Lval* lval_err;
-  if (lval_list->list == NIL) {
+  if (lval_list->head == NIL) {
     // TODO: release list here
     return make_lval_list();  // empty;
   }
 
   Lval* lval_fun =
-      lval_eval(env, list_first(lval_list->list));  // eval first node
+      lval_eval(env, list_first(lval_list->head));  // eval first node
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   if (lval_fun->type != LVAL_FUNCTION) {
     lval_err = make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
-        lval_type_to_name2(lval_fun), lval_type_to_name(LVAL_FUNCTION));
+        lval_type_to_name(lval_fun), lval_type_constant_to_name(LVAL_FUNCTION));
     lval_del(lval_list);
     lval_del(lval_fun);
     return lval_err;
   }
 
   Lval* arg_list = make_lval_list();
-  arg_list->list = list_rest(lval_list->list);
+  arg_list->head = list_rest(lval_list->head);
   switch (lval_fun->subtype) {
     case SYS:
     case LAMBDA:

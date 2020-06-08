@@ -17,15 +17,15 @@ int is_lval_type(Lval* lval, int type, int subtype) {
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
-  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && list_count(lval->list) > 0 &&
-      ((Lval*)(lval->list->car))->type == LVAL_SYMBOL) {
+  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && list_count(lval->head) > 0 &&
+      ((Lval*)(lval->head->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
-    Lval* lval_fun = lenv_get(env, lval->list->car);
+    Lval* lval_fun = lenv_get(env, lval->head->car);
 
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
       Lval* arg_list = make_lval_list();
-      arg_list->list = lval->list->cdr;
+      arg_list->head = lval->head->cdr;
       /* Bind the macro with its args */
       Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
       // release fun and args
@@ -118,6 +118,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       lval_del(x);
       lval = iter_next(i);
     }
+    iter_end(i);
   } else {
     lval_println(lval_list);
   }
@@ -147,7 +148,7 @@ Lval* mpc_load_fn(Lenv* env, Lval* arg_list) {
     /* lval_println(lval_list); */
 
     /* printf("exrp count:%d\n", expressions->count); */
-    Cell* cell = lval_list->list;
+    Cell* cell = lval_list->head;
     while (cell) {
       Lval* x = lval_eval(env, (Lval*)cell->car);
       if (x->type == LVAL_ERR) {

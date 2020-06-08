@@ -65,7 +65,7 @@ Lval* read_next_expression(Expr_stream* expr_stream);
           "The reader macro \"%s\" has nothing to (un)quote.", reader_token); \
     Lval* lval = make_lval_list();                                            \
     Cell* cell = make_cell();                                                 \
-    lval->list = cell;                                                        \
+    lval->head = cell;                                                        \
     cell->car = make_lval_sym(lispy_fn);                                      \
     cell->cdr = make_cell();                                                  \
     cell->cdr->car = next_expression;                                         \
@@ -102,7 +102,7 @@ Lval* read_list(Lval* lval_list, mpc_ast_t* expression) {
   /* printf("read_list\n"); */
   Expr_stream expr_stream = {expression->children, expression->children_num, 0};
   Cell** address_of_last_pointer;
-  address_of_last_pointer = &lval_list->list;
+  address_of_last_pointer = &lval_list->head;
 
   while (has_next_expr(&expr_stream)) {
     Lval* next_expr = read_next_expression(&expr_stream);

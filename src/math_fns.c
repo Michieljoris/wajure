@@ -29,7 +29,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
         if (arg->subtype != NUMBER) {
           ITER_END
           return make_lval_err("Expected number but got %s",
-                               lval_type_to_name2(arg));
+                               lval_type_to_name(arg));
         }
         if (*operator== '/' && arg->num == 0) {
           ITER_END
@@ -48,7 +48,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
   while (arg) {
     if (arg->subtype != NUMBER) {
       return make_lval_err("Expected number but got %s",
-                           lval_type_to_name2(arg));
+                           lval_type_to_name(arg));
     }
     switch (*operator) {
       case '+':
@@ -109,11 +109,11 @@ int lval_eq(Lval* x, Lval* y) {
     case LVAL_SYMBOL:
       return (_strcmp(x->sym, y->sym) == 0);
     case LVAL_COLLECTION:
-      if (list_count(x->list) != list_count(y->list)) {
+      if (list_count(x->head) != list_count(y->head)) {
         return 0;
       }
-      Cell* xl = x->list;
-      Cell* yl = y->list;
+      Cell* xl = x->head;
+      Cell* yl = y->head;
       while (xl) {
         if (!lval_eq(xl->car, yl->car)) {
           return 0;
@@ -129,7 +129,7 @@ int lval_eq(Lval* x, Lval* y) {
         return (_strcmp(x->str, y->str) == 0);
       default:
         printf("Warning: comparing instances of type '%s' is not implemented\n",
-               lval_type_to_name2(x));
+               lval_type_to_name(x));
         return 0;
     }
     case LVAL_FUNCTION:
@@ -142,7 +142,7 @@ int lval_eq(Lval* x, Lval* y) {
       return (_strcmp(x->err, y->err) == 0);
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
-         lval_type_to_name2(x));
+         lval_type_to_name(x));
   return 0;
 }
 
