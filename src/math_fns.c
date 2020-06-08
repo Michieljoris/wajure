@@ -39,12 +39,12 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
                                : make_lval_num(1 / arg->num);
       }
       result = arg->num;
+      ITER_NEXT
       break;
     default:
       ITER_END
       return make_lval_err("Unsupported math operation: %s", operator);
   }
-  ITER_NEXT
   while (arg) {
     if (arg->subtype != NUMBER) {
       return make_lval_err("Expected number but got %s",

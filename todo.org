@@ -9,6 +9,7 @@ So we must use lists for those. Perhaps we can use hamt and pvector if we need m
 - If we don't copy lvals from env they'll have to be immutable.
 - when env is created it should be a snapshot. Any modifications to it shouldn't affect any closures already bound.
   ->> so they have to be immutable as well.
+  WELL... : this goes for let, not for def!!!!!
 -
 - ? Should env be a palist? Instead of just an alist? So persistent? Well, persistent, see last point
     in other words, when setting values in the env do we overwrite if existing? Or treat the env as persistent.
@@ -30,7 +31,7 @@ So we must use lists for those. Perhaps we can use hamt and pvector if we need m
 - eval_lambda_call
 - let
 - do
-** add tests from mal
+** add rest of tests from mal
 ** More
 *** maps
 *** stdlib

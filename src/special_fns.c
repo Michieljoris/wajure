@@ -257,8 +257,8 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             lval_del(ret);
             Lval* body = make_lval_list();
             body->list = list_rest(list_rest(list_rest(node->list)));
-            lenv_print(catch_env);
-            lval_println(body);
+            /* lenv_print(catch_env); */
+            /* lval_println(body); */
             ret = eval_body(catch_env, body, WITHOUT_TCO);
             lenv_del(catch_env);
             if (ret->type == LVAL_ERR) {

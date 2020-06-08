@@ -197,8 +197,8 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
 Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
-  /* printf("evalling fn call: "); */
-  /* lval_println(lval_list); */
+  printf("evalling fn call: ");
+  lval_println(lval_list);
   Lval* lval_err;
   if (lval_list->list == NIL) {
     // TODO: release list here
@@ -207,7 +207,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
 
   Lval* lval_fun =
       lval_eval(env, list_first(lval_list->list));  // eval first node
-  if (lval_fun->type == LVAL_ERR) return lval_list;
+  if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   if (lval_fun->type != LVAL_FUNCTION) {
     lval_err = make_lval_err(
