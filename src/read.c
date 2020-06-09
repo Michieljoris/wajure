@@ -1,6 +1,7 @@
 #include <errno.h>
 
 #include "lib.h"
+#include "lispy_mempool.h"
 #include "lval.h"
 #include "print.h"
 
@@ -188,15 +189,15 @@ Lval* lval_read_list(char* s, int* i, char end) {
   while (s[*i] != end) {
     skip_ignored_chars(s, i);
     if (s[*i] == '\0') break;
-    Lval* y = lval_read(s, i);
+    Lval* next_expr = lval_read(s, i);
     skip_ignored_chars(s, i);
     /* If an error then return this and stop */
-    if (y->type == LVAL_ERR) {
-      lval_del(x);
-      return y;
+    if (next_expr->type == LVAL_ERR) {
+      release(x);
+      return next_expr;
     } else {
       Cell* next_cell = make_cell();
-      next_cell->car = y;
+      next_cell->car = next_expr;
       *lp = next_cell;
       lp = &(next_cell->cdr);
     }

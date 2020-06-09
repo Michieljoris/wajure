@@ -8,7 +8,7 @@
 Mempool** mempools;
 
 typedef struct {
-  unsigned int ref_count;
+  int ref_count;
   Destructor destroy;
   int type;
   void* data_p;
@@ -18,10 +18,58 @@ typedef struct {
 #define PAD(siz) ((siz) + sizeof(int) - ((siz) % sizeof(int)))
 #define SLOT_SIZE(type) PAD(sizeof(Slot)) + PAD(sizeof(type))
 
-void destroy_lval(void* lval) { printf("destroying lval!!!\n"); }
-void destroy_lenv(void* lval) { printf("destroying lenv!!!\n"); }
-void destroy_cell(void* lval) { printf("destroying cell!!!\n"); }
-void destroy_iter(void* lval) { printf("destroying iter!!!\n"); }
+void destroy_lval(void* data) {
+  Lval* lval = (Lval*)data;
+  printf("destroying lval:%li\n", (long int)lval);
+  lval_println(lval);
+  switch (lval->type) {
+    case LVAL_SYMBOL:
+      free(lval->sym);
+      break;
+    case LVAL_COLLECTION:
+      release(lval->head);
+      break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case NUMBER:
+          break;
+        case STRING:
+          free(lval->str);
+          break;
+        default:
+          printf("Can't delete unknown literal subtype: %d\n", lval->subtype);
+      }
+      break;
+    case LVAL_FUNCTION:
+      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
+        free(lval->func_name);
+      } else {
+        release(lval->bindings);
+        release(lval->params);
+        release(lval->body);
+      }
+      break;
+    case LVAL_ERR:
+      free(lval->err);
+      break;
+    default:
+      printf("Can't delete unknown type: %d\n", lval->type);
+  }
+}
+void destroy_lenv(void* env) {
+  printf("destroying lenv\n");
+  release(((Lenv*)env)->kv);
+}
+void destroy_cell(void* cell) {
+  printf("destroying cell\n");
+  release(((Cell*)cell)->car);
+  release(((Cell*)cell)->cdr);
+}
+void destroy_iter(void* cell) {
+  printf("destroying iter\n");
+  release(((Cell*)cell)->car);
+  release(((Cell*)cell)->cdr);
+}
 
 // The order and number of these types needs to match with the enum in
 // lispy_mempool.h!
@@ -81,7 +129,7 @@ char* type_to_name(int type) {
       return "LVAL";
       break;
     case LENV:
-      return "----->LENV";
+      return "LENV";
       break;
     case CELL:
       return "CELL";
@@ -94,21 +142,20 @@ char* type_to_name(int type) {
   }
 }
 
-void destroy(void* x) {}
-
 void* lalloc(int type) {
   Slot* slot_p = mempool_alloc(mempools[type]);
   *slot_p = (Slot){.destroy = destructors[type],
                    .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
+                   .ref_count = 1,
                    .type = type};
-  printf(">>%s: ", type_to_name(type));
+  printf("+%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   return slot_p->data_p;
 }
 
 void lfree(int type, void* slot) {
   mempool_free(mempools[type], slot);
-  printf("<<%s: ", type_to_name(type));
+  printf("-%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   /* printf("done %d\n", type); */
 }
@@ -117,15 +164,18 @@ static Slot* get_slot_p(void* data_p) {
   return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
 }
 
-unsigned int get_ref_count(void* data_p) {
-  return get_slot_p(data_p)->ref_count;
-}
+int get_ref_count(void* data_p) { return get_slot_p(data_p)->ref_count; }
 
-void retain(void* data_p) { ++get_slot_p(data_p)->ref_count; }
+void retain(void* data_p) {
+  Slot* slot = get_slot_p(data_p);
+  printf("retain: %s-%li, ref count is %d\n", type_to_name(slot->type),
+         (long int)data_p, slot->ref_count);
+  ++get_slot_p(data_p)->ref_count;
+}
 
 void release(void* data_p) {
   if (!data_p) {
-    printf("Warning: trying to release data with a NULL pointer.");
+    /* printf("Warning: trying to release data with a NULL pointer."); */
     return;
   }
   Slot* slot = get_slot_p(data_p);
@@ -135,9 +185,20 @@ void release(void* data_p) {
     return;
   };
 
-  if (--slot->ref_count) /* still referenced */
+  printf("release: %s-%li, ref count is %d\n", type_to_name(slot->type),
+         (long int)data_p, slot->ref_count);
+  if (--slot->ref_count) /* still referenced */ {
+    if (slot->ref_count < 0)
+      printf("Warning: ref count for a %s has gone negative: %d\n",
+             type_to_name(slot->type), slot->ref_count);
     return;
+  }
 
   if (slot->destroy) slot->destroy(data_p);
   lfree(slot->type, slot);
+}
+
+void clean_up(void* data) {
+  printf("Cleaning up\n");
+  release(*(void**)data);
 }

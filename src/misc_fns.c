@@ -90,7 +90,6 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   FILE* f = fopen(arg->str, "rb");
   if (f == NULL) {
     Lval* err = make_lval_err("Could not load Library %s", arg->str);
-    lval_del(arg_list);
     return err;
   }
   ITER_END
@@ -109,7 +108,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   free(input);
 
   printf("done reading\n");
-  return make_lval_list();
+  return lval_list;
   /* lval_println(lval_list); */
   /* Evaluate all expressions contained in S-Expr */
   if (lval_list->type != LVAL_ERR) {
@@ -129,7 +128,6 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   }
 
   lval_del(lval_list);
-  lval_del(arg_list);
 
   return make_lval_list();
 }
