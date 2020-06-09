@@ -6,6 +6,8 @@ Removed qexpr and added quoting instead.
 
 Added some more features as discussed in https://github.com/kanaka/mal such as tco, macros, closures and try/catch/throw.
 
+Replaced arrays with lists (chain of cons cells).
+
 Tests (wip) are also from mal repo.
 
 Memory pool is adapted from
@@ -18,7 +20,7 @@ reallocating.
 
 Env is a association list.
 
-*** Run
+* Run
 make (also runs the binary, with repl.lispy as arg)
 
 Alternatively:
@@ -27,9 +29,7 @@ out/lispy lispy/repl.lispy
 
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
-*** TODO:
-
-- persistent Lispy lists
+* TODO:
 - reference counting
 - finish adding mal tests, make them pass
 - expand lispy stdlib somewhat
@@ -41,7 +41,14 @@ There's a repl, but compilation is fast enough to make for a faster feedback loo
 - interpreter/compiler in lispy!
 
 Plan is when memory management is under control with memory pools and reference counting to slowly build a compiler to webassembly and/or llvm IR.
-*** references
-**** memorypool
+* references
+** memory pool
 - https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3,
 - http://www.pinksquirrellabs.com/blog/2018/01/31/-fixed-memory-pool-design
+** reference counting in c
+  http://manujbhatia.com/2020/04/11/reference-counting-in-c/
+  https://snai.pe/posts/c-smart-pointers
+  https://xs-labs.com/en/archives/articles/c-reference-counting/
+  https://nullprogram.com/blog/2015/02/17/
+  https://codereview.stackexchange.com/questions/146561/reference-counting-in-c99
+  https://github.com/mneri/refc/blob/master/src/refc.c

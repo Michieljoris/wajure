@@ -7,10 +7,30 @@
 
 Mempool** mempools;
 
-char* slot_types[] = {"LVAL", "LENV", "CELL"};
+typedef struct {
+  unsigned int ref_count;
+  Destructor destroy;
+  int type;
+  void* data_p;
+} Slot;
+
+// Alignment
+#define PAD(siz) ((siz) + sizeof(int) - ((siz) % sizeof(int)))
+#define SLOT_SIZE(type) PAD(sizeof(Slot)) + PAD(sizeof(type))
+
+void destroy_lval(void* lval) { printf("destroying lval!!!\n"); }
+void destroy_lenv(void* lval) { printf("destroying lenv!!!\n"); }
+void destroy_cell(void* lval) { printf("destroying cell!!!\n"); }
+void destroy_iter(void* lval) { printf("destroying iter!!!\n"); }
+
+// The order and number of these types needs to match with the enum in
+// lispy_mempool.h!
+char* slot_type_str[] = {"LVAL", "LENV", "CELL", "ITER"};
+Destructor destructors[] = {destroy_lval, destroy_lenv, destroy_cell,
+                            destroy_iter};
 
 void lispy_mempool_log(int type, char* msg) {
-  printf("%s %s", slot_types[type], msg);
+  printf("%s %s", slot_type_str[type], msg);
 }
 
 #define MEMPOOL_LOG(TYPE, type)             \
@@ -26,27 +46,98 @@ void lispy_mempool_log(int type, char* msg) {
 MEMPOOL_LOG(lval, LVAL);
 MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
+MEMPOOL_LOG(iter, ITER);
+
+Mempool* create_lispy_mempool(int count) {
+  return create_mempool(sizeof(Lval), count, MEMPOOL_AUTO_RESIZE,
+                        lval_mempool_log);
+}
+
+#define MEMPOOL(typeint, Type, type)                                \
+  mempools[typeint] = create_mempool(SLOT_SIZE(Type), type##_count, \
+                                     MEMPOOL_AUTO_RESIZE, type##_mempool_log);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
-  mempools = malloc(sizeof(Mempool*) * 3);
-  mempools[LVAL] = create_mempool(sizeof(Lval), lval_count, MEMPOOL_AUTO_RESIZE,
-                                  lval_mempool_log);
-  mempools[LENV] = create_mempool(sizeof(Lenv), lenv_count, MEMPOOL_AUTO_RESIZE,
-                                  lenv_mempool_log);
-  mempools[CELL] = create_mempool(sizeof(Cell), cell_count, MEMPOOL_AUTO_RESIZE,
-                                  cell_mempool_log);
+  int mempool_count = SLOT_TYPE_COUNT;
+  mempools = malloc(sizeof(Mempool*) * mempool_count);
+
+  MEMPOOL(LVAL, Lval, lval)
+  MEMPOOL(LENV, Lenv, lenv)
+  MEMPOOL(CELL, Cell, cell)
+  MEMPOOL(ITER, Cell, cell)
 }
 
 void free_lispy_mempools() {
   free_mempool(mempools[LVAL]);
   free_mempool(mempools[LENV]);
   free_mempool(mempools[CELL]);
+  free_mempool(mempools[ITER]);
   free(mempools);
 }
 
-void* lalloc(int type) { return mempool_alloc(mempools[type]); }
+char* type_to_name(int type) {
+  switch (type) {
+    case LVAL:
+      return "LVAL";
+      break;
+    case LENV:
+      return "----->LENV";
+      break;
+    case CELL:
+      return "CELL";
+      break;
+    case ITER:
+      return "ITER";
+      break;
+    default:
+      return "huuuuh???";
+  }
+}
+
+void destroy(void* x) {}
+
+void* lalloc(int type) {
+  Slot* slot_p = mempool_alloc(mempools[type]);
+  *slot_p = (Slot){.destroy = destructors[type],
+                   .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
+                   .type = type};
+  printf(">>%s: ", type_to_name(type));
+  mempool_debug(mempools[type]);
+  return slot_p->data_p;
+}
+
 void lfree(int type, void* slot) {
-  /* printf("freeing %d\n", type); */
   mempool_free(mempools[type], slot);
+  printf("<<%s: ", type_to_name(type));
+  mempool_debug(mempools[type]);
   /* printf("done %d\n", type); */
+}
+
+static Slot* get_slot_p(void* data_p) {
+  return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
+}
+
+unsigned int get_ref_count(void* data_p) {
+  return get_slot_p(data_p)->ref_count;
+}
+
+void retain(void* data_p) { ++get_slot_p(data_p)->ref_count; }
+
+void release(void* data_p) {
+  if (!data_p) {
+    printf("Warning: trying to release data with a NULL pointer.");
+    return;
+  }
+  Slot* slot = get_slot_p(data_p);
+
+  if (data_p != slot->data_p) {
+    printf("Warning: trying to release data that's not managed by ref_count.");
+    return;
+  };
+
+  if (--slot->ref_count) /* still referenced */
+    return;
+
+  if (slot->destroy) slot->destroy(data_p);
+  lfree(slot->type, slot);
 }

@@ -86,7 +86,6 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   param = iter_next(p);
   /* If there's still params unbound and next one is & */
   if (param && _strcmp(param->sym, "&") == 0) {
-
     param = iter_next(p);  // rest param
     /* The & needs to be followed by exactly one symbol */
     if (!param) {
@@ -94,7 +93,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
       iter_end(p);
-      lfree(LENV, bindings);
+      /* lfree(LENV, bindings); */
       return lval_err;
     }
 
@@ -124,7 +123,7 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
         ret = lval;
         ret->tco_env = env;
         break;
-       }
+      }
     }
     ret = lval_eval(env, lval);
     if (ret->type == LVAL_ERR) break;

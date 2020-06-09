@@ -82,6 +82,7 @@ Lval* exit_fn(Lenv* e, Lval* arg_list) {
 }
 
 Lval* load_fn(Lenv* env, Lval* arg_list) {
+  printf("load_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
 
@@ -103,8 +104,12 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   fclose(f);
   /* Read from input to create an S-Expr */
   int pos = 0;
+  printf("reading file\n");
   Lval* lval_list = lval_read_list(input, &pos, '\0');
   free(input);
+
+  printf("done reading\n");
+  return make_lval_list();
   /* lval_println(lval_list); */
   /* Evaluate all expressions contained in S-Expr */
   if (lval_list->type != LVAL_ERR) {

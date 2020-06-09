@@ -29,9 +29,8 @@ Lenv* lenv_pcopy(Lenv* env) {
 }
 
 void lenv_del(Lenv* e) {
-  if (e->kv)
-    list_free(e->kv);
-  lfree(LENV, e);
+  if (e->kv) list_free(e->kv);
+  /* lfree(LENV, e); */
 }
 
 int is_eq_str(void* k, void* v) { return _strcmp((char*)k, (char*)v) == 0; }

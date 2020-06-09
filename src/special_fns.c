@@ -91,8 +91,7 @@ Lval* eval_lambda(Lenv* env, Lval* arg_list) {
   return eval_lambda_form(env, arg_list, LAMBDA);
 }
 
-// When macros are defined they close over the environment where they are
-// defined.
+// Macros close over the environment where they are defined.
 Lval* eval_macro(Lenv* env, Lval* arg_list) {
   return eval_lambda_form(env, arg_list, MACRO);
 }
@@ -335,7 +334,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_do(Lenv* env, Lval* body) {
-  return eval_body(env, body, WITHOUT_TCO);
+  return eval_body(env, body, WITH_TCO);
 }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
@@ -401,13 +400,13 @@ void lenv_add_special_fns(Lenv* env) {
   lenv_add_builtin(env, "quote", eval_quote, SPECIAL);
   lenv_add_builtin(env, "quasiquote", eval_quasiquote, SPECIAL);
   lenv_add_builtin(env, "def", eval_def, SPECIAL);
-  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* no TCO! */
+  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* TCO! */
   lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
   lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
   lenv_add_builtin(env, "try", eval_try, SPECIAL);
   lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
-  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* no TCO! */
-  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* no TCO! */
+  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* TCO! */
+  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* TCO! */
 
   /* Not really needed because we have tco, but for clojure compatibility */
   /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */

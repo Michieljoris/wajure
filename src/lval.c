@@ -9,10 +9,12 @@
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_SYMBOL;
-  lval->sym = calloc(1, _strlen(s) + 1);
+  *lval = (Lval){
+      .type = LVAL_SYMBOL, .subtype = -1, .sym = calloc(1, _strlen(s) + 1)};
+  /* lval->type = LVAL_SYMBOL; */
+  /* lval->sym = calloc(1, _strlen(s) + 1); */
   _strcpy(lval->sym, s);
-  lval->tco_env = NULL;
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -20,28 +22,31 @@ Lval* make_lval_sym(char* s) {
 
 Lval* make_lval_list(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_COLLECTION;
-  lval->subtype = LIST;
-  lval->head = NULL;
-  lval->tco_env = NULL;
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST};
+  /* lval->type = LVAL_COLLECTION; */
+  /* lval->subtype = LIST; */
+  /* lval->head = NULL; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_COLLECTION;
-  lval->subtype = VECTOR;
-  lval->head = NULL;
-  lval->tco_env = NULL;
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR};
+  /* lval->type = LVAL_COLLECTION; */
+  /* lval->subtype = VECTOR; */
+  /* lval->head = NULL; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_COLLECTION;
-  lval->subtype = MAP;
-  lval->head = NULL;
-  lval->tco_env = NULL;
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP};
+  /* lval->type = LVAL_COLLECTION; */
+  /* lval->subtype = MAP; */
+  /* lval->head = NULL; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -49,20 +54,24 @@ Lval* make_lval_map(void) {
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_LITERAL;
-  lval->subtype = NUMBER;
-  lval->num = x;
-  lval->tco_env = NULL;
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .num = x};
+  /* lval->type = LVAL_LITERAL; */
+  /* lval->subtype = NUMBER; */
+  /* lval->num = x; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_LITERAL;
-  lval->subtype = STRING;
-  lval->str = calloc(1, _strlen(s) + 1);
+  *lval = (Lval){.type = LVAL_LITERAL,
+                 .subtype = STRING,
+                 .str = calloc(1, _strlen(s) + 1)};
+  /* lval->type = LVAL_LITERAL; */
+  /* lval->subtype = STRING; */
+  /* lval->str = calloc(1, _strlen(s) + 1); */
   _strcpy(lval->str, s);
-  lval->tco_env = NULL;
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -71,24 +80,34 @@ Lval* make_lval_str(char* s) {
 // SYSTEM and SPECIAL
 Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
   Lval* lval = lalloc(LVAL);
-  lval->func_name = calloc(1, _strlen(func_name) + 1);
+  *lval = (Lval){.type = LVAL_FUNCTION,
+                 .subtype = subtype,
+                 .fun = func,
+                 .func_name = calloc(1, _strlen(func_name) + 1)};
+
+  /* lval->func_name = calloc(1, _strlen(func_name) + 1); */
   _strcpy(lval->func_name, func_name);
-  lval->type = LVAL_FUNCTION;
-  lval->subtype = subtype;
-  lval->fun = func;
-  lval->tco_env = NULL;
+  /* lval->type = LVAL_FUNCTION; */
+  /* lval->subtype = subtype; */
+  /* lval->fun = func; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
 // LAMBDA and MACRO
 Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_FUNCTION;
-  lval->subtype = subtype;
-  lval->bindings = env;
-  lval->params = params;
-  lval->body = body;
-  lval->tco_env = NULL;
+  *lval = (Lval){.type = LVAL_FUNCTION,
+                 .subtype = subtype,
+                 .bindings = env,
+                 .params = params,
+                 .body = body};
+  /* lval->type = LVAL_FUNCTION; */
+  /* lval->subtype = subtype; */
+  /* lval->bindings = env; */
+  /* lval->params = params; */
+  /* lval->body = body; */
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -97,16 +116,16 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
-  lval->type = LVAL_ERR;
-  lval->subtype = SYS;
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
+  /* lval->type = LVAL_ERR; */
+  /* lval->subtype = SYS; */
   va_list va;
   va_start(va, fmt);
-  lval->err = calloc(1, 512);
+  /* lval->err = calloc(1, 512); */
   vsnprintf(lval->err, 511, fmt, va);
   lval->err = realloc(lval->err, _strlen(lval->err) + 1);
-
   va_end(va);
-  lval->tco_env = NULL;
+  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -114,7 +133,6 @@ Lval* make_lval_err(char* fmt, ...) {
 Lval* make_lval_exception(char* msg) {
   Lval* lval = make_lval_err(msg);
   lval->subtype = USER;
-  lval->tco_env = NULL;
   return lval;
 }
 
@@ -225,12 +243,20 @@ void lval_del(Lval* lval) {
   free(lval);
 }
 
-//TODO: make new ds for iter: but for now: cdr points to the cell for which the
-//lval was returned in the last call to iter_next, car points to the cell that
-//points to the lval that will be returned by the next iter_next call, it it
-//exists.
+// TODO: make new ds for iter: but for now: cdr points to the cell for which the
+// lval was returned in the last call to iter_next, car points to the cell that
+// points to the lval that will be returned by the next iter_next call, it it
+// exists.
+
+Cell* make_iter_cell() {
+  Cell* cell = lalloc(ITER);
+  cell->car = NULL;
+  cell->cdr = NULL;
+  return cell;
+}
+
 Cell* iter_new(Lval* lval_list) {
-  Cell* iterator = make_cell();
+  Cell* iterator = make_iter_cell();
   iterator->car = lval_list->head;
   return iterator;
 }
@@ -247,12 +273,12 @@ Cell* iter_current_cell(Cell* iterator) {
 
 Lval* iter_next(Cell* iterator) {
   if (!iterator->car) {
-    iterator->cdr = NIL; //current cell
+    iterator->cdr = NIL;  // current cell
     return NIL;
-   }
+  }
   Cell* p = iterator->car;
   Lval* next_lval = p->car;
-  iterator->cdr = p; //current cell
+  iterator->cdr = p;  // current cell
   iterator->car = p->cdr;
   return next_lval;
 }
@@ -264,4 +290,5 @@ Lval* iter_peek(Cell* iterator) {
   return next_lval;
 }
 
-void iter_end(Cell* iterator) { lfree(CELL, iterator); }
+void iter_end(Cell* iterator) { /* lfree(ITER, iterator); */
+}

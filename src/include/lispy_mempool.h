@@ -3,14 +3,16 @@
 
 #include "mempool.h"
 
-enum { LVAL, LENV, CELL };
-char* slot_types[3];
+// The order and number of these types needs to match!!
+enum { LVAL, LENV, CELL, ITER, SLOT_TYPE_COUNT };
 
 Mempool* lval_mempool;
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count);
 void free_lispy_mempools();
 
 void* lalloc(int type);
-void lfree(int type, void* slot);
+void retain(void* data_p);
+void release(void* data_p);
+typedef void (*Destructor)(void*);
 
 #endif  // __LVAL_MEMPOOL_H_

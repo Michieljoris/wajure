@@ -5,7 +5,7 @@ Cell* list_new() { return make_cell(); }
 
 void list_free(Cell* cell) {
   // Ref counting should get rid of rest of list
-  lfree(CELL, cell);
+  /* lfree(CELL, cell); */
 }
 
 Cell* make_cell() {
@@ -154,7 +154,7 @@ int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
 // Mutates passed in alist. Replaces value if key is found, otherwise prepends
 // alist with new association pair. Returns new head.
 Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
-                 void* value) {
+                  void* value) {
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     ((Cell*)node->car)->cdr = value;
