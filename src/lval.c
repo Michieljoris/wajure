@@ -290,5 +290,4 @@ Lval* iter_peek(Cell* iterator) {
   return next_lval;
 }
 
-void iter_end(Cell* iterator) { /* lfree(ITER, iterator); */
-}
+void iter_end(Cell* iterator) { release(iterator); }

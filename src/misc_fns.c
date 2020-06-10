@@ -107,8 +107,8 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list = lval_read_list(input, &pos, '\0');
   free(input);
 
-  printf("done reading\n");
-  return lval_list;
+  printf("DONE READING ====================n");
+  /* return lval_list; */
   /* lval_println(lval_list); */
   /* Evaluate all expressions contained in S-Expr */
   if (lval_list->type != LVAL_ERR) {
@@ -119,7 +119,6 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }
-      lval_del(x);
       lval = iter_next(i);
     }
     iter_end(i);

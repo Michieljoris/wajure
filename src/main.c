@@ -3,7 +3,6 @@
 #include "run.h"
 #include "test.h"
 
-#define NIL ((void *)0)
 int main(int argc, char **argv) {
   /* test_memory_pool(); */
   /* test_plist(); */
