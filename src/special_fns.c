@@ -35,7 +35,6 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
   lenv_put(get_root_env(env), lval_sym, lval);
-  lval_del(arg_list);
   return make_lval_list();
 }
 
@@ -132,8 +131,6 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
       /* Eval if node is unquoted */
       Lval* unquoted_lval = eval_unquote(env, arg);
       if (unquoted_lval->type == LVAL_ERR) {
-        lval_del(arg);
-        lval_del(evalled_list);
         ITER_END
         return unquoted_lval;
       }
@@ -147,8 +144,6 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
       /* Eval if node is splice unquoted */
       Lval* splice_unquoted_eval = eval_splice_unquote(env, arg);
       if (splice_unquoted_eval->type == LVAL_ERR) {
-        lval_del(arg_list);
-        lval_del(evalled_list);
         ITER_END
         return splice_unquoted_eval;
       }
@@ -161,8 +156,6 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
 
       if (arg->type == LVAL_COLLECTION) arg = eval_quasiquote_nodes(env, arg);
       if (arg->type == LVAL_ERR) {
-        lval_del(arg_list);
-        lval_del(evalled_list);
         ITER_END
         return arg;
       }
@@ -235,8 +228,6 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
             if (list_count(node->head) < 3) {
-              lval_del(ret);
-              lval_del(arg_list);
               return make_lval_err(
                   "catch clause should have at least an exception type and "
                   "binding to it");
@@ -245,17 +236,13 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             catch_env->parent_env = env;
             Lval* lval_sym = list_nth(node->head, 2); /* sym to bind msg to */
             if (lval_sym->type != LVAL_SYMBOL) {
-              lval_del(lval_sym);
-              lval_del(ret);
-              lval_del(arg_list);
               return make_lval_err(
                   "Expected symbol in catch clause to bind exception message "
                   "to.");
             };
 
             lenv_put(catch_env, lval_sym, make_lval_str(ret->err));
-            lval_del(lval_sym);
-            lval_del(ret);
+
             Lval* body = make_lval_list();
             body->head = list_rest(list_rest(list_rest(node->head)));
             /* lenv_print(catch_env); */
@@ -263,7 +250,6 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             ret = eval_body(catch_env, body, WITHOUT_TCO);
             lenv_del(catch_env);
             if (ret->type == LVAL_ERR) {
-              lval_del(arg_list);
               return ret;
             }
           }
@@ -275,23 +261,19 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           body->head = list_rest(node->head);
           Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
-            lval_del(ret);
-            lval_del(arg_list);
             return finally_ret;
           }
-          lval_del(finally_ret);
+
           ITER_NEXT
           continue;
         }
         /* Normal node, but skip if we already have a value that's an error */
         else if (ret->type != LVAL_ERR) {
-          lval_del(ret);
           ret = lval_eval(env, node);
           /* printf("evalling expr node\n"); */
           /* lval_println(ret); */
           if (ret->type == LVAL_ERR) {
-            if (ret->subtype == SYS) {
-              lval_del(arg_list);
+            if (ret->subtype == BUILTIN) {
               // We're not catching system errors
               return ret;
             }
@@ -308,13 +290,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           body->head = list_rest(node->head);
           Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
           if (finally_ret->type == LVAL_ERR) {
-            lval_del(ret);
-            lval_del(arg_list);
             return finally_ret;
           }
-          lval_del(finally_ret);
+
         } else {
-          lval_del(arg_list);
           return make_lval_err(
               "Only catch or finally clause can follow catch in try "
               "expression");
@@ -322,20 +301,17 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         break;
       case FINALLY:
         /* printf("in FINALLy\n"); */
-        lval_del(arg_list);
-        lval_del(ret);
+
         return make_lval_err("No clause can follow finally in try expression");
     }
     ITER_NEXT
   }
-  lval_del(arg_list);
+
   ITER_END
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) {
-  return eval_body(env, body, WITH_TCO);
-}
+Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
@@ -360,15 +336,11 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
     Lval* lval = iter_next(b);
     lval = lval_eval(let_env, lval);
     if (lval->type == LVAL_ERR) {
-      lval_del(lval_sym);
-      lval_del(bindings);
-      lval_del(arg_list);
       lenv_del(let_env);
       return lval;
     }
     let_env = lenv_assoc(let_env, lval_sym, lval);
-    lval_del(lval_sym);
-    lval_del(lval);
+
     lval_sym = iter_next(b);
   }
   iter_end(b);
@@ -384,30 +356,31 @@ Lval* eval_throw(Lenv* env, Lval* arg_list) {
           "Error: throw needs a message");
   arg_list = eval_nodes(env, arg_list);
   if (arg_list->type == LVAL_ERR) {
-    lval_del(arg_list);
     return arg_list;
   }
   Lval* lval_str = arg_list->head->car;
   LASSERT_TYPE("throw", arg_list, 0, LVAL_LITERAL, STRING, lval_str);
   char* msg = lval_str->str;
   Lval* lval_exc = make_lval_exception(msg);
-  lval_del(arg_list);
+
   return lval_exc;
 }
 
 /* https://clojure.org/reference/special_forms */
-void lenv_add_special_fns(Lenv* env) {
-  lenv_add_builtin(env, "quote", eval_quote, SPECIAL);
-  lenv_add_builtin(env, "quasiquote", eval_quasiquote, SPECIAL);
-  lenv_add_builtin(env, "def", eval_def, SPECIAL);
-  lenv_add_builtin(env, "if", eval_if, SPECIAL); /* TCO! */
-  lenv_add_builtin(env, "fn", eval_lambda, SPECIAL);
-  lenv_add_builtin(env, "macro", eval_macro, SPECIAL);
-  lenv_add_builtin(env, "try", eval_try, SPECIAL);
-  lenv_add_builtin(env, "throw", eval_throw, SPECIAL);
-  lenv_add_builtin(env, "do", eval_do, SPECIAL);   /* TCO! */
-  lenv_add_builtin(env, "let", eval_let, SPECIAL); /* TCO! */
+Builtin special_builtins[] = {
 
-  /* Not really needed because we have tco, but for clojure compatibility */
-  /* lenv_add_builtin(env, "loop", eval_loop, SPECIAL); */
-}
+    {"quote", eval_quote},
+    {"quasiquote", eval_quasiquote},
+    {"def", eval_def},
+    {"if", eval_if}, /* TCO! */
+    {"fn", eval_lambda},
+    {"macro", eval_macro},
+    {"try", eval_try},
+    {"throw", eval_throw},
+    {"do", eval_do},   /* TCO! */
+    {"let", eval_let}, /* TCO! */
+    {NULL}
+    /* Not really needed because we have tco, but for clojure compatibility */
+    /* {"loop", eval_loop}, */
+
+};

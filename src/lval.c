@@ -78,7 +78,7 @@ Lval* make_lval_str(char* s) {
 /* FUNCTION */
 
 // SYSTEM and SPECIAL
-Lval* make_lval_fun(lbuiltin func, char* func_name, int subtype) {
+Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
@@ -116,7 +116,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
+  *lval = (Lval){.type = LVAL_ERR, .subtype = BUILTIN, .err = calloc(1, 512)};
   /* lval->type = LVAL_ERR; */
   /* lval->subtype = SYS; */
   va_list va;
@@ -187,7 +187,7 @@ char* lval_type_to_name(Lval* lval) {
       }
     case LVAL_FUNCTION:
       switch (lval->subtype) {
-        case SYS:
+        case BUILTIN:
           return "System Function";
         case LAMBDA:
           return "User Function";
@@ -203,45 +203,46 @@ char* lval_type_to_name(Lval* lval) {
   }
 }
 
-void lval_del(Lval* lval) {
-  return;
-  /* printf("freeing: "); */
-  /* lval_println(lval); */
-  switch (lval->type) {
-    case LVAL_SYMBOL:
-      free(lval->sym);
-      break;
-    case LVAL_COLLECTION:
-      list_free(lval->head);
-      break;
-    case LVAL_LITERAL:
-      switch (lval->subtype) {
-        case NUMBER:
-          break;
-        case STRING:
-          free(lval->str);
-          break;
-        default:
-          printf("Can't delete unknown literal subtype: %d\n", lval->subtype);
-      }
-      break;
-    case LVAL_FUNCTION:
-      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
-        free(lval->func_name);
-      } else {
-        lenv_del(lval->bindings);
-        lval_del(lval->params);
-        lval_del(lval->body);
-      }
-      break;
-    case LVAL_ERR:
-      free(lval->err);
-      break;
-    default:
-      printf("Can't delete unknown type: %d\n", lval->type);
-  }
-  free(lval);
-}
+/* void lval_del(Lval* lval) { */
+/*   return; */
+/*   /\* printf("freeing: "); *\/ */
+/*   /\* lval_println(lval); *\/ */
+/*   switch (lval->type) { */
+/*     case LVAL_SYMBOL: */
+/*       free(lval->sym); */
+/*       break; */
+/*     case LVAL_COLLECTION: */
+/*       list_free(lval->head); */
+/*       break; */
+/*     case LVAL_LITERAL: */
+/*       switch (lval->subtype) { */
+/*         case NUMBER: */
+/*           break; */
+/*         case STRING: */
+/*           free(lval->str); */
+/*           break; */
+/*         default: */
+/*           printf("Can't delete unknown literal subtype: %d\n",
+ * lval->subtype); */
+/*       } */
+/*       break; */
+/*     case LVAL_FUNCTION: */
+/*       if (lval->subtype == BUILTIN || lval->subtype == SPECIAL) { */
+/*         free(lval->func_name); */
+/*       } else { */
+/*         lenv_del(lval->bindings); */
+/*         lval_del(lval->params); */
+/*         lval_del(lval->body); */
+/*       } */
+/*       break; */
+/*     case LVAL_ERR: */
+/*       free(lval->err); */
+/*       break; */
+/*     default: */
+/*       printf("Can't delete unknown type: %d\n", lval->type); */
+/*   } */
+/*   free(lval); */
+/* } */
 
 // TODO: make new ds for iter: but for now: cdr points to the cell for which the
 // lval was returned in the last call to iter_next, car points to the cell that
@@ -290,4 +291,8 @@ Lval* iter_peek(Cell* iterator) {
   return next_lval;
 }
 
-void iter_end(Cell* iterator) { release(iterator); }
+void iter_end(Cell* iterator) {
+  iterator->car = NIL;
+  iterator->cdr = NIL;
+  release(iterator);
+}

@@ -6,7 +6,6 @@
 #define LASSERT(sexpr, cond, fmt, ...)             \
   if (!(cond)) {                                   \
     Lval* err = make_lval_err(fmt, ##__VA_ARGS__); \
-    lval_del(sexpr);                               \
     return err;                                    \
   }
 

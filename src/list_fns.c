@@ -15,7 +15,6 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_cons(x, lval_list->head);
-  lval_del(arg_list);
   return lval_list2;
 }
 
@@ -25,7 +24,6 @@ Lval* first_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list = arg;
   ITER_END
   Lval* lval = list_first(lval_list->head);
-  lval_del(arg_list);
   ITER_END
   return lval ? lval : make_lval_list();
 }
@@ -37,7 +35,6 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_rest(lval_list->head);
-  lval_del(arg_list);
   return lval_list2;
 }
 
@@ -54,7 +51,6 @@ Lval* list_fn(Lenv* env, Lval* arg_list) {
     ITER_NEXT
   }
   ITER_END
-  lval_del(arg_list);
   return lval_list;
 }
 
@@ -75,14 +71,16 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
     lval_list = make_lval_list();
     lval_list->head = list_concat(lval_list1->head, lval_list2->head);
   }
-  lval_del(arg_list);
   return lval_list;
 }
 
-void lenv_add_list_fns(Lenv* env) {
-  lenv_add_builtin(env, "cons", cons_fn, SYS);
-  lenv_add_builtin(env, "first", first_fn, SYS);
-  lenv_add_builtin(env, "list", list_fn, SYS);
-  lenv_add_builtin(env, "rest", rest_fn, SYS);
-  lenv_add_builtin(env, "concat", concat_fn, SYS);
-}
+Builtin list_builtins[] = {
+
+    {"cons", cons_fn},
+    {"first", first_fn},
+    {"list", list_fn},
+    {"rest", rest_fn},
+    {"concat", concat_fn},
+    {NULL}
+
+};

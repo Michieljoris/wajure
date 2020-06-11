@@ -10,7 +10,12 @@ typedef struct lenv Lenv;
 
 typedef struct lval Lval;
 
-typedef Lval* (*lbuiltin)(Lenv*, Lval*);
+typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
+
+typedef struct {
+  char* func_name;
+  Lbuiltin fun;
+} Builtin;
 
 struct lval {
   int type;
@@ -23,7 +28,7 @@ struct lval {
   char* func_name;
 
   /* function */
-  lbuiltin fun;
+  Lbuiltin fun;
   Lenv* bindings;
   Lval* params;
   Lval* body;
@@ -51,7 +56,7 @@ enum {
   /* subtypes */
   NUMBER,
   STRING,
-  SYS,
+  BUILTIN,
   MACRO,
   SPECIAL,
   LAMBDA,
@@ -68,7 +73,7 @@ Lval* make_lval_str(char* s);
 Lval* make_lval_list(void);
 Lval* make_lval_map(void);
 Lval* make_lval_vector(void);
-Lval* make_lval_fun(lbuiltin func, char* func_name, int type);
+Lval* make_lval_fun(Lbuiltin func, char* func_name, int type);
 Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype);
 Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
@@ -77,7 +82,6 @@ Lval* make_lval_exception(char* msg);
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
 
-void lval_del(Lval* v);
 Cell* make_cell();
 
 Cell* iter_new(Lval* lval_list);

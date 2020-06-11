@@ -16,6 +16,7 @@
 Lval* lval_eval(Lenv* e, Lval* v);
 
 Lval* eval_nodes(Lenv* env, Lval* lval_list) {
+  printf("eval nodes, new list:");
   Lval* new_list = make_lval_list();
   Cell* i = iter_new(lval_list);
   Lval* lval = iter_next(i);
@@ -23,8 +24,7 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   while (lval) {
     Lval* x = lval_eval(env, lval);
     if (x->type == LVAL_ERR) {
-      lval_del(lval_list);
-      lval_del(new_list);
+      release(new_list);
       iter_end(i);
       return x;
     }
@@ -34,9 +34,8 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
     next_cell->car = x;
     lval = iter_next(i);
   }
-  iter_end(i);
-  lval_del(lval_list);
 
+  iter_end(i);
   return new_list;
 }
 
@@ -117,7 +116,6 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
   while (lval) {
     if (iter_peek(i)) {
       /* if expr is not last one of body discard the result */
-      lval_del(ret);
     } else {
       if (with_tco) {
         ret = lval;
@@ -188,12 +186,8 @@ Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list,
 }
 
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
-  /* printf("eval_symbol: symbol :"); */
-  /* lval_println(lval_symbol); */
-  /* lenv_print(env); */
-  /* lenv_print(env->parent_env); */
   Lval* lval_resolved_sym = lenv_get(env, lval_symbol);
-  lval_del(lval_symbol);
+  retain(lval_resolved_sym);
   return lval_resolved_sym;
 }
 
@@ -206,64 +200,67 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
 Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
-  /* printf("evalling fn call: "); */
-  /* lval_println(lval_list); */
+  printf("evalling fn call: ");
+  lval_println(lval_list);
   Lval* lval_err;
   if (lval_list->head == NIL) {
-    // TODO: release list here
     return make_lval_list();  // empty;
   }
+  Lval* lval_symbol = list_first(lval_list->head);
+  scoped Lval* lval_fun = lval_eval(env, lval_symbol);  // eval first node
 
-  Lval* lval_fun =
-      lval_eval(env, list_first(lval_list->head));  // eval first node
-  if (lval_fun->type == LVAL_ERR) return lval_fun;
+  if (lval_fun->type == LVAL_ERR) {
+    return lval_fun;
+  }
 
   if (lval_fun->type != LVAL_FUNCTION) {
     lval_err = make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
         lval_type_to_name(lval_fun), lval_type_constant_to_name(LVAL_FUNCTION));
-    lval_del(lval_list);
-    lval_del(lval_fun);
     return lval_err;
   }
 
-  Lval* arg_list = make_lval_list();
+  scoped Lval* arg_list = make_lval_list();
   arg_list->head = list_rest(lval_list->head);
+  retain(arg_list->head);
+  scoped Lval* evalled_arg_list = NIL;
   switch (lval_fun->subtype) {
-    case SYS:
+    case BUILTIN:
     case LAMBDA:
-      arg_list = eval_nodes(env, arg_list);
-      if (arg_list->type == LVAL_ERR) {
-        lval_del(lval_fun);
-        return arg_list;
+      evalled_arg_list = eval_nodes(env, arg_list);
+      if (evalled_arg_list->type == LVAL_ERR) {
+        retain(evalled_arg_list);
+        return evalled_arg_list;
       }
-    case MACRO:
-    case SPECIAL:
     default:;
   }
   /* printf("evalled the arguments of fn\n"); */
   /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
-    case SYS:
+    case BUILTIN:
+      return lval_fun->fun(env, evalled_arg_list);
+      break;
     case SPECIAL: {
-      Lval* ret = lval_fun->fun(env, arg_list);
-      return ret;
+      return lval_fun->fun(env, arg_list);
+      break;
     }
     case MACRO:
       return eval_macro_call(env, lval_fun, arg_list);
+      break;
     case LAMBDA:
-      return eval_lambda_call(lval_fun, arg_list, WITH_TCO);
+      return eval_lambda_call(lval_fun, evalled_arg_list, WITH_TCO);
+      break;
     default:
-      lval_err = make_lval_err("Unknown fun subtype %d for %s",
-                               lval_fun->subtype, lval_fun->func_name);
-      lval_del(arg_list);
-      lval_del(lval_fun);
-      return lval_err;
+      return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
+                           lval_fun->func_name);
   }
 }
 
 Lval* lval_eval(Lenv* env, Lval* lval) {
+  printf("\n->>>>>>>>EVAL:");
+  lval_println(lval);
+  Lval* ret = NIL;
   Lenv* tco_env = NULL;
   while (1) { /* TCO */
     if (tco_env) env = tco_env;
@@ -274,7 +271,8 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
-            lval = eval_fn_call(env, lval);
+            ret = eval_fn_call(env, lval);
+            lval = ret;
             if (lval->tco_env != NULL) {
               tco_env = lval->tco_env;
               continue;
@@ -289,11 +287,13 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
             return lval;
             break;
           default:
-            lval_del(lval);
             return make_lval_err("Unknown seq subtype");
         }
         break;
       default:
+        // It's lval_eval's caller's responsibility to release both the passed
+        // in args and the returned value
+        retain(lval);
         return lval;
     }
   }

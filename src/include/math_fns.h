@@ -2,6 +2,6 @@
 #define __MATH_FNS_H_
 
 #include "env.h"
-void lenv_add_math_fns(Lenv* env);
+Builtin math_builtins[999];
 
 #endif  // __MATH_FNS_H_

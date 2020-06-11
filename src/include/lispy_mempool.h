@@ -18,4 +18,8 @@ void retain(void* data_p);
 void release(void* data_p);
 typedef void (*Destructor)(void*);
 
+void print_mempool_free(int type);
+int get_free_slot_count(int type);
+void print_mempool_free_all();
+int get_ref_count(void* data_p);
 #endif  // __LVAL_MEMPOOL_H_

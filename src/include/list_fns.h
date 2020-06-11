@@ -2,7 +2,8 @@
 #define __LIST_FNS_H_
 
 #include "env.h"
+
 Lval* list_fn(Lenv* e, Lval* sexpr);
-void lenv_add_list_fns(Lenv* env);
+Builtin list_builtins[999];
 
 #endif  // __LIST_FNS_H_

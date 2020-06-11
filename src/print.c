@@ -36,7 +36,7 @@ void lval_collection_print(Lval* lval, char open, char close) {
 
 void lval_fun_print(Lval* lval) {
   switch (lval->subtype) {
-    case SYS:
+    case BUILTIN:
       _printf("<function %s>", lval->func_name);
       break;
     case LAMBDA:
@@ -120,7 +120,8 @@ void lval_println(Lval* v) {
 }
 
 void print_kv(void* pair) {
-  printf("%s: ", (char*)((Cell*)pair)->car);
+  lval_print((Lval*)((Cell*)pair)->car);
+  printf(": ");
   lval_print((Lval*)((Cell*)pair)->cdr);
 }
 
@@ -129,5 +130,6 @@ void lenv_print(Lenv* env) {
     list_print(env->kv, print_kv, "\n");
   } else {
     printf("ROOT env!!! \n");
+    /* list_print(env->kv, print_kv, "\n"); */
   }
 }

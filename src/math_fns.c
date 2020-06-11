@@ -62,7 +62,6 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
         break;
       case '/':
         if (arg->num == 0) {
-          lval_del(arg);
           ITER_END
           return make_lval_err("Division by number zero");
           break;
@@ -91,7 +90,6 @@ Lval* div_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "/", arg_list); }
     LASSERT_TYPE(fn_name, arg_list, 1, LVAL_LITERAL, NUMBER, arg)       \
     Lval* second_arg = arg;                                             \
     Lval* num = make_lval_num(first_arg->num operator second_arg->num); \
-    lval_del(arg_list);                                                 \
     ITER_END                                                            \
     return num;                                                         \
   }
@@ -159,7 +157,6 @@ Lval* cmp_fn(Lenv* env, Lval* arg_list, char* operator) {
   if (_strcmp(operator, "not=") == 0) {
     result = !lval_eq(first_arg, second_arg);
   }
-  lval_del(arg_list);
   ITER_END
   return make_lval_num(result);
 }
@@ -170,17 +167,10 @@ Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
   return cmp_fn(env, arg_list, "not=");
 }
 
-void lenv_add_math_fns(Lenv* env) {
-  lenv_add_builtin(env, "+", add_fn, SYS);
-  lenv_add_builtin(env, "-", sub_fn, SYS);
-  lenv_add_builtin(env, "*", mul_fn, SYS);
-  lenv_add_builtin(env, "/", div_fn, SYS);
+Builtin math_builtins[] = {
 
-  lenv_add_builtin(env, ">", gt_fn, SYS);
-  lenv_add_builtin(env, "<", lt_fn, SYS);
-  lenv_add_builtin(env, ">=", gte_fn, SYS);
-  lenv_add_builtin(env, "<=", lte_fn, SYS);
+    {"+", add_fn}, {"-", sub_fn},       {"*", mul_fn},  {"/", div_fn},
+    {">", gt_fn},  {"<", lt_fn},        {">=", gte_fn}, {"<=", lte_fn},
+    {"=", eq_fn},  {"not=", not_eq_fn}, {NIL}
 
-  lenv_add_builtin(env, "=", eq_fn, SYS);
-  lenv_add_builtin(env, "not=", not_eq_fn, SYS);
-}
+};

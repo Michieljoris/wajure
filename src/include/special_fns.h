@@ -3,6 +3,6 @@
 
 #include "lval.h"
 
-void lenv_add_special_fns(Lenv* env);
+Builtin special_builtins[999];
 
 #endif  // __SPECIAL_FNS_H_

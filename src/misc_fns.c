@@ -5,6 +5,7 @@
 #include "eval.h"
 #include "grammar.h"
 #include "iter.h"
+#include "lispy_mempool.h"
 #include "lval.h"
 #include "mpc.h"
 #include "mpc_read.h"
@@ -69,20 +70,18 @@ Lval* eval_fn(Lenv* env, Lval* arg_list) {
 
 Lval* print_env_fn(Lenv* env, Lval* arg_list) {
   lenv_print(env);
-  lval_del(arg_list);
   return make_lval_list();
 }
 
 int exit_repl = 0;
 
 Lval* exit_fn(Lenv* e, Lval* arg_list) {
-  lval_del(arg_list);
   exit_repl = 1;
   return make_lval_list();
 }
 
 Lval* load_fn(Lenv* env, Lval* arg_list) {
-  printf("load_fn: ");
+  printf("\nload_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
 
@@ -103,32 +102,56 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   fclose(f);
   /* Read from input to create an S-Expr */
   int pos = 0;
-  printf("reading file\n");
+  set_debug_level(1);
+  int lval_count1 = get_free_slot_count(LVAL);
+  int cell_count1 = get_free_slot_count(CELL);
   Lval* lval_list = lval_read_list(input, &pos, '\0');
   free(input);
 
-  printf("DONE READING ====================n");
-  /* return lval_list; */
-  /* lval_println(lval_list); */
+  set_debug_level(1);
+  print_mempool_free_all();
+  printf("DONE READING FILE ==================== ");
+  int lval_count2 = get_free_slot_count(LVAL);
+  int cell_count2 = get_free_slot_count(CELL);
+  int lval_count_extra = lval_count2 - lval_count1;
+  int cell_count_extra = cell_count2 - cell_count1;
+  printf("Extra: LVAL: %d | CELL: %d\n", lval_count_extra, cell_count_extra);
+  printf("Evalling lval_list: ");
+  lval_println(lval_list);
   /* Evaluate all expressions contained in S-Expr */
+  Lval* result = NIL;
   if (lval_list->type != LVAL_ERR) {
     Cell* i = iter_new(lval_list);
     Lval* lval = iter_next(i);
+
     while (lval) {
-      Lval* x = lval_eval(env, lval);
-      if (x->type == LVAL_ERR) {
-        lval_println(x);
+      release(result);
+      printf("\nEvalling: ");
+      lval_println(lval);
+      result = lval_eval(env, lval);  // EVAL
+      printf("\nDone evalling lval_list\n") if (result->type == LVAL_ERR) {
+        lval_println(result);
       }
       lval = iter_next(i);
     }
+
+    printf("Releasing lval_list: ");
+    release(lval_list);
     iter_end(i);
   } else {
     lval_println(lval_list);
+    iter_end(i);
   }
 
-  lval_del(lval_list);
-
-  return make_lval_list();
+  print_mempool_free_all();
+  printf("Done evalling =================== ");
+  int lval_count3 = get_free_slot_count(LVAL);
+  int cell_count3 = get_free_slot_count(CELL);
+  int lval_count_extra2 = lval_count3 - lval_count1;
+  int cell_count_extra2 = cell_count3 - cell_count1;
+  printf("Extra: LVAL: %d | CELL: %d\n", lval_count_extra2, cell_count_extra2);
+  printf("\n");
+  return result;
 }
 
 Lval* mpc_load_fn(Lenv* env, Lval* arg_list) {
@@ -159,14 +182,12 @@ Lval* mpc_load_fn(Lenv* env, Lval* arg_list) {
       cell = cell->cdr;
     }
     printf("Loaded %s\n", lval_str->str);
-    lval_del(lval_list);
     return make_lval_list();
   } else {
     char* err_msg = mpc_err_string(result.error);
     mpc_err_delete(result.error);
     Lval* err = make_lval_err("Couldn't load library %s", err_msg);
     free(err_msg);
-    lval_del(arg_list);
     return err;
   }
 }
@@ -181,7 +202,6 @@ Lval* print_fn(Lenv* env, Lval* arg_list) {
   }
   ITER_END
   _putchar('\n');
-  lval_del(arg_list);
   return make_lval_list();
 }
 
@@ -195,7 +215,6 @@ Lval* pr_fn(Lenv* env, Lval* arg_list) {
   }
   ITER_END
   _putchar('\n');
-  lval_del(arg_list);
   return make_lval_list();
 }
 
@@ -206,19 +225,21 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   printf("debug = %il\n", num);
   set_debug_level((int)num);
-  lval_del(arg_list);
   return make_lval_list();
 }
 
-void lenv_add_misc_fns(Lenv* env) {
-  lenv_add_builtin(env, "eval", eval_fn, SYS);
-  lenv_add_builtin(env, "print-env", print_env_fn, SYS);
-  lenv_add_builtin(env, "exit", exit_fn, SYS);
-  lenv_add_builtin(env, "load", load_fn, SYS);
-  lenv_add_builtin(env, "mpc_load", mpc_load_fn, SYS);
-  lenv_add_builtin(env, "print", print_fn, SYS);
-  lenv_add_builtin(env, "pr", pr_fn, SYS);
-  lenv_add_builtin(env, "macroexpand", macroexpand_fn, SYS);
-  lenv_add_builtin(env, "macroexpand-1", macroexpand_1_fn, SYS);
-  lenv_add_builtin(env, "debug", debug_fn, SYS);
-}
+Builtin misc_builtins[] = {
+
+    {"eval", eval_fn},
+    {"print-env", print_env_fn},
+    {"exit", exit_fn},
+    {"load", load_fn},
+    {"mpc_load", mpc_load_fn},
+    {"print", print_fn},
+    {"pr", pr_fn},
+    {"macroexpand", macroexpand_fn},
+    {"macroexpand-1", macroexpand_1_fn},
+    {"debug", debug_fn},
+    {NULL}
+
+};
