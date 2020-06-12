@@ -117,8 +117,7 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
     } else {
       if (with_tco) {
         ret = lval;
-        /* ret = retain(lval); */
-        /* ret->tco_env = env; */
+        ret->tco_env = env;
         break;
       }
     }
@@ -146,14 +145,21 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
+  printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
+  lval_println(lval_fun);
+  lval_println(arg_list);
   lval_fun = bind_lambda_params(lval_fun, arg_list);
+  printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
+  lval_println(lval_fun);
+  lenv_print(lval_fun->bindings);
   if (lval_fun->type == LVAL_ERR) return lval_fun;
 
   /* Eval body expressions, but only if all params are bound */
   if (!lval_fun->params->head) {
     Lval* evalled_body =
         eval_body(lval_fun->bindings, lval_fun->body, with_tco);
-
+    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
+    lval_println(evalled_body);
     return evalled_body;
   } else {
     return lval_fun;
@@ -254,7 +260,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   }
 }
 
-/* int i = 0; */
+int i = 0;
 Lval* lval_eval(Lenv* env, Lval* lval) {
   /* printf("\n->>>>>>>>EVAL: %d", i++); */
   printf("\n->>>>>>>>EVAL: ");
@@ -267,7 +273,8 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       case LVAL_SYMBOL:
         ret = eval_symbol(env, lval);
         if (tco_env) {
-          /* printf("SYMBOL: Releasing tco_env!!!! %d\n", i); */
+          printf("SYMBOL: Releasing tco_env!!!! %d\n", i);
+          lval_println(ret);
           release(tco_env);
         }
         /* i--; */
@@ -277,17 +284,17 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           case LIST:
             ret = eval_fn_call(env, lval);
             if (tco_env) {
-              /* printf("LIST: Releasing tco_env!!!! %d\n", i); */
-              /* lenv_print(tco_env); */
+              printf("LIST: Releasing tco_env!!!! %d\n", i);
+              lenv_print(tco_env);
               /* printf("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
               release(tco_env);
             }
             lval = ret;
             if (lval->tco_env != NULL) {
-              /* printf("\nRECEIVED TCO_ENV: %d", i); */
-              /* lval_println(lval); */
-              /* lval_println(ret); */
-              /* lenv_print(lval->tco_env); */
+              printf("\nRECEIVED TCO_ENV: %d", i);
+              lval_println(lval);
+              lval_println(ret);
+              lenv_print(lval->tco_env);
               tco_env = lval->tco_env;
               continue;
             }

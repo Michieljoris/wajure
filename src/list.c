@@ -163,7 +163,9 @@ Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
                   void* value) {
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
-    ((Cell*)node->car)->cdr = value;
+    Cell* pair = ((Cell*)node->car);
+    release(pair->cdr);
+    pair->cdr = value;
     return alist;
   } else {
     return alist_prepend(alist, key, value);

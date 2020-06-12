@@ -21,12 +21,12 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   if (is_lval_type(lval, LVAL_COLLECTION, LIST) && list_count(lval->head) > 0 &&
       ((Lval*)(lval->head->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
-    Lval* lval_fun = lenv_get(env, lval->head->car);
+    scoped Lval* lval_fun = lenv_get(env, lval->head->car);
 
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
-      Lval* arg_list = make_lval_list();
-      arg_list->head = lval->head->cdr;
+      scoped Lval* arg_list = make_lval_list();
+      arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
       Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
       // release fun and args
@@ -41,7 +41,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       }
     }
   }
-  return lval;
+  return retain(lval);
 }
 
 Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {
@@ -155,44 +155,6 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   printf("\n");
   return result ? result : make_lval_list();
 }
-
-/* Lval* mpc_load_fn(Lenv* env, Lval* arg_list) { */
-/*   ITER_NEW_N("load", 1) */
-/*   ITER_NEXT_TYPE(LVAL_LITERAL, STRING) */
-
-/*   mpc_result_t result; */
-/*   Lval* lval_str = arg; */
-/*   ITER_END */
-/*   if (mpc_parse_contents(lval_str->str, Lispy, &result)) { */
-/*     /\* printf("parsed again\n"); *\/ */
-/*     /\* mpc_ast_print(result.output); *\/ */
-
-/*     /\* parse contents into list of expressions *\/ */
-/*     mpc_ast_t* mpc_ast = result.output; */
-
-/*     Lval* lval_list = read_list(make_lval_list(), mpc_ast); */
-/*     mpc_ast_delete(result.output); */
-/*     /\* lval_println(lval_list); *\/ */
-
-/*     /\* printf("exrp count:%d\n", expressions->count); *\/ */
-/*     Cell* cell = lval_list->head; */
-/*     while (cell) { */
-/*       Lval* x = lval_eval(env, (Lval*)cell->car); */
-/*       if (x->type == LVAL_ERR) { */
-/*         lval_println(x); */
-/*       } */
-/*       cell = cell->cdr; */
-/*     } */
-/*     printf("Loaded %s\n", lval_str->str); */
-/*     return make_lval_list(); */
-/*   } else { */
-/*     char* err_msg = mpc_err_string(result.error); */
-/*     mpc_err_delete(result.error); */
-/*     Lval* err = make_lval_err("Couldn't load library %s", err_msg); */
-/*     free(err_msg); */
-/*     return err; */
-/*   } */
-/* } */
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
   scoped_iter Cell* i = iter_new(arg_list);

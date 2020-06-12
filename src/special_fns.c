@@ -21,23 +21,27 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
-  printf("in eval_def\n");
+  printf("\n++++++++++++in eval_def\n");
   ITER_NEW_N("def", 2);
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
-  printf("subtype: %d\n", arg->subtype);
   Lval* lval_sym = arg;
+  ITER_NEXT;
+  Lval* lval = arg;
+  ITER_END;
+  printf("\n++++++++++++++++++eval_def: before evalling lval\n");
+  lval = lval_eval(env, lval);
+  if (lval->type == LVAL_ERR) return lval;
+
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
     printf(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
         "being replaced by: #'user/%s",
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
+  } else {
+    retain(lval_sym);
   }
-  ITER_NEXT;
-  Lval* lval = arg;
-  ITER_END;
-  lval = lval_eval(env, lval);
-  if (lval->type == LVAL_ERR) return lval;
-  lenv_put(get_root_env(env), retain(lval_sym), lval);
+  lenv_put(get_root_env(env), lval_sym, lval);
+  printf("\n+++++++++++++++++=returning from eval_def\n");
   return make_lval_list();
 }
 
@@ -85,6 +89,9 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure = lenv_new();
   closure->parent_env = retain(env);
+  printf("lambda has retained env: ");
+  lenv_print(env);
+  printf("refcount: %d\n", get_ref_count(env));
   Lval* fn = make_lval_lambda(closure, retain(lval_params), lval_body, subtype);
   return fn;
 }
