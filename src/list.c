@@ -136,6 +136,17 @@ int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
   return find_cell(alist, cmp_key, key) ? 1 : 0;
 }
 
+// Conses kv value pair to alist. Returns new head.
+Cell* alist_prepend(Cell* alist, void* key, void* value) {
+  Cell* new_head = make_cell();
+  new_head->cdr = alist;
+  Cell* pair = make_cell();
+  pair->car = key;
+  pair->cdr = value;
+  new_head->car = pair;
+  return new_head;
+}
+
 // Mutates passed in alist. Replaces value if key is found, otherwise prepends
 // alist with new association pair. Returns new head.
 Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
@@ -150,17 +161,6 @@ Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
 }
 
 // Persistent association list ========================================
-
-// Conses kv value pair to alist. Returns new head.
-Cell* alist_prepend(Cell* alist, void* key, void* value) {
-  Cell* new_head = make_cell();
-  new_head->cdr = alist;
-  Cell* pair = make_cell();
-  pair->car = key;
-  pair->cdr = value;
-  new_head->car = pair;
-  return new_head;
-}
 
 // Immutable version of alist_assoc. Returns new alist;
 Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key,

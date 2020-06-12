@@ -16,3 +16,9 @@
 
 ;; (def a 1)
 ;; `(a ~@(list a))
+(try
+ 123
+  (throw "foo")
+  (catch E 1 e)
+  (finally (pr ":finally"))
+  )

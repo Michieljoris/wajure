@@ -239,6 +239,7 @@ Lval* lval_read_backquote(char* s, int* i) {
 Lval* lval_read_tilde(char* s, int* i) {
   return reader_macro("~", "unquote", s, i);
 }
+// TODO: reader doesn't throw a hissy fit when last closing token is missing :-(
 Lval* lval_read(char* s, int* i) {
   Lval* x = NIL;
 
