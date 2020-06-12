@@ -18,7 +18,7 @@ void run(int argc, char** argv) {
   Lenv* root_env = lenv_new();
   lenv_add_builtin_fns(root_env);  // add builtins
   Lenv* user_env = lenv_new();
-  user_env->parent_env = root_env;
+  user_env->parent_env = retain(root_env);
   set_debug_level(1);
   print_mempool_free_all();
   printf(" after adding builtin fns\n");

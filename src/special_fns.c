@@ -60,7 +60,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_END;
   if (ret) {
     ret->tco_env = env;
-    return retain(ret);
+    return ret;
   }
   return make_lval_list();
 }
@@ -84,9 +84,8 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure = lenv_new();
-  /* closure->parent_env = retain(env); */
-  closure->parent_env = env;
-  Lval* fn = make_lval_lambda(closure, lval_params, lval_body, subtype);
+  closure->parent_env = retain(env);
+  Lval* fn = make_lval_lambda(closure, retain(lval_params), lval_body, subtype);
   return fn;
 }
 

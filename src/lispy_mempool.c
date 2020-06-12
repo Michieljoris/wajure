@@ -58,7 +58,7 @@ void destroy_lval(void* data) {
 }
 void destroy_lenv(void* env) {
   release(((Lenv*)env)->kv);
-  /* release(((Lenv*)env)->parent_env); */
+  release(((Lenv*)env)->parent_env);
 }
 void destroy_cell(void* cell) {
   release(((Cell*)cell)->car);

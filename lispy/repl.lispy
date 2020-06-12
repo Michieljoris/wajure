@@ -11,5 +11,8 @@
 ;; (concat '() '(3 4))
 ;; (def a "FOOOOOOOOOOOOOOOOOOo")
 ;; (pr a)
+;; (if 1 2 3)
+;; (fn [a b c] a)
 
-(if 1 1 2)
+(def a 1)
+`(a ~a)
