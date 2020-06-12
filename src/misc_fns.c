@@ -110,6 +110,9 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
 
   set_debug_level(1);
   print_mempool_free_all();
+  lval_println(lval_list);
+
+  print_mempool_free_all();
   printf("DONE READING FILE ==================== ");
   int lval_count2 = get_free_slot_count(LVAL);
   int cell_count2 = get_free_slot_count(CELL);
@@ -129,7 +132,8 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       printf("\nEvalling: ");
       lval_println(lval);
       result = lval_eval(env, lval);  // EVAL
-      printf("\nDone evalling lval_list\n") if (result->type == LVAL_ERR) {
+      printf("\nDone evalling lval_list\n");
+      if (result->type == LVAL_ERR) {
         lval_println(result);
       }
       lval = iter_next(i);
@@ -151,57 +155,57 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   int cell_count_extra2 = cell_count3 - cell_count1;
   printf("Extra: LVAL: %d | CELL: %d\n", lval_count_extra2, cell_count_extra2);
   printf("\n");
-  return result;
+  return result ? result : make_lval_list();
 }
 
-Lval* mpc_load_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("load", 1)
-  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
+/* Lval* mpc_load_fn(Lenv* env, Lval* arg_list) { */
+/*   ITER_NEW_N("load", 1) */
+/*   ITER_NEXT_TYPE(LVAL_LITERAL, STRING) */
 
-  mpc_result_t result;
-  Lval* lval_str = arg;
-  ITER_END
-  if (mpc_parse_contents(lval_str->str, Lispy, &result)) {
-    /* printf("parsed again\n"); */
-    /* mpc_ast_print(result.output); */
+/*   mpc_result_t result; */
+/*   Lval* lval_str = arg; */
+/*   ITER_END */
+/*   if (mpc_parse_contents(lval_str->str, Lispy, &result)) { */
+/*     /\* printf("parsed again\n"); *\/ */
+/*     /\* mpc_ast_print(result.output); *\/ */
 
-    /* parse contents into list of expressions */
-    mpc_ast_t* mpc_ast = result.output;
+/*     /\* parse contents into list of expressions *\/ */
+/*     mpc_ast_t* mpc_ast = result.output; */
 
-    Lval* lval_list = read_list(make_lval_list(), mpc_ast);
-    mpc_ast_delete(result.output);
-    /* lval_println(lval_list); */
+/*     Lval* lval_list = read_list(make_lval_list(), mpc_ast); */
+/*     mpc_ast_delete(result.output); */
+/*     /\* lval_println(lval_list); *\/ */
 
-    /* printf("exrp count:%d\n", expressions->count); */
-    Cell* cell = lval_list->head;
-    while (cell) {
-      Lval* x = lval_eval(env, (Lval*)cell->car);
-      if (x->type == LVAL_ERR) {
-        lval_println(x);
-      }
-      cell = cell->cdr;
-    }
-    printf("Loaded %s\n", lval_str->str);
-    return make_lval_list();
-  } else {
-    char* err_msg = mpc_err_string(result.error);
-    mpc_err_delete(result.error);
-    Lval* err = make_lval_err("Couldn't load library %s", err_msg);
-    free(err_msg);
-    return err;
-  }
-}
+/*     /\* printf("exrp count:%d\n", expressions->count); *\/ */
+/*     Cell* cell = lval_list->head; */
+/*     while (cell) { */
+/*       Lval* x = lval_eval(env, (Lval*)cell->car); */
+/*       if (x->type == LVAL_ERR) { */
+/*         lval_println(x); */
+/*       } */
+/*       cell = cell->cdr; */
+/*     } */
+/*     printf("Loaded %s\n", lval_str->str); */
+/*     return make_lval_list(); */
+/*   } else { */
+/*     char* err_msg = mpc_err_string(result.error); */
+/*     mpc_err_delete(result.error); */
+/*     Lval* err = make_lval_err("Couldn't load library %s", err_msg); */
+/*     free(err_msg); */
+/*     return err; */
+/*   } */
+/* } */
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW("print")
   ITER_NEXT
   while (arg) {
     lval_print(arg);
-    _putchar(' ');
+    putchar(' ');
     ITER_NEXT
   }
   ITER_END
-  _putchar('\n');
+  putchar('\n');
   return make_lval_list();
 }
 
@@ -210,11 +214,11 @@ Lval* pr_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT
   while (arg) {
     lval_pr(arg);
-    _putchar(' ');
+    putchar(' ');
     ITER_NEXT
   }
   ITER_END
-  _putchar('\n');
+  putchar('\n');
   return make_lval_list();
 }
 
@@ -228,13 +232,13 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
   return make_lval_list();
 }
 
-Builtin misc_builtins[] = {
+Builtin misc_builtins[10] = {
 
     {"eval", eval_fn},
     {"print-env", print_env_fn},
     {"exit", exit_fn},
     {"load", load_fn},
-    {"mpc_load", mpc_load_fn},
+    /* {"mpc_load", mpc_load_fn}, */
     {"print", print_fn},
     {"pr", pr_fn},
     {"macroexpand", macroexpand_fn},

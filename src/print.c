@@ -11,7 +11,7 @@ void lval_print_str(Lval* lval) {
   char* escaped = malloc(strlen(lval->str) + 1);
   strcpy(escaped, lval->str);
   escaped = mpcf_escape(escaped);
-  _printf("\"%s\"", escaped);
+  printf("\"%s\"", escaped);
   free(escaped);
 }
 
@@ -19,53 +19,58 @@ void lval_pr_str(Lval* lval) {
   char* escaped = malloc(strlen(lval->str) + 1);
   strcpy(escaped, lval->str);
   escaped = mpcf_escape(escaped);
-  _printf("%s", escaped);
+  printf("%s", escaped);
   free(escaped);
 }
 
 void lval_collection_print(Lval* lval, char open, char close) {
-  if (open) _putchar(open);
+  if (open) putchar(open);
   Cell* cell = lval->head;
   while (cell) {
     lval_print(cell->car);
     cell = cell->cdr;
-    if (cell) _putchar(' ');
+    if (cell) putchar(' ');
   }
-  if (close) _putchar(close);
+  if (close) putchar(close);
 }
 
 void lval_fun_print(Lval* lval) {
   switch (lval->subtype) {
-    case BUILTIN:
-      _printf("<function %s>", lval->func_name);
+    case SYS:
+      printf("<function %s>", lval->func_name);
       break;
     case LAMBDA:
-      _printf("(fn ");
+      printf("(fn ");
       lval_print(lval->params);
-      _putchar(' ');
+      putchar(' ');
       lval_collection_print(lval->body, 0, 0);
-      _putchar(')');
+      putchar(')');
       break;
     case MACRO:
-      _printf("(macro ");
+      printf("(macro ");
       lval_print(lval->params);
-      _putchar(' ');
+      putchar(' ');
       for (int i = 0; i < lval->body->count; i++) {
         lval_print(lval->body->node[i]);
       }
-      _putchar(')');
+      putchar(')');
       break;
     case SPECIAL:
-      _printf("<function %s>", lval->func_name);
+      printf("<function %s>", lval->func_name);
       break;
   }
 }
 
 void lval_print(Lval* lval) {
-  /* _printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
+  if (!lval) {
+    printf(
+        "!! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !!");
+    return;
+  }
+  /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      _printf("%s", lval->sym);
+      printf("%s", lval->sym);
       break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
@@ -79,14 +84,14 @@ void lval_print(Lval* lval) {
           lval_collection_print(lval, '[', ']');
           break;
         default:
-          _printf("unknown lval subtype %s\n",
-                  lval_type_constant_to_name(lval->subtype));
+          printf("unknown lval subtype %s\n",
+                 lval_type_constant_to_name(lval->subtype));
       }
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case NUMBER:
-          _printf("%li", lval->num);
+          printf("%li", lval->num);
           break;
         case STRING:
           lval_print_str(lval);
@@ -96,11 +101,11 @@ void lval_print(Lval* lval) {
       lval_fun_print(lval);
       break;
     case LVAL_ERR:
-      _printf("Error: %s", lval->err);
+      printf("Error: %s", lval->err);
       break;
     default:
-      _printf("unknown lval type %d, %s\n", lval->type,
-              lval_type_constant_to_name(lval->type));
+      printf("unknown lval type %d, %s\n", lval->type,
+             lval_type_constant_to_name(lval->type));
   }
 }
 
@@ -116,7 +121,7 @@ void lval_pr(Lval* lval) {
 
 void lval_println(Lval* v) {
   lval_print(v);
-  _putchar('\n');
+  putchar('\n');
 }
 
 void print_kv(void* pair) {

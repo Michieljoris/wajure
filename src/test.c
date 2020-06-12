@@ -56,21 +56,21 @@ void test_list() {
   list = list_cons("2", list);
   list = list_cons("3", list);
   list_print(list, print_char_cell, ",");
-  Cell* list2 = list_copy(list, NULL);
-  list = list_cons("4", list);
-  list_print(list, print_char_cell, ",");
-  list_print(list2, print_char_cell, ",");
-  Cell* cell = list_get(list, cmp, "1");
-  printf("%s\n", (char*)cell->car);
-  printf("%s\n", (char*)cell->car);
-  printf("%s\n", (char*)list_nth(list2, 0));
-  printf("%s\n", (char*)list_last(list2)->car);
-  printf("count: %d\n", list_count(list));
-  printf("count: %d\n", list_count(list2));
-  printf("%s\n", (char*)list_first(list));
-  list_print(list_rest(list2), print_char_cell, ",");
-  list_print(list_concat(list, list2), print_char_cell, ",");
-  printf("done\n");
+  /* Cell* list2 = list_copy(list, NULL); */
+  /* list = list_cons("4", list); */
+  /* list_print(list, print_char_cell, ","); */
+  /* list_print(list2, print_char_cell, ","); */
+  /* Cell* cell = list_get(list, cmp, "1"); */
+  /* printf("%s\n", (char*)cell->car); */
+  /* printf("%s\n", (char*)cell->car); */
+  /* printf("%s\n", (char*)list_nth(list2, 0)); */
+  /* printf("%s\n", (char*)list_last(list2)->car); */
+  /* printf("count: %d\n", list_count(list)); */
+  /* printf("count: %d\n", list_count(list2)); */
+  /* printf("%s\n", (char*)list_first(list)); */
+  /* list_print(list_rest(list2), print_char_cell, ","); */
+  /* list_print(list_concat(list, list2), print_char_cell, ","); */
+  /* printf("done\n"); */
   Cell* alist = list_new();
 
   alist_assoc(alist, cmp, "foo", "bar");

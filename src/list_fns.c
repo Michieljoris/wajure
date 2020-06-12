@@ -2,6 +2,7 @@
 #include "env.h"
 #include "io.h"
 #include "iter.h"
+#include "lispy_mempool.h"
 #include "list.h"
 #include "lval.h"
 #include "print.h"
@@ -46,6 +47,7 @@ Lval* list_fn(Lenv* env, Lval* arg_list) {
   while (arg) {
     Cell* next_cell = make_cell();
     next_cell->car = arg;
+    retain(arg);
     *lp = next_cell;
     lp = &(next_cell->cdr);
     ITER_NEXT
@@ -63,18 +65,12 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
   ITER_END
 
   Lval* lval_list = NULL;
-  if (!lval_list1->head)
-    lval_list = lval_list2;
-  else if (!lval_list2->head)
-    lval_list = lval_list1;
-  else {
-    lval_list = make_lval_list();
-    lval_list->head = list_concat(lval_list1->head, lval_list2->head);
-  }
+  lval_list = make_lval_list();
+  lval_list->head = list_concat(lval_list1->head, lval_list2->head);
   return lval_list;
 }
 
-Builtin list_builtins[] = {
+Builtin list_builtins[6] = {
 
     {"cons", cons_fn},
     {"first", first_fn},

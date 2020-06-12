@@ -167,7 +167,7 @@ Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
   return cmp_fn(env, arg_list, "not=");
 }
 
-Builtin math_builtins[] = {
+Builtin math_builtins[11] = {
 
     {"+", add_fn}, {"-", sub_fn},       {"*", mul_fn},  {"/", div_fn},
     {">", gt_fn},  {"<", lt_fn},        {">=", gte_fn}, {"<=", lte_fn},

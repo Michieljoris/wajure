@@ -56,7 +56,7 @@ enum {
   /* subtypes */
   NUMBER,
   STRING,
-  BUILTIN,
+  SYS,
   MACRO,
   SPECIAL,
   LAMBDA,
@@ -66,6 +66,7 @@ enum {
   USER
 };
 
+Cell* make_cell();
 Lval* make_lval_num(long x);
 Lval* make_lval_quote(void);
 Lval* make_lval_sym(char* s);
@@ -83,12 +84,5 @@ char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
 
 Cell* make_cell();
-
-Cell* iter_new(Lval* lval_list);
-Cell* iter_cell(Cell* iterator);
-Cell* iter_current_cell(Cell* iterator);
-Lval* iter_next(Cell* iterator);
-void iter_end(Cell* iterator);
-Lval* iter_peek(Cell* iterator);
 
 #endif  // __LVAL_H_

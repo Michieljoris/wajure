@@ -1,29 +1,41 @@
 #include "io.h"
 #include "lispy_mempool.h"
+#include "lval.h"
 
 Cell* list_new() { return make_cell(); }
 
-void list_free(Cell* cell) {
-  // Ref counting should get rid of rest of list
-  /* lfree(CELL, cell); */
+// Conses cons to list. Returns new head.
+Cell* list_cons(void* cons, Cell* list) {
+  Cell* new_head = make_cell();
+  new_head->car = cons;
+  new_head->cdr = list;
+  retain(cons);
+  retain(list);
+  return new_head;
+}
+void* list_first(Cell* list) {
+  if (list)
+    return retain(list->car);
+  else
+    return list;
 }
 
-Cell* make_cell() {
-  Cell* cell = lalloc(CELL);
-  cell->car = NULL;
-  cell->cdr = NULL;
-  return cell;
+Cell* list_rest(Cell* list) {
+  if (list)
+    return retain(list->cdr);
+  else
+    return list;
 }
 
 // Copies from_cell list to to_cell list, until and excluding till_cell. Returns
 // last cell in copied list
 Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell) {
   Cell* prev_cell = to_cell;
-  to_cell->car = from_cell->car;
+  to_cell->car = retain(from_cell->car);
   from_cell = from_cell->cdr;
   while (from_cell != till_cell) {
     to_cell = make_cell();
-    to_cell->car = from_cell->car;
+    to_cell->car = retain(from_cell->car);
     prev_cell->cdr = to_cell;
     prev_cell = to_cell;
     from_cell = from_cell->cdr;
@@ -31,34 +43,36 @@ Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell) {
   return to_cell;
 }
 
-// Creates a new list, copies list starting at cell to this list, till and
-// excluding till_cell. Returns head of new list.
-Cell* list_copy(Cell* cell, Cell* till_cell) {
-  if (!cell) return cell;
+Cell* list_concat(Cell* list1, Cell* list2) {
+  if (!list1) return retain(list2);
+  if (!list2) return retain(list1);
   Cell* new_head = make_cell();
-  copy_cells(cell, new_head, till_cell);
+  Cell* tail = copy_cells(list1, new_head, NIL);
+  tail->cdr = retain(list2);
   return new_head;
 }
+
+// memory safe ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 // Finds and returns the cell in list for which cmp returns true. cmp fn
 // receives passed in key and each successive cell.
 Cell* list_get(Cell* list, int cmp(void*, void*), void* key) {
   while (list) {
     if (cmp(key, list->car)) {
-      return list;
+      return retain(list);
     }
     list = list->cdr;
   }
   return NULL;
 }
 
-// Returns the nth cell in list.
+// Returns the nth cell's car in list.
 void* list_nth(Cell* list, int n) {
   Cell* ret = NULL;
   int counter = 0;
   while (list) {
     if (counter++ == n) {
-      return list->car;
+      return retain(list->car);
     }
     list = list->cdr;
   }
@@ -68,7 +82,7 @@ void* list_nth(Cell* list, int n) {
 // Returns the last cell in the list
 Cell* list_last(Cell* list) {
   while (list) {
-    if (!list->cdr) return list;
+    if (!list->cdr) return retain(list);
     list = list->cdr;
   }
   return list;
@@ -83,35 +97,6 @@ int list_count(Cell* list) {
     list = list->cdr;
   }
   return i;
-}
-
-// Conses cons to list. Returns new head.
-Cell* list_cons(void* cons, Cell* list) {
-  Cell* new_head = make_cell();
-  new_head->car = cons;
-  new_head->cdr = list;
-  return new_head;
-}
-void* list_first(Cell* list) {
-  if (list)
-    return list->car;
-  else
-    return list;
-}
-
-Cell* list_rest(Cell* list) {
-  if (list)
-    return list->cdr;
-  else
-    return list;
-}
-
-Cell* list_concat(Cell* list1, Cell* list2) {
-  if (!list1) return list2;
-  if (!list2) return list2;
-  Cell* tail = list_last(list1);
-  tail->cdr = list2;
-  return list1;
 }
 
 void list_print(Cell* cell, void print(void*), char* seperator) {
@@ -142,7 +127,7 @@ Cell* find_cell(Cell* alist, int cmp_key(void*, void*), void* key) {
 // in key and the key for each successive association.
 void* alist_get(Cell* alist, int cmp_key(void*, void*), void* key) {
   Cell* cell = find_cell(alist, cmp_key, key);
-  if (cell) return ((Cell*)cell->car)->cdr;
+  if (cell) return retain(((Cell*)cell->car)->cdr);
   return NULL;
 }
 
@@ -168,13 +153,13 @@ Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
 
 // Conses kv value pair to alist. Returns new head.
 Cell* alist_prepend(Cell* alist, void* key, void* value) {
+  Cell* new_head = make_cell();
+  new_head->cdr = alist;
   Cell* pair = make_cell();
   pair->car = key;
   pair->cdr = value;
-  Cell* alist2 = list_cons(pair, alist);
-  /* printf("alist  %p\n", alist); */
-  /* printf("alist2 cdr %p\n", alist2->cdr); */
-  return alist2;
+  new_head->car = pair;
+  return new_head;
 }
 
 // Immutable version of alist_assoc. Returns new alist;

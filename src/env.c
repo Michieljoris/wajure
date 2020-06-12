@@ -14,7 +14,7 @@ Lenv* lenv_new(void) {
 
 void lenv_del(Lenv* e) {
   printf("OOPS!!! should be release(env) !!!!\n");
-  if (e->kv) list_free(e->kv);
+  /* if (e->kv) list_free(e->kv); */
 }
 
 int is_eq_lval_sym(void* k1, void* k2) {
@@ -54,8 +54,8 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
 // Persistent
 Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
+  /* next_env->parent_env = retain(env->parent_env); */
   next_env->parent_env = env->parent_env;
-  /* lenv_del(env); */
   next_env->kv = alist_passoc(env->kv, is_eq_lval_sym, lval_sym, lval);
   return next_env;
 }

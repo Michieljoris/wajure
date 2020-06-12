@@ -9,14 +9,15 @@
     return err;                                    \
   }
 
-#define LASSERT_TYPE(fn_name, arg_list, index, expected_type, \
-                     expected_subtype, lval)                  \
-  LASSERT(arg_list,                                           \
-          lval->type == expected_type &&                      \
-              lval->subtype == (long int)expected_subtype,    \
-          "Function '%s' passed incorrect type for arg %d, "  \
-          "got %s, expected %s",                              \
-          fn_name, index, lval_type_to_name(lval),            \
+#define LASSERT_TYPE(fn_name, arg_list, index, expected_type,     \
+                     expected_subtype, lval)                      \
+  LASSERT(arg_list,                                               \
+          (expected_type == -1 || lval->type == expected_type) && \
+              (expected_subtype == -1 || lval->subtype == -1 ||   \
+               lval->subtype == expected_subtype),                \
+          "Function '%s' passed incorrect type for arg %d, "      \
+          "got %s, expected %s",                                  \
+          fn_name, index, lval_type_to_name(lval),                \
           lval_type_constant_to_name(expected_type));
 
 #define LASSERT_LVAL_LIST_COUNT(lval_list, expected_count, fn_name) \

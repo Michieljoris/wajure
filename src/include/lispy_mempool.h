@@ -14,7 +14,7 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count);
 void free_lispy_mempools();
 
 void* lalloc(int type);
-void retain(void* data_p);
+void* retain(void* data_p);
 void release(void* data_p);
 typedef void (*Destructor)(void*);
 

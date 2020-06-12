@@ -208,6 +208,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   }
   Lval* lval_symbol = list_first(lval_list->head);
   scoped Lval* lval_fun = lval_eval(env, lval_symbol);  // eval first node
+  release(lval_symbol);
 
   if (lval_fun->type == LVAL_ERR) {
     return lval_fun;
@@ -221,12 +222,12 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
     return lval_err;
   }
 
+  /* Lval* ret = NIL; */
   scoped Lval* arg_list = make_lval_list();
   arg_list->head = list_rest(lval_list->head);
-  retain(arg_list->head);
   scoped Lval* evalled_arg_list = NIL;
   switch (lval_fun->subtype) {
-    case BUILTIN:
+    case SYS:
     case LAMBDA:
       evalled_arg_list = eval_nodes(env, arg_list);
       if (evalled_arg_list->type == LVAL_ERR) {
@@ -238,7 +239,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   /* printf("evalled the arguments of fn\n"); */
   /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
-    case BUILTIN:
+    case SYS:
       return lval_fun->fun(env, evalled_arg_list);
       break;
     case SPECIAL: {

@@ -5,6 +5,13 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 
+Cell* make_cell() {
+  Cell* cell = lalloc(CELL);
+  cell->car = NULL;
+  cell->cdr = NULL;
+  return cell;
+}
+
 /* SYMBOL */
 
 Lval* make_lval_sym(char* s) {
@@ -116,7 +123,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = BUILTIN, .err = calloc(1, 512)};
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
   /* lval->type = LVAL_ERR; */
   /* lval->subtype = SYS; */
   va_list va;
@@ -187,7 +194,7 @@ char* lval_type_to_name(Lval* lval) {
       }
     case LVAL_FUNCTION:
       switch (lval->subtype) {
-        case BUILTIN:
+        case SYS:
           return "System Function";
         case LAMBDA:
           return "User Function";
@@ -248,51 +255,3 @@ char* lval_type_to_name(Lval* lval) {
 // lval was returned in the last call to iter_next, car points to the cell that
 // points to the lval that will be returned by the next iter_next call, it it
 // exists.
-
-Cell* make_iter_cell() {
-  Cell* cell = lalloc(ITER);
-  cell->car = NULL;
-  cell->cdr = NULL;
-  return cell;
-}
-
-Cell* iter_new(Lval* lval_list) {
-  Cell* iterator = make_iter_cell();
-  iterator->car = lval_list->head;
-  return iterator;
-}
-
-Cell* iter_cell(Cell* iterator) {
-  if (!iterator->car) return NIL;
-  return iterator->car;
-}
-
-Cell* iter_current_cell(Cell* iterator) {
-  if (!iterator->cdr) return NIL;
-  return iterator->cdr;
-}
-
-Lval* iter_next(Cell* iterator) {
-  if (!iterator->car) {
-    iterator->cdr = NIL;  // current cell
-    return NIL;
-  }
-  Cell* p = iterator->car;
-  Lval* next_lval = p->car;
-  iterator->cdr = p;  // current cell
-  iterator->car = p->cdr;
-  return next_lval;
-}
-
-Lval* iter_peek(Cell* iterator) {
-  if (!iterator->car) return NIL;
-  Cell* p = iterator->car;
-  Lval* next_lval = p->car;
-  return next_lval;
-}
-
-void iter_end(Cell* iterator) {
-  iterator->car = NIL;
-  iterator->cdr = NIL;
-  release(iterator);
-}

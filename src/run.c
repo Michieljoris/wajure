@@ -51,7 +51,8 @@ void run(int argc, char** argv) {
   set_debug_level(1);
   print_mempool_free_all();
   printf(" after releasing user_env\n");
-  set_debug_level(0);
+  set_debug_level(1);
+  printf("refcount of root env: %d\n", get_ref_count(root_env));
   release(root_env);
   set_debug_level(1);
   print_mempool_free_all();

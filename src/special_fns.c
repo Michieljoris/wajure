@@ -16,12 +16,15 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
   ITER_NEXT;
   Lval* ret = arg;
   ITER_END;
+  retain(ret);
   return ret;
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
+  printf("in eval_def\n");
   ITER_NEW_N("def", 2);
-  ITER_NEXT_TYPE(LVAL_SYMBOL, NIL);
+  ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
+  printf("subtype: %d\n", arg->subtype);
   Lval* lval_sym = arg;
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
     printf(
@@ -34,7 +37,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_END;
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
-  lenv_put(get_root_env(env), lval_sym, lval);
+  lenv_put(get_root_env(env), retain(lval_sym), lval);
   return make_lval_list();
 }
 
@@ -81,6 +84,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure = lenv_new();
+  /* closure->parent_env = retain(env); */
   closure->parent_env = env;
   Lval* fn = make_lval_lambda(closure, lval_params, lval_body, subtype);
   return fn;
@@ -233,7 +237,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
                   "binding to it");
             }
             Lenv* catch_env = lenv_new();
-            catch_env->parent_env = env;
+            catch_env->parent_env = retain(env);
             Lval* lval_sym = list_nth(node->head, 2); /* sym to bind msg to */
             if (lval_sym->type != LVAL_SYMBOL) {
               return make_lval_err(
@@ -273,7 +277,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           /* printf("evalling expr node\n"); */
           /* lval_println(ret); */
           if (ret->type == LVAL_ERR) {
-            if (ret->subtype == BUILTIN) {
+            if (ret->subtype == SYS) {
               // We're not catching system errors
               return ret;
             }
@@ -323,6 +327,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
           "Binding vector for let has odd number of forms");
 
   Lenv* let_env = lenv_new();
+  /* let_env->parent_env = retain(env); */
   let_env->parent_env = env;
 
   Cell* b = iter_new(bindings);
@@ -367,7 +372,7 @@ Lval* eval_throw(Lenv* env, Lval* arg_list) {
 }
 
 /* https://clojure.org/reference/special_forms */
-Builtin special_builtins[] = {
+Builtin special_builtins[11] = {
 
     {"quote", eval_quote},
     {"quasiquote", eval_quasiquote},

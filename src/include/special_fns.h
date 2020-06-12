@@ -3,6 +3,6 @@
 
 #include "lval.h"
 
-Builtin special_builtins[999];
+Builtin special_builtins[11];
 
 #endif  // __SPECIAL_FNS_H_

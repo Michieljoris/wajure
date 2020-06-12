@@ -41,7 +41,7 @@ void destroy_lval(void* data) {
       }
       break;
     case LVAL_FUNCTION:
-      if (lval->subtype == BUILTIN || lval->subtype == SPECIAL) {
+      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
         release(lval->bindings);
@@ -56,7 +56,10 @@ void destroy_lval(void* data) {
       printf("Can't delete unknown type: %d\n", lval->type);
   }
 }
-void destroy_lenv(void* env) { release(((Lenv*)env)->kv); }
+void destroy_lenv(void* env) {
+  release(((Lenv*)env)->kv);
+  /* release(((Lenv*)env)->parent_env); */
+}
 void destroy_cell(void* cell) {
   release(((Cell*)cell)->car);
   release(((Cell*)cell)->cdr);
@@ -150,6 +153,9 @@ void* lalloc(int type) {
 }
 
 void lfree(int type, void* slot) {
+  // Zeroing out will catch errors that happen when the slot is freed, but still
+  // works as before because it's not been reassigned.
+  memset(slot, 0, mempools[type]->slot_size);
   mempool_free(mempools[type], slot);
   printf("-%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
@@ -179,11 +185,16 @@ static Slot* get_slot_p(void* data_p) {
 
 int get_ref_count(void* data_p) { return get_slot_p(data_p)->ref_count; }
 
-void retain(void* data_p) {
+void* retain(void* data_p) {
   /* Slot* slot = get_slot_p(data_p); */
   /* printf("retain: %s-%li, ref count is %d\n", type_to_name(slot->type), */
   /*        (long int)data_p, slot->ref_count); */
-  ++get_slot_p(data_p)->ref_count;
+  if (!data_p) {
+    printf("Trying to retain NULL;\n");
+  } else {
+    ++get_slot_p(data_p)->ref_count;
+  }
+  return data_p;
 }
 
 void release(void* data_p) {
@@ -203,9 +214,11 @@ void release(void* data_p) {
   /* printf("release: %s-%li, ref count is %d\n", type_to_name(slot->type), */
   /*        (long int)data_p, slot->ref_count); */
   if (--slot->ref_count) /* still referenced */ {
-    if (slot->ref_count < 0)
+    if (slot->ref_count < 0) {
       printf("Warning: ref count for a %s has gone negative: %d\n",
              type_to_name(slot->type), slot->ref_count);
+      lval_println(data_p);
+    }
     return;
   }
 
@@ -215,7 +228,7 @@ void release(void* data_p) {
 
 void clean_up(void* data) {
   printf("\nCleaning up: ");
-  if (data)
+  if (*(void**)data)
     lval_print(*(void**)data);
   else
     printf("NIL\n");
