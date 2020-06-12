@@ -124,7 +124,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
   /* Evaluate all expressions contained in S-Expr */
   Lval* result = NIL;
   if (lval_list->type != LVAL_ERR) {
-    Cell* i = iter_new(lval_list);
+    scoped_iter Cell* i = iter_new(lval_list);
     Lval* lval = iter_next(i);
 
     while (lval) {
@@ -141,10 +141,8 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
 
     printf("Releasing lval_list: ");
     release(lval_list);
-    iter_end(i);
   } else {
     lval_println(lval_list);
-    iter_end(i);
   }
 
   print_mempool_free_all();

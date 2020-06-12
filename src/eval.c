@@ -18,14 +18,13 @@ Lval* lval_eval(Lenv* e, Lval* v);
 Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   printf("eval nodes, new list:");
   Lval* new_list = make_lval_list();
-  Cell* i = iter_new(lval_list);
+  scoped_iter Cell* i = iter_new(lval_list);
   Lval* lval = iter_next(i);
   Cell** lp = &(new_list->head);
   while (lval) {
     Lval* x = lval_eval(env, lval);
     if (x->type == LVAL_ERR) {
       release(new_list);
-      iter_end(i);
       return x;
     }
     Cell* next_cell = make_cell();
@@ -35,17 +34,16 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
     lval = iter_next(i);
   }
 
-  iter_end(i);
   return new_list;
 }
 
 Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   /* Pop an arg */
-  Cell* a = iter_new(arg_list);
+  scoped_iter Cell* a = iter_new(arg_list);
   Lval* arg = iter_next(a);
 
   /* Pop a parameter symbol */
-  Cell* p = iter_new(lval_fun->params);
+  scoped_iter Cell* p = iter_new(lval_fun->params);
   Lval* param = NIL;
 
   Lenv* bindings = lval_fun->bindings;
@@ -80,7 +78,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
     bindings = lenv_assoc(bindings, param, arg);
     arg = iter_next(a);
   }
-  iter_end(a);
+  /* iter_end(a); */
 
   param = iter_next(p);
   /* If there's still params unbound and next one is & */
@@ -91,7 +89,7 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
       Lval* lval_err = make_lval_err(
           "Function format invalid. "
           "Symbol '&' not followed by single symbol.");
-      iter_end(p);
+      /* iter_end(p); */
       /* lfree(LENV, bindings); */
       return lval_err;
     }
@@ -104,12 +102,12 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 
   Lval* params = make_lval_vector();
   params->head = iter_current_cell(p);
-  iter_end(p);
+  /* iter_end(p); */
   return make_lval_lambda(bindings, params, lval_fun->body, LAMBDA);
 }
 
 Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
-  Cell* i = iter_new(list);
+  scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
   Lval* ret = NULL;
   /* Eval all exprs of body but the last one (if with_tco is true)*/
@@ -128,8 +126,6 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
 
     lval = iter_next(i);
   }
-  iter_end(i);
-
   return ret ? ret : make_lval_list();
 }
 
