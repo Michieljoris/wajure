@@ -1,4 +1,6 @@
-1
+;; 1
+;; (+ 1)
+;; [ 1 ]
 ;; '(1 2 3)
 ;; (cons 0 '(1 2 3))
 ;; (first '(1 2 3))
@@ -7,4 +9,5 @@
 ;; (concat '(1 2) '(3 4))
 ;; (concat '(1 2) '())
 ;; (concat '() '(3 4))
-(def a 1)
+(def a "FOOOOOOOOOOOOOOOOOOo")
+(pr a)

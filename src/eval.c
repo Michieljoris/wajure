@@ -187,7 +187,6 @@ Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list,
 
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym = lenv_get(env, lval_symbol);
-  retain(lval_resolved_sym);
   return lval_resolved_sym;
 }
 
