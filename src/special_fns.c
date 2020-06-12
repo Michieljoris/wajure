@@ -121,10 +121,11 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
 }
 
 Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
+
   /* a place to store processed cells */
   Lval* evalled_list = make_lval_list();
-  ITER_NEW("quasiquote")
-  ITER_NEXT
   Cell** lp;
   lp = &evalled_list->head;
   Cell* new_cell;
@@ -134,9 +135,10 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
       /* Eval if node is unquoted */
       Lval* unquoted_lval = eval_unquote(env, arg);
       if (unquoted_lval->type == LVAL_ERR) {
-        ITER_END
+        release(evalled_list);
         return unquoted_lval;
       }
+
       /* And add to processed nodes */
       new_cell = make_cell();
       new_cell->car = unquoted_lval;
@@ -147,29 +149,32 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
       /* Eval if node is splice unquoted */
       Lval* splice_unquoted_eval = eval_splice_unquote(env, arg);
       if (splice_unquoted_eval->type == LVAL_ERR) {
-        ITER_END
+        release(evalled_list);
         return splice_unquoted_eval;
       }
       /* And concat to processed nodes */
-      *lp = splice_unquoted_eval->head;
+      *lp = retain(splice_unquoted_eval->head);
+      release(splice_unquoted_eval);
       Cell* last_cell = list_last(splice_unquoted_eval->head);
       lp = &(last_cell->cdr);
     } else {
       /* if node is a list apply quasiquote recursively */
-
       if (arg->type == LVAL_COLLECTION) arg = eval_quasiquote_nodes(env, arg);
       if (arg->type == LVAL_ERR) {
-        ITER_END
+        release(evalled_list);
         return arg;
       }
+
       new_cell = make_cell();
-      new_cell->car = arg;
+      new_cell->car = retain(arg);
       *lp = new_cell;
       lp = &(new_cell->cdr);
     }
-    ITER_NEXT
+    arg = iter_next(i);
   }
-  ITER_END
+  /* printf("========================================\n"); */
+  /* lval_println(evalled_list); */
+  /* printf("========================================\n"); */
   return evalled_list;
 }
 
@@ -205,7 +210,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
       }
       break;
     default: /* symbols, strings, numbers etc */
-      ret = qq_arg;
+      ret = retain(qq_arg);
   }
   return ret;
 }

@@ -8,8 +8,8 @@
 #include "lval.h"
 
 static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
-  ITER_NEW(operator)
-  ITER_NEXT
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
   long int result;
   switch (*operator) {
     case '+':
@@ -21,28 +21,23 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
     case '-':
     case '/':
       if (!arg) {
-        ITER_END
         return make_lval_err(
             "Math operation %s needs at least one argument", operator);
       }
       if (!iter_peek(i)) {
         if (arg->subtype != NUMBER) {
-          ITER_END
           return make_lval_err("Expected number but got %s",
                                lval_type_to_name(arg));
         }
         if (*operator== '/' && arg->num == 0) {
-          ITER_END
           return make_lval_err("Division by number zero");
         }
         return *operator== '-' ? make_lval_num(-arg->num)
                                : make_lval_num(1 / arg->num);
       }
       result = arg->num;
-      ITER_NEXT
       break;
     default:
-      ITER_END
       return make_lval_err("Unsupported math operation: %s", operator);
   }
   while (arg) {
@@ -62,16 +57,14 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
         break;
       case '/':
         if (arg->num == 0) {
-          ITER_END
           return make_lval_err("Division by number zero");
           break;
         }
         result /= arg->num;
         break;
     }
-    ITER_NEXT
+    arg = iter_next(i);
   }
-  ITER_END
   return make_lval_num(result);
 }
 

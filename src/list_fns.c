@@ -40,8 +40,8 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* list_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW("list")
-  ITER_NEXT
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
   Lval* lval_list = make_lval_list();
   Cell** lp = &(lval_list->head);
   while (arg) {
@@ -50,9 +50,8 @@ Lval* list_fn(Lenv* env, Lval* arg_list) {
     retain(arg);
     *lp = next_cell;
     lp = &(next_cell->cdr);
-    ITER_NEXT
+    arg = iter_next(i);
   }
-  ITER_END
   return lval_list;
 }
 

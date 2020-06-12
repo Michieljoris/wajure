@@ -195,27 +195,25 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
 /* } */
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW("print")
-  ITER_NEXT
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
   while (arg) {
     lval_print(arg);
     putchar(' ');
-    ITER_NEXT
+    arg = iter_next(i);
   }
-  ITER_END
   putchar('\n');
   return make_lval_list();
 }
 
 Lval* pr_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW("print")
-  ITER_NEXT
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
   while (arg) {
     lval_pr(arg);
     putchar(' ');
-    ITER_NEXT
+    arg = iter_next(i);
   }
-  ITER_END
   putchar('\n');
   return make_lval_list();
 }

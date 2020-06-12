@@ -14,5 +14,5 @@
 ;; (if 1 2 3)
 ;; (fn [a b c] a)
 
-(def a 1)
-`(a ~a)
+;; (def a 1)
+;; `(a ~@(list a))
