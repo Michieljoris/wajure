@@ -137,6 +137,16 @@ int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
 }
 
 // Conses kv value pair to alist. Returns new head.
+Cell* alist_prepend2(Cell* alist, void* key, void* value) {
+  Cell* new_head = make_cell();
+  new_head->cdr = retain(alist);
+  Cell* pair = make_cell();
+  pair->car = key;
+  pair->cdr = value;
+  new_head->car = pair;
+  return new_head;
+}
+
 Cell* alist_prepend(Cell* alist, void* key, void* value) {
   Cell* new_head = make_cell();
   new_head->cdr = alist;
@@ -175,9 +185,9 @@ Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key,
     Cell* new_cell = make_cell();
     tail->cdr = new_cell;
     new_cell->car = pair;
-    new_cell->cdr = node;
+    new_cell->cdr = retain(node);
     return new_head;
   } else {
-    return alist_prepend(alist, key, value);
+    return alist_prepend2(alist, key, value);
   }
 }

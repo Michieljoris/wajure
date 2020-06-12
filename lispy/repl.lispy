@@ -16,9 +16,22 @@
 
 ;; (def a 1)
 ;; `(a ~@(list a))
-(try
- 123
-  (throw "foo")
-  (catch E 1 e)
-  (finally (pr ":finally"))
+;; (try
+;;  123
+;;   (throw "foo")
+;;   (catch E e e)
+;;   (finally (pr ":finally"))
+;;   123
+;;   )
+
+(let [a "THIS IS A!!!!!!"
+      b 1
+      c [1 2 3]
+      ]
+  (let [d c]
+    (let [e d]
+      e))
   )
+
+
+;; (def f (fn [a] a))

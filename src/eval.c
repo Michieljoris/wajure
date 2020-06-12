@@ -117,7 +117,8 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
     } else {
       if (with_tco) {
         ret = lval;
-        ret->tco_env = env;
+        /* ret = retain(lval); */
+        /* ret->tco_env = env; */
         break;
       }
     }
@@ -253,8 +254,10 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   }
 }
 
+/* int i = 0; */
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  printf("\n->>>>>>>>EVAL:");
+  /* printf("\n->>>>>>>>EVAL: %d", i++); */
+  printf("\n->>>>>>>>EVAL: ");
   lval_println(lval);
   Lval* ret = NIL;
   Lenv* tco_env = NULL;
@@ -262,39 +265,76 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     if (tco_env) env = tco_env;
     switch (lval->type) {
       case LVAL_SYMBOL:
-        return eval_symbol(env, lval);
-        break;
+        ret = eval_symbol(env, lval);
+        if (tco_env) {
+          /* printf("SYMBOL: Releasing tco_env!!!! %d\n", i); */
+          release(tco_env);
+        }
+        /* i--; */
+        return ret;
       case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
             ret = eval_fn_call(env, lval);
+            if (tco_env) {
+              /* printf("LIST: Releasing tco_env!!!! %d\n", i); */
+              /* lenv_print(tco_env); */
+              /* printf("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
+              release(tco_env);
+            }
             lval = ret;
             if (lval->tco_env != NULL) {
+              /* printf("\nRECEIVED TCO_ENV: %d", i); */
+              /* lval_println(lval); */
+              /* lval_println(ret); */
+              /* lenv_print(lval->tco_env); */
               tco_env = lval->tco_env;
               continue;
             }
+            /* i--; */
             return lval;
-            break;
           case VECTOR:
-            return eval_vector(env, lval);
-            break;
+            ret = eval_vector(env, lval);
+            if (tco_env) {
+              /* printf("VECTOR: Releasing tco_env!!!! %d\n", i); */
+              release(tco_env);
+            }
+            /* i--; */
+            return ret;
           case MAP:
             /* TODO: */
             return lval;
-            break;
           default:
             return make_lval_err("Unknown seq subtype");
         }
         break;
       default:
-        // It's lval_eval's caller's responsibility to release both the passed
-        // in args and the returned value
         retain(lval);
+        if (tco_env) {
+          /* printf("LITERAL: Releasing tco_env!!!! %d\n", i); */
+          release(tco_env);
+        }
+        /* i--; */
         return lval;
     }
   }
 }
-/* You can delete existing tco_env if next one is not pointing to it, like in
- * recursion. */
-/*  When in nested closures, delete whole chain when getting getting out of tco
- * loop.  */
+
+/* printf("Releasing tco_env!!!!\n") */
+
+/* printf("EVALLING SYMBOL with tco_env!!!!!!!\n"); */
+/* lval_println(lval); */
+/* lval_println(ret); */
+/* printf("REFCOUNT of tco_env rc: %d\n", get_ref_count(tco_env)); */
+/* release(lval); */
+/* lenv_print(tco_env); */
+/* printf("--\n"); */
+
+/* Lenv* parent_env = tco_env->parent_env; */
+/* while (parent_env) { */
+/*   lenv_print(parent_env); */
+/*   parent_env = parent_env->parent_env; */
+/*   printf("--\n"); */
+/* } */
+
+/* printf("Releasing tco_env!!!!\n"); */

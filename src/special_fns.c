@@ -252,23 +252,23 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
                   "to.");
             };
 
+            Lval* lval_str = make_lval_str(ret->err);  // 85
+
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = retain(env);
-
-            Lval* lval_str = make_lval_str(ret->err);  // 85
 
             /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             lenv_put(catch_env, lval_sym, lval_str);
             /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            Lval* body = make_lval_list();  // 86
-            body->head = retain(node->head->cdr->cdr->cdr);
+            Lval* catch_body = make_lval_list();  // 86
+            catch_body->head = retain(node->head->cdr->cdr->cdr);
             /* printf("BODY:"); */
             /* lval_println(body); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             release(ret);
-            ret = eval_body(catch_env, body, WITHOUT_TCO);
+            ret = eval_body(catch_env, catch_body, WITHOUT_TCO);
 
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
@@ -277,7 +277,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             /* printf("lval_str rc: %d\n", get_ref_count(lval_str)); */
             release(catch_env);
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            release(body);
+            release(catch_body);
             /* release(lval_str); */
             /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
@@ -291,9 +291,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         else if (is_fn_call(node, "finally", 1)) {
           printf("from EXPR, found finally\n");
           mode = FINALLY;
-          scoped Lval* body = make_lval_list();
+          Lval* body = make_lval_list();
           body->head = list_rest(node->head);
           Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
+          release(body);
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
             return finally_ret;
@@ -355,39 +356,44 @@ Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
-  Cell* a = iter_new(arg_list);
+  scoped_iter Cell* a = iter_new(arg_list);
   Lval* bindings = iter_next(a);
   LASSERT_TYPE("let", arg_list, 0, LVAL_COLLECTION, VECTOR, bindings);
   LASSERT(arg_list, list_count(bindings->head) % 2 == 0,
           "Binding vector for let has odd number of forms");
 
   Lenv* let_env = lenv_new();
-  /* let_env->parent_env = retain(env); */
-  let_env->parent_env = env;
+  let_env->parent_env = retain(env);
 
-  Cell* b = iter_new(bindings);
+  scoped_iter Cell* b = iter_new(bindings);
   Lval* lval_sym = iter_next(b);
+
   while (lval_sym) {
-    LASSERT(arg_list, lval_sym->type == LVAL_SYMBOL,
-            "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name(lval_sym),
-            lval_type_constant_to_name(LVAL_SYMBOL));
+    if (lval_sym->type != LVAL_SYMBOL) {
+      release(let_env);
+      return make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
+                           lval_type_to_name(lval_sym),
+                           lval_type_constant_to_name(LVAL_SYMBOL));
+    }
 
     Lval* lval = iter_next(b);
     lval = lval_eval(let_env, lval);
     if (lval->type == LVAL_ERR) {
-      lenv_del(let_env);
+      release(let_env);
       return lval;
     }
-    let_env = lenv_assoc(let_env, lval_sym, lval);
+    Lenv* new_let_env = lenv_assoc(let_env, retain(lval_sym), lval);
+    new_let_env->parent_env = let_env;
 
+    let_env = new_let_env;
     lval_sym = iter_next(b);
   }
-  iter_end(b);
-  Lval* body = make_lval_list();
-  body->head = iter_cell(a);
-  iter_end(a);
-  return eval_body(let_env, body, WITH_TCO);
+
+  scoped Lval* body = make_lval_list();
+  body->head = retain(iter_cell(a));
+  Lval* ret = eval_body(let_env, body, WITH_TCO);
+  ret->tco_env = let_env;
+  return ret;
 }
 
 /* Not really a special form */

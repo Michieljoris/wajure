@@ -17,8 +17,8 @@ void run(int argc, char** argv) {
   set_debug_level(0);
   Lenv* root_env = lenv_new();
   lenv_add_builtin_fns(root_env);  // add builtins
-  Lenv* user_env = lenv_new();
-  user_env->parent_env = retain(root_env);
+  /* Lenv* user_env = lenv_new(); */
+  /* user_env->parent_env = retain(root_env); */
   set_debug_level(1);
   print_mempool_free_all();
   printf(" after adding builtin fns\n");
@@ -29,7 +29,7 @@ void run(int argc, char** argv) {
       arg_list->head = make_cell();
       arg_list->head->car = make_lval_str(argv[i]);
       printf("done making arglist for load_fn\n");
-      Lval* x = load_fn(user_env, arg_list);  // load_fn
+      Lval* x = load_fn(root_env, arg_list);  // load_fn
       printf("done load_fn, result: ");
       lval_println(x);
       release(x);
@@ -46,13 +46,15 @@ void run(int argc, char** argv) {
     }
   }
   /* repl(env); */
-  set_debug_level(0);
-  release(user_env);
+  /* set_debug_level(0); */
+  /* release(user_env); */
+  /* set_debug_level(1); */
+  /* print_mempool_free_all(); */
+  /* printf(" after releasing user_env\n"); */
   set_debug_level(1);
+  /* printf("refcount of root env: %d\n", get_ref_count(root_env)); */
   print_mempool_free_all();
-  printf(" after releasing user_env\n");
-  set_debug_level(1);
-  printf("refcount of root env: %d\n", get_ref_count(root_env));
+  set_debug_level(0);
   release(root_env);
   set_debug_level(1);
   print_mempool_free_all();

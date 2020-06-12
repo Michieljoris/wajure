@@ -54,8 +54,6 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
 // Persistent
 Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
-  /* next_env->parent_env = retain(env->parent_env); */
-  next_env->parent_env = env->parent_env;
   next_env->kv = alist_passoc(env->kv, is_eq_lval_sym, lval_sym, lval);
   return next_env;
 }

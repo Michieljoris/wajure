@@ -55,6 +55,7 @@ void destroy_lval(void* data) {
     default:
       printf("Can't delete unknown type: %d\n", lval->type);
   }
+  /* release(lval->tco_env); */
 }
 void destroy_lenv(void* env) {
   release(((Lenv*)env)->kv);
