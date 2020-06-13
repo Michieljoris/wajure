@@ -71,34 +71,34 @@ void test_list() {
   /* list_print(list_rest(list2), print_char_cell, ","); */
   /* list_print(list_concat(list, list2), print_char_cell, ","); */
   /* printf("done\n"); */
-  Cell* alist = list_new();
+  /* Cell* alist = list_new(); */
 
-  alist_assoc(alist, cmp, "foo", "bar");
-  alist_assoc(alist, cmp, "fox", "foz");
-  alist_assoc(alist, cmp, "2a", "3");
+  /* alist_assoc(alist, cmp, "foo", "bar"); */
+  /* alist_assoc(alist, cmp, "fox", "foz"); */
+  /* alist_assoc(alist, cmp, "2a", "3"); */
+  /* /\* list_print(alist, print_pair, "\n"); *\/ */
+  /* alist_assoc(alist, cmp, "fox", "foz2"); */
   /* list_print(alist, print_pair, "\n"); */
-  alist_assoc(alist, cmp, "fox", "foz2");
-  list_print(alist, print_pair, "\n");
-  alist = alist_prepend(alist, "the", "end");
-  list_print(alist, print_pair, "\n");
-  printf("palist-------------------------:\n");
-  Cell* alist2 = alist_passoc(alist, cmp, "one", "more");
-  list_print(alist, print_pair, "\n");
+  /* alist = alist_prepend(alist, "the", "end"); */
+  /* list_print(alist, print_pair, "\n"); */
+  /* printf("palist-------------------------:\n"); */
+  /* Cell* alist2 = alist_passoc(alist, cmp, "one", "more"); */
+  /* list_print(alist, print_pair, "\n"); */
 
-  printf("palist-------------------------:\n");
-  list_print(alist2, print_pair, "\n");
+  /* printf("palist-------------------------:\n"); */
+  /* list_print(alist2, print_pair, "\n"); */
 
-  list_print(alist, print_pair, ", ");
-  Cell* alist3 = alist_passoc(alist, cmp, "foo", "not bar");
+  /* list_print(alist, print_pair, ", "); */
+  /* Cell* alist3 = alist_passoc(alist, cmp, "foo", "not bar"); */
 
-  printf("alist-------------------------:\n");
-  list_print(alist, print_pair, ", ");
-  printf("alist3-------------------------:\n");
-  list_print(alist3, print_pair, ", ");
+  /* printf("alist-------------------------:\n"); */
+  /* list_print(alist, print_pair, ", "); */
+  /* printf("alist3-------------------------:\n"); */
+  /* list_print(alist3, print_pair, ", "); */
 
-  printf("printing empty list\n");
-  list_print(list_new(), print_pair, "\n");
-  printf("done again\n");
-  printf("%s\n", (char*)alist_get(alist3, cmp, "foo"));
-  printf("%d\n", alist_has_key(alist3, cmp, "foo"));
+  /* printf("printing empty list\n"); */
+  /* list_print(list_new(), print_pair, "\n"); */
+  /* printf("done again\n"); */
+  /* printf("%s\n", (char*)alist_get(alist3, cmp, "foo")); */
+  /* printf("%d\n", alist_has_key(alist3, cmp, "foo")); */
 }

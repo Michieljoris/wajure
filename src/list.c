@@ -137,16 +137,6 @@ int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
 }
 
 // Conses kv value pair to alist. Returns new head.
-Cell* alist_prepend2(Cell* alist, void* key, void* value) {
-  Cell* new_head = make_cell();
-  new_head->cdr = retain(alist);
-  Cell* pair = make_cell();
-  pair->car = key;
-  pair->cdr = value;
-  new_head->car = pair;
-  return new_head;
-}
-
 Cell* alist_prepend(Cell* alist, void* key, void* value) {
   Cell* new_head = make_cell();
   new_head->cdr = alist;
@@ -158,9 +148,10 @@ Cell* alist_prepend(Cell* alist, void* key, void* value) {
 }
 
 // Mutates passed in alist. Replaces value if key is found, otherwise prepends
-// alist with new association pair. Returns new head.
-Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
-                  void* value) {
+// alist with new association pair. Returns (possibly new) head. Does not retain
+// key or value, but does release old value if updated.
+Cell* alist_put(Cell* alist, int cmp_key(void*, void*), void* key,
+                void* value) {
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     Cell* pair = ((Cell*)node->car);
@@ -174,22 +165,28 @@ Cell* alist_assoc(Cell* alist, int cmp_key(void*, void*), void* key,
 
 // Persistent association list ========================================
 
-// Immutable version of alist_assoc. Returns new alist;
-Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key,
-                   void* value) {
-  Cell* node = find_cell(alist, cmp_key, key);
-  if (node) {
-    Cell* new_head = make_cell();
-    Cell* tail = copy_cells(alist, new_head, node);
-    Cell* pair = make_cell();
-    pair->car = key;
-    pair->cdr = value;
-    Cell* new_cell = make_cell();
-    tail->cdr = new_cell;
-    new_cell->car = pair;
-    new_cell->cdr = retain(node);
-    return new_head;
-  } else {
-    return alist_prepend2(alist, key, value);
-  }
-}
+// Immutable version of alist_assoc. Returns new alist. Both key and pair are
+// assumed to be retained already.
+/* Cell* alist_passoc(Cell* alist, int cmp_key(void*, void*), void* key, */
+/*                    void* value) { */
+/*   Cell* node = find_cell(alist, cmp_key, key); */
+/*   if (node) { */
+/*     Cell* new_head = make_cell(); */
+/*     // tail is first cell after the cell we're 'updating'. */
+/*     Cell* tail = copy_cells(alist, new_head, node); */
+/*     // New cell with updated value: */
+/*     Cell* pair = make_cell(); */
+/*     pair->car = key; */
+/*     pair->cdr = value; */
+/*     // Use new cell to connect copied part of the list with shared part of
+ * the */
+/*     // list. */
+/*     Cell* new_cell = make_cell(); */
+/*     tail->cdr = new_cell; */
+/*     new_cell->car = pair; */
+/*     new_cell->cdr = retain(node); */
+/*     return new_head; */
+/*   } else { */
+/*     return alist_prepend(alist, key, value); */
+/*   } */
+/* } */

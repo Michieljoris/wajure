@@ -28,7 +28,6 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_NEXT;
   Lval* lval = arg;
   ITER_END;
-  printf("\n++++++++++++++++++eval_def: before evalling lval\n");
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
 
@@ -41,7 +40,6 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     retain(lval_sym);
   }
   lenv_put(get_root_env(env), lval_sym, lval);
-  printf("\n+++++++++++++++++=returning from eval_def\n");
   return make_lval_list();
 }
 
@@ -361,6 +359,8 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
 Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
+  printf("ENV IN LET:");
+  lenv_print(env);
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
   scoped_iter Cell* a = iter_new(arg_list);
@@ -389,7 +389,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
       release(let_env);
       return lval;
     }
-    Lenv* new_let_env = lenv_assoc(let_env, retain(lval_sym), lval);
+    Lenv* new_let_env = lenv_prepend(let_env, retain(lval_sym), lval);
     new_let_env->parent_env = let_env;
 
     let_env = new_let_env;
@@ -398,9 +398,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
   scoped Lval* body = make_lval_list();
   body->head = retain(iter_cell(a));
-  Lval* ret = eval_body(let_env, body, WITH_TCO);
-  ret->tco_env = let_env;
-  return ret;
+  return eval_body(let_env, body, WITH_TCO);
 }
 
 /* Not really a special form */

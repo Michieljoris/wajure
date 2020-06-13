@@ -24,21 +24,26 @@
 ;;   123
 ;;   )
 
-;; (let [a "THIS IS A!!!!!!"
-;;       b 1
-;;       c [1 2 3]
-;;       ]
-;;   (let [d c]
-;;     (let [e d]
-;;       e))
-;;   )
+(let [a "THIS IS A!!!!!!"
+      b 1
+      c [1 2 3]
+      ]
+ 'a
+  456
+  (let [d c]
+    (let [e d]
+      b))
+ 123
+  )
+
+;; (let [a 1] a)
 
 
-
-(def f (fn [a] a))
-(f 1)
+;; (def f (fn [a] a))
+;; (f 1)
 ;; (def foo (macro [x] (list 'print x)))
 ;; (def bar (macro [y] (print 123) (list 'foo 345)))
 
 ;; (print (bar 123))
 ;; (macroexpand '(foo 123))
+;; 1

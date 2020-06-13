@@ -133,6 +133,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       lval_println(lval);
       result = lval_eval(env, lval);  // EVAL
       printf("\nDone evalling lval_list\n");
+      lval_println(result);
       if (result->type == LVAL_ERR) {
         lval_println(result);
       }
@@ -140,7 +141,12 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
     }
 
     printf("Releasing lval_list: ");
+
+    lval_println(result);
     release(lval_list);
+
+    printf("Done releasing lval_list: ");
+    lval_println(result);
   } else {
     lval_println(lval_list);
   }

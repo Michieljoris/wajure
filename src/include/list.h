@@ -27,12 +27,12 @@ Cell* make_pair(void* key, void* value);
 
 void* alist_get(Cell* alist, int key_cmp(void*, void*), void* key);
 int alist_has_key(Cell* alist, int key_cmp(void*, void*), void* key);
+
 // Mutable
-Cell* alist_assoc(Cell* alist, int key_cmp(void*, void*), void* key,
-                  void* value);
+Cell* alist_put(Cell* alist, int key_cmp(void*, void*), void* key, void* value);
 
 // Persistent association list
 Cell* alist_prepend(Cell* alist, void* key, void* value);
-Cell* alist_passoc(Cell* alist, int key_cmp(void*, void*), void* key,
-                   void* value);
+/* Cell* alist_passoc(Cell* alist, int key_cmp(void*, void*), void* key, */
+/*                    void* value); */
 #endif  // __LIST_H_

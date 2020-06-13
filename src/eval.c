@@ -38,6 +38,7 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
 }
 
 Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
+  printf("\n---------------------bind_lambda_params\n");
   /* Pop an arg */
   scoped_iter Cell* a = iter_new(arg_list);
   Lval* arg = iter_next(a);
@@ -47,6 +48,8 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
   Lval* param = NIL;
 
   Lenv* bindings = lval_fun->bindings;
+  printf("\nBINDINGs:") lenv_print(bindings);
+  printf("\n");
 
   // Try to bind all the arg in arg_list
   while (arg) {
@@ -70,15 +73,16 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
       Lval* rest_args = make_lval_list();
       rest_args->head = iter_current_cell(a);
       /* Bind last param with rest of args */
-      bindings = lenv_assoc(bindings, param, rest_args);
+      lenv_put(bindings, param, rest_args);
       /* Break out of while loop because all args are bound now */
       break;
     }
     /* Bind sym with arg */
-    bindings = lenv_assoc(bindings, param, arg);
+    lenv_put(bindings, param, arg);
     arg = iter_next(a);
   }
-  /* iter_end(a); */
+  printf("\nBINDINGs:") lenv_print(bindings);
+  printf("\n");
 
   param = iter_next(p);
   /* If there's still params unbound and next one is & */
@@ -96,13 +100,14 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 
     /* and bind last symbol to empty list */
     Lval* empty_lval_list = make_lval_list();
-    bindings = lenv_assoc(bindings, param, empty_lval_list);
+    lenv_put(bindings, param, empty_lval_list);
     iter_next(p);
   }
 
   Lval* params = make_lval_vector();
-  params->head = iter_current_cell(p);
-  /* iter_end(p); */
+  params->head = retain(iter_current_cell(p));
+  printf("\nPARAMS:");
+  lval_println(params);
   return make_lval_lambda(bindings, params, lval_fun->body, LAMBDA);
 }
 
@@ -113,6 +118,7 @@ Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
   /* Eval all exprs of body but the last one (if with_tco is true)*/
   while (lval) {
     if (iter_peek(i)) {
+      release(lval);
       /* if expr is not last one of body discard the result */
     } else {
       if (with_tco) {
@@ -146,14 +152,11 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
   printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
-  lval_println(lval_fun);
-  lval_println(arg_list);
   lval_fun = bind_lambda_params(lval_fun, arg_list);
   printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
   lval_println(lval_fun);
   lenv_print(lval_fun->bindings);
   if (lval_fun->type == LVAL_ERR) return lval_fun;
-
   /* Eval body expressions, but only if all params are bound */
   if (!lval_fun->params->head) {
     Lval* evalled_body =
@@ -260,7 +263,6 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   }
 }
 
-int i = 0;
 Lval* lval_eval(Lenv* env, Lval* lval) {
   /* printf("\n->>>>>>>>EVAL: %d", i++); */
   printf("\n->>>>>>>>EVAL: ");
@@ -273,32 +275,32 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       case LVAL_SYMBOL:
         ret = eval_symbol(env, lval);
         if (tco_env) {
-          printf("SYMBOL: Releasing tco_env!!!! %d\n", i);
-          lval_println(ret);
+          printf("SYMBOL: Releasing tco_env!!!! \n");
           release(tco_env);
+          /* retain(ret); */
         }
-        /* i--; */
         return ret;
       case LVAL_COLLECTION:
         switch (lval->subtype) {
           case LIST:
             ret = eval_fn_call(env, lval);
+            printf("Evaled fn call, result:");
+            lval_println(ret);
             if (tco_env) {
-              printf("LIST: Releasing tco_env!!!! %d\n", i);
+              printf("LIST: Releasing tco_env!!!! \n");
               lenv_print(tco_env);
               /* printf("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
               release(tco_env);
             }
             lval = ret;
             if (lval->tco_env != NULL) {
-              printf("\nRECEIVED TCO_ENV: %d", i);
+              printf("\nRECEIVED TCO_ENV: ");
               lval_println(lval);
               lval_println(ret);
               lenv_print(lval->tco_env);
               tco_env = lval->tco_env;
               continue;
             }
-            /* i--; */
             return lval;
           case VECTOR:
             ret = eval_vector(env, lval);
@@ -306,7 +308,6 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
               /* printf("VECTOR: Releasing tco_env!!!! %d\n", i); */
               release(tco_env);
             }
-            /* i--; */
             return ret;
           case MAP:
             /* TODO: */
@@ -321,7 +322,6 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           /* printf("LITERAL: Releasing tco_env!!!! %d\n", i); */
           release(tco_env);
         }
-        /* i--; */
         return lval;
     }
   }

@@ -46,14 +46,28 @@ int lenv_is_bound(Lenv* env, Lval* lval_sym) {
   return alist_has_key(env->kv, is_eq_lval_sym, lval_sym) ? 1 : 0;
 }
 
-// Mutable
+// Assoces lval_sym with lval in the kv list in env. Mutates env by updating kv
+// list in place and returns it. Both lval_sym and lval are assumed to be
+// retained already.
 void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
-  env->kv = alist_assoc(env->kv, is_eq_lval_sym, lval_sym, lval);
+  env->kv = alist_put(env->kv, is_eq_lval_sym, lval_sym, lval);
 }
 
-// Persistent
-Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) {
+// Assoces lval_sym with lval in the kv list in env. Returns a new env where
+// lval_sym is assoced with lval. Passed in env is unchanged. Does not copy over
+// any other attributes. Both lval_sym and lval are assumed to be retained
+// already.
+/* Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) { */
+/*   Lenv* next_env = lenv_new(); */
+/*   next_env->kv = alist_passoc(env->kv, is_eq_lval_sym, lval_sym, lval); */
+/*   return next_env; */
+/* } */
+
+// Returns new env with sym/lval pair prepended. Does not copy over any other
+// attributes. Assumes lval_sym, lvalv alist are retained already. Retains head
+// of old kv list
+Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
-  next_env->kv = alist_passoc(env->kv, is_eq_lval_sym, lval_sym, lval);
+  next_env->kv = alist_prepend(retain(env->kv), lval_sym, lval);
   return next_env;
 }
