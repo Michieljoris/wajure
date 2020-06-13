@@ -273,7 +273,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             /* lval_println(body); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             release(ret);
-            ret = eval_body(catch_env, catch_body, EVAL_ALL);
+            Lval* last_expr = eval_list_but_last(catch_env, catch_body);
+            // if last_expr is an error it will be returned immediately by the
+            // next eval
+            ret = lval_eval(catch_env, last_expr);
 
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
@@ -298,7 +301,8 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = eval_body(env, body, EVAL_ALL);
+          Lval* last_expr = eval_list_but_last(env, body);
+          Lval* finally_ret = lval_eval(env, last_expr);
           release(body);
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -332,7 +336,8 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = eval_body(env, body, EVAL_ALL);
+          Lval* last_expr = eval_list_but_last(env, body);
+          Lval* finally_ret = lval_eval(env, last_expr);
           /* release(body); */
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -357,7 +362,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_do(Lenv* env, Lval* body) {
-  return eval_body(env, body, EVAL_ALL_BUT_LAST);
+  Lval* last_expr = eval_list_but_last(env, body);
+  if (last_expr->type == LVAL_ERR) return last_expr;
+  last_expr->tco_env = env;
+  return last_expr;
 }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
@@ -400,15 +408,15 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
   scoped Lval* body = make_lval_list();
   body->head = retain(iter_cell(a));
-  Lval* ret = eval_body(let_env, body, EVAL_ALL_BUT_LAST);
-  if (ret) {
-    lval_println(ret);
-    if (ret->type == LVAL_ERR) {
+  Lval* last_expr = eval_list_but_last(let_env, body);
+  if (last_expr) {
+    lval_println(last_expr);
+    if (last_expr->type == LVAL_ERR) {
       release(let_env);
-      return ret;
+      return last_expr;
     }
-    ret->tco_env = let_env;
-    return ret;
+    last_expr->tco_env = let_env;
+    return last_expr;
   }
   release(let_env);
   return make_lval_list();

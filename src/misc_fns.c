@@ -28,7 +28,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       scoped Lval* arg_list = make_lval_list();
       arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
-      Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, EVAL_ALL);
+      Lval* bound_macro = expand_macro(lval_fun, arg_list);
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
         return bound_macro;
