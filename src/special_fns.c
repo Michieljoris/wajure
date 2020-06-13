@@ -273,7 +273,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             /* lval_println(body); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             release(ret);
-            ret = eval_body(catch_env, catch_body, WITHOUT_TCO);
+            ret = eval_body(catch_env, catch_body, EVAL_ALL);
 
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
@@ -298,7 +298,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
+          Lval* finally_ret = eval_body(env, body, EVAL_ALL);
           release(body);
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -332,7 +332,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = eval_body(env, body, WITHOUT_TCO);
+          Lval* finally_ret = eval_body(env, body, EVAL_ALL);
           /* release(body); */
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -356,7 +356,9 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) { return eval_body(env, body, WITH_TCO); }
+Lval* eval_do(Lenv* env, Lval* body) {
+  return eval_body(env, body, EVAL_ALL_BUT_LAST);
+}
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   printf("ENV IN LET:");
@@ -398,7 +400,18 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
   scoped Lval* body = make_lval_list();
   body->head = retain(iter_cell(a));
-  return eval_body(let_env, body, WITH_TCO);
+  Lval* ret = eval_body(let_env, body, EVAL_ALL_BUT_LAST);
+  if (ret) {
+    lval_println(ret);
+    if (ret->type == LVAL_ERR) {
+      release(let_env);
+      return ret;
+    }
+    ret->tco_env = let_env;
+    return ret;
+  }
+  release(let_env);
+  return make_lval_list();
 }
 
 /* Not really a special form */

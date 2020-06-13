@@ -28,7 +28,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       scoped Lval* arg_list = make_lval_list();
       arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
-      Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
+      Lval* bound_macro = eval_lambda_call(lval_fun, arg_list, EVAL_ALL);
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
         return bound_macro;
@@ -132,7 +132,8 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
       printf("\nEvalling: ");
       lval_println(lval);
       result = lval_eval(env, lval);  // EVAL
-      printf("\nDone evalling lval_list\n");
+      printf("\nDone evalling lval in repl.lispy list, ref count: %d \n",
+             get_ref_count(result));
       lval_println(result);
       if (result->type == LVAL_ERR) {
         lval_println(result);

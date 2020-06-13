@@ -114,25 +114,28 @@ Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
 Lval* eval_body(Lenv* env, Lval* list, int with_tco) {
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
-  Lval* ret = NULL;
   /* Eval all exprs of body but the last one (if with_tco is true)*/
   while (lval) {
     if (iter_peek(i)) {
-      release(lval);
-      /* if expr is not last one of body discard the result */
-    } else {
-      if (with_tco) {
-        ret = lval;
-        ret->tco_env = env;
-        break;
+      lval = lval_eval(env, lval);
+      if (lval->type == LVAL_ERR) {
+        printf("OOOOOOOOOOOOOOPs ref count: %d", get_ref_count(lval));
+        lval_println(lval);
+        return lval;
       }
+      /* if expr is not last one of body discard the result */
+      release(lval);
+    } else {
+      // Last one in the list
+      if (with_tco) {
+        return lval;
+      }
+      return lval_eval(env, lval);
     }
-    ret = lval_eval(env, lval);
-    if (ret->type == LVAL_ERR) break;
 
     lval = iter_next(i);
   }
-  return ret ? ret : make_lval_list();
+  return NIL;
 }
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
@@ -143,7 +146,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   }
   if (lval_fun->type == LVAL_ERR) return lval_fun;
   Lval* expanded_macro =
-      eval_body(lval_fun->bindings, lval_fun->body, WITHOUT_TCO);
+      eval_body(lval_fun->bindings, lval_fun->body, EVAL_ALL);
 
   // Expanded macro closes over the environment where it is executed
   expanded_macro->tco_env = env;
@@ -175,7 +178,7 @@ Lval* eval_macro_call2(Lenv* env, Lval* lval_fun, Lval* arg_list,
   /* lval_println(lval_fun); */
   /* lval_println(arg_list); */
   /* printf("Expanding..\n"); */
-  Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, WITHOUT_TCO);
+  Lval* expanded_macro = eval_lambda_call(lval_fun, arg_list, EVAL_ALL);
   /* printf("Original lval_fun: "); */
   /* lval_println(lval_fun); */
   /* printf  ("Expanded macro:\n"); */
@@ -255,7 +258,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       return eval_macro_call(env, lval_fun, arg_list);
       break;
     case LAMBDA:
-      return eval_lambda_call(lval_fun, evalled_arg_list, WITH_TCO);
+      return eval_lambda_call(lval_fun, evalled_arg_list, EVAL_ALL_BUT_LAST);
       break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,

@@ -25,18 +25,20 @@
 ;;   )
 
 (let [a "THIS IS A!!!!!!"
-      b 1
+      ;; b 1
       c [1 2 3]
       ]
  'a
   456
   (let [d c]
+   'b 'c
     (let [e d]
+     'd
       b))
  123
   )
 
-;; (let [a 1] a)
+;; (let [] 123 d 3)
 
 
 ;; (def f (fn [a] a))
@@ -47,3 +49,13 @@
 ;; (print (bar 123))
 ;; (macroexpand '(foo 123))
 ;; 1
+
+;; LENV: 1 LVAL: 71 CELL: 69 ITER: 1 Done evalling =================== Extra: LVAL: 1 | CELL: 0
+
+;; -ITER: 0 | done load_fn, result: Error: unbound symbol 'b'
+;; done releasing result
+;; -LVAL: 70 | -CELL: 68 | -LVAL: 69 | done releasing arg_list
+
+;; LENV: 0 LVAL: 1 CELL: 0 ITER: 0  after releasing root_env
+
+;; Compilation finished at Sun Jun 14 04:17:39

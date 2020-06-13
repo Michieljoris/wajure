@@ -4,8 +4,8 @@
 #include "env.h"
 #include "lval.h"
 
-#define WITH_TCO 1
-#define WITHOUT_TCO 0
+#define EVAL_ALL_BUT_LAST 1
+#define EVAL_ALL 0
 
 Lval* lval_eval(Lenv* e, Lval* v);
 Lval* eval_nodes(Lenv* env, Lval* lval);

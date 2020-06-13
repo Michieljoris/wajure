@@ -32,6 +32,7 @@ void run(int argc, char** argv) {
       Lval* x = load_fn(root_env, arg_list);  // load_fn
       printf("done load_fn, result: ");
       lval_println(x);
+      printf("ref count of result: %d\n", get_ref_count(x));
       release(x);
       printf("done releasing result\n");
       /* debug("foo", arg_list); */
