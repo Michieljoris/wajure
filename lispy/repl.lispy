@@ -10,22 +10,23 @@
 ;; (concat '(1 2) '())
 ;; (concat '() '(3 4))
 ;; (def a "FOOOOOOOOOOOOOOOOOOo")
+;; (def a "UUUUUUUUUUUUUUUUU")
 ;; (pr a)
 ;; (if 1 2 3)
 ;; (fn [a b c] a)
 
-;; (def a 1)
+;; (def a "baaaaaaaaaaaaaaar")
+;; (+ 1 1)
 ;; `(a ~@(list a))
 ;; (try
 ;;  123
 ;;   (throw "foo")
 ;;   (catch E e e)
 ;;   (finally (pr ":finally"))
-;;   123
 ;;   )
 
 ;; (let [a "THIS IS A!!!!!!"
-;;       ;; b 1
+;;       b 1
 ;;       c [1 2 3]
 ;;       ]
 ;;  'a
@@ -38,15 +39,42 @@
 ;;  123
 ;;   )
 
-;; (let [] 123 d 3)
+;; (let [] 123 'd 3)
 
 
-(def f (fn [a] a))
-(f 123)
-;; (def foo (macro [x] (list 'print x)))
-;; (def bar (macro [y] (print 123) (list 'foo 345)))
+;; (def f (fn [a] a))
+;; (f 123)
 
-;; (print (bar 123))
+;; (def defmacro (macro [sym params  body]
+;;                      `(def ~sym (macro ~params ~@body))))
+
+;; (defmacro defn [sym params & body]
+;;   `(def ~sym (fn ~params ~@body)))
+
+(def foo (macro [sym params & body] `(def ~sym (macro ~params) ~body)))
+
+;; (foo x [y])
+(macroexpand '(foo x [x y]  1 2))
+;; x
+;; (print foo)
+;; foo
+;; 234
+;; (defmacro foo [x] `(print ~x))
+;; (foo x)
+;; x
+;; (def sym 1)
+;; (def params [1 2])
+;; (def body  [1 2 3])
+;; `(~@body)
+;; `(~@(list 1))
+
+
+;; (def foo (macro [x] (list 'pr x)))
+;; (def foo (macro [x] x))
+;; (def bar (macro [y] (print 123) (list 'foo y)))
+
+;; (foo "WITHOUT QUOTES?" )
+;; (bar "WITHOUT QUOTES?" )
 ;; (macroexpand '(foo 123))
 ;; 1
 

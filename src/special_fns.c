@@ -31,7 +31,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
 
-  if (lenv_is_bound(get_root_env(env), lval_sym)) {
+  if (lenv_is_bound(get_user_env(env), lval_sym)) {
     printf(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
         "being replaced by: #'user/%s",
@@ -61,7 +61,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   }
   ITER_END;
   if (ret) {
-    ret->tco_env = env;
+    ret->tco_env = retain(env);
     return ret;
   }
   return make_lval_list();
@@ -85,8 +85,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   // to the passed in env
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
-  Lenv* closure_env = NIL;
-  closure_env = lenv_new();
+  Lenv* closure_env = lenv_new();
   closure_env->parent_env = retain(env);
   printf("lambda has retained env: %d ", is_user_env(env));
   lenv_print(env);
@@ -163,17 +162,22 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
       *lp = retain(splice_unquoted_eval->head);
       release(splice_unquoted_eval);
       Cell* last_cell = list_last(splice_unquoted_eval->head);
+      release(last_cell);  //???????
       lp = &(last_cell->cdr);
     } else {
       /* if node is a list apply quasiquote recursively */
-      if (arg->type == LVAL_COLLECTION) arg = eval_quasiquote_nodes(env, arg);
-      if (arg->type == LVAL_ERR) {
-        release(evalled_list);
-        return arg;
+      if (arg->type == LVAL_COLLECTION) {
+        arg = eval_quasiquote_nodes(env, arg);
+        if (arg->type == LVAL_ERR) {
+          release(evalled_list);
+          return arg;
+        }
+      } else {
+        retain(arg);
       }
 
       new_cell = make_cell();
-      new_cell->car = retain(arg);
+      new_cell->car = arg;
       *lp = new_cell;
       lp = &(new_cell->cdr);
     }

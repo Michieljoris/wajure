@@ -41,7 +41,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       }
     }
   }
-  return retain(lval);
+  return lval;
 }
 
 Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {

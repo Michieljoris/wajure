@@ -127,7 +127,7 @@ Cell* find_cell(Cell* alist, int cmp_key(void*, void*), void* key) {
 // in key and the key for each successive association.
 void* alist_get(Cell* alist, int cmp_key(void*, void*), void* key) {
   Cell* cell = find_cell(alist, cmp_key, key);
-  if (cell) return retain(((Cell*)cell->car)->cdr);
+  if (cell) return ((Cell*)cell->car)->cdr;
   return NULL;
 }
 

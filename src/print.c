@@ -40,19 +40,12 @@ void lval_fun_print(Lval* lval) {
       printf("<function %s>", lval->func_name);
       break;
     case LAMBDA:
-      printf("(fn ");
+    case MACRO:;
+      char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
+      printf("(%s ", fn_name);
       lval_print(lval->params);
       putchar(' ');
       lval_collection_print(lval->body, 0, 0);
-      putchar(')');
-      break;
-    case MACRO:
-      printf("(macro ");
-      lval_print(lval->params);
-      putchar(' ');
-      for (int i = 0; i < lval->body->count; i++) {
-        lval_print(lval->body->node[i]);
-      }
       putchar(')');
       break;
     case SPECIAL:

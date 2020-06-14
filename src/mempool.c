@@ -94,15 +94,6 @@ void mempool_free(Mempool* mempool, void* slot) {
 
 // DEBUG ========================================
 
-void mempool_debug(Mempool* mp) {
-  /* printf("Total slot count: %i\n", mp->total_slot_count); */
-  /* printf("Free slot count: %i\n", mp->free_slot_count); */
-  /* printf("Data block count: %i\n", mp->data_block_count); */
-  /* printf("Free slot pointer: %p\n", mp->free_slot_p); */
-  /* printf("Initialised count: %i\n", mp->initialised_count); */
-  printf("%d | ", mp->total_slot_count - mp->free_slot_count);
-}
-
 // Obsolete
 // Alternative version which initialises a new slot on every alloc
 

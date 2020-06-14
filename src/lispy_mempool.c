@@ -5,6 +5,17 @@
 #include "lval.h"
 #include "mempool.h"
 
+int debug = 0;
+
+void mempool_debug(Mempool* mp) {
+  /* printf("Total slot count: %i\n", mp->total_slot_count); */
+  /* printf("Free slot count: %i\n", mp->free_slot_count); */
+  /* printf("Data block count: %i\n", mp->data_block_count); */
+  /* printf("Free slot pointer: %p\n", mp->free_slot_p); */
+  /* printf("Initialised count: %i\n", mp->initialised_count); */
+  if (debug) printf("%d | ", mp->total_slot_count - mp->free_slot_count);
+}
+
 Mempool** mempools;
 
 typedef struct {
@@ -21,8 +32,10 @@ typedef struct {
 void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
 
-  printf("destroying lval:%li (%s):", (long int)lval, lval_type_to_name(lval));
-  lval_println(lval);
+  if (debug)
+    printf("destroying lval:%li (%s):", (long int)lval,
+           lval_type_to_name(lval));
+  if (debug) lval_println(lval);
   switch (lval->type) {
     case LVAL_SYMBOL:
       free(lval->sym);
@@ -45,14 +58,17 @@ void destroy_lval(void* data) {
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
-        printf("\n freeing params:") release(lval->params);
-        printf("\n freeing body:") release(lval->body);
-        printf("\n freeing closure_env:")
-            printf("ref count for closure_env = %d\n",
-                   get_ref_count(lval->closure_env));
+        if (debug) printf("\n freeing params:");
+        release(lval->params);
+        if (debug) printf("\n freeing body:");
+        release(lval->body);
+        if (debug) printf("\n freeing closure_env:");
+        if (debug)
+          printf("ref count for closure_env = %d\n",
+                 get_ref_count(lval->closure_env));
         release(lval->closure_env);
 
-        printf("\n Done freeing lval_fun");
+        if (debug) printf("\n Done freeing lval_fun");
       }
       break;
     case LVAL_ERR:
@@ -154,7 +170,7 @@ void* lalloc(int type) {
                    .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
                    .ref_count = 1,
                    .type = type};
-  printf("+%s: ", type_to_name(type));
+  if (debug) printf("+%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   return slot_p->data_p;
 }
@@ -164,7 +180,7 @@ void lfree(int type, void* slot) {
   // still works as before because it's not been reassigned.
   memset(slot, 0, mempools[type]->slot_size);
   mempool_free(mempools[type], slot);
-  printf("-%s: ", type_to_name(type));
+  if (debug) printf("-%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   /* printf("done %d\n", type); */
 }
@@ -222,6 +238,7 @@ void release(void* data_p) {
     /* printf("releasing:"); */
     /* lval_println(data_p); */
     printf("Warning: trying to release data that's not managed by ref_count.");
+    exit(1);
     return;
   };
 
@@ -232,27 +249,32 @@ void release(void* data_p) {
       printf("Warning: ref count for a %s has gone negative: %d\n",
              type_to_name(slot->type), slot->ref_count);
       lval_println(data_p);
+      exit(1);
     }
     return;
   }
   int call_id = i;
-  if (slot->type == LVAL) {
-    printf("freeing: (i%d): ", i);
-    lval_println(data_p);
-  } else {
-    printf("freeing: (i%d) %s: ", i, type_to_name(slot->type));
+  if (debug) {
+    if (slot->type == LVAL) {
+      printf("freeing: (i%d): ", i);
+      lval_println(data_p);
+    } else {
+      printf("freeing: (i%d) %s: ", i, type_to_name(slot->type));
+    }
   }
   if (slot->destroy) slot->destroy(data_p);
-  printf("\nactually now freeing slot for i%d ", call_id);
+  if (debug) printf("\nactually now freeing slot for i%d ", call_id);
   lfree(slot->type, slot);
 }
 
 void clean_up(void* data) {
-  printf("\nCleaning up: ");
-  if (*(void**)data) {
-    lval_print(*(void**)data);
-    printf("\n");
-  } else
-    printf("NIL\n");
+  if (debug) {
+    printf("\nCleaning up: ");
+    if (*(void**)data) {
+      lval_print(*(void**)data);
+      printf("\n");
+    } else
+      printf("NIL\n");
+  }
   release(*(void**)data);
 }
