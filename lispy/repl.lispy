@@ -41,7 +41,7 @@
 ;; (let [] 123 d 3)
 
 
-;; (def f (fn [a] a))
+(def f (fn [a] a))
 ;; (f 123)
 ;; (def foo (macro [x] (list 'print x)))
 ;; (def bar (macro [y] (print 123) (list 'foo 345)))

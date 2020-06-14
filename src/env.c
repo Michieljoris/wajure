@@ -42,6 +42,23 @@ Lenv* get_root_env(Lenv* env) {
   return env;
 }
 
+Lenv* get_user_env(Lenv* env) {
+  Lenv* user_env = NIL;
+  while (env->parent_env) {
+    user_env = env;
+    env = env->parent_env;
+  }
+  if (!user_env) {
+    printf("Error: you can't get user_env from root env!!. Aborting");
+    exit(1);
+  }
+  return user_env;
+}
+
+int is_user_env(Lenv* env) {
+  return env->parent_env && !env->parent_env->parent_env;
+}
+
 int lenv_is_bound(Lenv* env, Lval* lval_sym) {
   return alist_has_key(env->kv, is_eq_lval_sym, lval_sym) ? 1 : 0;
 }

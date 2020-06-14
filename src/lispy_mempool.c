@@ -165,11 +165,16 @@ void lfree(int type, void* slot) {
 
 int get_free_slot_count(int type) {
   Mempool* mp = mempools[type];
+  return mp->free_slot_count;
+}
+
+int get_taken_slot_count(int type) {
+  Mempool* mp = mempools[type];
   return mp->total_slot_count - mp->free_slot_count;
 }
 
 void print_mempool_free(int type) {
-  printf("%s: %d ", type_to_name(type), get_free_slot_count(type));
+  printf("%s: %d ", type_to_name(type), get_taken_slot_count(type));
 }
 
 void print_mempool_counts() {

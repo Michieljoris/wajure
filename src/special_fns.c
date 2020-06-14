@@ -39,7 +39,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   } else {
     retain(lval_sym);
   }
-  lenv_put(get_root_env(env), lval_sym, lval);
+  lenv_put(get_user_env(env), lval_sym, lval);
   return make_lval_list();
 }
 
@@ -85,12 +85,18 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   // to the passed in env
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
-  Lenv* closure = lenv_new();
-  closure->parent_env = retain(env);
-  printf("lambda has retained env: ");
-  lenv_print(env);
+  Lenv* closure_env = NIL;
+  if (is_user_env(env)) {
+    closure_env = env;
+  } else {
+    closure_env = lenv_new();
+    closure_env->parent_env = retain(env);
+    printf("lambda has retained env: ");
+    lenv_print(env);
+  }
   printf("refcount: %d\n", get_ref_count(env));
-  Lval* fn = make_lval_lambda(closure, retain(lval_params), lval_body, subtype);
+  Lval* fn =
+      make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
   return fn;
 }
 

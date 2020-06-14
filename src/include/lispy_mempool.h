@@ -20,6 +20,7 @@ typedef void (*Destructor)(void*);
 
 void print_mempool_free(int type);
 int get_free_slot_count(int type);
+int get_taken_slot_count(int type);
 void print_mempool_counts();
 int get_ref_count(void* data_p);
 #endif  // __LVAL_MEMPOOL_H_
