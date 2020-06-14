@@ -70,16 +70,6 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   env->kv = alist_put(env->kv, is_eq_lval_sym, lval_sym, lval);
 }
 
-// Assoces lval_sym with lval in the kv list in env. Returns a new env where
-// lval_sym is assoced with lval. Passed in env is unchanged. Does not copy over
-// any other attributes. Both lval_sym and lval are assumed to be retained
-// already.
-/* Lenv* lenv_assoc(Lenv* env, Lval* lval_sym, Lval* lval) { */
-/*   Lenv* next_env = lenv_new(); */
-/*   next_env->kv = alist_passoc(env->kv, is_eq_lval_sym, lval_sym, lval); */
-/*   return next_env; */
-/* } */
-
 // Returns new env with sym/lval pair prepended. Does not copy over any other
 // attributes. Assumes lval_sym, lvalv alist are retained already. Retains head
 // of old kv list

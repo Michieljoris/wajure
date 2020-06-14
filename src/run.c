@@ -56,7 +56,8 @@ void run(int argc, char** argv) {
     printf("\n\n------------> Result of slurping %s: ", argv[i]);
     lval_println(result);
     printf("ref count of result: %d\n", get_ref_count(result));
-    printf("releasing result:") release(result);
+    printf("releasing result:");
+    release(result);
     printf("\n");
     /* print_mempool_counts(); */
     /* printf("after releasing result of slurp of %s ", argv[i]); */
@@ -70,12 +71,15 @@ void run(int argc, char** argv) {
          after_slurp.iter - after_builtins.iter);
   /* print_mempool_counts(); */
   /* printf("after slurping\n"); */
-  set_debug_level(0);
+  set_debug_level(1);
+  printf("\n-------------- Now going to release user_env->kv!!!!\n");
   release(user_env->kv);
+  printf("\n-------------- Now going to release user_env!!!!\n");
+  user_env->kv = NIL;
   release(user_env);
   set_debug_level(1);
-  /* print_mempool_counts(); */
-  /* printf(" after releasing user_env\n"); */
+  print_mempool_counts();
+  printf(" after releasing user_env\n");
   struct slot_count after_user_env = get_slot_count();
   printf(
       "\nextra: LENV:%d, LVAL:%d, CELL:%d, ITER:%d after releasing user_env\n",
@@ -84,7 +88,6 @@ void run(int argc, char** argv) {
       after_user_env.cell - after_builtins.cell,
       after_user_env.iter - after_builtins.iter);
   set_debug_level(0);
-  release(root_env->kv);
   release(root_env);
   set_debug_level(1);
   print_mempool_counts();

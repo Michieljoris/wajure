@@ -38,9 +38,6 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   return new_list;
 }
 
-/* printf("OOOOOOOOOOOOOOPs ref count: %d", get_ref_count(lval)); */
-/* lval_println(lval); */
-
 // Returns NIL if list is empty, otherwise evals and discards all expressions
 // but the last one, which is returned.
 Lval* eval_list_but_last(Lenv* env, Lval* list) {
@@ -69,135 +66,134 @@ Lval* eval_string(Lenv* env, char* str) {
   if (last_expr->type == LVAL_ERR) return last_expr;
 
   /* Evaluate the last expression and return it */
-  return lval_eval(env, last_expr);
+  Lval* ret = lval_eval(env, last_expr);
+  printf("\nDone eval_string\n");
+  return ret;
 }
 
-Lval* bind_lambda_params(Lval* lval_fun, Lval* arg_list) {
+Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
+  /* if the param is & there should be exactly one formal left  */
+  if (!param || iter_peek(p)) {
+    return NIL;
+  }
+  Lval* rest_args = make_lval_list();
+  rest_args->head = retain(iter_current_cell(a));
+  return rest_args;
+}
+
+/* Lval* make_bound_lval_lambda(Lval* params, Lval* body, Lval* arg_list) { */
+/* while (arg) { */
+/*   /\* Return error if we've got an arg but not a param *\/ */
+/*   if (!param) { */
+/*     return make_lval_err("Function passed too many args. Got %i, expected
+ * %i.", */
+/*                          list_count(arg_list->head),
+ * list_count(params->head)); */
+/*   } */
+
+/*   if (_strcmp(param->sym, "&") == 0) { */
+/*     param = iter_next(p); */
+/*     arg = read_rest_args(param, p, a); */
+/*     if (!arg) { */
+/*       release(bindings_env); */
+/*       return make_lval_err( */
+/*           "Function format invalid. " */
+/*           "Symbol '&' not followed by single symbol."); */
+/*     } */
+/*   } */
+/*   bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg); */
+/*   arg = iter_next(a); */
+/*   param = iter_next(p); */
+/* } */
+
+/* if (param && _strcmp(param->sym, "&") == 0) { */
+/*   param = iter_next(p);  // rest param */
+/*   /\* The & needs to be followed by exactly one symbol *\/ */
+/*   if (!param) { */
+/*     release(bindings_env); */
+/*     return make_lval_err( */
+/*         "Function format invalid. " */
+/*         "Symbol '&' not followed by single symbol."); */
+/*   } */
+/*   /\* and bind last symbol to empty list *\/ */
+/*   alist_prepend(bindings_env->kv, retain(param), make_lval_list()); */
+/*   iter_next(p); */
+/* } */
+
+// Bind any remaining params to rest arg if there is one  ==========
+
+/* params = make_lval_vector(); */
+/* params->head = retain(iter_current_cell(p)); */
+/* return make_lval_lambda(bindings_env, params, body, LAMBDA); */
+
+/* Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* arg_list) { */
+/* printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n"); */
+
+/* Lval* bound_lval_lambda = make_bound_lval_lambda( */
+/*     lval_fun->params, retain(lval_fun->body), arg_list); */
+
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   printf("\n---------------------bind_lambda_params\n");
-  /* Pop an arg */
+  scoped Lenv* bindings_env = lenv_new();
+
+  scoped_iter Cell* p = iter_new(lval_fun->params);
+  Lval* param = iter_next(p);
+
   scoped_iter Cell* a = iter_new(arg_list);
   Lval* arg = iter_next(a);
 
-  /* Pop a parameter symbol */
-  scoped_iter Cell* p = iter_new(lval_fun->params);
-  Lval* param = NIL;
-
-  Cell* closure_alist = lval_fun->closure_env->kv;
-  Cell* bindings = closure_alist;
-  retain(bindings);
-  printf("\nCLOSURE:");
-  alist_print(closure_alist);
-  printf("\n");
-
   // Try to bind all the arg in arg_list ====================
-  while (arg) {
-    param = iter_next(p);
-    /* Return error if we've got an arg but not a param */
-    if (!param) {
-      release(bindings);
-      return make_lval_err(
-          "Function passed too many args. Got %i, expected %i.",
-          list_count(arg_list->head), list_count(lval_fun->params->head));
-    }
-
-    /* Process symbol if it's a & and break out of while loop */
+  while (param) {
     if (_strcmp(param->sym, "&") == 0) {
       param = iter_next(p);
-      /* if the param is & there should be exactly one formal left  */
-      if (!param || iter_peek(p)) {
-        release(bindings);
+      arg = read_rest_args(param, p, a);
+      if (!arg)
         return make_lval_err(
             "Function format invalid. "
             "Symbol '&' not followed by single symbol.");
-      }
-      Lval* rest_args = make_lval_list();
-      rest_args->head = iter_current_cell(a);
-      /* Bind last param with rest of args */
-      bindings = alist_prepend(bindings, param, rest_args);
-      /* lenv_put(bindings, param, rest_args); */
-      /* Break out of while loop because all args are bound now */
+    }
+    if (arg)
+      bindings_env->kv =
+          alist_prepend(bindings_env->kv, retain(param), retain(arg));
+    else
       break;
-    }
-    /* Bind sym with arg */
-    bindings = alist_prepend(bindings, retain(param), retain(arg));
-    /* lenv_put(bindings, param, arg); */
     arg = iter_next(a);
+    param = iter_next(p);
   }
 
-  // Try to bind all the arg in arg_list done ====================
+  if (!param && arg)
+    return make_lval_err("Function passed too many args. Got %i, expected %i.",
+                         list_count(arg_list->head),
+                         list_count(lval_fun->params->head));
 
-  printf("\nBINDINGs:") alist_print(bindings);
-  printf("\n");
+  bindings_env->parent_env = retain(lval_fun->closure_env);
 
-  param = iter_next(p);
-
-  // Bind any remaining params to rest arg if there is one  ==========
-  if (param && _strcmp(param->sym, "&") == 0) {
-    param = iter_next(p);  // rest param
-    /* The & needs to be followed by exactly one symbol */
-    if (!param) {
-      release(bindings);
-      return make_lval_err(
-          "Function format invalid. "
-          "Symbol '&' not followed by single symbol.");
-    }
-
-    /* and bind last symbol to empty list */
-    alist_prepend(bindings, param, make_lval_list());
-    /* lenv_put(bindings, param, empty_lval_list); */
-    iter_next(p);
-  }
-  // Bind any remaining params to rest arg if there is one, done  ==========
-
-  Lenv* closure_env = lenv_new();
-  closure_env->kv = bindings;
-  closure_env->parent_env = lval_fun->closure_env->parent_env;
-  Lval* params = make_lval_vector();
-  params->head = retain(iter_current_cell(p));
-  printf("\nPARAMS:");
-  lval_println(params);
-  return make_lval_lambda(closure_env, params, retain(lval_fun->body), LAMBDA);
-}
-
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
-  lval_fun = bind_lambda_params(lval_fun, arg_list);
-  printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n");
-  lval_println(lval_fun);
-  lenv_print(lval_fun->closure_env);
-  if (lval_fun->type == LVAL_ERR) return lval_fun;
   /* Eval body expressions, but only if all params are bound */
-  if (!lval_fun->params->head) {
-    Lval* last_expr = eval_list_but_last(lval_fun->closure_env, lval_fun->body);
-    if (!last_expr) {
-      release(lval_fun);
-      return make_lval_list();
-    }
-    if (last_expr->type == LVAL_ERR) {
-      release(lval_fun);
-      return last_expr;
-    }
-    /* printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n"); */
-    /* lval_println(last_expr); */
-    /* release(lval_fun); */
-    last_expr->tco_env = lval_fun->closure_env;
+  if (!param) {
+    Lval* last_expr = eval_list_but_last(bindings_env, lval_fun->body);
+    if (!last_expr) return make_lval_list();
+    if (last_expr->type == LVAL_ERR) return last_expr;
+
+    last_expr->tco_env = retain(bindings_env);
     return last_expr;
   } else {
-    return lval_fun;
+    Lval* params = make_lval_vector();
+    params->head = retain(iter_current_cell(p));
+    return make_lval_lambda(retain(bindings_env), params,
+                            retain(lval_fun->body), LAMBDA);
   }
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
-  lval_fun = bind_lambda_params(lval_fun, arg_list);
+  Lval* lval = eval_lambda_call(lval_fun, arg_list);
 
-  if (lval_fun->params->head) {
+  if (lval->type == LVAL_FUNCTION)
     return make_lval_err("Macro needs all its params bound");
-  }
-  if (lval_fun->type == LVAL_ERR) return lval_fun;
+  if (lval->type == LVAL_ERR) return lval;
 
-  Lval* last_expr = eval_list_but_last(lval_fun->closure_env, lval_fun->body);
-  // if last_expr is an error it will be returned immediately by the next eval
-  return lval_eval(lval_fun->closure_env, last_expr);
+  Lenv* bindings_env = lval->tco_env;
+  lval->tco_env = NIL;
+  return lval_eval(bindings_env, lval);
 }
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
@@ -227,25 +223,20 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   printf("evalling fn call: ");
   lval_println(lval_list);
-  Lval* lval_err;
+
   if (lval_list->head == NIL) {
     return make_lval_list();  // empty;
   }
-  Lval* lval_symbol = list_first(lval_list->head);
-  scoped Lval* lval_fun = lval_eval(env, lval_symbol);  // eval first node
-  release(lval_symbol);
+  Lval* lval_first = lval_list->head->car;
+  scoped Lval* lval_fun = lval_eval(env, lval_first);
 
-  if (lval_fun->type == LVAL_ERR) {
-    return lval_fun;
-  }
+  if (lval_fun->type == LVAL_ERR) return retain(lval_fun);
 
-  if (lval_fun->type != LVAL_FUNCTION) {
-    lval_err = make_lval_err(
+  if (lval_fun->type != LVAL_FUNCTION)
+    return make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
         lval_type_to_name(lval_fun), lval_type_constant_to_name(LVAL_FUNCTION));
-    return lval_err;
-  }
 
   /* Lval* ret = NIL; */
   scoped Lval* arg_list = make_lval_list();
@@ -255,10 +246,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
     case SYS:
     case LAMBDA:
       evalled_arg_list = eval_nodes(env, arg_list);
-      if (evalled_arg_list->type == LVAL_ERR) {
-        retain(evalled_arg_list);
-        return evalled_arg_list;
-      }
+      if (evalled_arg_list->type == LVAL_ERR) return retain(evalled_arg_list);
     default:;
   }
   /* printf("evalled the arguments of fn\n"); */

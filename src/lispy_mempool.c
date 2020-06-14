@@ -20,8 +20,9 @@ typedef struct {
 
 void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
-  /* printf("destroying lval:%li\n", (long int)lval); */
-  /* lval_println(lval); */
+
+  printf("destroying lval:%li (%s):", (long int)lval, lval_type_to_name(lval));
+  lval_println(lval);
   switch (lval->type) {
     case LVAL_SYMBOL:
       free(lval->sym);
@@ -44,9 +45,14 @@ void destroy_lval(void* data) {
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
+        printf("\n freeing params:") release(lval->params);
+        printf("\n freeing body:") release(lval->body);
+        printf("\n freeing closure_env:")
+            printf("ref count for closure_env = %d\n",
+                   get_ref_count(lval->closure_env));
         release(lval->closure_env);
-        release(lval->params);
-        release(lval->body);
+
+        printf("\n Done freeing lval_fun");
       }
       break;
     case LVAL_ERR:
@@ -154,8 +160,8 @@ void* lalloc(int type) {
 }
 
 void lfree(int type, void* slot) {
-  // Zeroing out will catch errors that happen when the slot is freed, but still
-  // works as before because it's not been reassigned.
+  // Zeroing out will catch errors that happen when the slot is freed, but
+  // still works as before because it's not been reassigned.
   memset(slot, 0, mempools[type]->slot_size);
   mempool_free(mempools[type], slot);
   printf("-%s: ", type_to_name(type));
@@ -203,7 +209,9 @@ void* retain(void* data_p) {
   return data_p;
 }
 
+int i = 0;
 void release(void* data_p) {
+  i++;
   if (!data_p) {
     /* printf("Warning: trying to release data with a NULL pointer."); */
     return;
@@ -227,16 +235,24 @@ void release(void* data_p) {
     }
     return;
   }
-
+  int call_id = i;
+  if (slot->type == LVAL) {
+    printf("freeing: (i%d): ", i);
+    lval_println(data_p);
+  } else {
+    printf("freeing: (i%d) %s: ", i, type_to_name(slot->type));
+  }
   if (slot->destroy) slot->destroy(data_p);
+  printf("\nactually now freeing slot for i%d ", call_id);
   lfree(slot->type, slot);
 }
 
 void clean_up(void* data) {
   printf("\nCleaning up: ");
-  if (*(void**)data)
+  if (*(void**)data) {
     lval_print(*(void**)data);
-  else
+    printf("\n");
+  } else
     printf("NIL\n");
   release(*(void**)data);
 }

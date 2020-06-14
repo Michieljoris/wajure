@@ -86,14 +86,10 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure_env = NIL;
-  if (is_user_env(env)) {
-    closure_env = env;
-  } else {
-    closure_env = lenv_new();
-    closure_env->parent_env = retain(env);
-    printf("lambda has retained env: ");
-    lenv_print(env);
-  }
+  closure_env = lenv_new();
+  closure_env->parent_env = retain(env);
+  printf("lambda has retained env: %d ", is_user_env(env));
+  lenv_print(env);
   printf("refcount: %d\n", get_ref_count(env));
   Lval* fn =
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);

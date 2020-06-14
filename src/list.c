@@ -52,7 +52,7 @@ Cell* list_concat(Cell* list1, Cell* list2) {
   return new_head;
 }
 
-// memory safe ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// memory leak safe ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 // Finds and returns the cell in list for which cmp returns true. cmp fn
 // receives passed in key and each successive cell.

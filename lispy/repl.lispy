@@ -42,7 +42,7 @@
 
 
 (def f (fn [a] a))
-;; (f 123)
+(f 123)
 ;; (def foo (macro [x] (list 'print x)))
 ;; (def bar (macro [y] (print 123) (list 'foo 345)))
 
