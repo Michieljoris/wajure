@@ -80,87 +80,34 @@ Lval* exit_fn(Lenv* e, Lval* arg_list) {
   return make_lval_list();
 }
 
+char* read_file(char* file_name) {
+  // Open file and check it exists
+  FILE* f = fopen(file_name, "rb");
+  if (f == NULL) return NULL;
+
+  // Read file contents into string
+  fseek(f, 0, SEEK_END);
+  long length = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  char* str = calloc(length + 1, 1);
+  fread(str, 1, length, f);
+  fclose(f);
+  return str;
+}
+
+Lval* slurp(Lenv* env, char* file_name) {
+  char* str = read_file(file_name);
+  if (!str) return make_lval_err("Could not load file %s", str);
+  Lval* result = eval_string(env, str);
+  free(str);
+  return result;
+}
+
 Lval* load_fn(Lenv* env, Lval* arg_list) {
   printf("\nload_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-
-  /* Open file and check it exists */
-  FILE* f = fopen(arg->str, "rb");
-  if (f == NULL) {
-    Lval* err = make_lval_err("Could not load Library %s", arg->str);
-    return err;
-  }
-  ITER_END
-
-  /* Read File Contents */
-  fseek(f, 0, SEEK_END);
-  long length = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  char* input = calloc(length + 1, 1);
-  fread(input, 1, length, f);
-  fclose(f);
-  /* Read from input to create an S-Expr */
-  int pos = 0;
-  set_debug_level(1);
-  int lval_count1 = get_free_slot_count(LVAL);
-  int cell_count1 = get_free_slot_count(CELL);
-  Lval* lval_list = lval_read_list(input, &pos, '\0');
-  free(input);
-
-  set_debug_level(1);
-  print_mempool_free_all();
-  lval_println(lval_list);
-
-  print_mempool_free_all();
-  printf("DONE READING FILE ==================== ");
-  int lval_count2 = get_free_slot_count(LVAL);
-  int cell_count2 = get_free_slot_count(CELL);
-  int lval_count_extra = lval_count2 - lval_count1;
-  int cell_count_extra = cell_count2 - cell_count1;
-  printf("Extra: LVAL: %d | CELL: %d\n", lval_count_extra, cell_count_extra);
-  printf("Evalling lval_list: ");
-  lval_println(lval_list);
-  /* Evaluate all expressions contained in S-Expr */
-  Lval* result = NIL;
-  if (lval_list->type != LVAL_ERR) {
-    scoped_iter Cell* i = iter_new(lval_list);
-    Lval* lval = iter_next(i);
-
-    while (lval) {
-      release(result);
-      printf("\nEvalling: ");
-      lval_println(lval);
-      result = lval_eval(env, lval);  // EVAL
-      printf("\nDone evalling lval in repl.lispy list, ref count: %d \n",
-             get_ref_count(result));
-      lval_println(result);
-      if (result->type == LVAL_ERR) {
-        lval_println(result);
-      }
-      lval = iter_next(i);
-    }
-
-    printf("Releasing lval_list: ");
-
-    lval_println(result);
-    release(lval_list);
-
-    printf("Done releasing lval_list: ");
-    lval_println(result);
-  } else {
-    lval_println(lval_list);
-  }
-
-  print_mempool_free_all();
-  printf("Done evalling =================== ");
-  int lval_count3 = get_free_slot_count(LVAL);
-  int cell_count3 = get_free_slot_count(CELL);
-  int lval_count_extra2 = lval_count3 - lval_count1;
-  int cell_count_extra2 = cell_count3 - cell_count1;
-  printf("Extra: LVAL: %d | CELL: %d\n", lval_count_extra2, cell_count_extra2);
-  printf("\n");
-  return result ? result : make_lval_list();
+  return slurp(env, arg->str);
 }
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {

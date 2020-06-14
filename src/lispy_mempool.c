@@ -44,7 +44,7 @@ void destroy_lval(void* data) {
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
-        release(lval->bindings);
+        release(lval->closure_env);
         release(lval->params);
         release(lval->body);
       }
@@ -172,7 +172,7 @@ void print_mempool_free(int type) {
   printf("%s: %d ", type_to_name(type), get_free_slot_count(type));
 }
 
-void print_mempool_free_all() {
+void print_mempool_counts() {
   printf("\n");
   print_mempool_free(LENV);
   print_mempool_free(LVAL);

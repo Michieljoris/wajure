@@ -2,8 +2,8 @@
 #define __MISC_FNS_H_
 
 #include "env.h"
-Lval* load_fn(Lenv* env, Lval* arg_list);
-/* Lval* mpc_load_fn(Lenv* env, Lval* arg_list); */
+
+Lval* slurp(Lenv* env, char* file_name);
 Builtin misc_builtins[10];
 int exit_repl;
 

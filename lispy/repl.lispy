@@ -1,7 +1,7 @@
-1
-(+ 1)
-[ 1 ]
-'(1 2 3)
+;; 1
+;; (+ 1)
+;; [ 1 ]
+;; '(1 2 3)
 ;; (cons 0 '(1 2 3))
 ;; (first '(1 2 3))
 ;; (rest  '(1 2 3))
@@ -42,7 +42,7 @@
 
 
 ;; (def f (fn [a] a))
-;; (f 1)
+;; (f 123)
 ;; (def foo (macro [x] (list 'print x)))
 ;; (def bar (macro [y] (print 123) (list 'foo 345)))
 
@@ -50,12 +50,3 @@
 ;; (macroexpand '(foo 123))
 ;; 1
 
-;; LENV: 1 LVAL: 71 CELL: 69 ITER: 1 Done evalling =================== Extra: LVAL: 1 | CELL: 0
-
-;; -ITER: 0 | done load_fn, result: Error: unbound symbol 'b'
-;; done releasing result
-;; -LVAL: 70 | -CELL: 68 | -LVAL: 69 | done releasing arg_list
-
-;; LENV: 0 LVAL: 1 CELL: 0 ITER: 0  after releasing root_env
-
-;; Compilation finished at Sun Jun 14 04:17:39

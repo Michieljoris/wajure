@@ -130,9 +130,11 @@ void print_kv(void* pair) {
   lval_print((Lval*)((Cell*)pair)->cdr);
 }
 
+void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }
+
 void lenv_print(Lenv* env) {
   if (env->parent_env) {
-    list_print(env->kv, print_kv, "\n");
+    alist_print(env->kv);
   } else {
     printf("ROOT env!!! \n");
     /* list_print(env->kv, print_kv, "\n"); */

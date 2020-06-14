@@ -106,7 +106,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
-                 .bindings = env,
+                 .closure_env = env,
                  .params = params,
                  .body = body};
   /* lval->type = LVAL_FUNCTION; */
