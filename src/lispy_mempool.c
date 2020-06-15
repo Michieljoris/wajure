@@ -6,7 +6,7 @@
 #include "mempool.h"
 #include "print.h"
 
-int debug = 0;
+int debug = 1;
 
 void mempool_debug(Mempool* mp) {
   /* printf("Total slot count: %i\n", mp->total_slot_count); */
@@ -14,7 +14,7 @@ void mempool_debug(Mempool* mp) {
   /* printf("Data block count: %i\n", mp->data_block_count); */
   /* printf("Free slot pointer: %p\n", mp->free_slot_p); */
   /* printf("Initialised count: %i\n", mp->initialised_count); */
-  if (debug) printf("%d | ", mp->total_slot_count - mp->free_slot_count);
+  if (debug) ddebug("%d | ", mp->total_slot_count - mp->free_slot_count);
 }
 
 Mempool** mempools;
@@ -239,7 +239,7 @@ void release(void* data_p) {
     /* printf("releasing:"); */
     /* lval_println(data_p); */
     warn("Warning: trying to release data that's not managed by ref_count.");
-    exit(1);
+    /* exit(1); */
     return;
   };
 
@@ -250,7 +250,7 @@ void release(void* data_p) {
       warn("Warning: ref count for a %s has gone negative: %d\n",
            type_to_name(slot->type), slot->ref_count);
       lval_debugln(data_p);
-      exit(1);
+      /* exit(1); */
     }
     return;
   }

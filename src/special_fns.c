@@ -367,9 +367,11 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_do(Lenv* env, Lval* body) {
+  debug("In eval_do\n");
+  lenv_print(env);
   Lval* last_expr = eval_list_but_last(env, body);
   if (last_expr->type == LVAL_ERR) return last_expr;
-  last_expr->tco_env = env;
+  last_expr->tco_env = retain(env);
   return last_expr;
 }
 

@@ -1,4 +1,26 @@
 ;; (load "lispy/stdlib.lispy")
+
+;; (def defmacro (macro [sym params & body]
+;;                      `(def ~sym (macro ~params ~@body))))
+
+;; (defmacro defn [sym params & body]
+;;   `(def ~sym (fn ~params ~@body)))
+
+;; (defmacro when [cond body]
+;;   `(if ~cond ~body))
+
+;; (def t (macro [] (do 1 2 3)))
+(def t (macro [] (do 1)))
+
+(macroexpand '(t))
+;; (defmacro when [cond body]
+;;   `(if ~cond ~body))
+
+;; (macroexpand '(t ))
+;; (macroexpand '(when 1 2))
+;; (when 1 2)
+;; (load "lispy/test/test_2_eval.lispy")
+
 ;; 1
 ;; (+ 1)
 ;; [ 1 ]
@@ -69,7 +91,7 @@
 ;;     ret))
 
 ;; (def foo (x 1 2 ))
-3
+;; 3
 
 ;; (def foo (macro [sym params & body] `(def ~sym (macro ~params ~@body))))
 ;; (def foo (fn [& args] args))

@@ -47,13 +47,16 @@ void run(int argc, char** argv) {
 
   // Read in list of (string) arguments from commandline
 
+  set_log_level(LOG_LEVEL_DEEP_DEBUG);
   // For now we only understand args to be a list of file names to be read in
   for (int i = 1; i < argc; ++i) {
     info("Slurping %s\n", argv[i]);
     Lval* result = slurp(user_env, argv[i]);
 
-    printf("\n------------> Result of slurping %s: ", argv[i]);
-    lval_infoln(result);
+    printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    printf("Result of slurping %s: ", argv[i]);
+    lval_println(result);
+    printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     printf("\n");
     /* printf("ref count of result: %d\n", get_ref_count(result)); */
     printf("releasing result:");
@@ -70,9 +73,10 @@ void run(int argc, char** argv) {
       after_slurp.lval - after_builtins.lval,
       after_slurp.cell - after_builtins.cell,
       after_slurp.iter - after_builtins.iter);
+
+  set_log_level(LOG_LEVEL_INFO);
   /* print_mempool_counts(); */
   /* printf("after slurping\n"); */
-  /* set_log_level(LOG_LEVEL_DEEP_DEBUG); */
   /* printf("\n-------------- Now going to release user_env!!!!\n"); */
   release(user_env->kv);
   user_env->kv = NIL;

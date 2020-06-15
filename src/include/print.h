@@ -5,6 +5,8 @@
 
 void lval_debugln(Lval* v);
 void lval_infoln(Lval* v);
+void lval_println(Lval* v);
+void lval_print(Lval* v);
 void lval_debug(Lval* lval);
 void lval_pr(Lval* lval);
 void lenv_print(Lenv* e);

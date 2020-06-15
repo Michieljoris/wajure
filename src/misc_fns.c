@@ -29,6 +29,10 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
       Lval* bound_macro = expand_macro(lval_fun, arg_list);
+      info("\nbound_macro *******************************************\n");
+      lval_debugln(bound_macro);
+      lenv_print(bound_macro->tco_env);
+      info("*******************************************\n");
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
         return bound_macro;

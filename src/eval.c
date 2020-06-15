@@ -84,8 +84,8 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
   return rest_args;
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  debug("\n---------------------bind_lambda_params\n");
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
+  debug("---------------------eval_lambda_call\n");
   scoped Lenv* bindings_env = lenv_new();
 
   scoped_iter Cell* p = iter_new(lval_fun->params);
@@ -113,22 +113,25 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
     arg = iter_next(a);
     param = iter_next(p);
   }
-
   if (!param && arg)
     return make_lval_err("Function passed too many args. Got %i, expected %i.",
                          list_count(arg_list->head),
                          list_count(lval_fun->params->head));
 
   bindings_env->parent_env = retain(lval_fun->closure_env);
-
+  debug("--------------params bound:\n");
+  lenv_print(bindings_env);
+  debug("param: %p", param);
   /* Eval body expressions, but only if all params are bound */
   if (!param) {
     Lval* last_expr = eval_list_but_last(bindings_env, lval_fun->body);
     if (!last_expr) return make_lval_list();
     if (last_expr->type == LVAL_ERR) return last_expr;
-
-    last_expr->tco_env = retain(bindings_env);
-    return last_expr;
+    if (with_tco) {
+      last_expr->tco_env = retain(bindings_env);
+      return last_expr;
+    }
+    return lval_eval(bindings_env, last_expr);
   } else {
     Lval* params = make_lval_vector();
     params->head = retain(iter_current_cell(p));
@@ -138,26 +141,36 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
-  Lval* lval = eval_lambda_call(lval_fun, arg_list);
+  debug(">>>>>>>>>>>>>>>>>>> expand_macro:\n ");
+  Lval* lval = eval_lambda_call(lval_fun, arg_list, 0);
 
-  scoped Lenv* bindings_env = lval->tco_env;
-  lval->tco_env = NIL;
-
-  if (lval->type == LVAL_FUNCTION)
+  if (lval->type == LVAL_FUNCTION) {
+    release(lval);
     return make_lval_err("Macro needs all its params bound");
-  if (lval->type == LVAL_ERR) return lval;
+  }
 
-  return lval_eval(bindings_env, lval);
+  if (lval->tco_env) {
+    debug("Expanded macro has tco_env!!!!\n");
+    lenv_print(lval->tco_env);
+  }
+
+  return lval;
 }
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
-  debug(">>>>>>>>>>>>>>>>>>> expanded macro:");
+
+  debug(">>>>>>>>>>>>>>>>>>> expanded macro: ");
   lval_debugln(expanded_macro);
   if (expanded_macro->type == LVAL_ERR) return expanded_macro;
 
+  debug("Evalling expanded macro:\n");
   // Expanded macro closes over the environment where it is executed
-  return lval_eval(env, expanded_macro);
+  Lval* ret = lval_eval(env, expanded_macro);
+
+  debug("Done with eval_macro_call, returning result\n");
+  lval_debugln(ret);
+  return ret;
 
   /* expanded_macro->tco_env = env;  */
   /* return expanded_macro; */
@@ -194,7 +207,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
         "Got %s, expected %s.",
         lval_type_to_name(lval_fun), lval_type_constant_to_name(LVAL_FUNCTION));
 
-  /* Lval* ret = NIL; */
+  Lval* ret = NIL;
   scoped Lval* arg_list = make_lval_list();
   arg_list->head = list_rest(lval_list->head);
   scoped Lval* evalled_arg_list = NIL;
@@ -216,10 +229,16 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       break;
     }
     case MACRO:
-      return eval_macro_call(env, lval_fun, arg_list);
+      ret = eval_macro_call(env, lval_fun, arg_list);
+      debug("Just evalled macro!!!!\n");
+      lval_debugln(ret);
+      debug("----------------- Returned from eval-macro_call\n");
+      return ret;
       break;
     case LAMBDA:
-      return eval_lambda_call(lval_fun, evalled_arg_list);
+      ret = eval_lambda_call(lval_fun, evalled_arg_list, 1);
+      debug("----------------- Returned from eval-lambda_call\n");
+      return ret;
       break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
@@ -261,7 +280,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
             }
             lval = ret;
             if (lval->tco_env != NULL) {
-              debug("\nRECEIVED TCO_ENV: ");
+              debug("RECEIVED TCO_ENV: ");
               lval_debugln(lval);
               lval_debugln(ret);
               lenv_print(lval->tco_env);
@@ -286,8 +305,9 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       default:
         retain(lval);
         if (tco_env) {
-          /* printf("LITERAL: Releasing tco_env!!!! %d\n", i); */
+          debug("LITERAL: Releasing tco_env!!!! \n");
           release(tco_env);
+          debug("Done releasing tco_env\n");
         }
         return lval;
     }

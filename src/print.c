@@ -122,6 +122,11 @@ void lval_pr(Lval* lval) {
   lval_info(lval);
 }
 
+void lval_println(Lval* v) {
+  lval_print(v);
+  putchar('\n');
+}
+
 void lval_debugln(Lval* v) {
   if (*log_level < LOG_LEVEL_DEBUG) return;
   lval_print(v);

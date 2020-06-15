@@ -39,8 +39,9 @@ void set_log_level(int level);
   log_filler(DEBUG, "DEBUG") __VA_ARGS__); \
   }
 
-#define ddebug(...)                              \
-  log_filler(DEEP_DEBUG, "DDEBUG") __VA_ARGS__); \
+#define ddebug(...)                         \
+  if (*log_level >= LOG_LEVEL_DEEP_DEBUG) { \
+    printf(__VA_ARGS__);                    \
   }
 
 /* #define printf(...) \ */
