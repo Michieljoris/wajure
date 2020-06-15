@@ -2,13 +2,11 @@
 
 #include "assert.h"
 #include "eval.h"
-#include "grammar.h"
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "lval.h"
 #include "mpc.h"
-#include "mpc_read.h"
 #include "print.h"
 #include "read.h"
 
