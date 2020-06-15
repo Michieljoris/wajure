@@ -125,19 +125,20 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
   debug(">>>>>>>>>>>>>>>>>>> expand_macro:\n ");
+  lval_debugln(lval_fun);
   Lval* lval = eval_lambda_call(lval_fun, arg_list);
-
   if (lval->type == LVAL_FUNCTION) {
     release(lval);
     return make_lval_err("Macro needs all its params bound");
   }
+  lval_debugln(lval);
 
   return lval;
 }
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
-  if (expanded_macro->type == LVAL_ERR) return expanded_macro;
+  if (expanded_macro->type == LVAL_ERR) return retain(expanded_macro);
 
   // Expanded macro closes over the environment where it is executed
   return lval_eval(env, expanded_macro);

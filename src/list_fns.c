@@ -69,13 +69,22 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
   return lval_list;
 }
 
-Builtin list_builtins[6] = {
+Lval* count_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("count", 1)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
+  int count = list_count(arg->head);
+  ITER_END
+  return make_lval_num(count);
+}
+
+Builtin list_builtins[7] = {
 
     {"cons", cons_fn},
     {"first", first_fn},
     {"list", list_fn},
     {"rest", rest_fn},
     {"concat", concat_fn},
+    {"count", count_fn},
     {NULL}
 
 };

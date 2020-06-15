@@ -33,10 +33,16 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
 
   if (lenv_is_bound(get_user_env(env), lval_sym)) {
     warn(
-        "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
-        "being replaced by: #'user/%s",
+        "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
+        "being replaced by: #'user/%s\n",
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
   } else {
+    if (lenv_is_bound(get_root_env(env), lval_sym)) {
+      warn(
+          "WARNING: %s already refers to: #'root-env/%s in namespace: root, "
+          "being replaced by: #'user/%s\n",
+          lval_sym->sym, lval_sym->sym, lval_sym->sym);
+    }
     retain(lval_sym);
   }
   lenv_put(get_user_env(env), lval_sym, lval);
@@ -47,7 +53,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN_MAX("if", 2, 3);
   ITER_NEXT;
   scoped Lval* cond = lval_eval(env, arg);
-  if (cond->type == LVAL_ERR) return cond;
+  if (cond->type == LVAL_ERR) return retain(cond);
   LASSERT_TYPE("if", arg_list, 0, LVAL_LITERAL, NUMBER, cond)
   Lval* branch = NULL;
   if (cond->num) { /* TRUE */
