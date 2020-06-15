@@ -1,18 +1,20 @@
-;; (load "lispy/stdlib.lispy")
+(load "lispy/stdlib.lispy")
 
-;; (def defmacro (macro [sym params & body]
-;;                      `(def ~sym (macro ~params ~@body))))
 
-;; (defmacro defn [sym params & body]
-;;   `(def ~sym (fn ~params ~@body)))
 
+;; (defn x [y] y)
+;; (x 1)
+
+;; (pr '(+ 1 2))
+(t (+ 1 2) 3)
+(print "hello")
 ;; (defmacro when [cond body]
 ;;   `(if ~cond ~body))
 
 ;; (def t (macro [] (do 1 2 3)))
-(def t (macro [] (do 1)))
+;; (def t (macro [] (do 1)))
 
-(macroexpand '(t))
+;; (macroexpand '(t))
 ;; (defmacro when [cond body]
 ;;   `(if ~cond ~body))
 
@@ -41,12 +43,13 @@
 ;; (def a "baaaaaaaaaaaaaaar")
 ;; (+ 1 1)
 ;; `(a ~@(list a))
+
+
 ;; (try
 ;;  123
 ;;   (throw "foo")
 ;;   (catch E e e)
-;;   (finally (pr ":finally"))
-;;   )
+;;   (finally (pr ":finally")))
 
 ;; (let [a "THIS IS A!!!!!!"
 ;;       b 1

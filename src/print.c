@@ -26,7 +26,7 @@ void lval_collection_print(Lval* lval, char open, char close) {
   if (open) putchar(open);
   Cell* cell = lval->head;
   while (cell) {
-    lval_debug(cell->car);
+    lval_print(cell->car);
     cell = cell->cdr;
     if (cell) putchar(' ');
   }
@@ -114,7 +114,6 @@ void lval_debug(Lval* lval) {
 // TODO: this one prints without quotes. Make a proper pprint fn, and make
 // this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
-  if (*log_level < LOG_LEVEL_DEBUG) return;
   if (lval->subtype == STRING) {
     lval_pr_str(lval);
     return;
@@ -147,6 +146,7 @@ void print_kv(void* pair) {
 
 void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }
 
+// Debug version
 void lenv_print(Lenv* env) {
   if (*log_level < LOG_LEVEL_DEBUG) return;
   if (env->parent_env) {

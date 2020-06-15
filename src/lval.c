@@ -18,10 +18,7 @@ Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){
       .type = LVAL_SYMBOL, .subtype = -1, .sym = calloc(1, _strlen(s) + 1)};
-  /* lval->type = LVAL_SYMBOL; */
-  /* lval->sym = calloc(1, _strlen(s) + 1); */
   _strcpy(lval->sym, s);
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -30,30 +27,18 @@ Lval* make_lval_sym(char* s) {
 Lval* make_lval_list(void) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST};
-  /* lval->type = LVAL_COLLECTION; */
-  /* lval->subtype = LIST; */
-  /* lval->head = NULL; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR};
-  /* lval->type = LVAL_COLLECTION; */
-  /* lval->subtype = VECTOR; */
-  /* lval->head = NULL; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP};
-  /* lval->type = LVAL_COLLECTION; */
-  /* lval->subtype = MAP; */
-  /* lval->head = NULL; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -62,10 +47,6 @@ Lval* make_lval_map(void) {
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .num = x};
-  /* lval->type = LVAL_LITERAL; */
-  /* lval->subtype = NUMBER; */
-  /* lval->num = x; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -74,11 +55,7 @@ Lval* make_lval_str(char* s) {
   *lval = (Lval){.type = LVAL_LITERAL,
                  .subtype = STRING,
                  .str = calloc(1, _strlen(s) + 1)};
-  /* lval->type = LVAL_LITERAL; */
-  /* lval->subtype = STRING; */
-  /* lval->str = calloc(1, _strlen(s) + 1); */
   _strcpy(lval->str, s);
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -92,12 +69,7 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
                  .fun = func,
                  .func_name = calloc(1, _strlen(func_name) + 1)};
 
-  /* lval->func_name = calloc(1, _strlen(func_name) + 1); */
   _strcpy(lval->func_name, func_name);
-  /* lval->type = LVAL_FUNCTION; */
-  /* lval->subtype = subtype; */
-  /* lval->fun = func; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -109,12 +81,6 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
                  .closure_env = env,
                  .params = params,
                  .body = body};
-  /* lval->type = LVAL_FUNCTION; */
-  /* lval->subtype = subtype; */
-  /* lval->bindings = env; */
-  /* lval->params = params; */
-  /* lval->body = body; */
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -124,15 +90,11 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
-  /* lval->type = LVAL_ERR; */
-  /* lval->subtype = SYS; */
   va_list va;
   va_start(va, fmt);
-  /* lval->err = calloc(1, 512); */
   vsnprintf(lval->err, 511, fmt, va);
   lval->err = realloc(lval->err, _strlen(lval->err) + 1);
   va_end(va);
-  /* lval->tco_env = NULL; */
   return lval;
 }
 
@@ -209,49 +171,3 @@ char* lval_type_to_name(Lval* lval) {
       return "Unknown";
   }
 }
-
-/* void lval_del(Lval* lval) { */
-/*   return; */
-/*   /\* printf("freeing: "); *\/ */
-/*   /\* lval_println(lval); *\/ */
-/*   switch (lval->type) { */
-/*     case LVAL_SYMBOL: */
-/*       free(lval->sym); */
-/*       break; */
-/*     case LVAL_COLLECTION: */
-/*       list_free(lval->head); */
-/*       break; */
-/*     case LVAL_LITERAL: */
-/*       switch (lval->subtype) { */
-/*         case NUMBER: */
-/*           break; */
-/*         case STRING: */
-/*           free(lval->str); */
-/*           break; */
-/*         default: */
-/*           printf("Can't delete unknown literal subtype: %d\n",
- * lval->subtype); */
-/*       } */
-/*       break; */
-/*     case LVAL_FUNCTION: */
-/*       if (lval->subtype == BUILTIN || lval->subtype == SPECIAL) { */
-/*         free(lval->func_name); */
-/*       } else { */
-/*         lenv_del(lval->bindings); */
-/*         lval_del(lval->params); */
-/*         lval_del(lval->body); */
-/*       } */
-/*       break; */
-/*     case LVAL_ERR: */
-/*       free(lval->err); */
-/*       break; */
-/*     default: */
-/*       printf("Can't delete unknown type: %d\n", lval->type); */
-/*   } */
-/*   free(lval); */
-/* } */
-
-// TODO: make new ds for iter: but for now: cdr points to the cell for which the
-// lval was returned in the last call to iter_next, car points to the cell that
-// points to the lval that will be returned by the next iter_next call, it it
-// exists.

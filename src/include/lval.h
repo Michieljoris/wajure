@@ -36,7 +36,6 @@ struct lval {
   /* list of lval */
   int count;
   Lval** node;
-  Lenv* tco_env;
 
   Cell* head;
 };

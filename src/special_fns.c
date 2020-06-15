@@ -49,20 +49,19 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   scoped Lval* cond = lval_eval(env, arg);
   if (cond->type == LVAL_ERR) return cond;
   LASSERT_TYPE("if", arg_list, 0, LVAL_LITERAL, NUMBER, cond)
-  Lval* ret = NULL;
+  Lval* branch = NULL;
   if (cond->num) { /* TRUE */
     ITER_NEXT;
-    ret = arg;
+    branch = arg;
     ITER_NEXT;
   } else { /* FALSE  */
     ITER_NEXT;
     ITER_NEXT;
-    ret = arg;
+    branch = arg;
   }
   ITER_END;
-  if (ret) {
-    ret->tco_env = retain(env);
-    return ret;
+  if (branch) {
+    return lval_eval(env, branch);
   }
   return make_lval_list();
 }
@@ -243,10 +242,10 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         ddebug("in EXPR\n");
         /* CATCH node =================== */
         if (is_fn_call(node, "catch", 1)) {
-          ddebug("from EXPR, found catch\n");
+          debug("from EXPR, found catch\n");
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
-            if (list_count(node->head) < 3) {
+            if (list_count(node->head) < 4) {
               release(ret);
               return make_lval_err(
                   "catch clause should have at least an exception type and "
@@ -262,39 +261,20 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
                   "to.");
             };
 
-            Lval* lval_str = make_lval_str(ret->err);  // 85
+            Lval* lval_str = make_lval_str(ret->err);
 
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = retain(env);
-
-            /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             lenv_put(catch_env, lval_sym, lval_str);
-            /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
+
             Lval* catch_body = make_lval_list();  // 86
             catch_body->head = retain(node->head->cdr->cdr->cdr);
-            /* printf("BODY:"); */
-            /* lval_println(body); */
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            release(ret);
-            Lval* last_expr = eval_list_but_last(catch_env, catch_body);
-            // if last_expr is an error it will be returned immediately by the
-            // next eval
-            ret = lval_eval(catch_env, last_expr);
 
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            /* printf("releasing catch env\n"); */
-            /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
-            /* printf("lval_str rc: %d\n", get_ref_count(lval_str)); */
+            release(ret);
+            ret = do_list(catch_env, catch_body);
             release(catch_env);
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
             release(catch_body);
-            /* release(lval_str); */
-            /* printf("lval_sym rc: %d\n", get_ref_count(lval_sym)); */
-            /* printf("PUUUUT lval_str rc: %d\n", get_ref_count(lval_str)); */
-            /* printf("done releasing catch env\n"); */
+
             if (ret->type == LVAL_ERR) {
               return ret;
             }
@@ -306,8 +286,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* last_expr = eval_list_but_last(env, body);
-          Lval* finally_ret = lval_eval(env, last_expr);
+          Lval* finally_ret = do_list(env, body);
           release(body);
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -341,15 +320,15 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* last_expr = eval_list_but_last(env, body);
-          Lval* finally_ret = lval_eval(env, last_expr);
-          /* release(body); */
+          Lval* finally_ret = do_list(env, body);
+
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
             return finally_ret;
           }
           release(finally_ret);
         } else {
+          release(ret);
           return make_lval_err(
               "Only catch or finally clause can follow catch in try "
               "expression");
@@ -366,14 +345,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) {
-  debug("In eval_do\n");
-  lenv_print(env);
-  Lval* last_expr = eval_list_but_last(env, body);
-  if (last_expr->type == LVAL_ERR) return last_expr;
-  last_expr->tco_env = retain(env);
-  return last_expr;
-}
+Lval* eval_do(Lenv* env, Lval* body) { return do_list(env, body); }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   ddebug("ENV IN LET:");
@@ -415,18 +387,9 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
   scoped Lval* body = make_lval_list();
   body->head = retain(iter_cell(a));
-  Lval* last_expr = eval_list_but_last(let_env, body);
-  if (last_expr) {
-    lval_debugln(last_expr);
-    if (last_expr->type == LVAL_ERR) {
-      release(let_env);
-      return last_expr;
-    }
-    last_expr->tco_env = let_env;
-    return last_expr;
-  }
+  Lval* ret = do_list(let_env, body);
   release(let_env);
-  return make_lval_list();
+  return ret;
 }
 
 /* Not really a special form */

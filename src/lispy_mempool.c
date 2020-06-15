@@ -6,7 +6,7 @@
 #include "mempool.h"
 #include "print.h"
 
-int debug = 1;
+int debug = 0;
 
 void mempool_debug(Mempool* mp) {
   /* printf("Total slot count: %i\n", mp->total_slot_count); */
@@ -64,9 +64,9 @@ void destroy_lval(void* data) {
         if (debug) ddebug("\n freeing body:");
         release(lval->body);
         if (debug) ddebug("\n freeing closure_env:");
-        if (debug)
-          printf("ref count for closure_env = %d\n",
-                 get_ref_count(lval->closure_env));
+        /* if (debug) */
+        /*   debug("ref count for closure_env = %d\n", */
+        /*         get_ref_count(lval->closure_env)); */
         release(lval->closure_env);
 
         if (debug) ddebug("\n Done freeing lval_fun");
@@ -78,8 +78,8 @@ void destroy_lval(void* data) {
     default:
       error("Can't delete unknown type: %d\n", lval->type);
   }
-  /* release(lval->tco_env); */
 }
+
 void destroy_lenv(void* env) {
   release(((Lenv*)env)->kv);
   release(((Lenv*)env)->parent_env);
@@ -239,7 +239,7 @@ void release(void* data_p) {
     /* printf("releasing:"); */
     /* lval_println(data_p); */
     warn("Warning: trying to release data that's not managed by ref_count.");
-    /* exit(1); */
+    exit(1);
     return;
   };
 
@@ -250,7 +250,7 @@ void release(void* data_p) {
       warn("Warning: ref count for a %s has gone negative: %d\n",
            type_to_name(slot->type), slot->ref_count);
       lval_debugln(data_p);
-      /* exit(1); */
+      exit(1);
     }
     return;
   }

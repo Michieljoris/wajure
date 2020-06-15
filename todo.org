@@ -3,10 +3,6 @@
 Then there's less work for the compiler.
 * TODO
 ** reference counting
-*** TCO -> work out freeing tco_env for it!!!!!!
-- eval_lambda_call
-- let
-- do
 *** thoughts:
 - Can't use nodes for collections since the node field needs reallocing. Can't do that with my fixed pool memory since you wouldn't get contiguous blocks
 

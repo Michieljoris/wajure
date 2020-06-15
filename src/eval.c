@@ -15,7 +15,7 @@
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
-Lval* eval_nodes(Lenv* env, Lval* lval_list) {
+Lval* map_eval(Lenv* env, Lval* lval_list) {
   debug("eval nodes, new list:");
   Lval* new_list = make_lval_list();
   scoped_iter Cell* i = iter_new(lval_list);
@@ -37,9 +37,7 @@ Lval* eval_nodes(Lenv* env, Lval* lval_list) {
   return new_list;
 }
 
-// Returns NIL if list is empty, otherwise evals and discards all expressions
-// but the last one, which is returned.
-Lval* eval_list_but_last(Lenv* env, Lval* list) {
+Lval* do_list(Lenv* env, Lval* list) {
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
 
@@ -48,26 +46,20 @@ Lval* eval_list_but_last(Lenv* env, Lval* list) {
       lval = lval_eval(env, lval);
       if (lval->type == LVAL_ERR) return lval;
       release(lval);
-    } else
-      return lval;
+    } else {
+      Lval* ret = lval_eval(env, lval);
+      debug("in do_list\n");
+      return ret;
+    }
     lval = iter_next(i);
   }
-  return NIL;
+  return make_lval_list();
 }
 
 Lval* eval_string(Lenv* env, char* str) {
   int pos = 0;
   scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
-
-  // Evaluate all expressions for side effects and definitions but the last.
-  Lval* last_expr = eval_list_but_last(env, lval_list);
-  if (!last_expr) return make_lval_list();  // empty list is our nil
-  if (last_expr->type == LVAL_ERR) return last_expr;
-
-  /* Evaluate the last expression and return it */
-  Lval* ret = lval_eval(env, last_expr);
-  debug("\nDone eval_string\n");
-  return ret;
+  return do_list(env, lval_list);
 }
 
 Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
@@ -84,7 +76,7 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
   return rest_args;
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
+Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   debug("---------------------eval_lambda_call\n");
   scoped Lenv* bindings_env = lenv_new();
 
@@ -119,19 +111,10 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
                          list_count(lval_fun->params->head));
 
   bindings_env->parent_env = retain(lval_fun->closure_env);
-  debug("--------------params bound:\n");
-  lenv_print(bindings_env);
-  debug("param: %p", param);
+
   /* Eval body expressions, but only if all params are bound */
   if (!param) {
-    Lval* last_expr = eval_list_but_last(bindings_env, lval_fun->body);
-    if (!last_expr) return make_lval_list();
-    if (last_expr->type == LVAL_ERR) return last_expr;
-    if (with_tco) {
-      last_expr->tco_env = retain(bindings_env);
-      return last_expr;
-    }
-    return lval_eval(bindings_env, last_expr);
+    return do_list(bindings_env, lval_fun->body);
   } else {
     Lval* params = make_lval_vector();
     params->head = retain(iter_current_cell(p));
@@ -142,16 +125,11 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list, int with_tco) {
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
   debug(">>>>>>>>>>>>>>>>>>> expand_macro:\n ");
-  Lval* lval = eval_lambda_call(lval_fun, arg_list, 0);
+  Lval* lval = eval_lambda_call(lval_fun, arg_list);
 
   if (lval->type == LVAL_FUNCTION) {
     release(lval);
     return make_lval_err("Macro needs all its params bound");
-  }
-
-  if (lval->tco_env) {
-    debug("Expanded macro has tco_env!!!!\n");
-    lenv_print(lval->tco_env);
   }
 
   return lval;
@@ -159,21 +137,10 @@ Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
-
-  debug(">>>>>>>>>>>>>>>>>>> expanded macro: ");
-  lval_debugln(expanded_macro);
   if (expanded_macro->type == LVAL_ERR) return expanded_macro;
 
-  debug("Evalling expanded macro:\n");
   // Expanded macro closes over the environment where it is executed
-  Lval* ret = lval_eval(env, expanded_macro);
-
-  debug("Done with eval_macro_call, returning result\n");
-  lval_debugln(ret);
-  return ret;
-
-  /* expanded_macro->tco_env = env;  */
-  /* return expanded_macro; */
+  return lval_eval(env, expanded_macro);
 }
 
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
@@ -182,7 +149,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
-  lval_vector = eval_nodes(env, lval_vector);
+  lval_vector = map_eval(env, lval_vector);
   lval_vector->subtype = VECTOR;
   return lval_vector;
 }
@@ -214,12 +181,10 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
   switch (lval_fun->subtype) {
     case SYS:
     case LAMBDA:
-      evalled_arg_list = eval_nodes(env, arg_list);
+      evalled_arg_list = map_eval(env, arg_list);
       if (evalled_arg_list->type == LVAL_ERR) return retain(evalled_arg_list);
     default:;
   }
-  /* debug("evalled the arguments of fn\n"); */
-  /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
     case SYS:
       return lval_fun->fun(env, evalled_arg_list);
@@ -229,16 +194,11 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       break;
     }
     case MACRO:
-      ret = eval_macro_call(env, lval_fun, arg_list);
-      debug("Just evalled macro!!!!\n");
-      lval_debugln(ret);
-      debug("----------------- Returned from eval-macro_call\n");
+      return eval_macro_call(env, lval_fun, arg_list);
       return ret;
       break;
     case LAMBDA:
-      ret = eval_lambda_call(lval_fun, evalled_arg_list, 1);
-      debug("----------------- Returned from eval-lambda_call\n");
-      return ret;
+      return eval_lambda_call(lval_fun, evalled_arg_list);
       break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
@@ -250,85 +210,24 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   /* debug("\n->>>>>>>>EVAL: %d", i++); */
   debug("\n->>>>>>>>EVAL: ");
   lval_debugln(lval);
-  Lval* ret = NIL;
-  Lenv* tco_env = NULL;
-  while (1) { /* TCO */
-    if (tco_env) env = tco_env;
-    switch (lval->type) {
-      case LVAL_ERR:
-        // A tco might be calling eval on an error.
-        return lval;
-      case LVAL_SYMBOL:
-        ret = eval_symbol(env, lval);
-        if (tco_env) {
-          debug("SYMBOL: Releasing tco_env!!!! \n");
-          release(tco_env);
-          /* retain(ret); */
-        }
-        return ret;
-      case LVAL_COLLECTION:
-        switch (lval->subtype) {
-          case LIST:
-            ret = eval_fn_call(env, lval);
-            debug("Evaled fn call, result:");
-            lval_debugln(ret);
-            if (tco_env) {
-              debug("LIST: Releasing tco_env!!!! \n");
-              lenv_print(tco_env);
-              /* debug("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
-              release(tco_env);
-            }
-            lval = ret;
-            if (lval->tco_env != NULL) {
-              debug("RECEIVED TCO_ENV: ");
-              lval_debugln(lval);
-              lval_debugln(ret);
-              lenv_print(lval->tco_env);
-              tco_env = lval->tco_env;
-              continue;
-            }
-            return lval;
-          case VECTOR:
-            ret = eval_vector(env, lval);
-            if (tco_env) {
-              /* debug("VECTOR: Releasing tco_env!!!! %d\n", i); */
-              release(tco_env);
-            }
-            return ret;
-          case MAP:
-            /* TODO: */
-            return lval;
-          default:
-            return make_lval_err("Unknown seq subtype");
-        }
-        break;
-      default:
-        retain(lval);
-        if (tco_env) {
-          debug("LITERAL: Releasing tco_env!!!! \n");
-          release(tco_env);
-          debug("Done releasing tco_env\n");
-        }
-        return lval;
-    }
+  /* Lval* ret = NIL; */
+  switch (lval->type) {
+    case LVAL_SYMBOL:
+      return eval_symbol(env, lval);
+    case LVAL_COLLECTION:
+      switch (lval->subtype) {
+        case LIST:
+          return eval_fn_call(env, lval);
+        case VECTOR:
+          return eval_vector(env, lval);
+        case MAP:
+          /* TODO: */
+          return lval;
+        default:
+          return make_lval_err("Unknown seq subtype");
+      }
+      break;
+    default:
+      return retain(lval);
   }
 }
-
-/* printf("Releasing tco_env!!!!\n") */
-
-/* printf("EVALLING SYMBOL with tco_env!!!!!!!\n"); */
-/* lval_println(lval); */
-/* lval_println(ret); */
-/* printf("REFCOUNT of tco_env rc: %d\n", get_ref_count(tco_env)); */
-/* release(lval); */
-/* lenv_print(tco_env); */
-/* printf("--\n"); */
-
-/* Lenv* parent_env = tco_env->parent_env; */
-/* while (parent_env) { */
-/*   lenv_print(parent_env); */
-/*   parent_env = parent_env->parent_env; */
-/*   printf("--\n"); */
-/* } */
-
-/* printf("Releasing tco_env!!!!\n"); */
