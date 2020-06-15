@@ -1,7 +1,6 @@
 #include "eval.h"
 
 #include "assert.h"
-#include "debug.h"
 #include "env.h"
 #include "io.h"
 #include "iter.h"
@@ -17,7 +16,7 @@
 Lval* lval_eval(Lenv* e, Lval* v);
 
 Lval* eval_nodes(Lenv* env, Lval* lval_list) {
-  printf("eval nodes, new list:");
+  debug("eval nodes, new list:");
   Lval* new_list = make_lval_list();
   scoped_iter Cell* i = iter_new(lval_list);
   Lval* lval = iter_next(i);
@@ -67,7 +66,7 @@ Lval* eval_string(Lenv* env, char* str) {
 
   /* Evaluate the last expression and return it */
   Lval* ret = lval_eval(env, last_expr);
-  printf("\nDone eval_string\n");
+  debug("\nDone eval_string\n");
   return ret;
 }
 
@@ -86,7 +85,7 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  printf("\n---------------------bind_lambda_params\n");
+  debug("\n---------------------bind_lambda_params\n");
   scoped Lenv* bindings_env = lenv_new();
 
   scoped_iter Cell* p = iter_new(lval_fun->params);
@@ -153,7 +152,8 @@ Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
-  printf(">>>>>>>>>>>>>>>>>>> expanded macro:") lval_println(expanded_macro);
+  debug(">>>>>>>>>>>>>>>>>>> expanded macro:");
+  lval_debugln(expanded_macro);
   if (expanded_macro->type == LVAL_ERR) return expanded_macro;
 
   // Expanded macro closes over the environment where it is executed
@@ -177,8 +177,8 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
 Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
-  printf("evalling fn call: ");
-  lval_println(lval_list);
+  debug("evalling fn call: ");
+  lval_debugln(lval_list);
 
   if (lval_list->head == NIL) {
     return make_lval_list();  // empty;
@@ -205,7 +205,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       if (evalled_arg_list->type == LVAL_ERR) return retain(evalled_arg_list);
     default:;
   }
-  /* printf("evalled the arguments of fn\n"); */
+  /* debug("evalled the arguments of fn\n"); */
   /* lval_println(arg_list); */
   switch (lval_fun->subtype) {
     case SYS:
@@ -228,9 +228,9 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
 }
 
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  /* printf("\n->>>>>>>>EVAL: %d", i++); */
-  printf("\n->>>>>>>>EVAL: ");
-  lval_println(lval);
+  /* debug("\n->>>>>>>>EVAL: %d", i++); */
+  debug("\n->>>>>>>>EVAL: ");
+  lval_debugln(lval);
   Lval* ret = NIL;
   Lenv* tco_env = NULL;
   while (1) { /* TCO */
@@ -242,7 +242,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
       case LVAL_SYMBOL:
         ret = eval_symbol(env, lval);
         if (tco_env) {
-          printf("SYMBOL: Releasing tco_env!!!! \n");
+          debug("SYMBOL: Releasing tco_env!!!! \n");
           release(tco_env);
           /* retain(ret); */
         }
@@ -251,19 +251,19 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
         switch (lval->subtype) {
           case LIST:
             ret = eval_fn_call(env, lval);
-            printf("Evaled fn call, result:");
-            lval_println(ret);
+            debug("Evaled fn call, result:");
+            lval_debugln(ret);
             if (tco_env) {
-              printf("LIST: Releasing tco_env!!!! \n");
+              debug("LIST: Releasing tco_env!!!! \n");
               lenv_print(tco_env);
-              /* printf("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
+              /* debug("PUUUUT lval_env rc: %d\n", get_ref_count(tco_env)); */
               release(tco_env);
             }
             lval = ret;
             if (lval->tco_env != NULL) {
-              printf("\nRECEIVED TCO_ENV: ");
-              lval_println(lval);
-              lval_println(ret);
+              debug("\nRECEIVED TCO_ENV: ");
+              lval_debugln(lval);
+              lval_debugln(ret);
               lenv_print(lval->tco_env);
               tco_env = lval->tco_env;
               continue;
@@ -272,7 +272,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           case VECTOR:
             ret = eval_vector(env, lval);
             if (tco_env) {
-              /* printf("VECTOR: Releasing tco_env!!!! %d\n", i); */
+              /* debug("VECTOR: Releasing tco_env!!!! %d\n", i); */
               release(tco_env);
             }
             return ret;

@@ -21,7 +21,7 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
-  printf("\n++++++++++++in eval_def\n");
+  debug("\n++++++++++++in eval_def\n");
   ITER_NEW_N("def", 2);
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
   Lval* lval_sym = arg;
@@ -32,7 +32,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   if (lval->type == LVAL_ERR) return lval;
 
   if (lenv_is_bound(get_user_env(env), lval_sym)) {
-    printf(
+    warn(
         "WARNING: %s already refers to: #'root-env/%s in namespace: user, "
         "being replaced by: #'user/%s",
         lval_sym->sym, lval_sym->sym, lval_sym->sym);
@@ -87,9 +87,9 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure_env = lenv_new();
   closure_env->parent_env = retain(env);
-  printf("lambda has retained env: %d ", is_user_env(env));
+  ddebug("lambda has retained env: %d ", is_user_env(env));
   lenv_print(env);
-  printf("refcount: %d\n", get_ref_count(env));
+  ddebug("refcount: %d\n", get_ref_count(env));
   Lval* fn =
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
   return fn;
@@ -229,7 +229,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
 /* Implemented as a little state machine */
 enum { EXPR, CATCH, FINALLY };
 Lval* eval_try(Lenv* env, Lval* arg_list) {
-  printf("in eval_try\n");
+  ddebug("in eval_try\n");
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   int mode = EXPR;
@@ -237,14 +237,13 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   Lval* node;
   while (arg) {
     node = arg;
-    printf("node: ");
-    lval_println(node);
+    lval_debugln(node);
     switch (mode) {
       case EXPR:
-        printf("in EXPR\n");
+        ddebug("in EXPR\n");
         /* CATCH node =================== */
         if (is_fn_call(node, "catch", 1)) {
-          printf("from EXPR, found catch\n");
+          ddebug("from EXPR, found catch\n");
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
             if (list_count(node->head) < 3) {
@@ -303,7 +302,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         }
         /* FINALLY node =================== */
         else if (is_fn_call(node, "finally", 1)) {
-          printf("from EXPR, found finally\n");
+          ddebug("from EXPR, found finally\n");
           mode = FINALLY;
           Lval* body = make_lval_list();
           body->head = list_rest(node->head);
@@ -334,11 +333,11 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         }
         break;
       case CATCH:
-        printf("in CATCH\n");
+        ddebug("in CATCH\n");
         if (is_fn_call(node, "catch", 1)) {
-          printf("Catch clauses after the first one are ignored for now.\n");
+          ddebug("Catch clauses after the first one are ignored for now.\n");
         } else if (is_fn_call(node, "finally", 1)) {
-          printf("from CATCH, found finally\n");
+          ddebug("from CATCH, found finally\n");
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
           body->head = list_rest(node->head);
@@ -375,7 +374,7 @@ Lval* eval_do(Lenv* env, Lval* body) {
 }
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
-  printf("ENV IN LET:");
+  ddebug("ENV IN LET:");
   lenv_print(env);
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
@@ -416,7 +415,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
   body->head = retain(iter_cell(a));
   Lval* last_expr = eval_list_but_last(let_env, body);
   if (last_expr) {
-    lval_println(last_expr);
+    lval_debugln(last_expr);
     if (last_expr->type == LVAL_ERR) {
       release(let_env);
       return last_expr;

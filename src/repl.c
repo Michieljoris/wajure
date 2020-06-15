@@ -26,7 +26,7 @@ void repl(Lenv* env) {
         // TODO: fix up repl
         Lval* expr = NULL;  // lval_pop(expressions, 0);
         Lval* x = lval_eval(env, expr);
-        lval_println(x);
+        lval_debugln(x);
       }
 
     } else {

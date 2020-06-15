@@ -268,7 +268,7 @@ Lval* lval_read(char* s, int* i) {
         // TODO: implement maps
         printf("maps are not yet implement\n");
         x = lval_read_list(s, i, '}');
-        lval_println(x);
+        lval_debugln(x);
         break;
       case '\"':
         x = lval_read_str(s, i);

@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "lval.h"
 #include "mempool.h"
+#include "print.h"
 
 int debug = 0;
 
@@ -33,9 +34,9 @@ void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
 
   if (debug)
-    printf("destroying lval:%li (%s):", (long int)lval,
+    ddebug("destroying lval:%li (%s):", (long int)lval,
            lval_type_to_name(lval));
-  if (debug) lval_println(lval);
+  if (debug) lval_debugln(lval);
   switch (lval->type) {
     case LVAL_SYMBOL:
       free(lval->sym);
@@ -51,31 +52,31 @@ void destroy_lval(void* data) {
           free(lval->str);
           break;
         default:
-          printf("Can't delete unknown literal subtype: %d\n", lval->subtype);
+          error("Can't delete unknown literal subtype: %d\n", lval->subtype);
       }
       break;
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         free(lval->func_name);
       } else {
-        if (debug) printf("\n freeing params:");
+        if (debug) ddebug("\n freeing params:");
         release(lval->params);
-        if (debug) printf("\n freeing body:");
+        if (debug) ddebug("\n freeing body:");
         release(lval->body);
-        if (debug) printf("\n freeing closure_env:");
+        if (debug) ddebug("\n freeing closure_env:");
         if (debug)
           printf("ref count for closure_env = %d\n",
                  get_ref_count(lval->closure_env));
         release(lval->closure_env);
 
-        if (debug) printf("\n Done freeing lval_fun");
+        if (debug) ddebug("\n Done freeing lval_fun");
       }
       break;
     case LVAL_ERR:
       free(lval->err);
       break;
     default:
-      printf("Can't delete unknown type: %d\n", lval->type);
+      error("Can't delete unknown type: %d\n", lval->type);
   }
   /* release(lval->tco_env); */
 }
@@ -170,7 +171,7 @@ void* lalloc(int type) {
                    .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
                    .ref_count = 1,
                    .type = type};
-  if (debug) printf("+%s: ", type_to_name(type));
+  if (debug) ddebug("+%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   return slot_p->data_p;
 }
@@ -180,7 +181,7 @@ void lfree(int type, void* slot) {
   // still works as before because it's not been reassigned.
   memset(slot, 0, mempools[type]->slot_size);
   mempool_free(mempools[type], slot);
-  if (debug) printf("-%s: ", type_to_name(type));
+  if (debug) ddebug("-%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   /* printf("done %d\n", type); */
 }
@@ -218,7 +219,7 @@ void* retain(void* data_p) {
   /* printf("retain: %s-%li, ref count is %d\n", type_to_name(slot->type), */
   /*        (long int)data_p, slot->ref_count); */
   if (!data_p) {
-    printf("Trying to retain NULL;\n");
+    debug("Trying to retain NULL;\n");
   } else {
     ++get_slot_p(data_p)->ref_count;
   }
@@ -237,7 +238,7 @@ void release(void* data_p) {
   if (data_p != slot->data_p) {
     /* printf("releasing:"); */
     /* lval_println(data_p); */
-    printf("Warning: trying to release data that's not managed by ref_count.");
+    warn("Warning: trying to release data that's not managed by ref_count.");
     exit(1);
     return;
   };
@@ -246,9 +247,9 @@ void release(void* data_p) {
   /*        (long int)data_p, slot->ref_count); */
   if (--slot->ref_count) /* still referenced */ {
     if (slot->ref_count < 0) {
-      printf("Warning: ref count for a %s has gone negative: %d\n",
-             type_to_name(slot->type), slot->ref_count);
-      lval_println(data_p);
+      warn("Warning: ref count for a %s has gone negative: %d\n",
+           type_to_name(slot->type), slot->ref_count);
+      lval_debugln(data_p);
       exit(1);
     }
     return;
@@ -256,25 +257,25 @@ void release(void* data_p) {
   int call_id = i;
   if (debug) {
     if (slot->type == LVAL) {
-      printf("freeing: (i%d): ", i);
-      lval_println(data_p);
+      ddebug("freeing: (i%d): ", i);
+      lval_debugln(data_p);
     } else {
-      printf("freeing: (i%d) %s: ", i, type_to_name(slot->type));
+      ddebug("freeing: (i%d) %s: ", i, type_to_name(slot->type));
     }
   }
   if (slot->destroy) slot->destroy(data_p);
-  if (debug) printf("\nactually now freeing slot for i%d ", call_id);
+  if (debug) ddebug("\nactually now freeing slot for i%d ", call_id);
   lfree(slot->type, slot);
 }
 
 void clean_up(void* data) {
   if (debug) {
-    printf("\nCleaning up: ");
+    ddebug("\nCleaning up: ");
     if (*(void**)data) {
-      lval_print(*(void**)data);
-      printf("\n");
+      lval_debug(*(void**)data);
+      ddebug("\n");
     } else
-      printf("NIL\n");
+      ddebug("NIL\n");
   }
   release(*(void**)data);
 }

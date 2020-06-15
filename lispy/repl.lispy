@@ -1,3 +1,4 @@
+;; (load "lispy/stdlib.lispy")
 ;; 1
 ;; (+ 1)
 ;; [ 1 ]
@@ -45,8 +46,8 @@
 ;; (def f (fn [a] a))
 ;; (f 123)
 
-(def defmacro (macro [sym params & body]
-                     `(def ~sym (macro ~params ~@body))))
+;; (def defmacro (macro [sym params & body]
+;;                      `(def ~sym (macro ~params ~@body))))
 
 ;; (macroexpand '(defmacro ))
 
@@ -56,15 +57,19 @@
 
   ;; `(def ~sym (fn ~params ~@body))
 
-(def defn (macro [sym params & body] `(def ~sym (fn ~params ~@body))))
+;; (def defn (macro [sym params & body] `(def ~sym (fn ~params ~@body))))
 
 ;; (defn x [y] y)
 ;; (macroexpand '(defmacro x [y] y))
 ;; (macroexpand '(defn x [y] y))
 ;; (x 123)
 ;; (print-env)
-(defn x [y] y)
-(x 123)
+;; (defn x [x y z]
+;;   (let [ret (+ x y z)]
+;;     ret))
+
+;; (def foo (x 1 2 ))
+3
 
 ;; (def foo (macro [sym params & body] `(def ~sym (macro ~params ~@body))))
 ;; (def foo (fn [& args] args))

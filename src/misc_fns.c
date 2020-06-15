@@ -1,9 +1,9 @@
 #include "misc_fns.h"
 
 #include "assert.h"
-#include "debug.h"
 #include "eval.h"
 #include "grammar.h"
+#include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "lval.h"
@@ -69,8 +69,8 @@ Lval* eval_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* print_env_fn(Lenv* env, Lval* arg_list) {
-  printf("print_env:\n");
-  lenv_print(env);
+  ddebug("print_env:\n");
+  env_print(env);
   return make_lval_list();
 }
 
@@ -105,18 +105,18 @@ Lval* slurp(Lenv* env, char* file_name) {
 }
 
 Lval* load_fn(Lenv* env, Lval* arg_list) {
-  printf("\nload_fn: ");
+  ddebug("\nload_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
   return slurp(env, arg->str);
 }
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
-  printf("executing print_fn:");
+  ddebug("executing print_fn:");
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   while (arg) {
-    lval_print(arg);
+    lval_debug(arg);
     putchar(' ');
     arg = iter_next(i);
   }
@@ -141,8 +141,8 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
   int num = arg->num;
   ITER_END
-  printf("debug = %il\n", num);
-  set_debug_level((int)num);
+  ddebug("debug = %il\n", num);
+  set_log_level((int)num);
   return make_lval_list();
 }
 

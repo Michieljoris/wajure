@@ -1,6 +1,5 @@
 #include "print.h"
 
-#include "debug.h"
 #include "env.h"
 #include "io.h"
 #include "lib.h"
@@ -27,7 +26,7 @@ void lval_collection_print(Lval* lval, char open, char close) {
   if (open) putchar(open);
   Cell* cell = lval->head;
   while (cell) {
-    lval_print(cell->car);
+    lval_debug(cell->car);
     cell = cell->cdr;
     if (cell) putchar(' ');
   }
@@ -43,7 +42,7 @@ void lval_fun_print(Lval* lval) {
     case MACRO:;
       char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
       printf("(%s ", fn_name);
-      lval_print(lval->params);
+      lval_debug(lval->params);
       putchar(' ');
       lval_collection_print(lval->body, 0, 0);
       putchar(')');
@@ -102,34 +101,61 @@ void lval_print(Lval* lval) {
   }
 }
 
+void lval_info(Lval* lval) {
+  if (*log_level < LOG_LEVEL_INFO) return;
+  lval_print(lval);
+}
+
+void lval_debug(Lval* lval) {
+  if (*log_level < LOG_LEVEL_DEBUG) return;
+  lval_print(lval);
+}
+
 // TODO: this one prints without quotes. Make a proper pprint fn, and make
 // this the normal print (so without quotes)
 void lval_pr(Lval* lval) {
+  if (*log_level < LOG_LEVEL_DEBUG) return;
   if (lval->subtype == STRING) {
     lval_pr_str(lval);
     return;
   }
-  lval_print(lval);
+  lval_info(lval);
 }
 
-void lval_println(Lval* v) {
+void lval_debugln(Lval* v) {
+  if (*log_level < LOG_LEVEL_DEBUG) return;
+  lval_print(v);
+  putchar('\n');
+}
+
+void lval_infoln(Lval* v) {
+  if (*log_level < LOG_LEVEL_INFO) return;
   lval_print(v);
   putchar('\n');
 }
 
 void print_kv(void* pair) {
-  lval_print((Lval*)((Cell*)pair)->car);
+  lval_debug((Lval*)((Cell*)pair)->car);
   printf(": ");
-  lval_print((Lval*)((Cell*)pair)->cdr);
+  lval_debug((Lval*)((Cell*)pair)->cdr);
 }
 
 void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }
 
 void lenv_print(Lenv* env) {
+  if (*log_level < LOG_LEVEL_DEBUG) return;
   if (env->parent_env) {
     alist_print(env->kv);
   } else {
     printf("ROOT env!!! \n");
     /* list_print(env->kv, print_kv, "\n"); */
+  }
+}
+
+void env_print(Lenv* env) {
+  if (env->parent_env) {
+    alist_print(env->kv);
+  } else {
+    list_print(env->kv, print_kv, "\n");
   }
 }
