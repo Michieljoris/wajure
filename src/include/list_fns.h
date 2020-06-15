@@ -4,6 +4,6 @@
 #include "env.h"
 
 Lval* list_fn(Lenv* e, Lval* sexpr);
-Builtin list_builtins[6];
+Builtin list_builtins[7];
 
 #endif  // __LIST_FNS_H_

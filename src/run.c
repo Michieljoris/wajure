@@ -47,7 +47,7 @@ void run(int argc, char** argv) {
 
   // Read in list of (string) arguments from commandline
 
-  set_log_level(LOG_LEVEL_DEEP_DEBUG);
+  set_log_level(LOG_LEVEL_INFO);
   // For now we only understand args to be a list of file names to be read in
   for (int i = 1; i < argc; ++i) {
     info("Slurping %s\n", argv[i]);

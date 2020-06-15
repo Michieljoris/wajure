@@ -2,13 +2,11 @@
 
 #include "assert.h"
 #include "eval.h"
-#include "grammar.h"
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "lval.h"
 #include "mpc.h"
-#include "mpc_read.h"
 #include "print.h"
 #include "read.h"
 
@@ -31,7 +29,6 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       Lval* bound_macro = expand_macro(lval_fun, arg_list);
       info("\nbound_macro *******************************************\n");
       lval_debugln(bound_macro);
-      lenv_print(bound_macro->tco_env);
       info("*******************************************\n");
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
@@ -120,7 +117,7 @@ Lval* print_fn(Lenv* env, Lval* arg_list) {
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   while (arg) {
-    lval_debug(arg);
+    lval_print(arg);
     putchar(' ');
     arg = iter_next(i);
   }
