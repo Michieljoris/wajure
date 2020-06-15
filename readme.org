@@ -4,21 +4,23 @@ Used http://www.buildyourownlisp.com as a (re)introduction to c and to get mysel
 
 Removed qexpr and added quoting instead.
 
-Added some more features as discussed in https://github.com/kanaka/mal such as tco, macros, closures and try/catch/throw.
+Added some more features as discussed in https://github.com/kanaka/mal such macros, closures and try/catch/throw.
 
-Replaced arrays with lists (chain of cons cells).
+Replaced arrays with persistent lists (chain of cons cells).
 
 Tests (wip) are also from mal repo.
+
+Memory management with memory pools and ref counting
 
 Memory pool is adapted from
 https://www.semanticscholar.org/paper/Fast-Efficient-Fixed-Size-Memory-Pool%3A-No-Loops-and-Kenwright/4321a91d635d023ab25a743c698be219edcdb1a3,
 made a bit more efficient per suggestion and refactored to remove some superfluous code.
 
-
 Resizing idea is from this blog post http://www.pinksquirrellabs.com/blog/2018/01/31/-fixed-memory-pool-design/, but adding extra data blocks instead of
 reallocating.
 
 Env is a association list.
+
 
 * Run
 make (also runs the binary, with repl.lispy as arg)
@@ -30,7 +32,6 @@ out/lispy lispy/repl.lispy
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
 * TODO:
-- reference counting
 - finish adding mal tests, make them pass
 - expand lispy stdlib somewhat
 

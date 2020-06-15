@@ -2,43 +2,19 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
-** reference counting
-*** thoughts:
-- Can't use nodes for collections since the node field needs reallocing. Can't do that with my fixed pool memory since you wouldn't get contiguous blocks
-
-So we must use lists for those. Perhaps we can use hamt and pvector if we need maps and vectors.
-
-- We want lispy lists persistent.
-- If we don't copy lvals from env they'll have to be immutable.
-- when env is created it should be a snapshot. Any modifications to it shouldn't affect any closures already bound.
-  ->> so they have to be immutable as well.
-  WELL... : this goes for let, not for def!!!!!
--
-- ? Should env be a palist? Instead of just an alist? So persistent? Well, persistent, see last point
-    in other words, when setting values in the env do we overwrite if existing? Or treat the env as persistent.
-- ? When do we throw environments away?
-  We throw closures, not envs away when the fn that uses is goes out of scope!!!
-  When does env get created?
-  -> on let (the local bindings)
-  -> when evaluating lambda (the param bindings)
-  -> in catch
-- >>>>>>> So all should be persistent (or copied over) and big Q remains: when do we release lvals???
-
-** put ifdefs in for system libs
+** put ifdefs in for system libs so we're ready for wasm
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
 ** add rest of tests from mal
 ** More
+*** loop recur
+*** doseq
 *** maps
 *** stdlib
 **** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
 
 *** keywords
-*** special forms
-**** DONE do special form
-**** DONE let special form
-**** loop, recur
 *** hamt for symbol lookup and lispy maps
 *** pvector
 *** namespaces
@@ -80,3 +56,4 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 ** DONE memory pool
 ** DONE persistend list with mem pool
 ** DONE replace mpc
+** DONE reference counting
