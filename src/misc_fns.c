@@ -69,6 +69,7 @@ Lval* eval_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* print_env_fn(Lenv* env, Lval* arg_list) {
+  printf("print_env:\n");
   lenv_print(env);
   return make_lval_list();
 }
@@ -111,6 +112,7 @@ Lval* load_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
+  printf("executing print_fn:");
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   while (arg) {

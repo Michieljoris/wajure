@@ -78,59 +78,12 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
   }
   Lval* rest_args = make_lval_list();
   rest_args->head = retain(iter_current_cell(a));
+  Lval* arg = NIL;
+  do
+    arg = iter_next(a);
+  while (arg);
   return rest_args;
 }
-
-/* Lval* make_bound_lval_lambda(Lval* params, Lval* body, Lval* arg_list) { */
-/* while (arg) { */
-/*   /\* Return error if we've got an arg but not a param *\/ */
-/*   if (!param) { */
-/*     return make_lval_err("Function passed too many args. Got %i, expected
- * %i.", */
-/*                          list_count(arg_list->head),
- * list_count(params->head)); */
-/*   } */
-
-/*   if (_strcmp(param->sym, "&") == 0) { */
-/*     param = iter_next(p); */
-/*     arg = read_rest_args(param, p, a); */
-/*     if (!arg) { */
-/*       release(bindings_env); */
-/*       return make_lval_err( */
-/*           "Function format invalid. " */
-/*           "Symbol '&' not followed by single symbol."); */
-/*     } */
-/*   } */
-/*   bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg); */
-/*   arg = iter_next(a); */
-/*   param = iter_next(p); */
-/* } */
-
-/* if (param && _strcmp(param->sym, "&") == 0) { */
-/*   param = iter_next(p);  // rest param */
-/*   /\* The & needs to be followed by exactly one symbol *\/ */
-/*   if (!param) { */
-/*     release(bindings_env); */
-/*     return make_lval_err( */
-/*         "Function format invalid. " */
-/*         "Symbol '&' not followed by single symbol."); */
-/*   } */
-/*   /\* and bind last symbol to empty list *\/ */
-/*   alist_prepend(bindings_env->kv, retain(param), make_lval_list()); */
-/*   iter_next(p); */
-/* } */
-
-// Bind any remaining params to rest arg if there is one  ==========
-
-/* params = make_lval_vector(); */
-/* params->head = retain(iter_current_cell(p)); */
-/* return make_lval_lambda(bindings_env, params, body, LAMBDA); */
-
-/* Lval* eval_lambda_call(Lenv* env, Lval* lval_fun, Lval* arg_list) { */
-/* printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&eval_lambda_call\n"); */
-
-/* Lval* bound_lval_lambda = make_bound_lval_lambda( */
-/*     lval_fun->params, retain(lval_fun->body), arg_list); */
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   printf("\n---------------------bind_lambda_params\n");
@@ -151,10 +104,11 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
         return make_lval_err(
             "Function format invalid. "
             "Symbol '&' not followed by single symbol.");
-    }
+    } else
+      retain(arg);
+
     if (arg)
-      bindings_env->kv =
-          alist_prepend(bindings_env->kv, retain(param), retain(arg));
+      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg);
     else
       break;
     arg = iter_next(a);

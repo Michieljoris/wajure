@@ -45,16 +45,36 @@
 ;; (def f (fn [a] a))
 ;; (f 123)
 
-;; (def defmacro (macro [sym params  body]
-;;                      `(def ~sym (macro ~params ~@body))))
+(def defmacro (macro [sym params & body]
+                     `(def ~sym (macro ~params ~@body))))
 
-;; (defmacro defn [sym params & body]
-;;   `(def ~sym (fn ~params ~@body)))
+;; (macroexpand '(defmacro ))
 
-(def foo (macro [sym params & body] `(def ~sym (macro ~params) ~body)))
+;; (defmacro defn [sym params & body])
 
-;; (foo x [y])
-(macroexpand '(foo x [x y]  1 2))
+  ;; `(def ~sym (fn ~params ~@body)))
+
+  ;; `(def ~sym (fn ~params ~@body))
+
+(def defn (macro [sym params & body] `(def ~sym (fn ~params ~@body))))
+
+;; (defn x [y] y)
+;; (macroexpand '(defmacro x [y] y))
+;; (macroexpand '(defn x [y] y))
+;; (x 123)
+;; (print-env)
+(defn x [y] y)
+(x 123)
+
+;; (def foo (macro [sym params & body] `(def ~sym (macro ~params ~@body))))
+;; (def foo (fn [& args] args))
+;; (foo 1 2 3)
+;; (foo x [y] 'b1 'b2)
+;; (print "&&&&&&&&&&&&&&&&" (macroexpand '(foo x [x y]  1 2)))
+;; (foo x [x y]  1 2)
+;; (print-env)
+;; (def x (macro [x y] 1 2))
+;; (x 3 4)
 ;; x
 ;; (print foo)
 ;; foo
