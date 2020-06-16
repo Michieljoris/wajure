@@ -97,15 +97,30 @@ char* read_file(char* file_name) {
   return str;
 }
 
+Lval* read_string(Lenv* env, char* str) {
+  int pos = 0;
+  scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
+  return do_list(env, lval_list, RETURN_ON_ERROR);
+}
+
+Lval* read_string_fn(Lenv* env, Lval* arg_list) {
+  // TODO: The clojure read-string reads only the first expression, and doesn't
+  // eval it
+  ITER_NEW_N("read-string", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
+  return read_string(env, arg->str);
+}
+
 Lval* slurp(Lenv* env, char* file_name) {
   char* str = read_file(file_name);
   if (!str) return make_lval_err("Could not load file %s", str);
-  Lval* result = eval_string(env, str);
+  Lval* result = read_string(env, str);
+  printf("Slurped: %s \n", file_name);
   free(str);
   return result;
 }
 
-Lval* load_fn(Lenv* env, Lval* arg_list) {
+Lval* slurp_fn(Lenv* env, Lval* arg_list) {
   ddebug("\nload_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
@@ -147,15 +162,16 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
   return make_lval_list();
 }
 
-Builtin misc_builtins[10] = {
+Builtin misc_builtins[11] = {
 
     {"eval", eval_fn},
     {"print-env", print_env_fn},
     {"exit", exit_fn},
-    {"load", load_fn},
+    {"slurp", slurp_fn},
     /* {"mpc_load", mpc_load_fn}, */
     {"print", print_fn},
     {"pr", pr_fn},
+    {"read-string", read_string_fn},
     {"macroexpand", macroexpand_fn},
     {"macroexpand-1", macroexpand_1_fn},
     {"debug", debug_fn},

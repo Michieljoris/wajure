@@ -2,11 +2,11 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
+** add rest of tests from mal
 ** put ifdefs in for system libs so we're ready for wasm
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
-** add rest of tests from mal
 ** More
 *** loop recur
 *** doseq

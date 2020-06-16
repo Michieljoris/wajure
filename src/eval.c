@@ -37,29 +37,32 @@ Lval* map_eval(Lenv* env, Lval* lval_list) {
   return new_list;
 }
 
-Lval* do_list(Lenv* env, Lval* list) {
+Lval* do_list(Lenv* env, Lval* list, int mode) {
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
-
+  Lval* result = NIL;
   while (lval) {
     if (iter_peek(i)) {
-      lval = lval_eval(env, lval);
-      if (lval->type == LVAL_ERR) return lval;
-      release(lval);
+      result = lval_eval(env, lval);
+      if (result->type == LVAL_ERR) {
+        lval_print(lval);
+        printf(" resulted in: ");
+        lval_println(result);
+        if (mode == RETURN_ON_ERROR) return result;
+      }
+      release(result);
     } else {
-      Lval* ret = lval_eval(env, lval);
-      debug("in do_list\n");
-      return ret;
+      result = lval_eval(env, lval);
+      if (result->type == LVAL_ERR) {
+        lval_print(lval);
+        printf(" resulted in: ");
+        lval_println(result);
+      }
+      return result;
     }
     lval = iter_next(i);
   }
   return make_lval_list();
-}
-
-Lval* eval_string(Lenv* env, char* str) {
-  int pos = 0;
-  scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
-  return do_list(env, lval_list);
 }
 
 Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
@@ -114,7 +117,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 
   /* Eval body expressions, but only if all params are bound */
   if (!param) {
-    return do_list(bindings_env, lval_fun->body);
+    return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
   } else {
     Lval* params = make_lval_vector();
     params->head = retain(iter_current_cell(p));
@@ -140,6 +143,9 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
   if (expanded_macro->type == LVAL_ERR) return retain(expanded_macro);
 
+  /* info("env in eval macro:\n"); */
+  /* env_print(env); */
+  /* lval_println(expanded_macro); */
   // Expanded macro closes over the environment where it is executed
   return lval_eval(env, expanded_macro);
 }

@@ -277,7 +277,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             catch_body->head = retain(node->head->cdr->cdr->cdr);
 
             release(ret);
-            ret = do_list(catch_env, catch_body);
+            ret = do_list(catch_env, catch_body, RETURN_ON_ERROR);
             release(catch_env);
             release(catch_body);
 
@@ -292,7 +292,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = do_list(env, body);
+          Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
           release(body);
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -326,7 +326,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
           body->head = list_rest(node->head);
-          Lval* finally_ret = do_list(env, body);
+          Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
 
           if (finally_ret->type == LVAL_ERR) {
             release(ret);
@@ -351,7 +351,9 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
-Lval* eval_do(Lenv* env, Lval* body) { return do_list(env, body); }
+Lval* eval_do(Lenv* env, Lval* body) {
+  return do_list(env, body, RETURN_ON_ERROR);
+}
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   ddebug("ENV IN LET:");
@@ -393,7 +395,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
   scoped Lval* body = make_lval_list();
   body->head = retain(iter_cell(a));
-  Lval* ret = do_list(let_env, body);
+  Lval* ret = do_list(let_env, body, RETURN_ON_ERROR);
   release(let_env);
   return ret;
 }

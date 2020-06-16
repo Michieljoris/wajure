@@ -101,7 +101,7 @@ Destructor destructors[] = {destroy_lval, destroy_lenv, destroy_cell,
                             destroy_iter};
 
 void lispy_mempool_log(int type, char* msg) {
-  /* printf("%s %s", slot_type_str[type], msg); */
+  printf("%s %s", slot_type_str[type], msg);
 }
 
 #define MEMPOOL_LOG(TYPE, type)             \

@@ -1,7 +1,52 @@
-(load "lispy/stdlib.lispy")
-(load "lispy/test/test_2_eval.lispy")
-(load "lispy/test/test_3_env.lispy")
-(load "lispy/test/test_4_if_fn_do.lispy")
+(slurp "lispy/stdlib.lispy")
+(slurp "lispy/test/test_2_eval.lispy")
+(slurp "lispy/test/test_3_env.lispy")
+(slurp "lispy/test/test_4_if_fn_do.lispy")
+(slurp "lispy/test/test_5_tco.lispy")
+(slurp "lispy/test/test_6_file.lispy")
+(slurp "lispy/test/test_7_quote.lispy")
+(slurp "lispy/test/test_8_macros.lispy")
+(slurp "lispy/test/test_9_try.lispy")
+
+
+;; (nth [1 2] 123)
+;; (cond)
+;; (not (not 1))
+;; (defmacro unless2 [pred a b] (list 'if (list 'not pred) a b))
+;; (print "hello")
+;; (macroexpand '(cond 1 2))
+;; (cond 0 1 1 2 1 3kkk)
+;; (nth [1 2 3] 1)
+;; (cond 1 7)
+;; (slurp "lispy/test/test_9_try.lispy")
+;; (t 1 0)
+;; (+ 1 1)
+;; (+ 1 1)
+;; (+ 1 a)
+;; (+ 1 123)
+;; foo
+;; ((fn [a b] (+ b a)) 3 4)
+
+;; ((fn [f x] (f x))
+;;  (fn [a] (+ 1 a))
+;;  7)
+;; ( ( (fn [a] (fn [b] (+ a b))) 5) 7)
+
+;; (def x 4)
+;; (defmacro a [] x)
+;; (a)
+;; ;=>2
+;; (let [x 3]
+;;   (print x)
+;;   (a))
+;; (let [foo (fn [n] (if (= n 1) (foo 0)))] (print-env) (foo 1))
+;; (let [cst (fn [n] (if (= n 0) 0 (cst (- n 1))))] (cst 1))
+
+;; (def fib (fn [N] (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))
+;; =>2
+;; (if nil 7 8)
+;; 8
+;; (if (list) 7 8) 7
 
 ;; (t (a 1 2 3) 2)
 ;; (def expr '(abc 1 2 3))

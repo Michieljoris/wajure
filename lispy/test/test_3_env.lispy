@@ -21,7 +21,7 @@
 (t MYNUM 222)
 
 
-;;TEST TODO
+;;TODO TEST
 ;; Check env lookup non-fatal error
 ;; (abc 1 2 3)
 ;/.*\'?abc\'? not found.*

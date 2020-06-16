@@ -139,9 +139,9 @@ void lval_infoln(Lval* v) {
 }
 
 void print_kv(void* pair) {
-  lval_debug((Lval*)((Cell*)pair)->car);
+  lval_print((Lval*)((Cell*)pair)->car);
   printf(": ");
-  lval_debug((Lval*)((Cell*)pair)->cdr);
+  lval_print((Lval*)((Cell*)pair)->cdr);
 }
 
 void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }

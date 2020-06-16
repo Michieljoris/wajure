@@ -5,6 +5,14 @@
 (defmacro defn [sym params & body]
   `(def ~sym (fn ~params ~@body)))
 
+(defmacro cond [& xs]
+  (if (> (count xs) 0)
+    (list 'if (first xs)
+          (if (> (count xs) 1)
+            (nth xs 1)
+            (throw "odd number of forms to cond"))
+          (cons 'cond (rest (rest xs))))))
+
 (defn debug-on []
   (debug 1))
 

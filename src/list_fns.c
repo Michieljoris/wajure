@@ -11,7 +11,7 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("cons", 2)
   ITER_NEXT
   Lval* x = arg;
-  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
   Lval* lval_list = arg;
   ITER_END
   Lval* lval_list2 = make_lval_list();
@@ -21,7 +21,7 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
 
 Lval* first_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("first", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
   Lval* lval_list = arg;
   ITER_END
   Lval* lval = list_first(lval_list->head);
@@ -31,7 +31,7 @@ Lval* first_fn(Lenv* env, Lval* arg_list) {
 
 Lval* rest_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("rest", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, LIST)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
   Lval* lval_list = arg;
   ITER_END
   Lval* lval_list2 = make_lval_list();
@@ -77,7 +77,24 @@ Lval* count_fn(Lenv* env, Lval* arg_list) {
   return make_lval_num(count);
 }
 
-Builtin list_builtins[7] = {
+Lval* nth_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("nth", 2)
+  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
+  Lval* coll = arg;
+  ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
+  long int index = arg->num;
+  Lval* nth_lval = list_nth(coll->head, arg->num);
+  ITER_END
+  if (!nth_lval) {
+    return make_lval_err(
+        "Index out of bounds for nth function for index %li, length of "
+        "collection is %d",
+        index, list_count(coll->head));
+  }
+  return nth_lval;
+}
+
+Builtin list_builtins[8] = {
 
     {"cons", cons_fn},
     {"first", first_fn},
@@ -85,6 +102,7 @@ Builtin list_builtins[7] = {
     {"rest", rest_fn},
     {"concat", concat_fn},
     {"count", count_fn},
+    {"nth", nth_fn},
     {NULL}
 
 };
