@@ -51,6 +51,10 @@ void destroy_lval(void* data) {
         case STRING:
           free(lval->str);
           break;
+        case LNIL:
+        case LTRUE:
+        case LFALSE:
+          break;
         default:
           error("Can't delete unknown literal subtype: %d\n", lval->subtype);
       }

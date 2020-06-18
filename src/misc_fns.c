@@ -27,9 +27,9 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
       Lval* bound_macro = expand_macro(lval_fun, arg_list);
-      info("\nbound_macro *******************************************\n");
+      debug("\nbound_macro *******************************************\n");
       lval_debugln(bound_macro);
-      info("*******************************************\n");
+      debug("*******************************************\n");
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
         return bound_macro;
@@ -100,6 +100,7 @@ char* read_file(char* file_name) {
 Lval* read_string(Lenv* env, char* str) {
   int pos = 0;
   scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
+  if (lval_list->type == LVAL_ERR) return retain(lval_list);
   return do_list(env, lval_list, RETURN_ON_ERROR);
 }
 
@@ -149,7 +150,7 @@ Lval* pr_fn(Lenv* env, Lval* arg_list) {
     arg = iter_next(i);
   }
   putchar('\n');
-  return make_lval_list();
+  return make_lval_nil();
 }
 
 Lval* debug_fn(Lenv* env, Lval* arg_list) {
@@ -159,10 +160,19 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   ddebug("debug = %il\n", num);
   set_log_level((int)num);
-  return make_lval_list();
+  return make_lval_nil();
 }
 
-Builtin misc_builtins[11] = {
+Lval* boolean_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("boolean", 1)
+  ITER_NEXT
+  ITER_END
+  if (arg->subtype == LNIL) return make_lval_false();
+  if (arg->subtype == LFALSE) return retain(arg);
+  return make_lval_true();
+}
+
+Builtin misc_builtins[12] = {
 
     {"eval", eval_fn},
     {"print-env", print_env_fn},
@@ -175,6 +185,7 @@ Builtin misc_builtins[11] = {
     {"macroexpand", macroexpand_fn},
     {"macroexpand-1", macroexpand_1_fn},
     {"debug", debug_fn},
+    {"boolean", boolean_fn},
     {NULL}
 
 };

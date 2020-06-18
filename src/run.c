@@ -27,7 +27,7 @@ struct slot_count get_slot_count() {
 }
 
 void run(int argc, char** argv) {
-  init_lispy_mempools(800, 400, 400);
+  init_lispy_mempools(1600, 100, 1600);
 
   set_log_level(LOG_LEVEL_INFO);
 

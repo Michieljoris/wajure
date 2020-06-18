@@ -23,7 +23,7 @@
   `(if ~cond ~body))
 
 (defmacro not [b]
-  `(if ~b 0 1))
+  `(if ~b false true))
 
 (defmacro t [expr expected & str]
   (when (not=  (eval expr) expected)

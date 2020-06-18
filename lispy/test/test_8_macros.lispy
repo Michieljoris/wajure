@@ -1,5 +1,3 @@
-(def true 1)
-(def false 0)
 ;; Testing trivial macros
 (defmacro one [] 1)
 (t (one)
@@ -35,15 +33,15 @@
 
 
 ;; ;; Testing non-macro function
-;; (t (not (= 1 1))
-;;    false)
 (t (not (= 1 1))
-   0)
+   false)
+(t (not (= 1 1))
+   false)
 ;;; This should fail if it is a macro
 ;; (t (not (= 1 2))
 ;;    true)
 (t (not (= 1 2))
-   1)
+   true)
 
 ;; ;; Testing nth, first and rest functions
 
@@ -58,10 +56,8 @@
 (t x
    "x")
 
-;; (t (first (list))
-;;    nil)
 (t (first (list))
-   ())
+   nil)
 (t (first (list 6))
    6)
 (t (first (list 7 8 9))
@@ -76,23 +72,23 @@
 
 ;; ;; Testing cond macro
 
-;; (t (cond)
-;;    nil)
+(t (cond)
+   nil)
 (t (cond true 7)
    7)
 (t (cond true 7 true 8)
    7)
 (t (cond false 7 true 8)
    8)
-;; (t (cond false 7 false 8 "else" 9)
-;;    9)
-;; (t (cond false 7 (= 2 2) 8 "else" 9)
-;;    8)
-;; (t (cond false 7 false 8 false 9)
-;;    nil)
+(t (cond false 7 false 8 "else" 9)
+   9)
+(t (cond false 7 (= 2 2) 8 "else" 9)
+   8)
+(t (cond false 7 false 8 false 9)
+   nil)
 
 (t (cond false 7 false 8 false 9)
-   ())
+   nil)
 
 ;; ;; Testing EVAL in let
 
@@ -106,22 +102,18 @@
    1)
 (t (nth [1 2] 1)
    2)
-;; (t (nth [1 2 nil] 2)
-;;    nil)
+(t (nth [1 2 nil] 2)
+   nil)
 ;; (def x "x")
 ;; (def x (nth [1 2] 2))
 ;; x
 ;; ;=>"x"
 
-;; (t (first [])
-;;    nil)
+(t (first [])
+   nil)
 ;; (t (first nil)
 ;;    nil)
 
-(t (first [])
-   ())
-(t (first ())
-   ())
 (t (first [10])
    10)
 (t (first [10 11 12])

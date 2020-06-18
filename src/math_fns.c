@@ -75,18 +75,19 @@ Lval* sub_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "-", arg_list); }
 Lval* mul_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "*", arg_list); }
 Lval* div_fn(Lenv* e, Lval* arg_list) { return op_fn(e, "/", arg_list); }
 
-#define MATH_FN(fn_name, operator_str, operator)                        \
-  Lval* fn_name(Lenv* env, Lval* arg_list) {                            \
-    ITER_NEW_N(operator_str, 2)                                         \
-    ITER_NEXT                                                           \
-    LASSERT_TYPE(fn_name, arg_list, 0, LVAL_LITERAL, NUMBER, arg)       \
-    Lval* first_arg = arg;                                              \
-    ITER_NEXT                                                           \
-    LASSERT_TYPE(fn_name, arg_list, 1, LVAL_LITERAL, NUMBER, arg)       \
-    Lval* second_arg = arg;                                             \
-    Lval* num = make_lval_num(first_arg->num operator second_arg->num); \
-    ITER_END                                                            \
-    return num;                                                         \
+#define MATH_FN(fn_name, operator_str, operator)                              \
+  Lval* fn_name(Lenv* env, Lval* arg_list) {                                  \
+    ITER_NEW_N(operator_str, 2)                                               \
+    ITER_NEXT                                                                 \
+    LASSERT_TYPE(fn_name, arg_list, 0, LVAL_LITERAL, NUMBER, arg)             \
+    Lval* first_arg = arg;                                                    \
+    ITER_NEXT                                                                 \
+    LASSERT_TYPE(fn_name, arg_list, 1, LVAL_LITERAL, NUMBER, arg)             \
+    Lval* second_arg = arg;                                                   \
+    Lval* bool = first_arg->num operator second_arg->num ? make_lval_true()   \
+                                                         : make_lval_false(); \
+    ITER_END                                                                  \
+    return bool;                                                              \
   }
 
 MATH_FN(gt_fn, ">", >);
@@ -115,16 +116,22 @@ int lval_eq(Lval* x, Lval* y) {
         yl = yl->cdr;
       }
       return 1;
-    case LVAL_LITERAL: {
-      case NUMBER:
-        return (x->num == y->num);
-      case STRING:
-        return (_strcmp(x->str, y->str) == 0);
-      default:
-        printf("Warning: comparing instances of type '%s' is not implemented\n",
-               lval_type_to_name(x));
-        return 0;
-    }
+    case LVAL_LITERAL:
+      switch (x->subtype) {
+        case NUMBER:
+          return (x->num == y->num);
+        case STRING:
+          return (_strcmp(x->str, y->str) == 0);
+        case LNIL:
+        case LTRUE:
+        case LFALSE:
+          return x->subtype == y->subtype;
+        default:
+          printf(
+              "Warning: comparing instances of type '%s' is not implemented\n",
+              lval_type_to_name(x));
+          return 0;
+      }
     case LVAL_FUNCTION:
       if (x->fun || y->fun) {
         return x->fun == y->fun;
@@ -153,7 +160,7 @@ Lval* cmp_fn(Lenv* env, Lval* arg_list, char* operator) {
     result = !lval_eq(first_arg, second_arg);
   }
   ITER_END
-  return make_lval_num(result);
+  return result ? make_lval_true() : make_lval_false();
 }
 
 Lval* eq_fn(Lenv* env, Lval* arg_list) { return cmp_fn(env, arg_list, "="); }

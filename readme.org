@@ -8,7 +8,7 @@ Added some more features as discussed in https://github.com/kanaka/mal such macr
 
 Replaced arrays with persistent lists (chain of cons cells).
 
-Tests (wip) are also from mal repo.
+Tests are also from mal repo.
 
 Memory management with memory pools and ref counting
 
@@ -32,11 +32,10 @@ out/lispy lispy/repl.lispy
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
 * TODO:
-- finish adding mal tests, make them pass
 - expand lispy stdlib somewhat
 
   Would be nice:
-
+- rest of mal features plus their tests
 - persistent vectors and maps, but plists could function as such
 - namespaces, keywords, loop/recur, atoms, meta data, multimethods, nil, true, false, sets, seq abstraction
 - interpreter/compiler in lispy!

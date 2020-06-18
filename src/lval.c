@@ -44,6 +44,24 @@ Lval* make_lval_map(void) {
 
 /* LITERAL */
 
+Lval* make_lval_nil() {
+  Lval* lval = lalloc(LVAL);
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LNIL};
+  return lval;
+}
+
+Lval* make_lval_true() {
+  Lval* lval = lalloc(LVAL);
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LTRUE};
+  return lval;
+}
+
+Lval* make_lval_false() {
+  Lval* lval = lalloc(LVAL);
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LFALSE};
+  return lval;
+}
+
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .num = x};
@@ -114,7 +132,7 @@ char* lval_type_constant_to_name(int t) {
     case LVAL_SYMBOL:
       return "Symbol";
     case LVAL_COLLECTION:
-      return "Seq";
+      return "Collection";
     case LVAL_ERR:
       return "Error";
     case LVAL_FUNCTION:
@@ -127,6 +145,13 @@ char* lval_type_constant_to_name(int t) {
       return "Vector";
     case MAP:
       return "Map";
+
+    case LTRUE:
+      return "true";
+    case LFALSE:
+      return "false";
+    case LNIL:
+      return "nil";
     default:
       return "Unknown";
   }
@@ -153,6 +178,12 @@ char* lval_type_to_name(Lval* lval) {
           return "Number";
         case STRING:
           return "String";
+        case LTRUE:
+          return "true";
+        case LFALSE:
+          return "false";
+        case LNIL:
+          return "nil";
       }
     case LVAL_FUNCTION:
       switch (lval->subtype) {

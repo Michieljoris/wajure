@@ -88,6 +88,15 @@ void lval_print(Lval* lval) {
         case STRING:
           lval_print_str(lval);
           break;
+        case LNIL:
+          printf("nil");
+          break;
+        case LTRUE:
+          printf("true");
+          break;
+        case LFALSE:
+          printf("false");
+          break;
       }
     case LVAL_FUNCTION:
       lval_fun_print(lval);

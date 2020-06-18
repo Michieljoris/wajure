@@ -9,6 +9,36 @@
 (slurp "lispy/test/test_9_try.lispy")
 
 
+;; (t ( (fn [& more] (count more)) 1 2 3)
+;;    3)
+;; (t ( (fn [& more] (list? more)) 1 2 3)
+;;    true)
+"ok"
+;; foo?
+;; foo?
+;; (t ( (fn [& more] (count more)) 1)
+;;    1)
+;; (t ( (fn [& more] (count more)) )
+;;    0)
+;; ;; (t ( (fn [& more] (list? more)) )
+;; ;;    true)
+;; (t ( (fn [a & more] (count more)) 1 2 3)
+;;    2)
+;; (t ( (fn [a & more] (count more)) 1)
+;;    0)
+;; (t ( (fn [a & more] (list? more)) 1)
+;;    true)
+;; (t (not nil)
+;;    true)
+;; (t (not true)
+;;    false)
+;; (t (not "a")
+;;    false)
+;; (t (not 0)
+;;    false)
+
+;; (t (= "" "")
+;;    true)
 ;; (nth [1 2] 123)
 ;; (cond)
 ;; (not (not 1))

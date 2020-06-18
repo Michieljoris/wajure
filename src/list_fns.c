@@ -26,7 +26,7 @@ Lval* first_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval = list_first(lval_list->head);
   ITER_END
-  return lval ? lval : make_lval_list();
+  return lval ? lval : make_lval_nil();
 }
 
 Lval* rest_fn(Lenv* env, Lval* arg_list) {

@@ -6,7 +6,7 @@
 
 
 ;; Testing def!
-(t (def x 3) ())
+(t (def x 3) nil)
 (t x 3)
 (def y 4)
 (t y 4)

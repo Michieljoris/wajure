@@ -53,6 +53,9 @@ enum {
   LVAL_FUNCTION,
   LVAL_ERR,
   /* subtypes */
+  LNIL,
+  LTRUE,
+  LFALSE,
   NUMBER,
   STRING,
   SYS,
@@ -78,6 +81,9 @@ Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype);
 Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
 Lval* make_lval_exception(char* msg);
+Lval* make_lval_nil(void);
+Lval* make_lval_true(void);
+Lval* make_lval_false(void);
 
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);

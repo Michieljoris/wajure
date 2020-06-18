@@ -65,16 +65,17 @@ char* lval_str_escape(char x) {
   return "";
 }
 
+char* valid_symbol_chars =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789_+-*\\/=<>!&?";
+
 Lval* lval_read_sym(char* s, int* i) {
   /* Allocate Empty String */
   char* part = calloc(1, 1);
 
   /* While valid identifier characters */
-  while (_strchr("abcdefghijklmnopqrstuvwxyz"
-                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                 "0123456789_+-*\\/=<>!&",
-                 s[*i]) &&
-         s[*i] != '\0') {
+  while (_strchr(valid_symbol_chars, s[*i]) && s[*i] != '\0') {
     /* Append character to end of string */
     part = realloc(part, _strlen(part) + 2);
     part[_strlen(part) + 1] = '\0';
@@ -101,6 +102,14 @@ Lval* lval_read_sym(char* s, int* i) {
     long v = strtol(part, NULL, 10);
     x = (errno != ERANGE) ? make_lval_num(v)
                           : make_lval_err("Invalid Number %s", part);
+  } else if (_strcmp(part, "true") == 0) {
+    x = make_lval_true();
+
+  } else if (_strcmp(part, "false") == 0) {
+    x = make_lval_false();
+
+  } else if (_strcmp(part, "nil") == 0) {
+    x = make_lval_nil();
   } else {
     x = make_lval_sym(part);
   }
@@ -245,10 +254,7 @@ Lval* lval_read(char* s, int* i) {
 
   char next_char = s[*i];
 
-  if (_strchr("abcdefghijklmnopqrstuvwxyz"
-              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-              "0123456789_+-*\\/=<>!&",
-              next_char)) {
+  if (_strchr(valid_symbol_chars, next_char)) {
     x = lval_read_sym(s, i);
   } else
     switch (next_char) {

@@ -46,7 +46,6 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
       result = lval_eval(env, lval);
       if (result->type == LVAL_ERR) {
         lval_print(lval);
-        printf(" resulted in: ");
         lval_println(result);
         if (mode == RETURN_ON_ERROR) return result;
       }
@@ -62,7 +61,7 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
     }
     lval = iter_next(i);
   }
-  return make_lval_list();
+  return make_lval_nil();
 }
 
 Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
@@ -143,9 +142,6 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
   if (expanded_macro->type == LVAL_ERR) return retain(expanded_macro);
 
-  /* info("env in eval macro:\n"); */
-  /* env_print(env); */
-  /* lval_println(expanded_macro); */
   // Expanded macro closes over the environment where it is executed
   return lval_eval(env, expanded_macro);
 }
@@ -214,9 +210,9 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
 }
 
 Lval* lval_eval(Lenv* env, Lval* lval) {
-  /* debug("\n->>>>>>>>EVAL: %d", i++); */
-  debug("\n->>>>>>>>EVAL: ");
-  lval_debugln(lval);
+  /* info("\n->>>>>>>>EVAL: "); */
+  /* lval_infoln(lval); */
+  /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
   /* Lval* ret = NIL; */
   switch (lval->type) {
     case LVAL_SYMBOL:
@@ -231,7 +227,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           /* TODO: */
           return lval;
         default:
-          return make_lval_err("Unknown seq subtype");
+          return make_lval_err("Unknown seq subtype: %d ", lval->subtype);
       }
       break;
     default:

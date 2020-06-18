@@ -46,7 +46,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     retain(lval_sym);
   }
   lenv_put(get_user_env(env), lval_sym, lval);
-  return make_lval_list();
+  return make_lval_nil();
 }
 
 Lval* eval_if(Lenv* env, Lval* arg_list) {
@@ -54,9 +54,8 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_NEXT;
   scoped Lval* cond = lval_eval(env, arg);
   if (cond->type == LVAL_ERR) return retain(cond);
-  LASSERT_TYPE("if", arg_list, 0, LVAL_LITERAL, NUMBER, cond)
   Lval* branch = NULL;
-  if (cond->num) { /* TRUE */
+  if (cond->subtype != LFALSE && cond->subtype != LNIL) { /* TRUE */
     ITER_NEXT;
     branch = arg;
     ITER_NEXT;
@@ -69,7 +68,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   if (branch) {
     return lval_eval(env, branch);
   }
-  return make_lval_list();
+  return make_lval_nil();
 }
 
 Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
