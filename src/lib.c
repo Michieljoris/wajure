@@ -1,34 +1,10 @@
 #include "lib.h"
 
-char *out_types[] = {"%s", "%li", "%d"};
-
-char *out_to_str(int count, long int a[]) {
-  char *result = malloc(512);
-  for (int i = 0; i < count; ++i) {
-    long int type = a[i];
-    switch (type) {
-      case TSTRING:
-        _strcpy(result, (char *)a[++i]);
-        break;
-      case TLONG:
-      case TINT:;
-        char *s = malloc(200);
-        s = itostr(s, a[++i]);
-        _strcpy(result, s);
-        free(s);
-        break;
-    }
-  }
-  return result;
-}
-
-void out_fn(int count, long int a[]) {
-  char *s = out_to_str(count, a);
-  printf("%s", s);
-  free(s);
-}
 
 // https://en.wikibooks.org/wiki/C_Programming/String_manipulation#The_more_commonly-used_string_functions
+
+
+
 
 /* strlen */
 size_t(_strlen)(const char *s) {
@@ -212,17 +188,38 @@ void *(_memmove)(void *s1, const void *s2, size_t n) {
   return s1;
 }
 
-#include <ctype.h>
-/* #include <errno.h> */
-/* #include <limits.h> */
-/* #include <stdlib.h> */
-#define LONG_MAX (long int)9223372036854775807
-#define LONG_MIN (-LONG_MAX - 1L)
-#define ERANGE 34
+/* #include <ctype.h> */
 
 int merrno2 = 0;
 int *merrno = &merrno2;
 /* int errno = 0; */
+
+int isalpha(int c)
+{
+   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+int isupper(int c)
+{
+   return c >= 'A' && c <= 'Z';
+}
+
+int isdigit(int c)
+{
+   return (c >= '0' && c <= '9');
+}
+
+int isspace(int c)
+{
+   return c == ' ' || c == '\t'; // || whatever other char you consider space
+}
+
+
+/* int tolower(int c) */
+/* { */
+/*    if ( !isalpha(c) ) return c; */
+/*    return (c >= 'A' && c <= 'Z') ? c - 'A' : c; */
+/* } */
 
 /*
  * Convert a string to a long integer.

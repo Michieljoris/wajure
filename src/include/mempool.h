@@ -25,6 +25,8 @@ struct memory_pool {
 
 enum { MEMPOOL_FIXED_SIZE, MEMPOOL_AUTO_RESIZE };
 
+void mempool_reserve_memory(int initial_page_count, int _max_page_count);
+
 Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
                         Log log);
 void free_mempool(Mempool* memory_pool);

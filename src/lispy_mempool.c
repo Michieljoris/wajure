@@ -3,6 +3,7 @@
 #include "io.h"
 #include "lib.h"
 #include "lval.h"
+#include "malloc.h"
 #include "mempool.h"
 #include "print.h"
 
@@ -122,27 +123,48 @@ MEMPOOL_LOG(lval, LVAL);
 MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
 MEMPOOL_LOG(iter, ITER);
+MEMPOOL_LOG(char512, CHAR512);
+MEMPOOL_LOG(char256, CHAR256);
+MEMPOOL_LOG(char128, CHAR128);
+MEMPOOL_LOG(char64, CHAR64);
+MEMPOOL_LOG(char32, CHAR32);
+MEMPOOL_LOG(char16, CHAR16);
+MEMPOOL_LOG(char8, CHAR8);
 
 #define MEMPOOL(typeint, Type, type)                                \
   mempools[typeint] = create_mempool(SLOT_SIZE(Type), type##_count, \
                                      MEMPOOL_AUTO_RESIZE, type##_mempool_log);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
+  int char512_count = 10;
+  int char256_count = 10;
+  int char128_count = 10;
+  int char64_count = 10;
+  int char32_count = 10;
+  int char16_count = 10;
+  int char8_count = 10;
   int mempool_count = SLOT_TYPE_COUNT;
-  mempools = malloc(sizeof(Mempool*) * mempool_count);
+  mempools = _malloc(sizeof(Mempool*) * mempool_count);
 
   MEMPOOL(LVAL, Lval, lval)
   MEMPOOL(LENV, Lenv, lenv)
   MEMPOOL(CELL, Cell, cell)
   MEMPOOL(ITER, Cell, cell)
+  MEMPOOL(CHAR512, char, char512)
+  MEMPOOL(CHAR256, char, char256)
+  MEMPOOL(CHAR128, char, char128)
+  MEMPOOL(CHAR64, char, char64)
+  MEMPOOL(CHAR32, char, char32)
+  MEMPOOL(CHAR16, char, char16)
+  MEMPOOL(CHAR8, char, char8)
 }
 
 void free_lispy_mempools() {
-  free_mempool(mempools[LVAL]);
-  free_mempool(mempools[LENV]);
-  free_mempool(mempools[CELL]);
-  free_mempool(mempools[ITER]);
-  free(mempools);
+  /* free_mempool(mempools[LVAL]); */
+  /* free_mempool(mempools[LENV]); */
+  /* free_mempool(mempools[CELL]); */
+  /* free_mempool(mempools[ITER]); */
+  /* free(mempools); */
 }
 
 char* type_to_name(int type) {
@@ -164,7 +186,29 @@ char* type_to_name(int type) {
   }
 }
 
-void* lalloc(int type) {
+int get_mempool_type(int size) {
+  int type;
+  if (size > MAX_CHAR_SIZE) {
+    error("Can't allocate %d bytes, max is %d", size, MAX_CHAR_SIZE);
+    type = CHAR512;
+  } else {
+    if (size & 512)
+      type = CHAR512;
+    else if (size & 128)
+      type = CHAR128;
+    else if (size & 64)
+      type = CHAR64;
+    else if (size & 32)
+      type = CHAR32;
+    else if (size & 16)
+      type = CHAR16;
+    else
+      type = CHAR8;
+  }
+  return type;
+}
+
+void* lalloc_type(int type) {
   Slot* slot_p = mempool_alloc(mempools[type]);
   *slot_p = (Slot){.destroy = destructors[type],
                    .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
@@ -175,6 +219,11 @@ void* lalloc(int type) {
   return slot_p->data_p;
 }
 
+void* lalloc_size(int size) {
+  int type = get_mempool_type(size);
+  return lalloc_type(type);
+}
+
 void lfree(int type, void* slot) {
   // Zeroing out will catch errors that happen when the slot is freed, but
   // still works as before because it's not been reassigned.
@@ -183,6 +232,24 @@ void lfree(int type, void* slot) {
   if (debug) ddebug("-%s: ", type_to_name(type));
   mempool_debug(mempools[type]);
   /* printf("done %d\n", type); */
+}
+
+static Slot* get_slot_p(void* data_p) {
+  return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
+}
+
+void* lrealloc(int size, void* data_p) {
+  Slot* slot = get_slot_p(data_p);
+  int type = get_mempool_type(size);
+  if (type == slot->type) return data_p;
+
+  void* new_data_p = lalloc_type(type);
+  void* to_p = new_data_p;
+  // TODO!!!!!! get size of type CHARXXX
+  int old_size = 0;
+  while (old_size--) copy_byte(new_data_p++, to_p++);
+  release(data_p);
+  return new_data_p;
 }
 
 int get_free_slot_count(int type) {
@@ -205,10 +272,6 @@ void print_mempool_counts() {
   print_mempool_free(LVAL);
   print_mempool_free(CELL);
   print_mempool_free(ITER);
-}
-
-static Slot* get_slot_p(void* data_p) {
-  return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
 }
 
 int get_ref_count(void* data_p) { return get_slot_p(data_p)->ref_count; }

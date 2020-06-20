@@ -32,10 +32,11 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   if (lval->type == LVAL_ERR) return lval;
 
   if (lenv_is_bound(get_user_env(env), lval_sym)) {
-    warn(
-        "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
-        "being replaced by: #'user/%s\n",
-        lval_sym->sym, lval_sym->sym, lval_sym->sym);
+    /* warn( */
+    /*     "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
+     */
+    /*     "being replaced by: #'user/%s\n", */
+    /*     lval_sym->sym, lval_sym->sym, lval_sym->sym) */;
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {
       warn(

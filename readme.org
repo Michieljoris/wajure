@@ -21,6 +21,7 @@ reallocating.
 
 Env is a association list.
 
+WIP: getting the whole thing to compile to webassembly (without Emscripten!) so we have a lispy interpreter in the browser.
 
 * Run
 For editline lib do

@@ -3,7 +3,7 @@
 #include "lval.h"
 
 Cell* make_iter_cell() {
-  Cell* cell = lalloc(ITER);
+  Cell* cell = lalloc_type(ITER);
   cell->car = NULL;
   cell->cdr = NULL;
   return cell;
