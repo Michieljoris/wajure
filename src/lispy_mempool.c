@@ -123,11 +123,6 @@ MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
 MEMPOOL_LOG(iter, ITER);
 
-Mempool* create_lispy_mempool(int count) {
-  return create_mempool(sizeof(Lval), count, MEMPOOL_AUTO_RESIZE,
-                        lval_mempool_log);
-}
-
 #define MEMPOOL(typeint, Type, type)                                \
   mempools[typeint] = create_mempool(SLOT_SIZE(Type), type##_count, \
                                      MEMPOOL_AUTO_RESIZE, type##_mempool_log);

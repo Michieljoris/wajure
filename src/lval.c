@@ -116,6 +116,13 @@ Lval* make_lval_err(char* fmt, ...) {
   return lval;
 }
 
+Lval* make_lval_err_fn(int count, long int a[]) {
+  Lval* lval = lalloc(LVAL);
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS};
+  lval->err = out_to_str(count, a);
+  return lval;
+}
+
 // User error
 Lval* make_lval_exception(char* msg) {
   Lval* lval = make_lval_err(msg);

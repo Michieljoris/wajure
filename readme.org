@@ -4,11 +4,11 @@ Used http://www.buildyourownlisp.com as a (re)introduction to c and to get mysel
 
 Removed qexpr and added quoting instead.
 
-Added some more features as discussed in https://github.com/kanaka/mal such macros, closures and try/catch/throw.
+Added some more features as discussed in https://github.com/kanaka/mal such as macros, closures and try/catch/throw.
 
 Replaced arrays with persistent lists (chain of cons cells).
 
-Tests are also from mal repo.
+Tests are also from mal repo, as implemented.
 
 Memory management with memory pools and ref counting
 
@@ -23,21 +23,39 @@ Env is a association list.
 
 
 * Run
-make (also runs the binary, with repl.lispy as arg)
+For editline lib do
+
+   sudo apt-get install libedit-dev
+
+For binaryen clone the repo, edit CMakeLists.txt (see note below) and do
+
+    cmake . && make binaryen && make install
+
+Then:
+
+    make (also runs the binary, with repl.lispy as arg)
 
 Alternatively:
 
-out/lispy lispy/repl.lispy
+    out/lispy lispy/repl.lispy
 
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
+* Notes
+- libbinaryen.so is included, and so is binaryen-c.h
+  However, the shared lib has to be built with the -pthread flag. So that has to be added to the CMakeLists.txt:
+
+  add_compile_flag("-pthread")
+
+  otherwise you get an error that pthread_create symbol can't be found on running the executable lispy.
+
+  make uses an relative rpath but better is to install libbinaryen.so in /usr/lib or /usr/local/lib Manually or run make install in the binaryen repo (after editing the CMakeLists.txt)
 * TODO:
 - expand lispy stdlib somewhat
 
   Would be nice:
-- rest of mal features plus their tests
 - persistent vectors and maps, but plists could function as such
-- namespaces, keywords, loop/recur, atoms, meta data, multimethods, nil, true, false, sets, seq abstraction
+- namespaces, keywords, loop/recur, atoms, meta data, multimethods, sets, seq abstraction
 - interpreter/compiler in lispy!
 
 Plan is when memory management is under control with memory pools and reference counting to slowly build a compiler to webassembly and/or llvm IR.

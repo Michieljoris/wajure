@@ -1,4 +1,4 @@
-#include <errno.h>
+/* #include <errno.h> */
 
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -98,10 +98,10 @@ Lval* lval_read_sym(char* s, int* i) {
   /* Add Symbol or Number as lval */
   Lval* x = NULL;
   if (is_num) {
-    errno = 0;
-    long v = strtol(part, NULL, 10);
-    x = (errno != ERANGE) ? make_lval_num(v)
-                          : make_lval_err("Invalid Number %s", part);
+    long v = _strtol(part, NULL, 10);
+    x = (*merrno != ERANGE)
+            ? make_lval_num(v)
+            : make_lval_err("Invalid Number, too large or too small %s", part);
   } else if (_strcmp(part, "true") == 0) {
     x = make_lval_true();
 

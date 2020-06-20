@@ -13,6 +13,45 @@
  *
  * */
 
+int page_size = 64 * 1024;
+int max_memory;
+
+void* reserve_memory(int page_count) {
+  max_memory = page_count * page_size;
+  return calloc(1, max_memory);
+}
+
+void* simulate_wasm_memory() {}
+
+void* get_memory(int page_count) { return calloc(page_count, page_size); }
+
+void* grow_memory(void* memory, int new_page_count) {
+  void* grown_memory = realloc(memory, new_page_count * page_size);
+  return grown_memory;
+}
+
+char* memory;
+int page_count = 1;
+char* free_p;
+/* int grow_factor = 1; */
+
+void init_mempool(int initial_page_count) {
+  memory = free_p = get_memory(initial_page_count);
+}
+
+void* _calloc(int count, int size) {
+  char* next_free_p = free_p + size;
+  if (next_free_p - memory > page_count * page_size) {
+    page_count += 1;
+    char* grown_memory = grow_memory(memory, page_count);
+    if (grown_memory != memory) free_p = grown_memory;
+  }
+  free_p = next_free_p;
+  return free_p;
+}
+
+// ========================================
+
 uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   uint data_block_size = (mempool->slot_size * extra_slot_count);
   mempool->data_block_count++;
@@ -91,52 +130,3 @@ void mempool_free(Mempool* mempool, void* slot) {
   // We have one more free slot!!
   ++mempool->free_slot_count;
 }
-
-// DEBUG ========================================
-
-// Obsolete
-// Alternative version which initialises a new slot on every alloc
-
-// Add this to add_data_block fn
-//  mempool->end_of_data_p = mempool->uninitialised_p + data_block_size;
-/* void* mempool_alloc2(MemPool* mempool) { */
-/*   /\* printf("ALLOC: Free slot count: %i\n", mempool->free_slot_count); *\/
- */
-
-/*   /\* Resizing ========== *\/ */
-/*   if (mempool->free_slot_count == 0) { */
-/*     if (mempool->auto_resize) { */
-/*       /\* Ran out of space, adding extra data block *\/ */
-/*       printf("MEMPOOL: out of memory, resizing to %i\n", */
-/*              add_data_block(mempool, mempool->total_slot_count * 2)); */
-/*     } else { */
-/*       printf("MEMPOOL: out of memory, resizing is disabled!!!\n"); */
-/*       return NULL; */
-/*     } */
-/*   } */
-
-/*   void* free_slot_p; */
-
-/*   /\* Initialising a new slot ========== *\/ */
-/*   if (mempool->uninitialised_p < mempool->end_of_data_p) { */
-/*     // Address of next uninitialised data */
-/*     void** uninitialised_p = mempool->uninitialised_p + mempool->slot_size;
- */
-/*     // Put this address into where our uninitialised pointer points currently
- */
-/*     *(void**)mempool->uninitialised_p = uninitialised_p; */
-/*     // Set our unitialised pointer to this address as well. */
-/*     mempool->uninitialised_p = uninitialised_p; */
-/*   } */
-
-/*   /\* Pointer juggling ========== *\/ */
-/*   // Get pointer to next free block */
-/*   free_slot_p = (void*)mempool->free_slot_p; */
-
-/*   mempool->free_slot_count--; */
-
-/*   // Set the free block pointer to what its content points to */
-/*   mempool->free_slot_p = *(void**)mempool->free_slot_p; */
-
-/*   return free_slot_p; */
-/* } */

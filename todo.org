@@ -2,6 +2,7 @@
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
+**
 ** add rest of tests from mal
 ** put ifdefs in for system libs so we're ready for wasm
 #include <stdarg.h>  //va_start, va_list
@@ -19,7 +20,7 @@ Then there's less work for the compiler.
 *** pvector
 *** namespaces
 *** call/cc
-** compile to wasm using emscrypten
+** compile to wasm
 and link them to compiled lispy code
 runtime includes:
 - env mechanism

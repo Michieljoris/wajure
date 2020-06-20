@@ -1,5 +1,33 @@
 #include "lib.h"
 
+char *out_types[] = {"%s", "%li", "%d"};
+
+char *out_to_str(int count, long int a[]) {
+  char *result = malloc(512);
+  for (int i = 0; i < count; ++i) {
+    long int type = a[i];
+    switch (type) {
+      case TSTRING:
+        _strcpy(result, (char *)a[++i]);
+        break;
+      case TLONG:
+      case TINT:;
+        char *s = malloc(200);
+        s = itostr(s, a[++i]);
+        _strcpy(result, s);
+        free(s);
+        break;
+    }
+  }
+  return result;
+}
+
+void out_fn(int count, long int a[]) {
+  char *s = out_to_str(count, a);
+  printf("%s", s);
+  free(s);
+}
+
 // https://en.wikibooks.org/wiki/C_Programming/String_manipulation#The_more_commonly-used_string_functions
 
 /* strlen */
@@ -185,16 +213,24 @@ void *(_memmove)(void *s1, const void *s2, size_t n) {
 }
 
 #include <ctype.h>
-#include <errno.h>
-#include <limits.h>
+/* #include <errno.h> */
+/* #include <limits.h> */
 /* #include <stdlib.h> */
+#define LONG_MAX (long int)9223372036854775807
+#define LONG_MIN (-LONG_MAX - 1L)
+#define ERANGE 34
+
+int merrno2 = 0;
+int *merrno = &merrno2;
+/* int errno = 0; */
+
 /*
  * Convert a string to a long integer.
  *
  * Ignores `locale' stuff.  Assumes that the upper and lower case
  * alphabets and digits are each contiguous.
  */
-long strtol2(const char *nptr, char **endptr, int base) {
+long _strtol(const char *nptr, char **endptr, int base) {
   const char *s;
   long acc, cutoff;
   int c;
@@ -261,7 +297,7 @@ long strtol2(const char *nptr, char **endptr, int base) {
       if (acc < cutoff || (acc == cutoff && c > cutlim)) {
         any = -1;
         acc = LONG_MIN;
-        errno = ERANGE;
+        *merrno = ERANGE;
       } else {
         any = 1;
         acc *= base;
@@ -271,7 +307,7 @@ long strtol2(const char *nptr, char **endptr, int base) {
       if (acc > cutoff || (acc == cutoff && c > cutlim)) {
         any = -1;
         acc = LONG_MAX;
-        errno = ERANGE;
+        *merrno = ERANGE;
       } else {
         any = 1;
         acc *= base;
@@ -281,4 +317,21 @@ long strtol2(const char *nptr, char **endptr, int base) {
   }
   if (endptr != 0) *endptr = (char *)(any ? s - 1 : nptr);
   return (acc);
+}
+
+char *itostr(char str[], long int num) {
+  long int i, rem, len = 0, n;
+
+  n = num;
+  while (n != 0) {
+    len++;
+    n /= 10;
+  }
+  for (i = 0; i < len; i++) {
+    rem = num % 10;
+    num = num / 10;
+    str[len - (i + 1)] = rem + '0';
+  }
+  str[len] = '\0';
+  return str;
 }

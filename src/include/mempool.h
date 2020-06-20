@@ -1,9 +1,7 @@
 #ifndef __MEMORY_POOL_H_
 #define __MEMORY_POOL_H_
 
-typedef unsigned int uint;
-typedef unsigned char uchar;
-
+#include "lib.h"
 typedef struct memory_pool Mempool;
 
 typedef void (*Log)(char* fmt, ...);

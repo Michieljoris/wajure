@@ -6,7 +6,6 @@
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "lval.h"
-#include "mpc.h"
 #include "print.h"
 #include "read.h"
 
