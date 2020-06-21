@@ -13,7 +13,7 @@ deps = $(objs:.o=.d)
 # -D WASM
 CC = gcc
 CFLAGS = -pthread -g -std=c99 -Wall -Isrc/include -Ilib/include
-LDFLAGS = -Lout -Llib -Wl,-rpath=./lib -ledit -lbinaryen -lmpc
+LDFLAGS = -Lout -Llib -Wl,-rpath=./lib -ledit -lbinaryen
 
 all: out/lispy
 	out/lispy lispy/repl.lispy

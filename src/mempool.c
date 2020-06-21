@@ -81,7 +81,6 @@ void* mempool_alloc(Mempool* mempool) {
   } else {
     free_slot_p = (void*)mempool->free_slot_p;
     // Set pool's next free slot pointer to dereferenced current free slot
-    /* mempool->free_slot_p = *(void**)mempool->free_slot_p; */
     mempool->free_slot_p = get_pointer_at(mempool->free_slot_p);
   }
 
@@ -91,7 +90,6 @@ void* mempool_alloc(Mempool* mempool) {
 
 void mempool_free(Mempool* mempool, void* slot) {
   // Put the pointer to current next free slot into this to be freed slot
-  /* *(void**)slot = mempool->free_slot_p; */
   set_pointer_at(slot, mempool->free_slot_p);
   // Point our free slot pointer to the freed slot
   mempool->free_slot_p = slot;
