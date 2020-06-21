@@ -59,6 +59,7 @@ void run(int argc, char** argv) {
     printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     printf("\n");
     /* printf("ref count of result: %d\n", get_ref_count(result)); */
+    print_mempool_counts();
     printf("releasing result:");
     release(result);
     /* print_mempool_counts(); */

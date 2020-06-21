@@ -72,12 +72,12 @@ char* valid_symbol_chars =
 
 Lval* lval_read_sym(char* s, int* i) {
   /* Allocate Empty String */
-  char* part = calloc(1, 1);
+  char* part = lalloc_size(1);
 
   /* While valid identifier characters */
   while (_strchr(valid_symbol_chars, s[*i]) && s[*i] != '\0') {
     /* Append character to end of string */
-    part = realloc(part, _strlen(part) + 2);
+    part = lrealloc(part, _strlen(part) + 2);
     part[_strlen(part) + 1] = '\0';
     part[_strlen(part) + 0] = s[*i];
     (*i)++;
@@ -115,7 +115,7 @@ Lval* lval_read_sym(char* s, int* i) {
   }
 
   /* Free temp string */
-  free(part);
+  release(part);
 
   /* Return lval */
   return x;
@@ -223,6 +223,8 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
     lispy_fn = "splice-unquote";
     (*i)++;
   };
+  char* lsym = lalloc_size(_strlen(lispy_fn));
+  _strcpy(lsym, lispy_fn);
   Lval* next_expression = lval_read(s, i);
   if (!next_expression)
     return make_lval_err("The reader macro \"%s\" has nothing to (un)quote.",
@@ -231,7 +233,8 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   Lval* lval = make_lval_list();
   Cell* cell = make_cell();
   lval->head = cell;
-  cell->car = make_lval_sym(lispy_fn);
+  cell->car = make_lval_sym(lsym);
+  release(lsym);
   cell->cdr = make_cell();
   cell->cdr->car = next_expression;
   return lval;

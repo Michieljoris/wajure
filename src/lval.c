@@ -17,12 +17,11 @@ Cell* make_cell() {
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
   /* *lval = (Lval){ */
-  /*     .type = LVAL_SYMBOL, .subtype = -1, .sym = calloc(1, _strlen(s) + 1)};
-   */
-  *lval = (Lval){
-      .type = LVAL_SYMBOL, .subtype = -1, .sym = lalloc_size(_strlen(s) + 1)};
-  ;
-  _strcpy(lval->sym, s);
+  /*     .type = LVAL_SYMBOL, .subtype = -1, .sym = lalloc_size(_strlen(s) +
+   * 1)}; */
+
+  *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .sym = retain(s)};
+  /* _strcpy(lval->sym, s); */
   return lval;
 }
 
@@ -111,11 +110,11 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = lalloc_size(512)};
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
   va_list va;
   va_start(va, fmt);
   vsnprintf(lval->err, 511, fmt, va);
-  lval->err = lrealloc(lval->err, _strlen(lval->err) + 1);
+  lval->err = realloc(lval->err, _strlen(lval->err) + 1);
   va_end(va);
   return lval;
 }

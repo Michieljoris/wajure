@@ -181,24 +181,11 @@ void free_lispy_mempools() {
   /* free(mempools); */
 }
 
-char* type_to_name(int type) {
-  switch (type) {
-    case LVAL:
-      return "LVAL";
-      break;
-    case LENV:
-      return "LENV";
-      break;
-    case CELL:
-      return "CELL";
-      break;
-    case ITER:
-      return "ITER";
-      break;
-    default:
-      return "huuuuh???";
-  }
-}
+char* type_names[] = {"LVAL",     "LENV",    "CELL",    "ITER",
+                      "INTERNAL", "CHAR8",   "CHAR16",  "CHAR32",
+                      "CHAR64",   "CHAR128", "CHAR256", "CHAR512"};
+
+char* type_to_name(int type) { return type_names[type]; }
 
 int get_mempool_chartype(int size) {
   int type;
@@ -294,6 +281,14 @@ void print_mempool_counts() {
   print_mempool_free(LVAL);
   print_mempool_free(CELL);
   print_mempool_free(ITER);
+  print_mempool_free(INTERNAL);
+  print_mempool_free(CHAR512);
+  print_mempool_free(CHAR256);
+  print_mempool_free(CHAR128);
+  print_mempool_free(CHAR64);
+  print_mempool_free(CHAR32);
+  print_mempool_free(CHAR16);
+  print_mempool_free(CHAR8);
 }
 
 int get_ref_count(void* data_p) { return get_slot_p(data_p)->ref_count; }
