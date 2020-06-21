@@ -152,6 +152,10 @@ There's a repl, but compilation is fast enough to make for a faster feedback loo
   make uses an relative rpath but better is to install libbinaryen.so in
   /usr/lib or /usr/local/lib manually or run make install in the binaryen repo
   (after editing the CMakeLists.txt)
+
+ - when using the included libbinaryen.so run lispy from the repo's root dir
+   since it's linked relatively from there by rpath.
+
 * TODO:
 - expand lispy stdlib somewhat
 
