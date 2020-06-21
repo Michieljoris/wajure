@@ -40,7 +40,7 @@ void destroy_lval(void* data) {
   if (debug) lval_debugln(lval);
   switch (lval->type) {
     case LVAL_SYMBOL:
-      free(lval->sym);
+      release(lval->sym);
       break;
     case LVAL_COLLECTION:
       release(lval->head);
@@ -50,7 +50,7 @@ void destroy_lval(void* data) {
         case NUMBER:
           break;
         case STRING:
-          free(lval->str);
+          release(lval->str);
           break;
         case LNIL:
         case LTRUE:
@@ -62,7 +62,7 @@ void destroy_lval(void* data) {
       break;
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
-        free(lval->func_name);
+        release(lval->func_name);
       } else {
         if (debug) ddebug("\n freeing params:");
         release(lval->params);
@@ -78,7 +78,7 @@ void destroy_lval(void* data) {
       }
       break;
     case LVAL_ERR:
-      free(lval->err);
+      release(lval->err);
       break;
     default:
       error("Can't delete unknown type: %d\n", lval->type);
@@ -106,6 +106,12 @@ Destructor destructors[SLOT_TYPE_COUNT] = {destroy_lval, destroy_lenv,
                                            destroy_cell, destroy_iter};
 
 void lispy_mempool_log(int type, char* msg) {
+  if (type >= CHAR8) {
+    int power_of_2 = type - CHAR8 + 3;
+    int size = 1 << power_of_2;
+    printf("CHAR%d %s", size, msg);
+    return;
+  }
   printf("%s %s", slot_type_str[type], msg);
 }
 
@@ -113,9 +119,9 @@ void lispy_mempool_log(int type, char* msg) {
   void TYPE##_mempool_log(char* fmt, ...) { \
     va_list va;                             \
     va_start(va, fmt);                      \
-    char* msg = malloc(512);                \
+    char* msg = lalloc_size(512);           \
     vsnprintf(msg, 511, fmt, va);           \
-    msg = realloc(msg, _strlen(msg) + 1);   \
+    msg = lrealloc(msg, _strlen(msg) + 1);  \
     lispy_mempool_log(type, msg);           \
   }
 

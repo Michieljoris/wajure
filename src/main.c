@@ -95,6 +95,7 @@ void _printf2(char* format, int n, ...) {
   for (int i = 0; i < n; ++i) {
     printf("%d: %d\n", *type++, va_arg(va, int));
   }
+  va_end(va);
   release(types);
 }
 
@@ -131,7 +132,7 @@ int main(int argc, char** argv) {
   /* make_bmodule(); */
 
   // Run lispy interpreterkk
-  /* run(argc, argv); */
+  run(argc, argv);
 
   free_malloc();
   return 0;

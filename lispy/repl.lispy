@@ -8,6 +8,7 @@
 (slurp "lispy/test/test_8_macros.lispy")
 (slurp "lispy/test/test_9_try.lispy")
 
+;; foobar
 ;; (t ( (fn [& more] (count more)) 1 2 3)
 ;;    3)
 ;; (t ( (fn [& more] (list? more)) 1 2 3)
