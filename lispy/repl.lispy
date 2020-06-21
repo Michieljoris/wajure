@@ -8,6 +8,9 @@
 (slurp "lispy/test/test_8_macros.lispy")
 (slurp "lispy/test/test_9_try.lispy")
 
+(print "Hello!!" (+ 2 2))
+
+"ok"
 ;; foobar
 ;; (t ( (fn [& more] (count more)) 1 2 3)
 ;;    3)

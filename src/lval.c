@@ -75,8 +75,9 @@ Lval* make_lval_str(char* s) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL,
                  .subtype = STRING,
-                 .str = lalloc_size(_strlen(s) + 1)};
-  _strcpy(lval->str, s);
+                 /* .str = lalloc_size(_strlen(s) + 1)}; */
+                 .str = retain(s)};
+  /* _strcpy(lval->str, s); */
   return lval;
 }
 
@@ -88,9 +89,10 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
                  .fun = func,
-                 .func_name = lalloc_size(_strlen(func_name) + 1)};
+                 /* .func_name = lalloc_size(_strlen(func_name) + 1)}; */
+                 .func_name = retain(func_name)};
 
-  _strcpy(lval->func_name, func_name);
+  /* _strcpy(lval->func_name, func_name); */
   return lval;
 }
 
@@ -110,11 +112,11 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = calloc(1, 512)};
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = lalloc_size(512)};
   va_list va;
   va_start(va, fmt);
   vsnprintf(lval->err, 511, fmt, va);
-  lval->err = realloc(lval->err, _strlen(lval->err) + 1);
+  lval->err = lrealloc(lval->err, _strlen(lval->err) + 1);
   va_end(va);
   return lval;
 }

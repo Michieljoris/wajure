@@ -122,7 +122,7 @@ Lval* lval_read_sym(char* s, int* i) {
 }
 Lval* lval_read_str(char* s, int* i) {
   /* Allocate empty string */
-  char* part = calloc(1, 1);
+  char* part = lalloc_size(1);
 
   /* More forward one step past initial " character */
   (*i)++;
@@ -131,7 +131,7 @@ Lval* lval_read_str(char* s, int* i) {
 
     /* If end of input then there is an unterminated string literal */
     if (c == '\0') {
-      free(part);
+      release(part);
       return make_lval_err("Unexpected end of input");
     }
 
@@ -142,13 +142,13 @@ Lval* lval_read_str(char* s, int* i) {
       if (_strchr(lval_str_unescapable, s[*i])) {
         c = lval_str_unescape(s[*i]);
       } else {
-        free(part);
+        release(part);
         return make_lval_err("Invalid escape sequence \\%c", s[*i]);
       }
     }
 
     /* Append character to string */
-    part = realloc(part, _strlen(part) + 2);
+    part = lrealloc(part, _strlen(part) + 2);
     part[_strlen(part) + 1] = '\0';
     part[_strlen(part) + 0] = c;
     (*i)++;
@@ -159,7 +159,7 @@ Lval* lval_read_str(char* s, int* i) {
   Lval* x = make_lval_str(part);
 
   /* free temp string */
-  free(part);
+  release(part);
 
   return x;
 }

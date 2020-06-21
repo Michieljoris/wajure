@@ -3,6 +3,7 @@
 #include "env.h"
 #include "io.h"
 #include "lib.h"
+#include "lispy_mempool.h"
 #include "lval.h"
 
 static char* mpcf_escape_new(char* x, const char* input, const char** output) {
@@ -10,7 +11,7 @@ static char* mpcf_escape_new(char* x, const char* input, const char** output) {
   int found;
   char buff[2];
   char* s = x;
-  char* y = calloc(1, 1);
+  char* y = lalloc_size(1);
 
   while (*s) {
     i = 0;
@@ -18,7 +19,7 @@ static char* mpcf_escape_new(char* x, const char* input, const char** output) {
 
     while (output[i]) {
       if (*s == input[i]) {
-        y = realloc(y, _strlen(y) + _strlen(output[i]) + 1);
+        y = lrealloc(y, _strlen(y) + _strlen(output[i]) + 1);
         _strcat(y, output[i]);
         found = 1;
         break;
@@ -27,7 +28,7 @@ static char* mpcf_escape_new(char* x, const char* input, const char** output) {
     }
 
     if (!found) {
-      y = realloc(y, _strlen(y) + 2);
+      y = lrealloc(y, _strlen(y) + 2);
       buff[0] = *s;
       buff[1] = '\0';
       _strcat(y, buff);
@@ -46,26 +47,33 @@ static const char* mpc_escape_output_c[] = {"\\a", "\\b",  "\\f", "\\n",
                                             "\\r", "\\t",  "\\v", "\\\\",
                                             "\\'", "\\\"", "\\0", NULL};
 
-char* mpcf_escape(char* x) {
-  char* y = mpcf_escape_new(x, mpc_escape_input_c, mpc_escape_output_c);
-  free(x);
-  return y;
-}
+/* char* mpcf_escape(char* x) { */
+/*   char* y = mpcf_escape_new(x, mpc_escape_input_c, mpc_escape_output_c); */
+/*   free(x); */
+/*   return y; */
+/* } */
 
 void lval_print_str(Lval* lval) {
-  char* escaped = malloc(_strlen(lval->str) + 1);
-  _strcpy(escaped, lval->str);
-  escaped = mpcf_escape(escaped);
+  /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
+  /* _strcpy(escaped, lval->str); */
+  /* char* to_escape = retain(lval->str); */
+  /* escaped = mpcf_escape(escaped); */
+  char* escaped =
+      mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c);
   printf("\"%s\"", escaped);
-  free(escaped);
+  release(escaped);
 }
 
 void lval_pr_str(Lval* lval) {
-  char* escaped = malloc(_strlen(lval->str) + 1);
-  _strcpy(escaped, lval->str);
-  escaped = mpcf_escape(escaped);
+  char* escaped =
+      mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c);
   printf("%s", escaped);
-  free(escaped);
+  release(escaped);
+  /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
+  /* _strcpy(escaped, lval->str); */
+  /* escaped = mpcf_escape(escaped); */
+  /* printf("%s", escaped); */
+  /* release(escaped); */
 }
 
 void lval_collection_print(Lval* lval, char open, char close) {

@@ -23,6 +23,104 @@ Env is a association list.
 
 WIP: getting the whole thing to compile to webassembly (without Emscripten!) so we have a lispy interpreter in the browser.
 
+Idea is to remove all dependencies on libc or any other libray which depends on
+libc since we don't have it in the browser. Or rather, as a challenge we try not
+to rely on libc at all. Of course you can compile C code to wasm using
+Emscripten which will fill in the blanks. Or rely on some minimal implementation
+of libc. But in essence for a language interpreter you only need two things:
+memory and io, both of which can be supplied by a wasm runtime through imports.
+This means however that memory management needs to be 'in house'. And producing
+output will either have to be very basic ie. numbers since this the only real
+datatype in wasm, or with some effort strings (as a sequence of numbers). To
+solve the second problem there's a printf libray that is a dropin for the printf
+from stdio.h bu which has no dependency other than an external putchar. The
+first problem needs a bit more consideration.
+
+Both on the x86 and the wasm platform it's possible to get a memory block
+'wholesale'. On x86 it's a simple malloc. On wasm you get memory in blocks, or
+pages of 64kb. So the abstraction needs to be built on top that.
+
+To begin with a reasonable block of memory is reserved. The program can then
+reserve memory in two ways:
+
+1. Request a permanent arbitrarily sized block (smaller than reserved memory).
+   This block cannot be freed and is not tracked at all by the system. Memory
+   like this is useful for long lived (life of the program) memory, however they
+   can be requested at any time and will be doled out from the big block of
+   initially reserved memory. To release this memory you would have to to free
+   the whole memory pool and start again (not possible on wasm platform though).
+
+2. Request a fixed size block of memory. These blocks can be the size of a
+   particular type, or of some predetermined size (like 8, 32, 64 etc bytes).
+   The blocks are reference counted. The program needs to perform proper retain
+   and release calls on the pointers to the blocks as they get assigned/removed
+   from other objects. Since these blocks have a fixed size it's possible to
+   have a rather efficiently managed memory pool where releasing and acquiring
+   blocks of memory is basically just a bit of pointer juggling where released
+   slots get reused.
+
+For each pool of fixed sized objects an initial number of slots can be reserved.
+These pools will dynamically grow as the program requests more of the type of
+objects that the pool is designed for. If the memory management system runs out
+of memory it'll request more from the underlying platform. These requested and
+supplied blocks of memory do not need to be contiguous.
+
+There's a couple of advantages to this system as a whole:
+
+- Using reference counted objects is fast. Or should be. This is useful for
+  small objects of which there might be many. There's the issue that both the
+  system and the program need to keep track and manage the reference count. In the first
+  case this might actually have an effect on performance (since we need to
+  continuously increment and decrement counters and test whether act on them
+  when they go to zero). Where the program is concerned, making sure retain and
+  release is called on objects at the right moments can be tricky. But see the next point.
+
+- You don't /have/ to use reference counted objects. It's possible to just get a
+  block of memory and use and reuse it. Useful not only for long lived objects,
+  but also for reading files, loading images etc. They can also be realloced,
+  but this does not free the original block (it's still useable by the program
+  though).
+
+- The whole memory management system is transparent. Meaning, it's possible to
+  debug and actually 'see' what's going on. This mitigates somewhat the problem
+  of calling retain/release properly.
+
+- The only system dependent call is the (abstracted away) request for memory
+  from the underlying platform. All requests for memory from the program are
+  platform independent.
+
+- Not so much an advantage but a feature: the releasing of objects is recursive.
+  Meaning, if a ref count is zero all the objects it has pointers to will also
+  be checked and released if their ref count is zero.
+
+- Another feature: it's possible to request an arbitrarily sized object but only
+  to a maximum size. Under the cover however a selection is made from an memory
+  pool with appropriately sized objects. Waste will be at most the space of the
+  object itself, but on average a third of the object (eg. any size between 128
+  and 256 will be allocated 256 bytes, which will be at most 127 bytes waste and
+  at minimum 0, so with even distribution of sizes requested will mean on
+  average 63-64 bytes waste for this memory pool). The smaller the objects that
+  are requested the less the wastage actually matters. This is suitable for
+  string manipulation for example.
+
+There's a few disadvantages:
+
+- Memory only ever grows. Once a slot is released it's available again for
+  allocation, but the total memory in use will not shrink. So this is not
+  useable for programs that might peak in requiring memory but most of the time
+  need much less, so for longer running programs with unsteady and unpredictable
+  workload. It's more suitable for programs that might or might not have a high
+  requirement for memory but that will get shut down once the job is done. Or
+  that don't need to hang on to state from job to job and can rest their memory
+  pool.
+
+- It's not suitable for programs that require many different arbitrarily (big)
+  sized objects which need to be freed at some point for memory space reasons.
+  The system works for smaller arbitrarily sized objects, but there's some
+  wastage there though.
+
+
+
 * Run
 For editline lib do
 
@@ -44,13 +142,16 @@ There's a repl, but compilation is fast enough to make for a faster feedback loo
 
 * Notes
 - libbinaryen.so is included, and so is binaryen-c.h
+
   However, the shared lib has to be built with the -pthread flag. So that has to be added to the CMakeLists.txt:
 
   add_compile_flag("-pthread")
 
   otherwise you get an error that pthread_create symbol can't be found on running the executable lispy.
 
-  make uses an relative rpath but better is to install libbinaryen.so in /usr/lib or /usr/local/lib Manually or run make install in the binaryen repo (after editing the CMakeLists.txt)
+  make uses an relative rpath but better is to install libbinaryen.so in
+  /usr/lib or /usr/local/lib manually or run make install in the binaryen repo
+  (after editing the CMakeLists.txt)
 * TODO:
 - expand lispy stdlib somewhat
 
