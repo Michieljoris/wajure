@@ -41,6 +41,7 @@ void destroy_lval(void* data) {
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->sym);
+      /* free(lval->sym); */
       break;
     case LVAL_COLLECTION:
       release(lval->head);
@@ -50,6 +51,7 @@ void destroy_lval(void* data) {
         case NUMBER:
           break;
         case STRING:
+          /* free(lval->str); */
           release(lval->str);
           break;
         case LNIL:
@@ -62,6 +64,7 @@ void destroy_lval(void* data) {
       break;
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
+        /* free(lval->func_name); */
         release(lval->func_name);
       } else {
         if (debug) ddebug("\n freeing params:");
@@ -78,6 +81,7 @@ void destroy_lval(void* data) {
       }
       break;
     case LVAL_ERR:
+      /* free(lval->err); */
       release(lval->err);
       break;
     default:
@@ -119,16 +123,18 @@ void lispy_mempool_log(int type, char* msg) {
   void TYPE##_mempool_log(char* fmt, ...) { \
     va_list va;                             \
     va_start(va, fmt);                      \
-    char* msg = lalloc_size(512);           \
+    char* msg = lalloc_type(INTERNAL);      \
     vsnprintf(msg, 511, fmt, va);           \
     msg = lrealloc(msg, _strlen(msg) + 1);  \
     lispy_mempool_log(type, msg);           \
+    release(msg);                           \
   }
 
 MEMPOOL_LOG(lval, LVAL);
 MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
 MEMPOOL_LOG(iter, ITER);
+MEMPOOL_LOG(internal, INTERNAL);
 MEMPOOL_LOG(char512, CHAR512);
 MEMPOOL_LOG(char256, CHAR256);
 MEMPOOL_LOG(char128, CHAR128);
@@ -142,6 +148,7 @@ MEMPOOL_LOG(char8, CHAR8);
                                      MEMPOOL_AUTO_RESIZE, type##_mempool_log);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
+  int internal_count = 1;  // just for the mempool log
   int char512_count = 10;
   int char256_count = 10;
   int char128_count = 10;
@@ -156,6 +163,7 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   MEMPOOL(LENV, sizeof(Lenv), lenv)
   MEMPOOL(CELL, sizeof(Cell), cell)
   MEMPOOL(ITER, sizeof(Cell), cell)
+  MEMPOOL(INTERNAL, 512, internal)
   MEMPOOL(CHAR512, 512, char512)
   MEMPOOL(CHAR256, 256, char256)
   MEMPOOL(CHAR128, 128, char128)
@@ -200,13 +208,17 @@ int get_mempool_chartype(int size) {
   } else {
     if (size & 512)
       type = CHAR512;
+    else if (size & 256)
+      type = CHAR512;
     else if (size & 128)
-      type = CHAR128;
+      type = CHAR256;
     else if (size & 64)
-      type = CHAR64;
+      type = CHAR128;
     else if (size & 32)
-      type = CHAR32;
+      type = CHAR64;
     else if (size & 16)
+      type = CHAR32;
+    else if (size & 8)
       type = CHAR16;
     else
       type = CHAR8;

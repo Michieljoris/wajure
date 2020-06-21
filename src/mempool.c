@@ -52,11 +52,13 @@ void free_mempool(Mempool* mempool) {
   free(mempool);
 }
 
+int c = 0;
 // Only initialises a new slot when needed.
 void* mempool_alloc(Mempool* mempool) {
   // Resizing
-  if (mempool->free_slot_count == 0) {
+  if (mempool->free_slot_count == 0 && c++ < 30) {
     if (mempool->auto_resize) {
+      printf("resizing\n");
       mempool->log("MEMPOOL: data block full, resizing from %i slots to %i\n",
                    mempool->total_slot_count, mempool->total_slot_count * 2);
       add_data_block(mempool, mempool->total_slot_count);

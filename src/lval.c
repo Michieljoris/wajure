@@ -16,8 +16,12 @@ Cell* make_cell() {
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
+  /* *lval = (Lval){ */
+  /*     .type = LVAL_SYMBOL, .subtype = -1, .sym = calloc(1, _strlen(s) + 1)};
+   */
   *lval = (Lval){
       .type = LVAL_SYMBOL, .subtype = -1, .sym = lalloc_size(_strlen(s) + 1)};
+  ;
   _strcpy(lval->sym, s);
   return lval;
 }

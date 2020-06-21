@@ -102,6 +102,30 @@ void _printf2(char* format, int n, ...) {
 #define printf2(format, ...) \
   _printf2(format, PP_NARG(__VA_ARGS__), __VA_ARGS__);
 
+int get_mempool_chartype2(int size) {
+  int type;
+  if (size > MAX_CHAR_SIZE) {
+    error("Can't allocate %d bytes, max is %d", size, MAX_CHAR_SIZE);
+    type = CHAR512;
+  } else {
+    if (size & 256)
+      type = CHAR512;
+    else if (size & 128)
+      type = CHAR256;
+    else if (size & 64)
+      type = CHAR128;
+    else if (size & 32)
+      type = CHAR64;
+    else if (size & 16)
+      type = CHAR32;
+    else if (size & 8)
+      type = CHAR16;
+    else
+      type = CHAR8;
+  }
+  return type;
+}
+
 int main(int argc, char** argv) {
   init_malloc(1, 10, 64 * 1024);
   /* somef(1, 2, 3); */
@@ -110,17 +134,17 @@ int main(int argc, char** argv) {
   /* printf2(format, 1, 2, 3); */
   init_lispy_mempools(800, 800, 800);
   /* printf2("%d %s %p", 1, 2, 99999); */
-  printf("%d\n", sizeof(char*));
+  /* printf("%d\n", sizeof(char*)); */
   /* f(D(1), D(2)); */
   /* f(int_(123), str_("hello")); */
   /* char buf[256]; */
   /* char* buf = malloc(500); */
   /* stringf(buf, "foobar %d", 123); */
-  char* buf = lalloc_size(512);
-  _strcpy(buf, "foo");
-  printf("%d %s\n", _strlen(buf), buf);
-  char* buf2 = lrealloc(buf, 4);
-  printf("%d %s", _strlen(buf2), buf2);
+  /* char* buf = lalloc_size(512); */
+  /* _strcpy(buf, "foo"); */
+  /* printf("%d %s\n", _strlen(buf), buf); */
+  /* char* buf2 = lrealloc(buf, 4); */
+  /* printf("%d %s", _strlen(buf2), buf2); */
   /* test_printf(); */
   /* sprintf(buf, "hello"); */
   /* printf("%s\n", buf); */
@@ -130,6 +154,20 @@ int main(int argc, char** argv) {
   /* printf("numarg: %li", NUMARGS((long)"a", 2, 3)); */
   /* printf("%d", (PP_NARG("a", b))); */
   /* make_bmodule(); */
+  /* printf("%b , %b: ", 33, 300 & 256); */
+  /* lalloc_size(300); */
+
+  /* int i = 100; */
+  /* while (i--) { */
+  /*   lalloc_size(100); */
+  /* } */
+
+  /* int i = 20; */
+  /* while (i--) { */
+  /*   /\* make_lval_sym("foo"); *\/ */
+  /*   printf(" [%d] ", 20 - i); */
+  /*   lalloc_size(512); */
+  /* } */
 
   // Run lispy interpreterkk
   run(argc, argv);
