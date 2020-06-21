@@ -9,18 +9,17 @@ enum {
   LENV,
   CELL,
   ITER,
-  CHAR512,
-  CHAR256,
-  CHAR128,
+  CHAR8,
+  CHAR16,
   CHAR64,
   CHAR32,
-  CHAR16,
-  CHAR8,
+  CHAR128,
+  CHAR256,
+  CHAR512,
   SLOT_TYPE_COUNT
 };
 
 #define MAX_CHAR_SIZE 512
-/* #define SLOT_TYPE_COUNT SLOT_TYPE_END - LVAL */
 
 void clean_up(void* data);
 #define scoped __attribute__((__cleanup__(clean_up)))
@@ -30,6 +29,8 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count);
 void free_lispy_mempools();
 
 void* lalloc_type(int type);
+void* lalloc_size(int size);
+void* lrealloc(void* data_p, int size);
 void* retain(void* data_p);
 void release(void* data_p);
 typedef void (*Destructor)(void*);

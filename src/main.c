@@ -108,17 +108,22 @@ int main(int argc, char** argv) {
   /* printf("%d ", *types); */
   /* printf2(format, 1, 2, 3); */
   init_lispy_mempools(800, 800, 800);
-  printf2("%d %s %p", 1, 2, 3);
+  /* printf2("%d %s %p", 1, 2, 99999); */
   printf("%d\n", sizeof(char*));
   /* f(D(1), D(2)); */
   /* f(int_(123), str_("hello")); */
   /* char buf[256]; */
-  char* buf = malloc(500);
+  /* char* buf = malloc(500); */
   /* stringf(buf, "foobar %d", 123); */
-
+  char* buf = lalloc_size(512);
+  _strcpy(buf, "foo");
+  printf("%d %s\n", _strlen(buf), buf);
+  char* buf2 = lrealloc(buf, 4);
+  printf("%d %s", _strlen(buf2), buf2);
   /* test_printf(); */
-  sprintf(buf, "hello");
-  printf("%s\n", buf);
+  /* sprintf(buf, "hello"); */
+  /* printf("%s\n", buf); */
+
   /* long int a[] = {D(12), S("hello"), L(123)}; */
   /* out(a); */
   /* printf("numarg: %li", NUMARGS((long)"a", 2, 3)); */
@@ -126,7 +131,7 @@ int main(int argc, char** argv) {
   /* make_bmodule(); */
 
   // Run lispy interpreterkk
-  run(argc, argv);
+  /* run(argc, argv); */
 
   free_malloc();
   return 0;

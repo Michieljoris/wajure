@@ -29,7 +29,7 @@ typedef struct {
 
 // Alignment
 #define PAD(siz) ((siz) + sizeof(int) - ((siz) % sizeof(int)))
-#define SLOT_SIZE(type) PAD(sizeof(Slot)) + PAD(sizeof(type))
+#define SLOT_SIZE(type_size) PAD(sizeof(Slot)) + PAD(type_size)
 
 void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
@@ -102,8 +102,8 @@ void destroy_iter(void* cell) {
 // The order and number of these types needs to match with the enum in
 // lispy_mempool.h!
 char* slot_type_str[] = {"LVAL", "LENV", "CELL", "ITER"};
-Destructor destructors[] = {destroy_lval, destroy_lenv, destroy_cell,
-                            destroy_iter};
+Destructor destructors[SLOT_TYPE_COUNT] = {destroy_lval, destroy_lenv,
+                                           destroy_cell, destroy_iter};
 
 void lispy_mempool_log(int type, char* msg) {
   printf("%s %s", slot_type_str[type], msg);
@@ -131,8 +131,8 @@ MEMPOOL_LOG(char32, CHAR32);
 MEMPOOL_LOG(char16, CHAR16);
 MEMPOOL_LOG(char8, CHAR8);
 
-#define MEMPOOL(typeint, Type, type)                                \
-  mempools[typeint] = create_mempool(SLOT_SIZE(Type), type##_count, \
+#define MEMPOOL(typeint, type_size, type)                                \
+  mempools[typeint] = create_mempool(SLOT_SIZE(type_size), type##_count, \
                                      MEMPOOL_AUTO_RESIZE, type##_mempool_log);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
@@ -146,17 +146,17 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   int mempool_count = SLOT_TYPE_COUNT;
   mempools = _malloc(sizeof(Mempool*) * mempool_count);
 
-  MEMPOOL(LVAL, Lval, lval)
-  MEMPOOL(LENV, Lenv, lenv)
-  MEMPOOL(CELL, Cell, cell)
-  MEMPOOL(ITER, Cell, cell)
-  MEMPOOL(CHAR512, char, char512)
-  MEMPOOL(CHAR256, char, char256)
-  MEMPOOL(CHAR128, char, char128)
-  MEMPOOL(CHAR64, char, char64)
-  MEMPOOL(CHAR32, char, char32)
-  MEMPOOL(CHAR16, char, char16)
-  MEMPOOL(CHAR8, char, char8)
+  MEMPOOL(LVAL, sizeof(Lval), lval)
+  MEMPOOL(LENV, sizeof(Lenv), lenv)
+  MEMPOOL(CELL, sizeof(Cell), cell)
+  MEMPOOL(ITER, sizeof(Cell), cell)
+  MEMPOOL(CHAR512, 512, char512)
+  MEMPOOL(CHAR256, 256, char256)
+  MEMPOOL(CHAR128, 128, char128)
+  MEMPOOL(CHAR64, 64, char64)
+  MEMPOOL(CHAR32, 32, char32)
+  MEMPOOL(CHAR16, 16, char16)
+  MEMPOOL(CHAR8, 8, char8)
 }
 
 void free_lispy_mempools() {
@@ -186,7 +186,7 @@ char* type_to_name(int type) {
   }
 }
 
-int get_mempool_type(int size) {
+int get_mempool_chartype(int size) {
   int type;
   if (size > MAX_CHAR_SIZE) {
     error("Can't allocate %d bytes, max is %d", size, MAX_CHAR_SIZE);
@@ -220,7 +220,7 @@ void* lalloc_type(int type) {
 }
 
 void* lalloc_size(int size) {
-  int type = get_mempool_type(size);
+  int type = get_mempool_chartype(size);
   return lalloc_type(type);
 }
 
@@ -238,16 +238,20 @@ static Slot* get_slot_p(void* data_p) {
   return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
 }
 
-void* lrealloc(int size, void* data_p) {
+void* lrealloc(void* data_p, int size) {
   Slot* slot = get_slot_p(data_p);
-  int type = get_mempool_type(size);
-  if (type == slot->type) return data_p;
+  int chartype = get_mempool_chartype(size);
+  /* printf("old slot type=%d\n", slot->type); */
+  /* printf("new char type=%d\n", chartype); */
+  if (chartype == slot->type) return data_p;
 
-  void* new_data_p = lalloc_type(type);
+  void* new_data_p = lalloc_type(chartype);
+  int power_of_2 = chartype - CHAR8 + 3;
+  int new_size = 1 << power_of_2;
+  void* from_p = data_p;
   void* to_p = new_data_p;
-  // TODO!!!!!! get size of type CHARXXX
-  int old_size = 0;
-  while (old_size--) copy_byte(new_data_p++, to_p++);
+  /* printf("%d new size=%d\n", power_of_2, new_size); */
+  while (new_size--) copy_byte(from_p++, to_p++);
   release(data_p);
   return new_data_p;
 }
