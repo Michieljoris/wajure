@@ -1,4 +1,4 @@
-#include <errno.h>
+/* #include <errno.h> */
 
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -72,12 +72,12 @@ char* valid_symbol_chars =
 
 Lval* lval_read_sym(char* s, int* i) {
   /* Allocate Empty String */
-  char* part = calloc(1, 1);
+  char* part = lalloc_size(1);
 
   /* While valid identifier characters */
   while (_strchr(valid_symbol_chars, s[*i]) && s[*i] != '\0') {
     /* Append character to end of string */
-    part = realloc(part, _strlen(part) + 2);
+    part = lrealloc(part, _strlen(part) + 2);
     part[_strlen(part) + 1] = '\0';
     part[_strlen(part) + 0] = s[*i];
     (*i)++;
@@ -98,10 +98,10 @@ Lval* lval_read_sym(char* s, int* i) {
   /* Add Symbol or Number as lval */
   Lval* x = NULL;
   if (is_num) {
-    errno = 0;
-    long v = strtol(part, NULL, 10);
-    x = (errno != ERANGE) ? make_lval_num(v)
-                          : make_lval_err("Invalid Number %s", part);
+    long v = _strtol(part, NULL, 10);
+    x = (*merrno != ERANGE)
+            ? make_lval_num(v)
+            : make_lval_err("Invalid Number, too large or too small %s", part);
   } else if (_strcmp(part, "true") == 0) {
     x = make_lval_true();
 
@@ -115,14 +115,14 @@ Lval* lval_read_sym(char* s, int* i) {
   }
 
   /* Free temp string */
-  free(part);
+  release(part);
 
   /* Return lval */
   return x;
 }
 Lval* lval_read_str(char* s, int* i) {
   /* Allocate empty string */
-  char* part = calloc(1, 1);
+  char* part = lalloc_size(1);
 
   /* More forward one step past initial " character */
   (*i)++;
@@ -131,7 +131,7 @@ Lval* lval_read_str(char* s, int* i) {
 
     /* If end of input then there is an unterminated string literal */
     if (c == '\0') {
-      free(part);
+      release(part);
       return make_lval_err("Unexpected end of input");
     }
 
@@ -142,13 +142,13 @@ Lval* lval_read_str(char* s, int* i) {
       if (_strchr(lval_str_unescapable, s[*i])) {
         c = lval_str_unescape(s[*i]);
       } else {
-        free(part);
+        release(part);
         return make_lval_err("Invalid escape sequence \\%c", s[*i]);
       }
     }
 
     /* Append character to string */
-    part = realloc(part, _strlen(part) + 2);
+    part = lrealloc(part, _strlen(part) + 2);
     part[_strlen(part) + 1] = '\0';
     part[_strlen(part) + 0] = c;
     (*i)++;
@@ -159,7 +159,7 @@ Lval* lval_read_str(char* s, int* i) {
   Lval* x = make_lval_str(part);
 
   /* free temp string */
-  free(part);
+  release(part);
 
   return x;
 }
@@ -223,6 +223,8 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
     lispy_fn = "splice-unquote";
     (*i)++;
   };
+  char* lsym = lalloc_size(_strlen(lispy_fn));
+  _strcpy(lsym, lispy_fn);
   Lval* next_expression = lval_read(s, i);
   if (!next_expression)
     return make_lval_err("The reader macro \"%s\" has nothing to (un)quote.",
@@ -231,7 +233,8 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   Lval* lval = make_lval_list();
   Cell* cell = make_cell();
   lval->head = cell;
-  cell->car = make_lval_sym(lispy_fn);
+  cell->car = make_lval_sym(lsym);
+  release(lsym);
   cell->cdr = make_cell();
   cell->cdr->car = next_expression;
   return lval;

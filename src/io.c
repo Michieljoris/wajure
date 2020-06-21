@@ -1,6 +1,8 @@
 #include "io.h"
 
+#include "lib.h"
+
 int debug_level = LOG_LEVEL_INFO;
-int* log_level = &debug_level;
+int *log_level = &debug_level;
 
 void set_log_level(int level) { *log_level = level; }

@@ -6,7 +6,7 @@
 #include "lval.h"
 
 Lenv* lenv_new(void) {
-  Lenv* env = lalloc(LENV);
+  Lenv* env = lalloc_type(LENV);
   env->parent_env = NULL;
   env->kv = NIL;
   return env;

@@ -1,6 +1,10 @@
 #include "lib.h"
 
+
 // https://en.wikibooks.org/wiki/C_Programming/String_manipulation#The_more_commonly-used_string_functions
+
+
+
 
 /* strlen */
 size_t(_strlen)(const char *s) {
@@ -184,17 +188,46 @@ void *(_memmove)(void *s1, const void *s2, size_t n) {
   return s1;
 }
 
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-/* #include <stdlib.h> */
+/* #include <ctype.h> */
+
+int merrno2 = 0;
+int *merrno = &merrno2;
+/* int errno = 0; */
+
+int isalpha(int c)
+{
+   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+int isupper(int c)
+{
+   return c >= 'A' && c <= 'Z';
+}
+
+int isdigit(int c)
+{
+   return (c >= '0' && c <= '9');
+}
+
+int isspace(int c)
+{
+   return c == ' ' || c == '\t'; // || whatever other char you consider space
+}
+
+
+/* int tolower(int c) */
+/* { */
+/*    if ( !isalpha(c) ) return c; */
+/*    return (c >= 'A' && c <= 'Z') ? c - 'A' : c; */
+/* } */
+
 /*
  * Convert a string to a long integer.
  *
  * Ignores `locale' stuff.  Assumes that the upper and lower case
  * alphabets and digits are each contiguous.
  */
-long strtol2(const char *nptr, char **endptr, int base) {
+long _strtol(const char *nptr, char **endptr, int base) {
   const char *s;
   long acc, cutoff;
   int c;
@@ -261,7 +294,7 @@ long strtol2(const char *nptr, char **endptr, int base) {
       if (acc < cutoff || (acc == cutoff && c > cutlim)) {
         any = -1;
         acc = LONG_MIN;
-        errno = ERANGE;
+        *merrno = ERANGE;
       } else {
         any = 1;
         acc *= base;
@@ -271,7 +304,7 @@ long strtol2(const char *nptr, char **endptr, int base) {
       if (acc > cutoff || (acc == cutoff && c > cutlim)) {
         any = -1;
         acc = LONG_MAX;
-        errno = ERANGE;
+        *merrno = ERANGE;
       } else {
         any = 1;
         acc *= base;
@@ -281,4 +314,21 @@ long strtol2(const char *nptr, char **endptr, int base) {
   }
   if (endptr != 0) *endptr = (char *)(any ? s - 1 : nptr);
   return (acc);
+}
+
+char *itostr(char str[], long int num) {
+  long int i, rem, len = 0, n;
+
+  n = num;
+  while (n != 0) {
+    len++;
+    n /= 10;
+  }
+  for (i = 0; i < len; i++) {
+    rem = num % 10;
+    num = num / 10;
+    str[len - (i + 1)] = rem + '0';
+  }
+  str[len] = '\0';
+  return str;
 }

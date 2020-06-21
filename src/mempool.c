@@ -2,6 +2,8 @@
 
 #include "io.h"
 #include "lib.h"
+#include "malloc.h"
+#include "platform.h"
 
 /*
  * Adapted from:
@@ -15,11 +17,13 @@
 
 uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   uint data_block_size = (mempool->slot_size * extra_slot_count);
+  int data_block_pointers_size = sizeof(void*) * mempool->data_block_count;
   mempool->data_block_count++;
-  mempool->data_pointers = realloc(mempool->data_pointers,
-                                   sizeof(void*) * mempool->data_block_count);
+  mempool->data_pointers =
+      _realloc(mempool->data_pointers, data_block_pointers_size,
+               data_block_pointers_size + sizeof(void*));
   mempool->data_pointers[mempool->data_block_count - 1] =
-      mempool->uninitialised_p = calloc(1, data_block_size);
+      mempool->uninitialised_p = _malloc(data_block_size);
 
   mempool->total_slot_count += extra_slot_count;
   mempool->free_slot_count = extra_slot_count;
@@ -31,7 +35,7 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
 
 Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
                         Log log) {
-  Mempool* mempool = calloc(1, sizeof(Mempool));
+  Mempool* mempool = _malloc(sizeof(Mempool));
   mempool->auto_resize = auto_resize;
   mempool->log = log;
   mempool->slot_size = slot_size;
@@ -48,10 +52,11 @@ void free_mempool(Mempool* mempool) {
   free(mempool);
 }
 
+int c = 0;
 // Only initialises a new slot when needed.
 void* mempool_alloc(Mempool* mempool) {
   // Resizing
-  if (mempool->free_slot_count == 0) {
+  if (mempool->free_slot_count == 0 && c++ < 30) {
     if (mempool->auto_resize) {
       mempool->log("MEMPOOL: data block full, resizing from %i slots to %i\n",
                    mempool->total_slot_count, mempool->total_slot_count * 2);
@@ -76,7 +81,8 @@ void* mempool_alloc(Mempool* mempool) {
   } else {
     free_slot_p = (void*)mempool->free_slot_p;
     // Set pool's next free slot pointer to dereferenced current free slot
-    mempool->free_slot_p = *(void**)mempool->free_slot_p;
+    /* mempool->free_slot_p = *(void**)mempool->free_slot_p; */
+    mempool->free_slot_p = get_pointer_at(mempool->free_slot_p);
   }
 
   mempool->free_slot_count--;
@@ -85,58 +91,10 @@ void* mempool_alloc(Mempool* mempool) {
 
 void mempool_free(Mempool* mempool, void* slot) {
   // Put the pointer to current next free slot into this to be freed slot
-  *(void**)slot = mempool->free_slot_p;
+  /* *(void**)slot = mempool->free_slot_p; */
+  set_pointer_at(slot, mempool->free_slot_p);
   // Point our free slot pointer to the freed slot
   mempool->free_slot_p = slot;
   // We have one more free slot!!
   ++mempool->free_slot_count;
 }
-
-// DEBUG ========================================
-
-// Obsolete
-// Alternative version which initialises a new slot on every alloc
-
-// Add this to add_data_block fn
-//  mempool->end_of_data_p = mempool->uninitialised_p + data_block_size;
-/* void* mempool_alloc2(MemPool* mempool) { */
-/*   /\* printf("ALLOC: Free slot count: %i\n", mempool->free_slot_count); *\/
- */
-
-/*   /\* Resizing ========== *\/ */
-/*   if (mempool->free_slot_count == 0) { */
-/*     if (mempool->auto_resize) { */
-/*       /\* Ran out of space, adding extra data block *\/ */
-/*       printf("MEMPOOL: out of memory, resizing to %i\n", */
-/*              add_data_block(mempool, mempool->total_slot_count * 2)); */
-/*     } else { */
-/*       printf("MEMPOOL: out of memory, resizing is disabled!!!\n"); */
-/*       return NULL; */
-/*     } */
-/*   } */
-
-/*   void* free_slot_p; */
-
-/*   /\* Initialising a new slot ========== *\/ */
-/*   if (mempool->uninitialised_p < mempool->end_of_data_p) { */
-/*     // Address of next uninitialised data */
-/*     void** uninitialised_p = mempool->uninitialised_p + mempool->slot_size;
- */
-/*     // Put this address into where our uninitialised pointer points currently
- */
-/*     *(void**)mempool->uninitialised_p = uninitialised_p; */
-/*     // Set our unitialised pointer to this address as well. */
-/*     mempool->uninitialised_p = uninitialised_p; */
-/*   } */
-
-/*   /\* Pointer juggling ========== *\/ */
-/*   // Get pointer to next free block */
-/*   free_slot_p = (void*)mempool->free_slot_p; */
-
-/*   mempool->free_slot_count--; */
-
-/*   // Set the free block pointer to what its content points to */
-/*   mempool->free_slot_p = *(void**)mempool->free_slot_p; */
-
-/*   return free_slot_p; */
-/* } */

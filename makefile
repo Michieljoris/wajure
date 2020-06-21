@@ -10,9 +10,10 @@ tmp = $(subst src,out,$(src))
 objs = $(tmp:.c=.o)
 deps = $(objs:.o=.d)
 
+# -D WASM
 CC = gcc
-CFLAGS = -g -std=c99 -Wall -Isrc/include -Ilib/include
-LDFLAGS = -Lout -ledit -lmpc
+CFLAGS = -pthread -g -std=c99 -Wall -Isrc/include -Ilib/include
+LDFLAGS = -Lout -Llib -Wl,-rpath=./lib -ledit -lbinaryen -lmpc
 
 all: out/lispy
 	out/lispy lispy/repl.lispy

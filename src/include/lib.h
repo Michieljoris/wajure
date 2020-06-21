@@ -2,10 +2,20 @@
 #define __LIB_H_
 
 #include <stdarg.h>  //va_start, va_list
-#include <stdio.h>   //printf, puts
-#include <stdlib.h>  //malloc, calloc, realloc
+
+#include "platform.h"
+
+#define LONG_MAX (long int)9223372036854775807
+#define LONG_MIN (-LONG_MAX - 1L)
+#define ERANGE 34
 
 typedef unsigned int uint;
+typedef unsigned char uchar;
+
+int *merrno;
+
+enum { TNULL, TSTRING, TLONG, TINT, TFLOAT, TUINT, TCHAR, TPTR };
+
 /* typedef unsigned int size_t; */
 #define NIL ((void *)0)
 
@@ -34,4 +44,9 @@ int(memcmp)(const void *s1, const void *s2, size_t n);
 char *(_strstr)(const char *haystack, const char *needle);
 
 void *(_memmove)(void *s1, const void *s2, size_t n);
+
+long _strtol(const char *nptr, char **endptr, int base);
+
+char *itostr(char str[], long int num);
+
 #endif  // __LIB_H_

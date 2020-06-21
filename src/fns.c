@@ -7,12 +7,14 @@
 #include "special_fns.h"
 
 void lenv_add_builtin(Lenv* env, char* name, Lbuiltin func, int type) {
-  Lval* lval_sym = make_lval_sym(name);
+  char* lname = lalloc_size(_strlen(name));
+  _strcpy(lname, name);
+  Lval* lval_sym = make_lval_sym(lname);
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
-    /* release(lenv_get(get_root_env(env), lval_sym)); */
     printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->sym);
   }
-  Lval* lval_fun = make_lval_fun(func, name, type);
+  Lval* lval_fun = make_lval_fun(func, lname, type);
+  release(lname);
   lenv_put(env, lval_sym, lval_fun);
 }
 
@@ -23,6 +25,7 @@ void lenv_add_builtins(Lenv* env, Builtin builtins[], int type) {
 }
 
 void lenv_add_builtin_fns(Lenv* env) {
+  printf("adding builtings\n");
   lenv_add_builtins(env, math_builtins, SYS);
   lenv_add_builtins(env, list_builtins, SYS);
   lenv_add_builtins(env, misc_builtins, SYS);

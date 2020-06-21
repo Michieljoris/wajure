@@ -27,7 +27,7 @@ struct slot_count get_slot_count() {
 }
 
 void run(int argc, char** argv) {
-  init_lispy_mempools(1600, 100, 1600);
+  init_lispy_mempools(100, 100, 100);
 
   set_log_level(LOG_LEVEL_INFO);
 
@@ -59,6 +59,7 @@ void run(int argc, char** argv) {
     printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     printf("\n");
     /* printf("ref count of result: %d\n", get_ref_count(result)); */
+    print_mempool_counts();
     printf("releasing result:");
     release(result);
     /* print_mempool_counts(); */
