@@ -3,26 +3,38 @@
 
 #ifdef WASM
 
-extern void grow_memory(char* next_free_p);
+// IO
+extern void _putchar(char character);
+
+// MEMORY
 extern char* get_memory(int size);
 extern void* get_pointer_at(void** p);
 extern void set_pointer_at(void** p1, void* p2);
-extern void _putchar(char character);
+
 extern void copy_byte(const char* from_p, char* to_p);
+
+extern int page_size;
+extern int max_page_count;
+extern int initial_page_count;
 
 #else
 
 #include <stdio.h>  //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
 
-void grow_memory(char* next_free_p);
-char* get_memory(int size);
+// IO
+void _putchar(char character);
+
+// MEMORY
+char* get_memory();
+void free_memory();
+int grow_memory();
+char* get_mem_end();
+
 void* get_pointer_at(void** p);
 void set_pointer_at(void** p1, void* p2);
 
 void copy_byte(const char* from_p, char* to_p);
-
-void _putchar(char character);
 
 #endif  // WASM
 

@@ -1,9 +1,7 @@
 #include "mempool.h"
 
-#include "io.h"
 #include "lib.h"
 #include "malloc.h"
-#include "platform.h"
 
 /*
  * Adapted from:

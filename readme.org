@@ -89,29 +89,34 @@ There's a couple of advantages to this system as a whole:
   from the underlying platform. All requests for memory from the program are
   platform independent.
 
+- Memory is reference counted and released continuously as the program runs,
+  which means no 'pauses' a mark and sweep garbage collector might cause.
+  Probably not so much an issue till the number of objects managed is rather
+  large.
+
 - Not so much an advantage but a feature: the releasing of objects is recursive.
   Meaning, if a ref count is zero all the objects it has pointers to will also
   be checked and released if their ref count is zero.
 
-- Another feature: it's possible to request an arbitrarily sized object but only
-  to a maximum size. Under the cover however a selection is made from an memory
-  pool with appropriately sized objects. Waste will be at most the space of the
-  object itself, but on average a third of the object (eg. any size between 128
-  and 256 will be allocated 256 bytes, which will be at most 127 bytes waste and
-  at minimum 0, so with even distribution of sizes requested will mean on
-  average 63-64 bytes waste for this memory pool). The smaller the objects that
-  are requested the less the wastage actually matters. This is suitable for
-  string manipulation for example.
+- Another feature: it's possible to request an arbitrarily sized reference
+  counted object but only to a maximum size. Under the cover a selection is made
+  from an memory pool with appropriately sized objects. Waste will be at most
+  the space of the object itself, but on average a third of the object (eg. any
+  size between 128 and 256 will be allocated 256 bytes, which will be at most
+  127 bytes waste and at minimum 0, so with even distribution of sizes requested
+  will mean on average 63-64 bytes waste for this memory pool per object). The
+  smaller the objects that are requested the less the wastage actually matters.
+  This is suitable for string manipulation for example.
 
 There's a few disadvantages:
 
 - Memory only ever grows. Once a slot is released it's available again for
   allocation, but the total memory in use will not shrink. So this is not
-  useable for programs that might peak in requiring memory but most of the time
-  need much less, so for longer running programs with unsteady and unpredictable
+  useable for programs that might peak in memory use but most of the time need
+  much less, so for longer running programs with unsteady and unpredictable
   workload. It's more suitable for programs that might or might not have a high
   requirement for memory but that will get shut down once the job is done. Or
-  that don't need to hang on to state from job to job and can rest their memory
+  that don't need to hang on to state from job to job and can reset their memory
   pool.
 
 - It's not suitable for programs that require many different arbitrarily (big)
