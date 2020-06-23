@@ -51,7 +51,9 @@ Lenv* get_user_env(Lenv* env) {
   }
   if (!user_env) {
     printf("Error: you can't get user_env from root env!!. Aborting");
+#ifndef WASM
     exit(1);
+#endif
   }
   return user_env;
 }

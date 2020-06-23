@@ -31,6 +31,7 @@ void copy_byte(const char* from_p, char* to_p);
 #else
 
 #include "printf.h"
+#define putchar _putchar
 
 #endif  // WASM
 

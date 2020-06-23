@@ -5,6 +5,7 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "lval.h"
+#include "platform.h"
 
 static char* mpcf_escape_new(char* x, const char* input, const char** output) {
   int i;

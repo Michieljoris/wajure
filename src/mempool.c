@@ -45,9 +45,11 @@ Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
 }
 
 void free_mempool(Mempool* mempool) {
+#ifndef WASM
   while (mempool->data_block_count--)
     free(mempool->data_pointers[mempool->data_block_count]);
   free(mempool);
+#endif
 }
 
 int c = 0;

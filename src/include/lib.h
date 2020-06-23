@@ -34,13 +34,13 @@ char *(_strncat)(char *restrict s1, const char *restrict s2, zize_t n);
 
 int(_strncmp)(const char *s1, const char *s2, zize_t n);
 
-void *(memset)(void *s, int c, zize_t n);
+void *(memset)(void *s, int c, unsigned long n);
 
 char *(_strncpy)(char *restrict s1, const char *restrict s2, zize_t n);
 
 char *(_strrchr)(const char *s, int c);
 
-int(memcmp)(const void *s1, const void *s2, zize_t n);
+int(memcmp)(const void *s1, const void *s2, unsigned long n);
 
 char *(_strstr)(const char *haystack, const char *needle);
 

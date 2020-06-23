@@ -318,7 +318,9 @@ void release(void* data_p) {
     /* printf("releasing:"); */
     /* lval_println(data_p); */
     warn("Warning: trying to release data that's not managed by ref_count.");
+#ifndef WASM
     exit(1);
+#endif
     return;
   };
 
@@ -329,7 +331,9 @@ void release(void* data_p) {
       warn("Warning: ref count for a %s has gone negative: %d\n",
            type_to_name(slot->type), slot->ref_count);
       lval_debugln(data_p);
+#ifndef WASM
       exit(1);
+#endif
     }
     return;
   }

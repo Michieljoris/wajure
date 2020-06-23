@@ -6,6 +6,7 @@
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "lval.h"
+#include "platform.h"
 #include "print.h"
 #include "read.h"
 
@@ -119,12 +120,16 @@ Lval* read_string_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lval* slurp(Lenv* env, char* file_name) {
+#ifndef WASM
   char* str = read_file(file_name);
   if (!str) return make_lval_err("Could not load file %s", str);
   Lval* result = read_string(env, str);
   printf("Slurped: %s \n", file_name);
   free(str);
   return result;
+#else
+  return NULL;
+#endif
 }
 
 Lval* slurp_fn(Lenv* env, Lval* arg_list) {
