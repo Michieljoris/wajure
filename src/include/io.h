@@ -11,16 +11,15 @@ enum {
   LOG_LEVEL_DEEP_DEBUG
 };
 
-int* log_level;
-
 void set_log_level(int level);
+extern int log_level;
 
 // TODO: change this macros so no code is inserted when not printing
 
 #define _prefix(m) printf("%s (%s:%d): ", m, __FILE__, __LINE__);
 
-#define log_filler(level, prefix)        \
-  if (*log_level >= LOG_LEVEL_##level) { \
+#define log_filler(level, prefix)       \
+  if (log_level >= LOG_LEVEL_##level) { \
   _prefix(prefix) printf(
 
 #define error(...)                         \
@@ -39,15 +38,15 @@ void set_log_level(int level);
   log_filler(DEBUG, "DEBUG") __VA_ARGS__); \
   }
 
-#define ddebug(...)                         \
-  if (*log_level >= LOG_LEVEL_DEEP_DEBUG) { \
-    printf(__VA_ARGS__);                    \
+#define ddebug(...)                        \
+  if (log_level >= LOG_LEVEL_DEEP_DEBUG) { \
+    printf(__VA_ARGS__);                   \
   }
 
 /* #define printf(...) \ */
-/*   if (*log_level >= LOG_LEVEL_INFO) printf(__VA_ARGS__); */
+/*   if (log_level >= LOG_LEVEL_INFO) printf(__VA_ARGS__); */
 
 /* #define putchar(...) \ */
-/*   if (*log_level >= LOG_LEVEL_INFO) putchar(__VA_ARGS__); */
+/*   if (log_level >= LOG_LEVEL_INFO) putchar(__VA_ARGS__); */
 
 #endif  // __IO_H_

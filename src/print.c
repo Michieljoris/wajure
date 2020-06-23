@@ -165,12 +165,12 @@ void lval_print(Lval* lval) {
 }
 
 void lval_info(Lval* lval) {
-  if (*log_level < LOG_LEVEL_INFO) return;
+  if (log_level < LOG_LEVEL_INFO) return;
   lval_print(lval);
 }
 
 void lval_debug(Lval* lval) {
-  if (*log_level < LOG_LEVEL_DEBUG) return;
+  if (log_level < LOG_LEVEL_DEBUG) return;
   lval_print(lval);
 }
 
@@ -190,13 +190,13 @@ void lval_println(Lval* v) {
 }
 
 void lval_debugln(Lval* v) {
-  if (*log_level < LOG_LEVEL_DEBUG) return;
+  if (log_level < LOG_LEVEL_DEBUG) return;
   lval_print(v);
   putchar('\n');
 }
 
 void lval_infoln(Lval* v) {
-  if (*log_level < LOG_LEVEL_INFO) return;
+  if (log_level < LOG_LEVEL_INFO) return;
   lval_print(v);
   putchar('\n');
 }
@@ -211,7 +211,7 @@ void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }
 
 // Debug version
 void lenv_print(Lenv* env) {
-  if (*log_level < LOG_LEVEL_DEBUG) return;
+  if (log_level < LOG_LEVEL_DEBUG) return;
   if (env->parent_env) {
     alist_print(env->kv);
   } else {

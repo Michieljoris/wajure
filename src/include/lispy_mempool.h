@@ -25,7 +25,6 @@ enum {
 void clean_up(void* data);
 #define scoped __attribute__((__cleanup__(clean_up)))
 
-Mempool* lval_mempool;
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count);
 void free_lispy_mempools();
 

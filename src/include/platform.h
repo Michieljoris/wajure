@@ -7,15 +7,14 @@
 extern void _putchar(char character);
 
 // MEMORY
-extern char* get_memory(int size);
-extern void* get_pointer_at(void** p);
-extern void set_pointer_at(void** p1, void* p2);
+char* get_memory(int size);
+void free_memory();
+int grow_memory();
+char* get_mem_end();
+void* get_pointer_at(void** p);
+void set_pointer_at(void** p1, void* p2);
 
-extern void copy_byte(const char* from_p, char* to_p);
-
-extern int page_size;
-extern int max_page_count;
-extern int initial_page_count;
+void copy_byte(const char* from_p, char* to_p);
 
 #else
 

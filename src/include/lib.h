@@ -12,7 +12,7 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-int *merrno;
+extern int *merrno;
 
 enum { TNULL, TSTRING, TLONG, TINT, TFLOAT, TUINT, TCHAR, TPTR };
 

@@ -24,6 +24,11 @@ void lenv_add_builtins(Lenv* env, Builtin builtins[], int type) {
   }
 }
 
+extern Builtin misc_builtins[];
+extern Builtin list_builtins[];
+extern Builtin math_builtins[];
+extern Builtin special_builtins[];
+
 void lenv_add_builtin_fns(Lenv* env) {
   printf("adding builtings\n");
   lenv_add_builtins(env, math_builtins, SYS);

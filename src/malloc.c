@@ -1,14 +1,10 @@
 #include "platform.h"
 
-char* memory;
 char* free_p;
 
-void init_malloc() {
-  memory = get_memory();
-  free_p = memory;
-}
+void init_malloc() { free_p = get_memory(); }
 
-void free_malloc() { free_memory(); }
+void free_malloc() {}
 
 void* _malloc(int size) {
   char* next_free_p = free_p + size;

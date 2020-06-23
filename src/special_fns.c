@@ -1,13 +1,11 @@
-#include "special_fns.h"
-
 #include "assert.h"
 #include "env.h"
 #include "eval.h"
+#include "fns.h"
 #include "io.h"
 #include "iter.h"
 #include "lib.h"
 #include "lispy_mempool.h"
-#include "list_fns.h"
 #include "lval.h"
 #include "print.h"
 

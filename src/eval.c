@@ -7,7 +7,6 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
-#include "list_fns.h"
 #include "lval.h"
 #include "misc_fns.h"
 #include "print.h"
@@ -72,8 +71,7 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
   Lval* rest_args = make_lval_list();
   rest_args->head = retain(iter_current_cell(a));
   Lval* arg = NIL;
-  do
-    arg = iter_next(a);
+  do arg = iter_next(a);
   while (arg);
   return rest_args;
 }
