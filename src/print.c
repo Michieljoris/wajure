@@ -45,7 +45,7 @@ static const char mpc_escape_input_c[] = {'\a', '\b', '\f', '\n', '\r', '\t',
 
 static const char* mpc_escape_output_c[] = {"\\a", "\\b",  "\\f", "\\n",
                                             "\\r", "\\t",  "\\v", "\\\\",
-                                            "\\'", "\\\"", "\\0", NULL};
+                                            "\\'", "\\\"", "\\0", NIL};
 
 /* char* mpcf_escape(char* x) { */
 /*   char* y = mpcf_escape_new(x, mpc_escape_input_c, mpc_escape_output_c); */

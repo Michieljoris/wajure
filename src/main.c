@@ -1,4 +1,7 @@
+#ifdef WASM
 #include "binaryen.h"
+#endif
+
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"

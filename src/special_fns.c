@@ -53,7 +53,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_NEXT;
   scoped Lval* cond = lval_eval(env, arg);
   if (cond->type == LVAL_ERR) return retain(cond);
-  Lval* branch = NULL;
+  Lval* branch = NIL;
   if (cond->subtype != LFALSE && cond->subtype != LNIL) { /* TRUE */
     ITER_NEXT;
     branch = arg;
@@ -198,7 +198,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
   ITER_NEXT
   Lval* qq_arg = arg;
   ITER_END;
-  Lval* ret = NULL;
+  Lval* ret = NIL;
   switch (qq_arg->type) {
     case LVAL_COLLECTION:
       switch (qq_arg->subtype) {
@@ -421,7 +421,7 @@ Builtin special_builtins[11] = {
     {"throw", eval_throw},
     {"do", eval_do},   /* TCO! */
     {"let", eval_let}, /* TCO! */
-    {NULL}
+    {NIL}
     /* Not really needed because we have tco, but for clojure compatibility */
     /* {"loop", eval_loop}, */
 

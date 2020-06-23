@@ -4,8 +4,8 @@
 
 Cell* make_iter_cell() {
   Cell* cell = lalloc_type(ITER);
-  cell->car = NULL;
-  cell->cdr = NULL;
+  cell->car = NIL;
+  cell->cdr = NIL;
   return cell;
 }
 

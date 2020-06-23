@@ -63,7 +63,7 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list2 = arg;
   ITER_END
 
-  Lval* lval_list = NULL;
+  Lval* lval_list = NIL;
   lval_list = make_lval_list();
   lval_list->head = list_concat(lval_list1->head, lval_list2->head);
   return lval_list;
@@ -103,6 +103,6 @@ Builtin list_builtins[8] = {
     {"concat", concat_fn},
     {"count", count_fn},
     {"nth", nth_fn},
-    {NULL}
+    {NIL}
 
 };

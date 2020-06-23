@@ -81,10 +81,12 @@ Lval* exit_fn(Lenv* e, Lval* arg_list) {
   return make_lval_list();
 }
 
+#ifndef WASM
+
 char* read_file(char* file_name) {
   // Open file and check it exists
   FILE* f = fopen(file_name, "rb");
-  if (f == NULL) return NULL;
+  if (f == NIL) return NIL;
 
   // Read file contents into string
   fseek(f, 0, SEEK_END);
@@ -95,6 +97,11 @@ char* read_file(char* file_name) {
   fclose(f);
   return str;
 }
+#else
+
+char* read_file(char* file_name) { return NULL; }
+
+#endif
 
 Lval* read_string(Lenv* env, char* str) {
   int pos = 0;
@@ -185,6 +192,6 @@ Builtin misc_builtins[12] = {
     {"macroexpand-1", macroexpand_1_fn},
     {"debug", debug_fn},
     {"boolean", boolean_fn},
-    {NULL}
+    {NIL}
 
 };

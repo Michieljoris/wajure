@@ -1,3 +1,4 @@
+#ifndef WASM
 /* /\* #include "binaryen.h" *\/ */
 
 /* /\* #include "binaryen_hello_world.h" *\/ */
@@ -51,3 +52,5 @@ int make_bmodule() {
 /*   ) */
 /*  ) */
 /* ) */
+
+#endif

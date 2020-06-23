@@ -2,6 +2,8 @@
 
 #ifdef WASM
 
+#include "printf.h"
+
 #else  // not WASM
 
 // IO

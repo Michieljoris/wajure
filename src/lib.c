@@ -1,17 +1,13 @@
 #include "lib.h"
 
-
 // https://en.wikibooks.org/wiki/C_Programming/String_manipulation#The_more_commonly-used_string_functions
 
-
-
-
 /* strlen */
-size_t(_strlen)(const char *s) {
+zize_t _strlen(const char *s) {
   const char *p = s; /* pointer to character constant */
   /* Loop over the data in s.  */
   while (*p != '\0') p++;
-  return (size_t)(p - s);
+  return (zize_t)(p - s);
 }
 
 /* strcpy */
@@ -75,7 +71,7 @@ int(_strcmp)(const char *s1, const char *s2) {
 /* } */
 
 /* strncat */
-char *(_strncat)(char *restrict s1, const char *restrict s2, size_t n) {
+char *(_strncat)(char *restrict s1, const char *restrict s2, zize_t n) {
   char *s = s1;
   /* Loop over the data in s1.  */
   while (*s != '\0') s++;
@@ -93,7 +89,7 @@ char *(_strncat)(char *restrict s1, const char *restrict s2, size_t n) {
 }
 
 /* strncmp */
-int(_strncmp)(const char *s1, const char *s2, size_t n) {
+int(_strncmp)(const char *s1, const char *s2, zize_t n) {
   unsigned char uc1, uc2;
   /* Nothing to compare?  Return zero.  */
   if (n == 0) return 0;
@@ -111,7 +107,7 @@ int(_strncmp)(const char *s1, const char *s2, size_t n) {
 }
 
 /* memset */
-void *(memset)(void *s, int c, size_t n) {
+void *(memset)(void *s, int c, zize_t n) {
   unsigned char *us = s;
   unsigned char uc = c;
   while (n-- != 0) *us++ = uc;
@@ -119,7 +115,7 @@ void *(memset)(void *s, int c, size_t n) {
 }
 
 /* strncpy */
-char *(_strncpy)(char *restrict s1, const char *restrict s2, size_t n) {
+char *(_strncpy)(char *restrict s1, const char *restrict s2, zize_t n) {
   char *dst = s1;
   const char *src = s2;
   /* Copy bytes, one at a time.  */
@@ -150,7 +146,7 @@ char *(_strrchr)(const char *s, int c) {
   return (char *)last;
 }
 /* memcmp */
-int(memcmp)(const void *s1, const void *s2, size_t n) {
+int(memcmp)(const void *s1, const void *s2, zize_t n) {
   const unsigned char *us1 = (const unsigned char *)s1;
   const unsigned char *us2 = (const unsigned char *)s2;
   while (n-- != 0) {
@@ -163,7 +159,7 @@ int(memcmp)(const void *s1, const void *s2, size_t n) {
 
 /* strstr */
 char *(_strstr)(const char *haystack, const char *needle) {
-  size_t needlelen;
+  zize_t needlelen;
   /* Check for the null needle case.  */
   if (*needle == '\0') return (char *)haystack;
   needlelen = _strlen(needle);
@@ -173,7 +169,7 @@ char *(_strstr)(const char *haystack, const char *needle) {
 }
 
 /* memmove */
-void *(_memmove)(void *s1, const void *s2, size_t n) {
+void *(_memmove)(void *s1, const void *s2, zize_t n) {
   /* note: these don't have to point to unsigned chars */
   char *p1 = s1;
   const char *p2 = s2;
@@ -194,26 +190,15 @@ int merrno2 = 0;
 int *merrno = &merrno2;
 /* int errno = 0; */
 
-int isalpha(int c)
-{
-   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
+int isalpha(int c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
-int isupper(int c)
-{
-   return c >= 'A' && c <= 'Z';
-}
+int isupper(int c) { return c >= 'A' && c <= 'Z'; }
 
-int isdigit(int c)
-{
-   return (c >= '0' && c <= '9');
-}
+int isdigit(int c) { return (c >= '0' && c <= '9'); }
 
-int isspace(int c)
-{
-   return c == ' ' || c == '\t'; // || whatever other char you consider space
+int isspace(int c) {
+  return c == ' ' || c == '\t';  // || whatever other char you consider space
 }
-
 
 /* int tolower(int c) */
 /* { */
