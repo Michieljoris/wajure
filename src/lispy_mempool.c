@@ -1,43 +1,82 @@
 #include "lispy_mempool.h"
 
 #include "io.h"
-#include "lib.h"
-#include "lval.h"
 #include "malloc.h"
 #include "mempool.h"
-#include "print.h"
+/* #include "print.h" */
+#include "lval.h"
+#include "refcount.h"
 
-int debug = 0;
-
-void mempool_debug(Mempool* mp) {
-  /* printf("Total slot count: %i\n", mp->total_slot_count); */
-  /* printf("Free slot count: %i\n", mp->free_slot_count); */
-  /* printf("Data block count: %i\n", mp->data_block_count); */
-  /* printf("Free slot pointer: %p\n", mp->free_slot_p); */
-  /* printf("Initialised count: %i\n", mp->initialised_count); */
-  if (debug) ddebug("%d | ", mp->total_slot_count - mp->free_slot_count);
-}
+/* int debug = 0; */
 
 Mempool** mempools;
 
-typedef struct {
-  int ref_count;
-  Destructor destroy;
-  int type;
-  void* data_p;
-} Slot;
+void* lalloc_type(int type);
 
-// Alignment
-#define PAD(siz) ((siz) + sizeof(int) - ((siz) % sizeof(int)))
-#define SLOT_SIZE(type_size) PAD(sizeof(Slot)) + PAD(type_size)
+void lispy_mempool_log(int type, char* msg);
+
+#define MEMPOOL_LOG(TYPE, type)             \
+  void TYPE##_mempool_log(char* fmt, ...) { \
+    va_list va;                             \
+    va_start(va, fmt);                      \
+    char* msg = lalloc_type(INTERNAL);      \
+    vsnprintf(msg, 511, fmt, va);           \
+    msg = lrealloc(msg, _strlen(msg) + 1);  \
+    lispy_mempool_log(type, msg);           \
+    release(msg);                           \
+  }
+
+MEMPOOL_LOG(lval, LVAL);
+MEMPOOL_LOG(lenv, LENV);
+MEMPOOL_LOG(cell, CELL);
+MEMPOOL_LOG(iter, ITER);
+MEMPOOL_LOG(internal, INTERNAL);
+MEMPOOL_LOG(char512, CHAR512);
+MEMPOOL_LOG(char256, CHAR256);
+MEMPOOL_LOG(char128, CHAR128);
+MEMPOOL_LOG(char64, CHAR64);
+MEMPOOL_LOG(char32, CHAR32);
+MEMPOOL_LOG(char16, CHAR16);
+MEMPOOL_LOG(char8, CHAR8);
+
+#define MEMPOOL(typeint, type_size, type)                         \
+  mempools[typeint] =                                             \
+      create_mempool(typeint, SLOT_SIZE(type_size), type##_count, \
+                     MEMPOOL_AUTO_RESIZE, type##_mempool_log);
+
+void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
+  int internal_count = 1;  // just for the mempool log
+  int char512_count = 10;
+  int char256_count = 10;
+  int char128_count = 10;
+  int char64_count = 10;
+  int char32_count = 10;
+  int char16_count = 10;
+  int char8_count = 10;
+  int mempool_count = SLOT_TYPE_COUNT;
+  mempools = _malloc(sizeof(Mempool*) * mempool_count);
+
+  MEMPOOL(LVAL, sizeof(Lval), lval)
+  MEMPOOL(LENV, sizeof(Lenv), lenv)
+  MEMPOOL(CELL, sizeof(Cell), cell)
+  MEMPOOL(ITER, sizeof(Cell), cell)
+  MEMPOOL(INTERNAL, 512, internal)
+  MEMPOOL(CHAR512, 512, char512)
+  MEMPOOL(CHAR256, 256, char256)
+  MEMPOOL(CHAR128, 128, char128)
+  MEMPOOL(CHAR64, 64, char64)
+  MEMPOOL(CHAR32, 32, char32)
+  MEMPOOL(CHAR16, 16, char16)
+  MEMPOOL(CHAR8, 8, char8)
+}
 
 void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
 
-  if (debug)
-    ddebug("destroying lval:%li (%s):", (long int)lval,
-           lval_type_to_name(lval));
-  if (debug) lval_debugln(lval);
+  /* if (debug) */
+  /*   ddebug("destroying lval:%li (%s):", (long int)lval, */
+  /*          lval_type_to_name(lval)); */
+  /* if (debug) lval_debugln(lval); */
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->sym);
@@ -67,17 +106,17 @@ void destroy_lval(void* data) {
         /* free(lval->func_name); */
         release(lval->func_name);
       } else {
-        if (debug) ddebug("\n freeing params:");
+        /* if (debug) ddebug("\n freeing params:"); */
         release(lval->params);
-        if (debug) ddebug("\n freeing body:");
+        /* if (debug) ddebug("\n freeing body:"); */
         release(lval->body);
-        if (debug) ddebug("\n freeing closure_env:");
+        /* if (debug) ddebug("\n freeing closure_env:"); */
         /* if (debug) */
         /*   debug("ref count for closure_env = %d\n", */
         /*         get_ref_count(lval->closure_env)); */
         release(lval->closure_env);
 
-        if (debug) ddebug("\n Done freeing lval_fun");
+        /* if (debug) ddebug("\n Done freeing lval_fun"); */
       }
       break;
     case LVAL_ERR:
@@ -117,60 +156,6 @@ void lispy_mempool_log(int type, char* msg) {
     return;
   }
   printf("%s %s", slot_type_str[type], msg);
-}
-
-#define MEMPOOL_LOG(TYPE, type)             \
-  void TYPE##_mempool_log(char* fmt, ...) { \
-    va_list va;                             \
-    va_start(va, fmt);                      \
-    char* msg = lalloc_type(INTERNAL);      \
-    vsnprintf(msg, 511, fmt, va);           \
-    msg = lrealloc(msg, _strlen(msg) + 1);  \
-    lispy_mempool_log(type, msg);           \
-    release(msg);                           \
-  }
-
-MEMPOOL_LOG(lval, LVAL);
-MEMPOOL_LOG(lenv, LENV);
-MEMPOOL_LOG(cell, CELL);
-MEMPOOL_LOG(iter, ITER);
-MEMPOOL_LOG(internal, INTERNAL);
-MEMPOOL_LOG(char512, CHAR512);
-MEMPOOL_LOG(char256, CHAR256);
-MEMPOOL_LOG(char128, CHAR128);
-MEMPOOL_LOG(char64, CHAR64);
-MEMPOOL_LOG(char32, CHAR32);
-MEMPOOL_LOG(char16, CHAR16);
-MEMPOOL_LOG(char8, CHAR8);
-
-#define MEMPOOL(typeint, type_size, type)                                \
-  mempools[typeint] = create_mempool(SLOT_SIZE(type_size), type##_count, \
-                                     MEMPOOL_AUTO_RESIZE, type##_mempool_log);
-
-void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
-  int internal_count = 1;  // just for the mempool log
-  int char512_count = 10;
-  int char256_count = 10;
-  int char128_count = 10;
-  int char64_count = 10;
-  int char32_count = 10;
-  int char16_count = 10;
-  int char8_count = 10;
-  int mempool_count = SLOT_TYPE_COUNT;
-  mempools = _malloc(sizeof(Mempool*) * mempool_count);
-
-  MEMPOOL(LVAL, sizeof(Lval), lval)
-  MEMPOOL(LENV, sizeof(Lenv), lenv)
-  MEMPOOL(CELL, sizeof(Cell), cell)
-  MEMPOOL(ITER, sizeof(Cell), cell)
-  MEMPOOL(INTERNAL, 512, internal)
-  MEMPOOL(CHAR512, 512, char512)
-  MEMPOOL(CHAR256, 256, char256)
-  MEMPOOL(CHAR128, 128, char128)
-  MEMPOOL(CHAR64, 64, char64)
-  MEMPOOL(CHAR32, 32, char32)
-  MEMPOOL(CHAR16, 16, char16)
-  MEMPOOL(CHAR8, 8, char8)
 }
 
 void free_lispy_mempools() {
@@ -214,33 +199,13 @@ int get_mempool_chartype(int size) {
 }
 
 void* lalloc_type(int type) {
-  Slot* slot_p = mempool_alloc(mempools[type]);
-  *slot_p = (Slot){.destroy = destructors[type],
-                   .data_p = ((char*)slot_p + PAD(sizeof(Slot))),
-                   .ref_count = 1,
-                   .type = type};
-  if (debug) ddebug("+%s: ", type_to_name(type));
-  mempool_debug(mempools[type]);
-  return slot_p->data_p;
+  return alloc_rc_slot(mempools[type], destructors[type]);
 }
 
+// Allocates a new slot in the mempool.
 void* lalloc_size(int size) {
   int type = get_mempool_chartype(size);
   return lalloc_type(type);
-}
-
-void lfree(int type, void* slot) {
-  // Zeroing out will catch errors that happen when the slot is freed, but
-  // still works as before because it's not been reassigned.
-  memset(slot, 0, mempools[type]->slot_size);
-  mempool_free(mempools[type], slot);
-  if (debug) ddebug("-%s: ", type_to_name(type));
-  mempool_debug(mempools[type]);
-  /* printf("done %d\n", type); */
-}
-
-static Slot* get_slot_p(void* data_p) {
-  return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
 }
 
 void* lrealloc(void* data_p, int size) {
@@ -248,7 +213,7 @@ void* lrealloc(void* data_p, int size) {
   int chartype = get_mempool_chartype(size);
   /* printf("old slot type=%d\n", slot->type); */
   /* printf("new char type=%d\n", chartype); */
-  if (chartype == slot->type) return data_p;
+  if (chartype == slot->mempool->type) return data_p;
 
   void* new_data_p = lalloc_type(chartype);
   int power_of_2 = chartype - CHAR8 + 3;
@@ -261,18 +226,8 @@ void* lrealloc(void* data_p, int size) {
   return new_data_p;
 }
 
-int get_free_slot_count(int type) {
-  Mempool* mp = mempools[type];
-  return mp->free_slot_count;
-}
-
-int get_taken_slot_count(int type) {
-  Mempool* mp = mempools[type];
-  return mp->total_slot_count - mp->free_slot_count;
-}
-
 void print_mempool_free(int type) {
-  printf("%s: %d ", type_to_name(type), get_taken_slot_count(type));
+  printf("%s: %d ", type_to_name(type), get_taken_slot_count(mempools[type]));
 }
 
 void print_mempool_counts() {
@@ -291,74 +246,10 @@ void print_mempool_counts() {
   print_mempool_free(CHAR8);
 }
 
-int get_ref_count(void* data_p) { return get_slot_p(data_p)->ref_count; }
-
-void* retain(void* data_p) {
-  /* Slot* slot = get_slot_p(data_p); */
-  /* printf("retain: %s-%li, ref count is %d\n", type_to_name(slot->type), */
-  /*        (long int)data_p, slot->ref_count); */
-  if (!data_p) {
-    debug("Trying to retain NULL;\n");
-  } else {
-    ++get_slot_p(data_p)->ref_count;
-  }
-  return data_p;
-}
-
-int i = 0;
-void release(void* data_p) {
-  i++;
-  if (!data_p) {
-    /* printf("Warning: trying to release data with a NULL pointer."); */
-    return;
-  }
-  Slot* slot = get_slot_p(data_p);
-
-  if (data_p != slot->data_p) {
-    /* printf("releasing:"); */
-    /* lval_println(data_p); */
-    warn("Warning: trying to release data that's not managed by ref_count.");
-#ifndef WASM
-    exit(1);
-#endif
-    return;
-  };
-
-  /* printf("release: %s-%li, ref count is %d\n", type_to_name(slot->type), */
-  /*        (long int)data_p, slot->ref_count); */
-  if (--slot->ref_count) /* still referenced */ {
-    if (slot->ref_count < 0) {
-      warn("Warning: ref count for a %s has gone negative: %d\n",
-           type_to_name(slot->type), slot->ref_count);
-      lval_debugln(data_p);
-#ifndef WASM
-      exit(1);
-#endif
-    }
-    return;
-  }
-  int call_id = i;
-  if (debug) {
-    if (slot->type == LVAL) {
-      ddebug("freeing: (i%d): ", i);
-      lval_debugln(data_p);
-    } else {
-      ddebug("freeing: (i%d) %s: ", i, type_to_name(slot->type));
-    }
-  }
-  if (slot->destroy) slot->destroy(data_p);
-  if (debug) ddebug("\nactually now freeing slot for i%d ", call_id);
-  lfree(slot->type, slot);
-}
-
-void clean_up(void* data) {
-  if (debug) {
-    ddebug("\nCleaning up: ");
-    if (*(void**)data) {
-      lval_debug(*(void**)data);
-      ddebug("\n");
-    } else
-      ddebug("NIL\n");
-  }
-  release(*(void**)data);
+SlotCount get_slot_count() {
+  SlotCount ret = {.env = get_taken_slot_count(mempools[LENV]),
+                   .lval = get_taken_slot_count(mempools[LVAL]),
+                   .cell = get_taken_slot_count(mempools[CELL]),
+                   .iter = get_taken_slot_count(mempools[ITER])};
+  return ret;
 }

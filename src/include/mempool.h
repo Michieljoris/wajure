@@ -20,6 +20,7 @@ struct memory_pool {
   uint initialised_count;
   int auto_resize;
   Log log;
+  int type;
   /* void* (*log)(Mempool*, char*); */
 };
 
@@ -27,13 +28,12 @@ enum { MEMPOOL_FIXED_SIZE, MEMPOOL_AUTO_RESIZE };
 
 void mempool_reserve_memory(int initial_page_count, int _max_page_count);
 
-Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
-                        Log log);
+Mempool* create_mempool(int type, int slot_size, uint slot_clount,
+                        int auto_resize, Log log);
 void free_mempool(Mempool* memory_pool);
 
-void* mempool_alloc(Mempool* memory_pool);
+void* alloc_slot(Mempool* memory_pool);
 
-void mempool_free(Mempool* memory_pool, void* slot);
+void free_slot(Mempool* memory_pool, void* slot);
 
-void mempool_debug(Mempool* mp);
 #endif  // __MEMORY_POOL_H_

@@ -1,6 +1,5 @@
 #include "mempool.h"
 
-#include "lib.h"
 #include "malloc.h"
 
 /*
@@ -31,15 +30,17 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   return data_block_size;
 }
 
-Mempool* create_mempool(int slot_size, uint slot_clount, int auto_resize,
-                        Log log) {
+Mempool* create_mempool(int type, int slot_size, uint slot_clount,
+                        int auto_resize, Log log) {
   Mempool* mempool = _malloc(sizeof(Mempool));
-  mempool->auto_resize = auto_resize;
-  mempool->log = log;
-  mempool->slot_size = slot_size;
-  mempool->total_slot_count = mempool->initialised_count =
-      mempool->data_block_count = 0;
-  mempool->data_pointers = NULL;
+  *mempool = (Mempool){.auto_resize = auto_resize,
+                       .log = log,
+                       .type = type,
+                       .slot_size = slot_size,
+                       .total_slot_count = 0,
+                       .initialised_count = 0,
+                       .data_block_count = 0,
+                       .data_pointers = NULL};
   add_data_block(mempool, slot_clount);
   return mempool;
 }
@@ -54,7 +55,7 @@ void free_mempool(Mempool* mempool) {
 
 int c = 0;
 // Only initialises a new slot when needed.
-void* mempool_alloc(Mempool* mempool) {
+void* alloc_slot(Mempool* mempool) {
   // Resizing
   if (mempool->free_slot_count == 0 && c++ < 30) {
     if (mempool->auto_resize) {
@@ -88,7 +89,7 @@ void* mempool_alloc(Mempool* mempool) {
   return free_slot_p;
 }
 
-void mempool_free(Mempool* mempool, void* slot) {
+void free_slot(Mempool* mempool, void* slot) {
   // Put the pointer to current next free slot into this to be freed slot
   set_pointer_at(slot, mempool->free_slot_p);
   // Point our free slot pointer to the freed slot

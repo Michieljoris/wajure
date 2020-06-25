@@ -1,8 +1,6 @@
 #ifndef __IO_H_
 #define __IO_H_
 
-#include "lib.h"
-
 enum {
   LOG_LEVEL_ERROR,
   LOG_LEVEL_WARN,

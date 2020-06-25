@@ -35,7 +35,7 @@ else
 endif
 
 
-all: build
+all: $(BUILD_ARTIFACT)
 	$(EXEC)
 
 # c files to dep files, if c file changes, rebuild its dep file
@@ -53,9 +53,9 @@ out/%.o: src/%.c
 
 
 # link object files, rebuild if any of the .o files changed
-build: $(objs)
+$(BUILD_ARTIFACT): $(objs)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS)  -o $(BUILD_ARTIFACT)
 
 
 clean:
-	rm -f $(objs) $(deps) out/lispy
+	rm -f $(objs) $(deps) $(BUILD_ARTIFACT)

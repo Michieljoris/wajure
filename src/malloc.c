@@ -8,6 +8,8 @@ export_wasm void init_malloc() {
   free_p = mem;
 }
 
+void free_malloc() { free_memory(); }
+
 export_wasm void* _malloc(int size) {
   char* next_free_p = free_p + size;
   while (next_free_p >= get_mem_end()) {

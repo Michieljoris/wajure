@@ -1,19 +1,11 @@
 #ifndef __LIB_H_
 #define __LIB_H_
 
-#include <stdarg.h>  //va_start, va_list
-
 #include "platform.h"
 
-#define LONG_MAX (long int)9223372036854775807
-#define LONG_MIN (-LONG_MAX - 1L)
-#define ERANGE 34
-#define zize_t int
-
-typedef unsigned int uint;
-typedef unsigned char uchar;
-
 extern int *merrno;
+
+#define zize_t int
 
 enum { TNULL, TSTRING, TLONG, TINT, TFLOAT, TUINT, TCHAR, TPTR };
 

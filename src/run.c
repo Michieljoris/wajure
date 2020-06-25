@@ -11,21 +11,6 @@
 #include "print.h"
 #include "repl.h"
 
-struct slot_count {
-  int env;
-  int lval;
-  int cell;
-  int iter;
-};
-
-struct slot_count get_slot_count() {
-  struct slot_count ret = {.env = get_taken_slot_count(LENV),
-                           .lval = get_taken_slot_count(LVAL),
-                           .cell = get_taken_slot_count(CELL),
-                           .iter = get_taken_slot_count(ITER)};
-  return ret;
-}
-
 void run(int argc, char** argv) {
   init_lispy_mempools(100, 100, 100);
 
@@ -35,7 +20,7 @@ void run(int argc, char** argv) {
   Lenv* root_env = lenv_new();
   lenv_add_builtin_fns(root_env);
 
-  struct slot_count after_builtins = get_slot_count();
+  SlotCount after_builtins = get_slot_count();
 
   Lenv* user_env = lenv_new();
   user_env->parent_env = retain(root_env);
@@ -66,7 +51,7 @@ void run(int argc, char** argv) {
     /* printf("after releasing result of slurp of %s ", argv[i]); */
   }
 
-  struct slot_count after_slurp = get_slot_count();
+  SlotCount after_slurp = get_slot_count();
   printf(
       "\nextra: LENV:%d, LVAL:%d, CELL:%d, ITER:%d after slurp and releasing "
       "result\n",
@@ -84,7 +69,7 @@ void run(int argc, char** argv) {
   release(user_env);
   print_mempool_counts();
   printf(" after releasing user_env\n");
-  struct slot_count after_user_env = get_slot_count();
+  SlotCount after_user_env = get_slot_count();
   printf(
       "\nextra: LENV:%d, LVAL:%d, CELL:%d, ITER:%d after releasing user_env\n",
       after_user_env.env - after_builtins.env,
