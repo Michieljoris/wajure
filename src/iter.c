@@ -1,5 +1,6 @@
 #include "lib.h"
 #include "lispy_mempool.h"
+#include "list.h"
 #include "lval.h"
 
 Cell* make_iter_cell() {

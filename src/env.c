@@ -3,7 +3,7 @@
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
-#include "lval.h"
+#include "list.h"
 
 Lenv* lenv_new(void) {
   Lenv* env = lalloc_type(LENV);

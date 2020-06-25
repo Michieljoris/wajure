@@ -5,6 +5,7 @@
 #include "io.h"
 #include "iter.h"
 #include "lib.h"
+#include "list.h"
 #include "lval.h"
 
 static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {

@@ -1,10 +1,9 @@
 #include "lispy_mempool.h"
 
 #include "io.h"
+#include "ltypes.h"
 #include "malloc.h"
 #include "mempool.h"
-/* #include "print.h" */
-#include "lval.h"
 #include "refcount.h"
 
 /* int debug = 0; */

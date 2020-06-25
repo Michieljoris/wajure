@@ -1,12 +1,7 @@
 #ifndef __LIST_H_
 #define __LIST_H_
 
-typedef struct cell Cell;
-
-struct cell {
-  void* car;
-  Cell* cdr;
-};
+#include "ltypes.h"
 
 Cell* list_new(void);
 Cell* list_get(Cell* list, int cmp(void*, void*), void* key);
