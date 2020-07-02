@@ -207,6 +207,8 @@ void* lalloc_size(int size) {
   return lalloc_type(type);
 }
 
+void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; }
+
 void* lrealloc(void* data_p, int size) {
   Slot* slot = get_slot_p(data_p);
   int chartype = get_mempool_chartype(size);
@@ -217,10 +219,11 @@ void* lrealloc(void* data_p, int size) {
   void* new_data_p = lalloc_type(chartype);
   int power_of_2 = chartype - CHAR8 + 3;
   int new_size = 1 << power_of_2;
-  void* from_p = data_p;
-  void* to_p = new_data_p;
+  char* from_p = data_p;
+  char* to_p = new_data_p;
   /* printf("%d new size=%d\n", power_of_2, new_size); */
-  while (new_size--) copy_byte(from_p++, to_p++);
+  /* while (new_size--) copy_byte(from_p++, to_p++); */
+  while (new_size--) *to_p++ = (*(char*)from_p++);
   release(data_p);
   return new_data_p;
 }

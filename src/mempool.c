@@ -1,5 +1,6 @@
 #include "mempool.h"
 
+#include "lib.h"
 #include "malloc.h"
 
 /*
@@ -30,8 +31,8 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
   return data_block_size;
 }
 
-Mempool* create_mempool(int type, int slot_size, uint slot_clount,
-                        int auto_resize, Log log) {
+export_wasm Mempool* create_mempool(int type, int slot_size, uint slot_clount,
+                                    int auto_resize, Log log) {
   Mempool* mempool = _malloc(sizeof(Mempool));
   *mempool = (Mempool){.auto_resize = auto_resize,
                        .log = log,
@@ -45,7 +46,7 @@ Mempool* create_mempool(int type, int slot_size, uint slot_clount,
   return mempool;
 }
 
-void free_mempool(Mempool* mempool) {
+export_wasm void free_mempool(Mempool* mempool) {
 #ifndef WASM
   while (mempool->data_block_count--)
     free(mempool->data_pointers[mempool->data_block_count]);
@@ -55,7 +56,7 @@ void free_mempool(Mempool* mempool) {
 
 int c = 0;
 // Only initialises a new slot when needed.
-void* alloc_slot(Mempool* mempool) {
+export_wasm void* alloc_slot(Mempool* mempool) {
   // Resizing
   if (mempool->free_slot_count == 0 && c++ < 30) {
     if (mempool->auto_resize) {
@@ -82,16 +83,18 @@ void* alloc_slot(Mempool* mempool) {
   } else {
     free_slot_p = (void*)mempool->free_slot_p;
     // Set pool's next free slot pointer to dereferenced current free slot
-    mempool->free_slot_p = get_pointer_at(mempool->free_slot_p);
+    mempool->free_slot_p = *(void**)mempool->free_slot_p;
+    /* mempool->free_slot_p = (char *)get_dword_at(mempool->free_slot_p); */
   }
 
   mempool->free_slot_count--;
   return free_slot_p;
 }
 
-void free_slot(Mempool* mempool, void* slot) {
+export_wasm void free_slot(Mempool* mempool, void* slot) {
   // Put the pointer to current next free slot into this to be freed slot
-  set_pointer_at(slot, mempool->free_slot_p);
+  *(void**)slot = mempool->free_slot_p;
+  /* set_dword_at(slot, (int)mempool->free_slot_p); */
   // Point our free slot pointer to the freed slot
   mempool->free_slot_p = slot;
   // We have one more free slot!!

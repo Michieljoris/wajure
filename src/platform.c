@@ -4,6 +4,16 @@
 
 #include "printf.h"
 
+extern char __heap_base;
+char* heap_pointer = &__heap_base;
+
+char* get_memory() { return heap_pointer; }
+
+void free_memory() { /* No implementation possible in wasm */
+}
+
+/* char* get_mem_end(); */
+
 #else  // not WASM
 
 // IO
@@ -23,7 +33,7 @@ const long int max_size = page_size * max_page_count;
 char* memory;
 
 char* get_memory() {
-  memory = calloc(1, max_size);
+  if (!memory) memory = calloc(1, max_size);
   return memory;
 }
 
@@ -46,7 +56,7 @@ void* get_pointer_at(void** p) { return *p; }
 void set_pointer_at(void** p1, void* p2) { *p1 = p2; }
 
 // Puts value that's at from_p into address at to_p
-void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; }
+/* void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; } */
 
 #endif  // WASM
 

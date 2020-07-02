@@ -1,5 +1,7 @@
 #include "io.h"
 
+#include "lib.h"
+
 int log_level = LOG_LEVEL_INFO;
 /* int *log_level = &_log_level; */
 
