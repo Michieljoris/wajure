@@ -158,11 +158,11 @@ void lispy_mempool_log(int type, char* msg) {
 }
 
 void free_lispy_mempools() {
-  /* free_mempool(mempools[LVAL]); */
-  /* free_mempool(mempools[LENV]); */
-  /* free_mempool(mempools[CELL]); */
-  /* free_mempool(mempools[ITER]); */
-  /* free(mempools); */
+  free_mempool(mempools[LVAL]);
+  free_mempool(mempools[LENV]);
+  free_mempool(mempools[CELL]);
+  free_mempool(mempools[ITER]);
+  _free(mempools);
 }
 
 char* type_names[] = {"LVAL",     "LENV",    "CELL",    "ITER",
@@ -207,7 +207,7 @@ void* lalloc_size(int size) {
   return lalloc_type(type);
 }
 
-void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; }
+/* void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; } */
 
 void* lrealloc(void* data_p, int size) {
   Slot* slot = get_slot_p(data_p);

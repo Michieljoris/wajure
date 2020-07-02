@@ -26,22 +26,20 @@ struct lval {
   int type;
   int subtype;
 
+  // Number, error, symbol or string
   long num; /* TODO: could/should this be a union? */
   char* err;
   char* str;
   char* sym;
   char* func_name;
 
-  /* function */
+  /* Function */
   Lbuiltin fun;
   Lenv* closure_env;
   Lval* params;
   Lval* body;
 
-  /* list of lval */
-  int count;
-  Lval** node;
-
+  // List
   Cell* head;
 };
 

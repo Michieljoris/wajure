@@ -9,4 +9,6 @@ void* _malloc(int size);
 
 void* _realloc(void* p, int old_size, int new_size);
 
+void _free(void* p);
+
 #endif  // __MALLOC_H_

@@ -9,7 +9,7 @@ export_wasm void init_malloc() {
   free_p = mem;
 }
 
-void free_malloc() { free_memory(); }
+export_wasm void free_malloc() { free_memory(); }
 
 export_wasm void* _malloc(int size) {
   char* next_free_p =
@@ -26,16 +26,14 @@ export_wasm void* _malloc(int size) {
   return current_free_p;
 }
 
-/* void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; } */
+export_wasm void _free(void* p) {}
 
 export_wasm void* _realloc(void* p, int old_size, int new_size) {
   void* new_p = _malloc(new_size);
   char* to_p = new_p;
-  /* while (old_size--) copy_byte(p++, to_p++); */
   while (old_size--) *to_p++ = (*(char*)p++);
   return new_p;
 }
-/* extern unsigned char __heap_base; */
 
 export_wasm int test() {
   /* printf("%d\n", sizeof(short)); */
