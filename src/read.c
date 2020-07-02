@@ -1,5 +1,6 @@
 /* #include <errno.h> */
 
+#include "cell.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "lval.h"

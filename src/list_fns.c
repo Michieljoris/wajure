@@ -1,4 +1,5 @@
 #include "assert.h"
+#include "cell.h"
 #include "env.h"
 #include "io.h"
 #include "iter.h"
