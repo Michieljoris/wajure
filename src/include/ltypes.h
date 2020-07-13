@@ -4,6 +4,7 @@
 typedef struct cell Cell;
 
 struct cell {
+  int hash;
   void* car;
   Cell* cdr;
 };
@@ -27,20 +28,18 @@ struct lval {
   int subtype;
 
   // Number, error, symbol or string
-  long num; /* TODO: could/should this be a union? */
-  char* err;
+  long num;
   char* str;
-  char* sym;
-  char* func_name;
-
   /* Function */
   Lbuiltin fun;
-  Lenv* closure_env;
+  Lenv* closure;
   Lval* params;
   Lval* body;
 
   // List
   Cell* head;
+
+  int hash;
 };
 
 struct lenv {

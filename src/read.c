@@ -1,6 +1,7 @@
 /* #include <errno.h> */
 
 #include "cell.h"
+#include "hash.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "lval.h"
@@ -179,6 +180,35 @@ void skip_ignored_chars(char* s, int* i) {
   }
 }
 
+Lval* get_next_expr(char* s, int* i, char end) {
+  Lval* next_expr = NULL;
+  if (s[*i] != end) {
+    skip_ignored_chars(s, i);
+    if (s[*i] == '\0') return NULL;
+    next_expr = lval_read(s, i);
+    skip_ignored_chars(s, i);
+  }
+  return next_expr;
+}
+
+Lval* lval_err = NULL;
+
+Cell* read_cell(char* s, int* i, char end) {
+  Cell* cons = NULL;
+  Lval* expr = get_next_expr(s, i, end);
+  if (!expr) return NULL;
+  /* If an error then return this and stop */
+  if (expr->type == LVAL_ERR) {
+    lval_err = expr;
+    return NULL;
+  }
+  cons = make_cell();
+  cons->car = expr;
+  cons->cdr = read_cell(s, i, end);
+  cons->hash = calc_list_hash(cons, cons->cdr);
+  return cons;
+}
+
 Lval* lval_read_list(char* s, int* i, char end) {
   /* Create list, vector or map */
   Lval* x;
@@ -192,30 +222,55 @@ Lval* lval_read_list(char* s, int* i, char end) {
     default:;
       x = make_lval_list();
   }
-  Cell** lp;
-  lp = &x->head;
-
-  /* While not at end character keep reading lvals */
-  while (s[*i] != end) {
-    skip_ignored_chars(s, i);
-    if (s[*i] == '\0') break;
-    Lval* next_expr = lval_read(s, i);
-    skip_ignored_chars(s, i);
-    /* If an error then return this and stop */
-    if (next_expr->type == LVAL_ERR) {
-      release(x);
-      return next_expr;
-    } else {
-      Cell* next_cell = make_cell();
-      next_cell->car = next_expr;
-      *lp = next_cell;
-      lp = &(next_cell->cdr);
-    }
+  lval_err = NULL;
+  x->head = read_cell(s, i, end);
+  if (lval_err) {
+    release(x);
+    return lval_err;
   }
+  x->hash = x->head ? x->head->hash : x->hash;
   /* Move past end character */
   (*i)++;
   return x;
 }
+
+/* Lval* lval_read_list_old(char* s, int* i, char end) { */
+/*   /\* Create list, vector or map *\/ */
+/*   Lval* x; */
+/*   switch (end) { */
+/*     case ']': */
+/*       x = make_lval_vector(); */
+/*       break; */
+/*     case '}': */
+/*       x = make_lval_map(); */
+/*       break; */
+/*     default:; */
+/*       x = make_lval_list(); */
+/*   } */
+/*   Cell** lp; */
+/*   lp = &x->head; */
+
+/*   /\* While not at end character keep reading lvals *\/ */
+/*   while (s[*i] != end) { */
+/*     skip_ignored_chars(s, i); */
+/*     if (s[*i] == '\0') break; */
+/*     Lval* next_expr = lval_read(s, i); */
+/*     skip_ignored_chars(s, i); */
+/*     /\* If an error then return this and stop *\/ */
+/*     if (next_expr->type == LVAL_ERR) { */
+/*       release(x); */
+/*       return next_expr; */
+/*     } else { */
+/*       Cell* next_cell = make_cell(); */
+/*       next_cell->car = next_expr; */
+/*       *lp = next_cell; */
+/*       lp = &(next_cell->cdr); */
+/*     } */
+/*   } */
+/*   /\* Move past end character *\/ */
+/*   (*i)++; */
+/*   return x; */
+/* } */
 
 static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   (*i)++;
@@ -252,7 +307,8 @@ Lval* lval_read_backquote(char* s, int* i) {
 Lval* lval_read_tilde(char* s, int* i) {
   return reader_macro("~", "unquote", s, i);
 }
-// TODO: reader doesn't throw a hissy fit when last closing token is missing :-(
+// TODO: reader doesn't throw a hissy fit when last closing token is missing
+// :-(
 Lval* lval_read(char* s, int* i) {
   Lval* x = NIL;
 

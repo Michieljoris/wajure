@@ -91,7 +91,7 @@ void lval_collection_print(Lval* lval, char open, char close) {
 void lval_fun_print(Lval* lval) {
   switch (lval->subtype) {
     case SYS:
-      printf("<function %s>", lval->func_name);
+      printf("<function %s>", lval->str);
       break;
     case LAMBDA:
     case MACRO:;
@@ -103,7 +103,7 @@ void lval_fun_print(Lval* lval) {
       putchar(')');
       break;
     case SPECIAL:
-      printf("<function %s>", lval->func_name);
+      printf("<function %s>", lval->str);
       break;
   }
 }
@@ -117,7 +117,7 @@ void lval_print(Lval* lval) {
   /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      printf("%s", lval->sym);
+      printf("%s", lval->str);
       break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
@@ -157,7 +157,7 @@ void lval_print(Lval* lval) {
       lval_fun_print(lval);
       break;
     case LVAL_ERR:
-      printf("Error: %s", lval->err);
+      printf("Error: %s", lval->str);
       break;
     default:
       printf("unknown lval type %d, %s\n", lval->type,

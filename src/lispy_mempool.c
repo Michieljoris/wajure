@@ -78,8 +78,8 @@ void destroy_lval(void* data) {
   /* if (debug) lval_debugln(lval); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      release(lval->sym);
-      /* free(lval->sym); */
+      release(lval->str);
+      /* free(lval->str); */
       break;
     case LVAL_COLLECTION:
       release(lval->head);
@@ -103,7 +103,7 @@ void destroy_lval(void* data) {
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         /* free(lval->func_name); */
-        release(lval->func_name);
+        release(lval->str);
       } else {
         /* if (debug) ddebug("\n freeing params:"); */
         release(lval->params);
@@ -113,14 +113,14 @@ void destroy_lval(void* data) {
         /* if (debug) */
         /*   debug("ref count for closure_env = %d\n", */
         /*         get_ref_count(lval->closure_env)); */
-        release(lval->closure_env);
+        release(lval->closure);
 
         /* if (debug) ddebug("\n Done freeing lval_fun"); */
       }
       break;
     case LVAL_ERR:
-      /* free(lval->err); */
-      release(lval->err);
+      /* free(lval->str); */
+      release(lval->str);
       break;
     default:
       error("Can't delete unknown type: %d\n", lval->type);

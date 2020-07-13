@@ -178,13 +178,22 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
 Lval* boolean_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("boolean", 1)
   ITER_NEXT
-  ITER_END
   if (arg->subtype == LNIL) return make_lval_false();
   if (arg->subtype == LFALSE) return retain(arg);
+  ITER_END
   return make_lval_true();
 }
 
-Builtin misc_builtins[12] = {
+Lval* hash_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("hash", 1)
+  ITER_NEXT
+  Lval* ret = make_lval_num(arg->hash);
+  ITER_END
+  /* printf("hash: %d\n", arg->hash); */
+  return ret;
+}
+
+Builtin misc_builtins[13] = {
 
     {"eval", eval_fn},
     {"print-env", print_env_fn},
@@ -198,6 +207,7 @@ Builtin misc_builtins[12] = {
     {"macroexpand-1", macroexpand_1_fn},
     {"debug", debug_fn},
     {"boolean", boolean_fn},
+    {"hash", hash_fn},
     {NIL}
 
 };

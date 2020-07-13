@@ -89,7 +89,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 
   // Try to bind all the arg in arg_list ====================
   while (param) {
-    if (_strcmp(param->sym, "&") == 0) {
+    if (_strcmp(param->str, "&") == 0) {
       param = iter_next(p);
       arg = read_rest_args(param, p, a);
       if (!arg)
@@ -111,7 +111,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
                          list_count(arg_list->head),
                          list_count(lval_fun->params->head));
 
-  bindings_env->parent_env = retain(lval_fun->closure_env);
+  bindings_env->parent_env = retain(lval_fun->closure);
 
   /* Eval body expressions, but only if all params are bound */
   if (!param) {
@@ -204,7 +204,7 @@ Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
       break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
-                           lval_fun->func_name);
+                           lval_fun->str);
   }
 }
 

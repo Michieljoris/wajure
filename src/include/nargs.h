@@ -111,4 +111,6 @@
 // myfunc0();
 // myfunc6(a,b,c,d,e,f);
 
+#define NUMARGS(...) (sizeof((int[]){__VA_ARGS__}) / sizeof(int))
+
 #endif  // __NARGS_H_

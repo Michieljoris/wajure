@@ -11,7 +11,7 @@ CC = clang
 CFLAGS_COMMON = -g -std=c99 -Wall -flto -Isrc/include -Ilib/include
 
 X86FLAGS = -pthread $(CFLAGS_COMMON)
-X86LDFLAGS =  -Lout -Llib  -ledit -lbinaryen
+X86LDFLAGS =  -Lout -Llib  -ledit -lbinaryen -lm
 
 WASMFLAGS = $(CFLAGS_COMMON) --target=wasm32 -O3  -flto -nostdlib -D WASM
 # https://lld.llvm.org/WebAssembly.html

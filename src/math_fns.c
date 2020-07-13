@@ -97,12 +97,12 @@ MATH_FN(lte_fn, "<=", <=);
 MATH_FN(gte_fn, ">=", >=);
 
 int lval_eq(Lval* x, Lval* y) {
-  if (x->type != y->type) {
-    return 0;
-  }
+  if (x->hash != y->hash) return 0;
+  if (x->type != y->type) return 0;
+
   switch (x->type) {
     case LVAL_SYMBOL:
-      return (_strcmp(x->sym, y->sym) == 0);
+      return (_strcmp(x->str, y->str) == 0);
     case LVAL_COLLECTION:
       if (list_count(x->head) != list_count(y->head)) {
         return 0;
@@ -134,13 +134,14 @@ int lval_eq(Lval* x, Lval* y) {
           return 0;
       }
     case LVAL_FUNCTION:
-      if (x->fun || y->fun) {
-        return x->fun == y->fun;
-      } else {
-        return lval_eq(x->params, y->params) && lval_eq(x->body, y->body);
-      }
+      /* if (x->fun || y->fun) { */
+      /*   return x->fun == y->fun; */
+      /* } else { */
+      /*   return lval_eq(x->params, y->params) && lval_eq(x->body, y->body); */
+      /* } */
     case LVAL_ERR:
-      return (_strcmp(x->err, y->err) == 0);
+      return x == y;
+      /* return (_strcmp(x->str, y->str) == 0); */
   }
   printf("Warning: comparing instances of type '%s' is not implemented\n",
          lval_type_to_name(x));

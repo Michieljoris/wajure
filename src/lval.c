@@ -2,20 +2,74 @@
 
 #include "cell.h"
 #include "env.h"
+#include "hash.h"
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 
 /* SYMBOL */
 
+int seed = 123;
+int str_seed = 124;
+int sym_seed = 125;
+
+int lval_hash(Lval* lval) {
+  int hash = -1;
+  switch (lval->type) {
+    case LVAL_FUNCTION:
+    case LVAL_ERR:
+      hash = murmur3_int(long_hash((unsigned long)lval), seed);
+      break;
+    case LVAL_SYMBOL:
+      hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed);
+      break;
+    case LVAL_LITERAL:
+      switch (lval->subtype) {
+        case STRING:
+          hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  //
+          break;
+        case NUMBER:
+          hash = murmur3_int(long_hash_munge(lval->num), seed);
+          break;
+        case LNIL:
+          hash = 0;
+          break;
+        case LTRUE:
+          hash = 1;
+          break;
+        case LFALSE:
+          hash = 2;
+          break;
+        default:
+          printf("OOPS, can't calculate hash of uknown collection subtype %d\n",
+                 lval->subtype);
+      }
+      break;
+
+    case LVAL_COLLECTION:
+      switch (lval->subtype) {
+        case LIST:
+        case VECTOR:
+          hash = 3;
+          break;
+        case MAP:
+          hash = 4;
+          break;
+        default:
+          printf("OOPS, can't calculate hash of uknown collection subtype %d\n",
+                 lval->subtype);
+      }
+      break;
+    default:
+      printf("OOPS, can't calculate hash of uknown type %d\n", lval->type);
+  }
+  return hash;
+}
+
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  /* *lval = (Lval){ */
-  /*     .type = LVAL_SYMBOL, .subtype = -1, .sym = lalloc_size(_strlen(s) +
-   * 1)}; */
-
-  *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .sym = retain(s)};
-  /* _strcpy(lval->sym, s); */
+  *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .str = retain(s)};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
@@ -24,18 +78,21 @@ Lval* make_lval_sym(char* s) {
 Lval* make_lval_list(void) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
@@ -44,34 +101,39 @@ Lval* make_lval_map(void) {
 Lval* make_lval_nil() {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = LNIL};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_true() {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = LTRUE};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_false() {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = LFALSE};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .num = x};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL,
-                 .subtype = STRING,
-                 /* .str = lalloc_size(_strlen(s) + 1)}; */
-                 .str = retain(s)};
-  /* _strcpy(lval->str, s); */
+  *lval = (Lval){
+      .type = LVAL_LITERAL,
+      .subtype = STRING,
+      .str = retain(s),
+  };
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
@@ -83,10 +145,8 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
                  .fun = func,
-                 /* .func_name = lalloc_size(_strlen(func_name) + 1)}; */
-                 .func_name = retain(func_name)};
-
-  /* _strcpy(lval->func_name, func_name); */
+                 .str = retain(func_name)};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
@@ -95,9 +155,10 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
-                 .closure_env = env,
+                 .closure = env,
                  .params = params,
                  .body = body};
+  lval->hash = lval_hash(lval);
   return lval;
 }
 
@@ -106,12 +167,13 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .err = lalloc_size(512)};
+  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .str = lalloc_size(512)};
   va_list va;
   va_start(va, fmt);
-  vsnprintf(lval->err, 511, fmt, va);
-  lval->err = lrealloc(lval->err, _strlen(lval->err) + 1);
+  vsnprintf(lval->str, 511, fmt, va);
+  lval->str = lrealloc(lval->str, _strlen(lval->str) + 1);
   va_end(va);
+  lval->hash = lval_hash(lval);
   return lval;
 }
 

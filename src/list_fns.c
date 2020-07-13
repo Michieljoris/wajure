@@ -1,6 +1,7 @@
 #include "assert.h"
 #include "cell.h"
 #include "env.h"
+#include "hash.h"
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
@@ -17,6 +18,8 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_cons(x, lval_list->head);
+  lval_list2->hash = lval_list2->head->hash =
+      calc_list_hash(lval_list2->head, lval_list->head);
   return lval_list2;
 }
 
@@ -37,6 +40,8 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_rest(lval_list->head);
+  printf("lval_list2->head->hash %d \n", lval_list->head->hash);
+  if (lval_list2->head) lval_list2->hash = lval_list2->head->hash;
   return lval_list2;
 }
 

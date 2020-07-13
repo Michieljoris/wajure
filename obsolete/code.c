@@ -46,7 +46,7 @@
 /*   } */
 /* } */
 
-/* int special_sym = lookup_special_sym(lval->node[0]->sym); */
+/* int special_sym = lookup_special_sym(lval->node[0]->str); */
 /* if (special_sym != -1) { */
 /*   lval_del(lval_pop(lval, 0)); */
 /*   return eval_special(env, special_sym, lval); */

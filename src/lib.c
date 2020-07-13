@@ -317,3 +317,31 @@ char *itostr(char str[], long int num) {
   str[len] = '\0';
   return str;
 }
+
+int power(int x, uint y) {
+  int temp;
+  if (y == 0) return 1;
+  temp = power(x, y / 2);
+  temp *= temp;
+  if (y % 2 == 0)
+    return temp;
+  else
+    return x * temp;
+}
+
+int ipow(int base, int exp) {
+  int result = 1;
+  for (;;) {
+    if (exp & 1) result *= base;
+    exp >>= 1;
+    if (!exp) break;
+    base *= base;
+  }
+
+  return result;
+}
+
+long logical_rshift(long x, int n) {
+  long mask = (1 << (sizeof(long) * 8 - n)) - 1;
+  return x >> n & mask;
+}

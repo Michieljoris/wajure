@@ -50,4 +50,6 @@ long _strtol(const char *nptr, char **endptr, int base);
 
 char *itostr(char str[], long int num);
 
+long logical_rshift(long x, int n);
+
 #endif  // __LIB_H_

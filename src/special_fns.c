@@ -36,13 +36,13 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     /*     "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
      */
     /*     "being replaced by: #'user/%s\n", */
-    /*     lval_sym->sym, lval_sym->sym, lval_sym->sym) */;
+    /*     lval_sym->str, lval_sym->str, lval_sym->str) */;
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {
       warn(
           "WARNING: %s already refers to: #'root-env/%s in namespace: root, "
           "being replaced by: #'user/%s\n",
-          lval_sym->sym, lval_sym->sym, lval_sym->sym);
+          lval_sym->str, lval_sym->str, lval_sym->str);
     }
     retain(lval_sym);
   }
@@ -113,7 +113,7 @@ int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
       list_count(lval->head) >= min_node_count) {
     lval = lval->head->car;
-    return lval->type == LVAL_SYMBOL && _strcmp(lval->sym, sym) == 0;
+    return lval->type == LVAL_SYMBOL && _strcmp(lval->str, sym) == 0;
   }
   return 0;
 }
@@ -267,7 +267,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
                   "to.");
             };
 
-            Lval* lval_str = make_lval_str(ret->err);
+            Lval* lval_str = make_lval_str(ret->str);
 
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = retain(env);
