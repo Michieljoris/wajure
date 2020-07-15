@@ -33,6 +33,7 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
 
 export_wasm Mempool* create_mempool(int type, int slot_size, uint slot_clount,
                                     int auto_resize, Log log) {
+  /* printf("mempool %lu\n", sizeof(Mempool)); */
   Mempool* mempool = _malloc(sizeof(Mempool));
   *mempool = (Mempool){.auto_resize = auto_resize,
                        .log = log,

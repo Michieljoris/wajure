@@ -1,5 +1,11 @@
+ifeq ($(PLATFORM),wasm)
+src = src/platform.c src/malloc.c src/refcount.c src/mempool.c src/printf.c src/lispy_mempool.c  src/lib.c  src/io.c
+tmp = $(subst src,out_wasm,$(src))
+else
 src = $(wildcard src/*.c)
 tmp = $(subst src,out,$(src))
+endif
+
 objs = $(tmp:.c=.o)
 deps = $(objs:.o=.d)
 
@@ -23,10 +29,11 @@ WASMLDFLAGS = -Lout -Wl,--no-entry \
 #,--export-dynamic  \
 
 ifeq ($(PLATFORM),wasm)
-	BUILD_ARTIFACT = out/lispy.wasm
+	BUILD_ARTIFACT = out/runtime.wasm
 	CFLAGS = $(WASMFLAGS)
 	LDFLAGS = $(WASMLDFLAGS)
-	EXEC =
+	EXEC = node nodejs.js
+	# EXEC = wasm-opt out/lispy.wasm --print > out/lispy.wat
 else
 	BUILD_ARTIFACT = out/lispy
 	CFLAGS = $(X86FLAGS)
@@ -47,10 +54,14 @@ out/%.d : src/%.c
 -include $(deps)
 
 # c files to object files
-# rebuild the .o file it its .c file changes or is marked.
+# rebuild the .o file if its .c file changes or is marked.
+ifeq ($(PLATFORM),wasm)
+out_wasm/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+else
 out/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
-
+endif
 
 # link object files, rebuild if any of the .o files changed
 $(BUILD_ARTIFACT): $(objs)

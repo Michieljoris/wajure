@@ -107,12 +107,12 @@ int(_strncmp)(const char *s1, const char *s2, zize_t n) {
 }
 
 /* memset */
-/* void *(memset)(void *s, int c, zize_t n) { */
-/*   unsigned char *us = s; */
-/*   unsigned char uc = c; */
-/*   while (n-- != 0) *us++ = uc; */
-/*   return s; */
-/* } */
+void *(memset)(void *s, int c, unsigned long n) {
+  unsigned char *us = s;
+  unsigned char uc = c;
+  while (n-- != 0) *us++ = uc;
+  return s;
+}
 
 /* strncpy */
 char *(_strncpy)(char *restrict s1, const char *restrict s2, zize_t n) {
@@ -146,16 +146,16 @@ char *(_strrchr)(const char *s, int c) {
   return (char *)last;
 }
 /* memcmp */
-/* int(memcmp)(const void *s1, const void *s2, zize_t n) { */
-/*   const unsigned char *us1 = (const unsigned char *)s1; */
-/*   const unsigned char *us2 = (const unsigned char *)s2; */
-/*   while (n-- != 0) { */
-/*     if (*us1 != *us2) return (*us1 < *us2) ? -1 : +1; */
-/*     us1++; */
-/*     us2++; */
-/*   } */
-/*   return 0; */
-/* } */
+int(memcmp)(const void *s1, const void *s2, unsigned long n) {
+  const unsigned char *us1 = (const unsigned char *)s1;
+  const unsigned char *us2 = (const unsigned char *)s2;
+  while (n-- != 0) {
+    if (*us1 != *us2) return (*us1 < *us2) ? -1 : +1;
+    us1++;
+    us2++;
+  }
+  return 0;
+}
 
 /* strstr */
 char *(_strstr)(const char *haystack, const char *needle) {

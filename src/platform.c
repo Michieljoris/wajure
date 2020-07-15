@@ -42,6 +42,7 @@ char* get_mem_end() { return memory + page_count * page_size; }
 void free_memory() { free(memory); }
 
 int grow_memory() {
+  printf("Grow_memory\n");
   if (++page_count > max_page_count) {
     printf("Error: can't allocate memory beyond max\n");
     return 0;

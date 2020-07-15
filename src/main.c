@@ -1,5 +1,6 @@
 #ifndef WASM
 #include "binaryen.h"
+#include "binaryen_kitchen_sink.h"
 #endif
 
 #include <math.h>
@@ -25,8 +26,19 @@ int main(int argc, char **argv) {
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(800, 800, 800);
   // Run lispy interpreterkk
-  run(argc, argv);
+  /* run(argc, argv); */
   /* make_bmodule(); */
+
+  /* test_types(); */
+  /* test_features(); */
+  /* test_core(); */
+  /* test_unreachable(); */
+  /* test_relooper(); */
+  /* test_binaries(); */
+  /* test_interpret(); */
+  /* test_nonvalid(); */
+  /* test_color_status(); */
+  /* test_for_each(); */
 
   /* printf("%d\n", sizeof(int)); */
   /* printf("%d\n", vhash(1, 2)); */

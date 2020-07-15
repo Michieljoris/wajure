@@ -1,14 +1,14 @@
-#ifndef WASM
-/* /\* #include "binaryen.h" *\/ */
+#include "binaryen_kitchen_sink.h"
 
 /* /\* #include "binaryen_hello_world.h" *\/ */
 
 #include <binaryen-c.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // "hello world" type example: create a function that adds two i32s and
 /* returns */
 // the result
-
 int make_bmodule() {
   BinaryenModuleRef module = BinaryenModuleCreate();
 
@@ -22,20 +22,36 @@ int make_bmodule() {
   BinaryenExpressionRef x = BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
                         y = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
   BinaryenExpressionRef add = BinaryenBinary(module, BinaryenAddInt32(), x, y);
-  BinaryenType localTypes[] = {BinaryenTypeInt32(),   BinaryenTypeInt32(),
-                               BinaryenTypeInt64(),   BinaryenTypeInt32(),
-                               BinaryenTypeFloat32(), BinaryenTypeFloat64(),
-                               BinaryenTypeInt32()};
+  BinaryenExpressionRef add1 = BinaryenBinary(module, BinaryenAddInt32(), x, y);
+  BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
+  BinaryenExpressionRef my_value_list[] = {
+      BinaryenLocalSet(module, 5, BinaryenPop(module, BinaryenTypeExnref())),
+      add, add1,
+      /* makeMemoryInit(module), */
+      /* makeMemoryCopy(module), */
+      /* makeMemoryFill(module), */
+  };
+  BinaryenExpressionRef block =
+      BinaryenBlock(module, "my-block", my_value_list,
+                    sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
+                    BinaryenTypeAuto());
+  BinaryenExpressionPrint(my_value_list[1]);
 
+  /* BinaryenSetDebugInfo(1); */
   // Create the add function
   // Note: no additional local variables
   // Note: no basic blocks here, we are an AST. The function body is just an
   // expression node.
+
   BinaryenAddFunction(module, "adder", params, results, localTypes,
-                      sizeof(localTypes) / sizeof(BinaryenType), add);
+                      sizeof(localTypes) / sizeof(BinaryenType), block);
 
   // Print it out
   BinaryenModulePrint(module);
+
+  /* char *text = BinaryenModuleAllocateAndWriteText(module); */
+  /* printf("module s-expr printed (in memory, caller-owned):\n%s\n", text); */
+  /* free(text); */
 
   // Clean up the module, which owns all the objects we created above
   BinaryenModuleDispose(module);
@@ -52,5 +68,3 @@ int make_bmodule() {
 /*   ) */
 /*  ) */
 /* ) */
-
-#endif
