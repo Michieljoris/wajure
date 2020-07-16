@@ -34,6 +34,12 @@ var importObject = {
          }
 };
 
+function consoleLogString(memory, offset, length) {
+  var bytes = new Uint8Array(memory.buffer, offset, length);
+  var string = new TextDecoder('utf8').decode(bytes);
+  console.log(string);
+}
+
 async function start() {
     try {
         let buf = fs.readFileSync('./out_wasm/runtime.wasm');
@@ -49,11 +55,14 @@ async function start() {
         // const __data_end = new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end);
         let lispyImportObject = { env: { memory: runtime.memory,
                                          printf: runtime.printf_,
+                                         init_malloc: runtime.init_malloc,
+                                         log: arg => console.log(arg),
                                          __data_end: runtime.__data_end
                                        }};
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
             then(res => res.instance.exports);
 
+        consoleLogString(runtime.memory, 10, 12);
         console.log("test: ", lispy.test);
         lispy.test();
     } catch(e) {

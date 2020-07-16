@@ -15,10 +15,10 @@ BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x) {
 }
 
 BinaryenExpressionRef make_memory_init(BinaryenModuleRef module) {
-  BinaryenExpressionRef dest = make_int32(module, 1024);
+  BinaryenExpressionRef dest = make_int32(module, 1836);
   BinaryenExpressionRef offset = make_int32(module, 0);
   BinaryenExpressionRef size = make_int32(module, 12);
-  return BinaryenMemoryInit(module, 0, dest, offset, size);
+  return BinaryenMemoryInit(module, 1, dest, offset, size);
 };
 
 char* make_err(char* fmt, ...) {
@@ -63,15 +63,17 @@ int compile_expression(BinaryenModuleRef module, Lval* lval_expr) {
 }
 
 void add_memory_section(BinaryenModuleRef module) {
-  /* BinaryenAddMemoryImport(module, "memory", "env", "memory", 0); */
-  const char* segments[] = {"hello, world!\n" /* , "Hello world again!" */};
+  BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
+  const char* segments[] = {"hello, world\n" /* , "Hello world again!" */};
   int8_t segmentPassive[] = {0};
   BinaryenExpressionRef __data_end =
       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
 
-  BinaryenExpressionRef segmentOffsets[] = {__data_end /* , __data_end */};
+  BinaryenExpressionRef segmentOffsets[] = {/* make_int32(module, 1836) */
+                                            __data_end
+                                            /* __data_end *\/ */};
 
-  BinaryenIndex segmentSizes[] = {12 /* , 18 */};
+  BinaryenIndex segmentSizes[] = {13 /* , 18 */};
   int initial_mem_size = 2;
   int max_mem_size = 32767;
   int num_segments = 1;
@@ -134,9 +136,17 @@ void add_test_fn(BinaryenModuleRef module) {
 
   BinaryenType _printf_params[2] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
   BinaryenType printf_params = BinaryenTypeCreate(_printf_params, 2);
+  BinaryenType _log_params[1] = {BinaryenTypeInt32()};
+  BinaryenType log_params = BinaryenTypeCreate(_log_params, 1);
 
   BinaryenAddFunctionImport(module, "printf", "env", "printf", printf_params,
                             BinaryenTypeInt32());
+
+  BinaryenAddFunctionImport(module, "log", "env", "log", log_params,
+                            BinaryenTypeNone());
+
+  BinaryenAddFunctionImport(module, "init_malloc", "env", "init_malloc",
+                            BinaryenTypeNone(), BinaryenTypeNone());
 
   BinaryenType params = BinaryenTypeNone();
   BinaryenType results = BinaryenTypeInt32();
@@ -146,16 +156,28 @@ void add_test_fn(BinaryenModuleRef module) {
       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
 
   BinaryenExpressionRef operands[] = {__data_end, make_int32(module, 0)};
+  /* BinaryenExpressionRef operands[] = {make_int32(module, 1836), */
+  /*                                     make_int32(module, 0)}; */
 
   BinaryenExpressionRef printf =
       BinaryenCall(module, "printf", operands, 2, BinaryenTypeNone());
 
   BinaryenExpressionRef drop = BinaryenDrop(module, printf);
+
+  BinaryenExpressionRef log_operands[] = {make_int32(module, 42)};
+  BinaryenExpressionRef log =
+      BinaryenCall(module, "log", log_operands, 1, BinaryenTypeNone());
+
+  BinaryenExpressionRef im_operands[] = {};
+  BinaryenExpressionRef im =
+      BinaryenCall(module, "init_malloc", im_operands, 0, BinaryenTypeNone());
   /* (drop */
   /*    (call 6 */
   /*      (i32.const 1032) */
   /*      (i32.const 0))) */
-  BinaryenExpressionRef my_value_list[] = {drop};
+  BinaryenExpressionRef my_value_list[] = {/* drop, */
+                                           /* make_memory_init(module), */
+                                           drop, log};
   BinaryenExpressionRef block =
       BinaryenBlock(module, "my-block", my_value_list,
                     sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
