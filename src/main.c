@@ -5,6 +5,7 @@
 
 #include <math.h>
 
+#include "compile.h"
 #include "hash.h"
 #include "io.h"
 #include "lib.h"
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
   init_lispy_mempools(800, 800, 800);
   // Run lispy interpreterkk
   /* run(argc, argv); */
+  compile(argc, argv);
   /* make_bmodule(); */
 
   /* test_types(); */

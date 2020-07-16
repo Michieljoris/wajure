@@ -29,10 +29,11 @@ WASMLDFLAGS = -Lout -Wl,--no-entry \
 #,--export-dynamic  \
 
 ifeq ($(PLATFORM),wasm)
-	BUILD_ARTIFACT = out/runtime.wasm
+	BUILD_ARTIFACT = out_wasm/runtime.wasm
 	CFLAGS = $(WASMFLAGS)
 	LDFLAGS = $(WASMLDFLAGS)
-	EXEC = node nodejs.js
+	# EXEC = wasm-opt out_wasm/runtime.wasm -O0 --print  > out_wasm/runtime.wat;  node nodejs.js
+	EXEC = wasm2wat -f --inline-imports --inline-exports out_wasm/runtime.wasm -o out_wasm/runtime.wat; node nodejs.js
 	# EXEC = wasm-opt out/lispy.wasm --print > out/lispy.wat
 else
 	BUILD_ARTIFACT = out/lispy

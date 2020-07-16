@@ -168,6 +168,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .str = lalloc_size(512)};
+
   va_list va;
   va_start(va, fmt);
   vsnprintf(lval->str, 511, fmt, va);

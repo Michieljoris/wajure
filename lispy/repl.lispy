@@ -1,3 +1,5 @@
+(print 123)
+;; (+ 1 2)
 ;; (slurp "lispy/stdlib.lispy")
 ;; (slurp "lispy/test/test_2_eval.lispy")
 ;; (slurp "lispy/test/test_3_env.lispy")
@@ -14,11 +16,11 @@
 
 ;; (print (boolean 123))
 ;; (print (hash 2))
-(list 1 2)
-(print (hash (cons 1 (list 2 3))))
-(print (hash (cons 1 (list 2 (+ 2 1)))))
-(print (hash (cons 1 '(2 3))))
-(print (hash (rest (cons 1 (list 2 3)))))
+;; (list 1 2)
+;; (print (hash (cons 1 (list 2 3))))
+;; (print (hash (cons 1 (list 2 (+ 2 1)))))
+;; (print (hash (cons 1 '(2 3))))
+;; (print (hash (rest (cons 1 (list 2 3)))))
 ;; "ok"
 ;; foobar
 ;; (t ( (fn [& more] (count more)) 1 2 3)
