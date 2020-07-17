@@ -15,9 +15,9 @@ var page_count = initial_page_count;
 
 var importObject = {
     env: { _putchar: arg => {
-        if (arg == 10) { console.log(str); str = ""; }
-        else str = str + String.fromCharCode(arg);
-        // process.stdout.write(String.fromCharCode(arg))
+        // if (arg == 10) { console.log(str); str = ""; }
+        // else str = str + String.fromCharCode(arg);
+        process.stdout.write(String.fromCharCode(arg))
     },
            grow_memory: () => { console.log("grow_memory");
                                 if (++page_count > max_page_count) {
@@ -34,10 +34,24 @@ var importObject = {
          }
 };
 
-function consoleLogString(memory, offset, length) {
-  var bytes = new Uint8Array(memory.buffer, offset, length);
-  var string = new TextDecoder('utf8').decode(bytes);
-  console.log(string);
+function makeLogString(memory, offset) {
+    return function(offset) {
+        var bytes = new Uint8Array(memory.buffer, offset);
+        var length = 0;
+        while (bytes[length] != 0) length++;
+        var bytes = new Uint8Array(memory.buffer, offset, length);
+        var string = new TextDecoder('utf8').decode(bytes);
+        console.log(string);
+    }
+}
+
+
+function makeLogStringN(memory, offset, length) {
+    return function(offset, length) {
+        var bytes = new Uint8Array(memory.buffer, offset, length);
+        var string = new TextDecoder('utf8').decode(bytes);
+        console.log(string);
+    }
 }
 
 async function start() {
@@ -56,13 +70,16 @@ async function start() {
         let lispyImportObject = { env: { memory: runtime.memory,
                                          printf: runtime.printf_,
                                          init_malloc: runtime.init_malloc,
-                                         log: arg => console.log(arg),
+                                         log_int: arg => console.log(arg),
+                                         log_string: makeLogString(runtime.memory),
+                                         log_string_n: makeLogStringN(runtime.memory),
                                          __data_end: runtime.__data_end
                                        }};
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
             then(res => res.instance.exports);
 
-        consoleLogString(lispy.mem, runtime.__data_end.value , 3);
+        makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
+        makeLogString(lispy.mem)(runtime.__data_end.value);
         console.log("test: ", lispy.test);
         lispy.test();
     } catch(e) {

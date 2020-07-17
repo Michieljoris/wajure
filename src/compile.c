@@ -14,12 +14,12 @@ BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x) {
   return BinaryenConst(module, BinaryenLiteralInt32(x));
 }
 
-BinaryenExpressionRef make_memory_init(BinaryenModuleRef module) {
-  BinaryenExpressionRef dest = make_int32(module, 1836);
-  BinaryenExpressionRef offset = make_int32(module, 0);
-  BinaryenExpressionRef size = make_int32(module, 12);
-  return BinaryenMemoryInit(module, 1, dest, offset, size);
-};
+/* BinaryenExpressionRef make_memory_init(BinaryenModuleRef module) { */
+/*   BinaryenExpressionRef dest = make_int32(module, 1836); */
+/*   BinaryenExpressionRef offset = make_int32(module, 0); */
+/*   BinaryenExpressionRef size = make_int32(module, 12); */
+/*   return BinaryenMemoryInit(module, 1, dest, offset, size); */
+/* }; */
 
 char* make_err(char* fmt, ...) {
   va_list va;
@@ -63,27 +63,38 @@ int compile_expression(BinaryenModuleRef module, Lval* lval_expr) {
 }
 
 typedef struct {
+  BinaryenModuleRef module;
   char* strings;
   int strings_offset;
 } Wasm;
 
-Wasm* init() {
+Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
+  wasm->module = BinaryenModuleCreate();
   wasm->strings = malloc(1);
   wasm->strings_offset = 0;
   return wasm;
 }
+void free_wasm(Wasm* wasm) {
+  BinaryenModuleDispose(wasm->module);
+  free(wasm->strings);
+  free(wasm);
+}
 
-void strings_data_cat(Wasm* wasm, char* str) {
+int strings_data_cat(Wasm* wasm, char* str) {
   int len = _strlen(str) + 1;
-  printf("%d %d\n", wasm->strings_offset, len);
+  /* printf("%d %d\n", wasm->strings_offset, len); */
   wasm->strings = realloc(wasm->strings, wasm->strings_offset + len);
   _strncpy(wasm->strings + wasm->strings_offset, str, len);
   wasm->strings_offset += len;
-  printf("strings_offset: %d\n", wasm->strings_offset);
+  /* printf("strings_offset: %d\n", wasm->strings_offset); */
+  return wasm->strings_offset;
 }
 
-void add_memory_section(BinaryenModuleRef module, Wasm* wasm) {
+void add_memory_section(Wasm* wasm) {
+  BinaryenModuleRef module = wasm->module;
+  BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
+                          BinaryenTypeInt32(), 0);
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
   const int num_segments = 1;
   const char* segments[1] = {wasm->strings};
@@ -95,23 +106,24 @@ void add_memory_section(BinaryenModuleRef module, Wasm* wasm) {
   int8_t segmentPassive[] = {0};
 
   int initial_mem_size = 2;
-  int max_mem_size = 32767;
+  /* int max_mem_size = 32767; */
+  int max_mem_size = 65536;
   int shared = 0;
   BinaryenSetMemory(module, initial_mem_size, max_mem_size, "mem", segments,
                     segmentPassive, segmentOffsets, segmentSizes, num_segments,
                     shared);
 }
 
-void add_global_section(BinaryenModuleRef module) {
-  BinaryenAddGlobalImport(module, "data_end", "env", "data_end",
-                          BinaryenTypeInt32(), 0);
+/* void add_global_section(BinaryenModuleRef module) { */
+/*   BinaryenAddGlobalImport(module, "data_end", "env", "data_end", */
+/*                           BinaryenTypeInt32(), 0); */
 
-  BinaryenAddGlobal(module, "a-global", BinaryenTypeInt32(), 0,
-                    make_int32(module, 7));
+/*   BinaryenAddGlobal(module, "a-global", BinaryenTypeInt32(), 0, */
+/*                     make_int32(module, 7)); */
 
-  BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1,
-                    make_int32(module, 123));
-}
+/*   BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1, */
+/*                     make_int32(module, 123)); */
+/* } */
 
 void add_function_table(BinaryenModuleRef module) {
   BinaryenAddTableImport(module, "table", "env", "table");
@@ -125,14 +137,8 @@ void add_function_table(BinaryenModuleRef module) {
                            offset);
 }
 
-void add_function(BinaryenModuleRef module) {
-  BinaryenType _printf_params[2] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
-  BinaryenType printf_params = BinaryenTypeCreate(_printf_params, 2);
-  BinaryenAddFunctionImport(module, "printf", "env", "printf", printf_params,
-                            BinaryenTypeNone());
-}
-
-int compile_list(BinaryenModuleRef module, Lval* list) {
+int compile_list(Wasm* wasm, Lval* list) {
+  BinaryenModuleRef module = wasm->module;
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
   int result;
@@ -147,63 +153,113 @@ int compile_list(BinaryenModuleRef module, Lval* list) {
   return 1;
 }
 
-void add_test_fn(BinaryenModuleRef module) {
-  /* BinaryenType ii[3] = {BinaryenTypeInt32(), BinaryenTypeInt32(), */
-  /* BinaryenTypeInt32()}; */
-  /* BinaryenType params = BinaryenTypeCreate(ii, 3); */
-  /* BinaryenType results = BinaryenTypeInt32(); */
+BinaryenType TypeInt32;
+BinaryenType TypeInt32x1;
+BinaryenType TypeInt32x2;
+BinaryenType TypeNone;
 
-  BinaryenType _printf_params[2] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
-  BinaryenType printf_params = BinaryenTypeCreate(_printf_params, 2);
-  BinaryenType _log_params[1] = {BinaryenTypeInt32()};
-  BinaryenType log_params = BinaryenTypeCreate(_log_params, 1);
-
-  BinaryenAddFunctionImport(module, "printf", "env", "printf", printf_params,
-                            BinaryenTypeInt32());
-
-  BinaryenAddFunctionImport(module, "log", "env", "log", log_params,
-                            BinaryenTypeNone());
+void import_runtime(Wasm* wasm) {
+  BinaryenModuleRef module = wasm->module;
+  TypeInt32 = BinaryenTypeInt32();
+  BinaryenType _TypeInt32x1[1] = {BinaryenTypeInt32()};
+  TypeInt32x1 = BinaryenTypeCreate(_TypeInt32x1, 1);
+  BinaryenType _TypeInt32x2[2] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
+  TypeInt32x2 = BinaryenTypeCreate(_TypeInt32x2, 2);
+  TypeNone = BinaryenTypeNone();
 
   BinaryenAddFunctionImport(module, "init_malloc", "env", "init_malloc",
-                            BinaryenTypeNone(), BinaryenTypeNone());
+                            TypeNone, TypeNone);
+  BinaryenAddFunctionImport(module, "printf", "env", "printf", TypeInt32x2,
+                            TypeInt32);
+  BinaryenAddFunctionImport(module, "log_int", "env", "log_int", TypeInt32x1,
+                            TypeNone);
 
-  BinaryenType params = BinaryenTypeNone();
-  BinaryenType results = BinaryenTypeInt32();
-  BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
+  BinaryenAddFunctionImport(module, "log_string", "env", "log_string",
+                            TypeInt32x1, TypeNone);
 
-  BinaryenExpressionRef __data_end =
-      BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
+  BinaryenAddFunctionImport(module, "log_string_n", "env", "log_string_n",
+                            TypeInt32x2, TypeNone);
+}
 
-  BinaryenExpressionRef operands[] = {__data_end, make_int32(module, 0)};
-  /* BinaryenExpressionRef operands[] = {make_int32(module, 1836), */
-  /*                                     make_int32(module, 0)}; */
+BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef operands[] = {make_int32(module, int32)};
+
+  BinaryenExpressionRef log_int =
+      BinaryenCall(module, "log_int", operands, 1, TypeNone);
+
+  return log_int;
+}
+
+BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef wasm_data_end =
+      BinaryenGlobalGet(module, "__data_end", TypeInt32);
+
+  BinaryenExpressionRef wasm_offset = make_int32(module, offset);
+
+  BinaryenExpressionRef str_p =
+      BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
+  return str_p;
+}
+
+BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset)};
+
+  BinaryenExpressionRef log_string =
+      BinaryenCall(module, "log_string", operands, 1, TypeNone);
+
+  return log_string;
+}
+
+BinaryenExpressionRef wasm_log_string_n(Wasm* wasm, int offset, int n) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset),
+                                      make_int32(module, n)};
+
+  BinaryenExpressionRef log_string_n =
+      BinaryenCall(module, "log_string_n", operands, 2, TypeNone);
+
+  return log_string_n;
+}
+
+BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset),
+                                      make_int32(module, 0)};
 
   BinaryenExpressionRef printf =
-      BinaryenCall(module, "printf", operands, 2, BinaryenTypeNone());
+      BinaryenCall(module, "printf", operands, 2, TypeNone);
 
   BinaryenExpressionRef drop = BinaryenDrop(module, printf);
+  return drop;
+}
 
-  BinaryenExpressionRef log_operands[] = {make_int32(module, 42)};
-  BinaryenExpressionRef log =
-      BinaryenCall(module, "log", log_operands, 1, BinaryenTypeNone());
+void add_test_fn(Wasm* wasm) {
+  BinaryenModuleRef module = wasm->module;
+  BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
 
-  BinaryenExpressionRef im_operands[] = {};
-  BinaryenExpressionRef im =
-      BinaryenCall(module, "init_malloc", im_operands, 0, BinaryenTypeNone());
-  /* (drop */
-  /*    (call 6 */
-  /*      (i32.const 1032) */
-  /*      (i32.const 0))) */
-  BinaryenExpressionRef my_value_list[] = {/* drop, */
-                                           /* make_memory_init(module), */
-                                           drop, log};
-  BinaryenExpressionRef block =
+  int offset = 5;
+  BinaryenExpressionRef printf = wasm_printf(wasm, offset);
+  BinaryenExpressionRef log_int = wasm_log_int(wasm, 123);
+  BinaryenExpressionRef log_string = wasm_log_string(wasm, offset);
+  BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2);
+
+  BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string,
+                                           log_string_n};
+  BinaryenExpressionRef body =
       BinaryenBlock(module, "my-block", my_value_list,
                     sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
                     BinaryenTypeAuto());
 
-  BinaryenAddFunction(module, "test", params, results, localTypes,
-                      sizeof(localTypes) / sizeof(BinaryenType), block);
+  BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
+                      sizeof(localTypes) / sizeof(BinaryenType), body);
 }
 
 void write_string(char* file_name, char* str) {
@@ -217,153 +273,73 @@ void write_binary(char* file_name, void* bin, size_t size) {
   fclose(f);
 }
 
-int compile(int argc, char** argv) {
-  for (int i = 1; i < argc; ++i) {
-    info("Compiling %s\n", argv[i]);
-
-    // Read file
-    char* str = read_file(argv[i]);
-    if (!str) {
-      printf("Could not load file %s", str);
-      return 0;
-    }
-
-    int pos = 0;
-    scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
-    if (lval_list->type == LVAL_ERR) {
-      lval_println(lval_list);
-      return 0;
-    }
-
-    // Module
-    BinaryenModuleRef module = BinaryenModuleCreate();
-
-    Wasm* wasm = init();
-    strings_data_cat(wasm, "foo");
-    strings_data_cat(wasm, "bar");
-    printf("strings_data: %s\n", wasm->strings + 4);
-
-    compile_list(module, lval_list);
-
-    BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
-                            BinaryenTypeInt32(), 0);
-    add_test_fn(module);
-
-    BinaryenAddFunctionExport(module, "test", "test");
-
-    // We only have this data _after_ compiling
-    /* add_global_section(module); */
-    /* add_function_table(module); */
-    /* add_function(module); */
-    add_memory_section(module, wasm);
-
-    printf("mem id %d\n", BinaryenExternalMemory());
-    BinaryenModulePrint(module);
-
-    BinaryenSetColorsEnabled(0);
-    char* output = BinaryenModuleAllocateAndWriteText(module);
-    /* printf("%s %d\n", output, _strlen(output)); */
-    write_string("compiled/lispy.wat", output);
-    free(output);
-
-    BinaryenModuleAllocateAndWriteResult result =
-        BinaryenModuleAllocateAndWrite(module, NULL);
-
-    void* binary = result.binary;
-    size_t binaryBytes = result.binaryBytes;
-    char* sourceMap = result.sourceMap;
-    printf("%s \n%zu \n%s\n", binary, binaryBytes, sourceMap);
-    write_binary("compiled/lispy.wasm", binary, binaryBytes);
-    free(binary);
-    free(sourceMap);
-
-    BinaryenModuleDispose(module);
-  }
-  return 1;
+void write_wat(Wasm* wasm, char* file_name) {
+  BinaryenSetColorsEnabled(0);
+  char* output = BinaryenModuleAllocateAndWriteText(wasm->module);
+  /* printf("%s %d\n", output, _strlen(output)); */
+  write_string(file_name, output);
+  free(output);
+  BinaryenSetColorsEnabled(1);
 }
 
-// ==================================================
-/* void foo(BinaryenModuleRef module) { */
-/*   // Create a function type for  i32 (i32, i32) */
-/*   BinaryenType ii[3] = {BinaryenTypeInt32(), BinaryenTypeInt32(), */
-/*                         BinaryenTypeInt32()}; */
-/*   BinaryenType params = BinaryenTypeCreate(ii, 3); */
-/*   BinaryenType results = BinaryenTypeInt32(); */
+void write_wasm(Wasm* wasm, char* file_name) {
+  BinaryenModuleRef module = wasm->module;
+  BinaryenModuleAllocateAndWriteResult result =
+      BinaryenModuleAllocateAndWrite(module, NULL);
 
-/*   // Get the 0 and 1 arguments, and add them */
-/*   BinaryenExpressionRef x = BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
- */
-/*                         y = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
- */
-/*   BinaryenExpressionRef add = BinaryenBinary(module, BinaryenAddInt32(), x,
- * y); */
-/*   BinaryenExpressionRef add1 = BinaryenBinary(module, BinaryenAddInt32(), x,
- * y); */
-/*   BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()}; */
+  void* binary = result.binary;
+  size_t binaryBytes = result.binaryBytes;
+  char* sourceMap = result.sourceMap;
+  /* printf("%s \n%zu \n%s\n", binary, binaryBytes, sourceMap); */
+  write_binary(file_name, binary, binaryBytes);
+  free(binary);
+  free(sourceMap);
+}
 
-/*   const char* switchValueNames[] = {"v1", "v2"}; */
-/*   const char* switchBodyNames[] = {"the-nothing"}; */
+Lval* parse_file(char* file_name) {
+  char* str = read_file(file_name);
+  if (!str) {
+    printf("Could not load file %s", str);
+    return NULL;
+  }
 
-/*   BinaryenExpressionRef */
-/*       /\* temp1 = make_int32(module, 1), *\/ */
-/*       /\*                   temp2 = make_int32(module, 2), *\/ */
-/*       /\*                   temp3 = make_int32(module, 3), *\/ */
-/*       /\*                   temp4 = make_int32(module, 4), *\/ */
-/*       /\*                   temp5 = make_int32(module, 5), *\/ */
-/*       /\*                   temp6 = make_int32(module, 0), *\/ */
-/*       /\*                   temp7 = make_int32(module, 1), *\/ */
-/*       temp8 = make_int32(module, 0), */
-/*       temp9 = make_int32(module, 1), temp10 = make_int32(module, 1); */
-/*   /\* temp11 = make_int32(module, 3), *\/ */
-/*   /\* temp12 = make_int32(module, 5), *\/ */
-/*   /\* temp13 = make_int32(module, 10), *\/ */
-/*   /\* temp14 = make_int32(module, 11), *\/ */
-/*   /\* temp15 = make_int32(module, 110); *\/ */
+  int pos = 0;
+  scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
+  if (lval_list->type == LVAL_ERR) {
+    lval_println(lval_list);
+    return NULL;
+  }
+  return lval_list;
+}
 
-/*   BinaryenExpressionRef s1 = */
-/*       BinaryenSwitch(module, switchValueNames, 2, "the-value", temp8, temp9);
- */
-/*   BinaryenExpressionRef s2 = BinaryenSwitch( */
-/*       module, switchBodyNames, 1, "the-nothing", make_int32(module, 2),
- * NULL); */
+int compile(char* file_name) {
+  info("Compiling %s\n", file_name);
 
-/*   BinaryenExpressionRef select1 = */
-/*       BinaryenSelect(module, temp8, temp9, temp10, BinaryenTypeAuto()); */
+  Lval* lval_list = parse_file(file_name);
 
-/*   BinaryenExpressionRef my_value_list[] = { */
-/*       /\* BinaryenLocalSet(module, 5, BinaryenPop(module,
- * BinaryenTypeExnref())), */
-/*        *\/ */
-/*       /\* add, *\/ */
-/*       /\* add1, *\/ */
-/*       /\* make_memory_init(module), *\/ */
-/*       s1,  // s2 */
-/*       select1 */
-/*       /\* makeMemoryInit(module), *\/ */
-/*       /\* makeMemoryCopy(module), *\/ */
-/*       /\* makeMemoryFill(module), *\/ */
-/*   }; */
-/*   BinaryenExpressionRef block = */
-/*       BinaryenBlock(module, "my-block", my_value_list, */
-/*                     sizeof(my_value_list) / sizeof(BinaryenExpressionRef), */
-/*                     BinaryenTypeAuto()); */
+  // Wasm
+  Wasm* wasm = init_wasm();
+  import_runtime(wasm);
 
-/*   /\* BinaryenExpressionPrint(my_value_list[0]); *\/ */
+  compile_list(wasm, lval_list);
+  add_test_fn(wasm);
 
-/*   /\* BINARYEN_API void BinaryenSetStart(BinaryenModuleRef module, *\/ */
-/*   /\*                                    BinaryenFunctionRef start); *\/ */
+  strings_data_cat(wasm, "foo3");
+  strings_data_cat(wasm, "bar");
+  /* printf("strings_data: %s\n", wasm->strings + 4); */
 
-/*   BinaryenAddFunction(module, "adder", params, results, localTypes, */
-/*                       sizeof(localTypes) / sizeof(BinaryenType), block); */
-/* } */
+  BinaryenAddFunctionExport(wasm->module, "test", "test");
 
-/* BinaryenSetDebugInfo(1); */
-/* BINARYEN_API void BinaryenExpressionPrint(BinaryenExpressionRef
-   expr); */
+  // We only have this data _after_ compiling
+  /* add_global_section(module); */
+  /* add_function_table(module); */
+  add_memory_section(wasm);
 
-/* BINARYEN_API BinaryenExpressionRef BinaryenDrop(BinaryenModuleRef
- * module,
- */
-/*                                                 BinaryenExpressionRef
- * value); */
-// Return: value can be NULL
+  /* BinaryenModulePrint(wasm->module); */
+
+  write_wat(wasm, "compiled/lispy.wat");
+  write_wasm(wasm, "compiled/lispy.wasm");
+
+  free_wasm(wasm);
+  return 1;
+}

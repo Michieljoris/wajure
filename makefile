@@ -39,7 +39,7 @@ else
 	BUILD_ARTIFACT = out/lispy
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
-	EXEC = out/lispy lispy/repl.lispy
+	EXEC = out/lispy lispy/repl.lispy;  ~/bin/node nodejs.js
 endif
 
 

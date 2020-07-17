@@ -28,7 +28,10 @@ int main(int argc, char **argv) {
   init_lispy_mempools(800, 800, 800);
   // Run lispy interpreterkk
   /* run(argc, argv); */
-  compile(argc, argv);
+
+  for (int i = 1; i < argc; ++i) {
+    compile(argv[i]);
+  }
   /* make_bmodule(); */
 
   /* test_types(); */
