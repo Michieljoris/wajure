@@ -4,7 +4,7 @@
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_i32 (func (param i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 32767))
- (data (global.get $__data_end) "hello, world\n")
+ (data (global.get $__data_end) "foo\00bar\00")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "printf" (func $printf (param i32 i32) (result i32)))
  (import "env" "log" (func $log (param i32)))

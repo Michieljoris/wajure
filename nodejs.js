@@ -62,7 +62,7 @@ async function start() {
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
             then(res => res.instance.exports);
 
-        consoleLogString(runtime.memory, 10, 12);
+        consoleLogString(lispy.mem, runtime.__data_end.value , 3);
         console.log("test: ", lispy.test);
         lispy.test();
     } catch(e) {

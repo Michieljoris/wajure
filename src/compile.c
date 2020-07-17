@@ -62,21 +62,40 @@ int compile_expression(BinaryenModuleRef module, Lval* lval_expr) {
   return 1;
 }
 
-void add_memory_section(BinaryenModuleRef module) {
+typedef struct {
+  char* strings;
+  int strings_offset;
+} Wasm;
+
+Wasm* init() {
+  Wasm* wasm = malloc(sizeof(Wasm));
+  wasm->strings = malloc(1);
+  wasm->strings_offset = 0;
+  return wasm;
+}
+
+void strings_data_cat(Wasm* wasm, char* str) {
+  int len = _strlen(str) + 1;
+  printf("%d %d\n", wasm->strings_offset, len);
+  wasm->strings = realloc(wasm->strings, wasm->strings_offset + len);
+  _strncpy(wasm->strings + wasm->strings_offset, str, len);
+  wasm->strings_offset += len;
+  printf("strings_offset: %d\n", wasm->strings_offset);
+}
+
+void add_memory_section(BinaryenModuleRef module, Wasm* wasm) {
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
-  const char* segments[] = {"hello, world\n" /* , "Hello world again!" */};
-  int8_t segmentPassive[] = {0};
+  const int num_segments = 1;
+  const char* segments[1] = {wasm->strings};
+  BinaryenIndex segmentSizes[] = {wasm->strings_offset};
+
   BinaryenExpressionRef __data_end =
       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
+  BinaryenExpressionRef segmentOffsets[1] = {__data_end};
+  int8_t segmentPassive[] = {0};
 
-  BinaryenExpressionRef segmentOffsets[] = {/* make_int32(module, 1836) */
-                                            __data_end
-                                            /* __data_end *\/ */};
-
-  BinaryenIndex segmentSizes[] = {13 /* , 18 */};
   int initial_mem_size = 2;
   int max_mem_size = 32767;
-  int num_segments = 1;
   int shared = 0;
   BinaryenSetMemory(module, initial_mem_size, max_mem_size, "mem", segments,
                     segmentPassive, segmentOffsets, segmentSizes, num_segments,
@@ -201,11 +220,14 @@ void write_binary(char* file_name, void* bin, size_t size) {
 int compile(int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
     info("Compiling %s\n", argv[i]);
+
+    // Read file
     char* str = read_file(argv[i]);
     if (!str) {
       printf("Could not load file %s", str);
       return 0;
     }
+
     int pos = 0;
     scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
     if (lval_list->type == LVAL_ERR) {
@@ -213,7 +235,13 @@ int compile(int argc, char** argv) {
       return 0;
     }
 
+    // Module
     BinaryenModuleRef module = BinaryenModuleCreate();
+
+    Wasm* wasm = init();
+    strings_data_cat(wasm, "foo");
+    strings_data_cat(wasm, "bar");
+    printf("strings_data: %s\n", wasm->strings + 4);
 
     compile_list(module, lval_list);
 
@@ -227,7 +255,7 @@ int compile(int argc, char** argv) {
     /* add_global_section(module); */
     /* add_function_table(module); */
     /* add_function(module); */
-    add_memory_section(module);
+    add_memory_section(module, wasm);
 
     printf("mem id %d\n", BinaryenExternalMemory());
     BinaryenModulePrint(module);
