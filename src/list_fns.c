@@ -40,7 +40,7 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_rest(lval_list->head);
-  printf("lval_list2->head->hash %d \n", lval_list->head->hash);
+  /* printf("lval_list2->head->hash %d \n", lval_list->head->hash); */
   if (lval_list2->head) lval_list2->hash = lval_list2->head->hash;
   return lval_list2;
 }
@@ -83,6 +83,18 @@ Lval* count_fn(Lenv* env, Lval* arg_list) {
   return make_lval_num(count);
 }
 
+Lval* is_list_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("list?", 1)
+  ITER_NEXT
+  if (arg->subtype == LIST)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
+}
+
 Lval* nth_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("nth", 2)
   ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
@@ -100,7 +112,7 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   return nth_lval;
 }
 
-Builtin list_builtins[8] = {
+Builtin list_builtins[9] = {
 
     {"cons", cons_fn},
     {"first", first_fn},
@@ -109,6 +121,7 @@ Builtin list_builtins[8] = {
     {"concat", concat_fn},
     {"count", count_fn},
     {"nth", nth_fn},
+    {"list?", is_list_fn},
     {NIL}
 
 };

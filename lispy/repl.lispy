@@ -1,12 +1,51 @@
-(def foo 123)
+;; (defn macroexpand-all [form]
+;;   (let [form (macroexpand form)]
+;;     (if (list? form)
+;;       (if (> (count form) 0)
+;;         (cons (macroexpand-all (first form)) (macroexpand-all (rest form)))
+;;         form)
+;;       form)))
+
+
+;; (def foo 123)
 (def fox "abc")
-(let [a foo]
-  (def fuz a))
-(def fux (let [a 1] a))
-(defn bar [x] (let [f (fn [] (+ foo x))]
-               f))
-(print foo)
-((bar 123))
+;; (print-env)
+;; (let [a foo]
+;;   (def fuz a))
+;; (def fux (let [a 1] a))
+;; (defn bar [x] (let [f (fn [] (+ foo x))]
+;;                f))
+
+(defmacro m0 [x y] `(+ ~x ~y))
+(defmacro m1 [x y] `(+ ~x ~y (m0 6 7)))
+(def m2 (macro [y] `(m1 (m1 2 3) ~y)))
+;; ;; (defmacro m2 [y] `(+ 123 ~y))
+;; (print foo)
+;; ((bar 123))
+
+(macroexpand-all '(m2 123))
+
+;; (defn me [form]
+;;   (macroexpand form)
+;;   )
+
+;; (me '(m2 123))
+;; (print "foo")
+
+
+;; (macroexpand-all '(m2 1))
+;; (and (+ 1 2) (= 1 2) (print "FOOOOO"))
+;; (macroexpand (list 1 2))
+
+;; (and false (print "foo"))
+
+
+;; (macroexpand-all '(a b c))
+;; (and (= 1 0) true)
+
+;; (macroexpand '(apply + '(1 2)))
+;; (apply and '(1 2))
+;; (cons (first '(a b c))  (rest '(a b c)))
 ;; (+ 1 2)
 ;; (slurp "lispy/stdlib.lispy")
 ;; (slurp "lispy/test/test_2_eval.lispy")

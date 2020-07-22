@@ -21,7 +21,6 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       ((Lval*)(lval->head->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
     scoped Lval* lval_fun = lenv_get(env, lval->head->car);
-
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
       scoped Lval* arg_list = make_lval_list();
@@ -43,7 +42,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       }
     }
   }
-  return lval;
+  return retain(lval);
 }
 
 Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {

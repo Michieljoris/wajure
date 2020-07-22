@@ -108,6 +108,16 @@ Lval* parse_file(char* file_name) {
   return lval_list;
 }
 
+void process_env(Lenv* env) {
+  // walk list and encode every non function into a wasm data string, and keep
+  // tabs on the offset for each symbol.
+
+  // For functions: create a wasm function for each. Any symbol encountered
+  // resolve to lval in wasm data by offset, unless redefined in fn already. Any
+  // functions encountered again create a wasm function, but now with closure
+  // vars added.
+}
+
 int compile(char* file_name) {
   info("Compiling %s\n", file_name);
 
@@ -133,7 +143,7 @@ int compile(char* file_name) {
 
   printf("Result of slurping %s:\n", file_name);
   lval_println(result);
-  env_print(user_env);
+  /* env_print(user_env); */
   /* env_print(root_env); */
 
   release(result);
