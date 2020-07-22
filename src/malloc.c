@@ -4,8 +4,8 @@ char* mem;
 char* free_p;
 
 export_wasm void init_malloc() {
-  printf("abc %li", (long)0xfffffffff);
-  printf("init_malloc\n");
+  /* printf("abc %li", (long)0xfffffffff); */
+  /* printf("init_malloc\n"); */
   mem = get_memory();
   free_p = mem;
 }

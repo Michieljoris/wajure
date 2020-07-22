@@ -43,6 +43,7 @@ struct lval {
 };
 
 struct lenv {
+  int is_user_env;
   Lenv* parent_env;
   Cell* kv;
 };

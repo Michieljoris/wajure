@@ -97,7 +97,7 @@ void lval_fun_print(Lval* lval) {
     case MACRO:;
       char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
       printf("(%s ", fn_name);
-      lval_debug(lval->params);
+      lval_print(lval->params);
       putchar(' ');
       lval_collection_print(lval->body, 0, 0);
       putchar(')');

@@ -31,8 +31,12 @@ int main(int argc, char **argv) {
 
   for (int i = 1; i < argc; ++i) {
     compile(argv[i]);
+    /* run(argv[i]); */
   }
   /* make_bmodule(); */
+
+  free_lispy_mempools();
+  free_malloc();
 
   /* test_types(); */
   /* test_features(); */

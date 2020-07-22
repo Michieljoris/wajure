@@ -50,8 +50,8 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   int char128_count = 10;
   int char64_count = 10;
   int char32_count = 10;
-  int char16_count = 10;
-  int char8_count = 10;
+  int char16_count = 40;
+  int char8_count = 200;
   int mempool_count = SLOT_TYPE_COUNT;
   /* printf("malloc mempools count: %d\n", SLOT_TYPE_COUNT); */
   mempools = _malloc(sizeof(Mempool*) * mempool_count);

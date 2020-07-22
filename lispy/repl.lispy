@@ -1,4 +1,12 @@
-(print 123)
+(def foo 123)
+(def fox "abc")
+(let [a foo]
+  (def fuz a))
+(def fux (let [a 1] a))
+(defn bar [x] (let [f (fn [] (+ foo x))]
+               f))
+(print foo)
+((bar 123))
 ;; (+ 1 2)
 ;; (slurp "lispy/stdlib.lispy")
 ;; (slurp "lispy/test/test_2_eval.lispy")

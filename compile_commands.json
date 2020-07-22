@@ -1,1 +1,542 @@
-[]
+[
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/printf.o",
+            "src/printf.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/printf.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/main.o",
+            "src/main.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/main.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/lib.o",
+            "src/lib.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/lib.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/list_fns.o",
+            "src/list_fns.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/list_fns.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/cell.o",
+            "src/cell.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/cell.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/binaryen_kitchen_sink.o",
+            "src/binaryen_kitchen_sink.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/binaryen_kitchen_sink.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/read.o",
+            "src/read.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/read.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/lispy_mempool.o",
+            "src/lispy_mempool.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/lispy_mempool.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/mempool.o",
+            "src/mempool.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/mempool.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/compile.o",
+            "src/compile.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/compile.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/repl.o",
+            "src/repl.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/repl.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/malloc.o",
+            "src/malloc.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/malloc.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/run.o",
+            "src/run.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/run.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/refcount.o",
+            "src/refcount.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/refcount.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/env.o",
+            "src/env.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/env.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/io.o",
+            "src/io.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/io.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/platform.o",
+            "src/platform.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/platform.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/eval.o",
+            "src/eval.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/eval.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/print.o",
+            "src/print.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/print.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/hash.o",
+            "src/hash.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/hash.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/lval.o",
+            "src/lval.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/lval.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/list.o",
+            "src/list.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/list.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/binaryen.o",
+            "src/binaryen.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/binaryen.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/printf2.o",
+            "src/printf2.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/printf2.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/misc_fns.o",
+            "src/misc_fns.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/misc_fns.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/math_fns.o",
+            "src/math_fns.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/math_fns.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/test.o",
+            "src/test.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/test.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/fns.o",
+            "src/fns.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/fns.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/iter.o",
+            "src/iter.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/iter.c"
+    },
+    {
+        "arguments": [
+            "clang",
+            "-c",
+            "-pthread",
+            "-g",
+            "-std=c99",
+            "-Wall",
+            "-flto",
+            "-Isrc/include",
+            "-Ilib/include",
+            "-o",
+            "out/special_fns.o",
+            "src/special_fns.c"
+        ],
+        "directory": "/home/mj/src/c/lispy",
+        "file": "src/special_fns.c"
+    }
+]

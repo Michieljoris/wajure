@@ -19,7 +19,7 @@ var importObject = {
         // else str = str + String.fromCharCode(arg);
         process.stdout.write(String.fromCharCode(arg))
     },
-           grow_memory: () => { console.log("grow_memory");
+           grow_memory: () => { //console.log("grow_memory");
                                 if (++page_count > max_page_count) {
                                     console.log("Error: can't allocate memory beyond max\n");
                                     // throw "Error: can't allocate memory beyond max\n";
@@ -59,13 +59,13 @@ async function start() {
         let buf = fs.readFileSync('./out_wasm/runtime.wasm');
         runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
             then(res => res.instance.exports);
-        console.log("data_end =", runtime.__data_end.value);
-        console.log("calling init_malloc");
+        // console.log("data_end =", runtime.__data_end.value);
+        // console.log("calling init_malloc");
         runtime.init_malloc();
         runtime.init_lispy_mempools(800, 800, 800);
 
         buf = fs.readFileSync('./compiled/lispy.wasm');
-        console.log("printf_ :", runtime.printf_);
+        // console.log("printf_ :", runtime.printf_);
         // const __data_end = new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end);
         let lispyImportObject = { env: { memory: runtime.memory,
                                          printf: runtime.printf_,
@@ -78,9 +78,9 @@ async function start() {
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
             then(res => res.instance.exports);
 
-        makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
-        makeLogString(lispy.mem)(runtime.__data_end.value);
-        console.log("test: ", lispy.test);
+        // makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
+        // makeLogString(lispy.mem)(runtime.__data_end.value);
+        // console.log("test: ", lispy.test);
         lispy.test();
     } catch(e) {
         console.log(e);

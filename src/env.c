@@ -44,18 +44,15 @@ Lenv* get_root_env(Lenv* env) {
 }
 
 Lenv* get_user_env(Lenv* env) {
-  Lenv* user_env = NIL;
   while (env->parent_env) {
-    user_env = env;
+    if (env->is_user_env) return env;
     env = env->parent_env;
   }
-  if (!user_env) {
-    printf("Error: you can't get user_env from root env!!. Aborting");
+  printf("Error: you can't get user_env from root env!!. Aborting");
 #ifndef WASM
-    exit(1);
+  exit(1);
 #endif
-  }
-  return user_env;
+  return NULL;
 }
 
 int is_user_env(Lenv* env) {

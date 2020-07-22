@@ -58,3 +58,13 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 ** DONE persistend list with mem pool
 ** DONE replace mpc
 ** DONE reference counting
+
+* Good to know
+To create/update compile_commmands.json:
+
+    make clean
+    bear make
+
+    rc -J
+
+https://github.com/Andersbakken/rtags/wiki/Usage
