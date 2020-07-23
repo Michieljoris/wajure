@@ -7,9 +7,11 @@
 
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
-  wasm->module = BinaryenModuleCreate();
-  wasm->strings = malloc(1);
-  wasm->strings_offset = 0;
+  *wasm = (Wasm){.module = BinaryenModuleCreate(),
+                 .strings = malloc(1),
+                 .strings_offset = 0,
+                 .fn_names = malloc(1),
+                 .fns_count = 0};
   return wasm;
 }
 
@@ -47,14 +49,15 @@ void add_memory_section(Wasm* wasm) {
                     shared);
 }
 
-void add_function_table(BinaryenModuleRef module) {
-  BinaryenAddTableImport(module, "table", "env", "table");
-  int initial = 1;
-  int maximum = 1;
+void add_function_table(Wasm* wasm) {
+  BinaryenModuleRef module = wasm->module;
+  /* BinaryenAddTableImport(module, "table", "env", "table"); */
+  int initial = wasm->fns_count;
+  int maximum = wasm->fns_count;
 
-  const char* funcNames[] = {"some_func"};
-  int numFuncNames = 1;
-  BinaryenExpressionRef offset = make_int32(module, 11);
+  const char** funcNames = (const char**)wasm->fn_names;
+  int numFuncNames = wasm->fns_count;
+  BinaryenExpressionRef offset = make_int32(module, 0);
   BinaryenSetFunctionTable(module, initial, maximum, funcNames, numFuncNames,
                            offset);
 }

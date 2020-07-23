@@ -23,6 +23,20 @@ typedef struct {
   Lbuiltin fun;
 } Builtin;
 
+/* struct fun { */
+/*   Lbuiltin fun; */
+/*   Lenv* closure; */
+/*   Lval* params; */
+/*   Lval* body; */
+/* }; */
+
+/* struct lval2 { */
+/*   int type; */
+/*   int subtype; */
+/*   void* pointer;  // num, str, fun or cell */
+/*   int hash; */
+/* }; */
+
 struct lval {
   int type;
   int subtype;
@@ -40,6 +54,7 @@ struct lval {
   Cell* head;
 
   int hash;
+  int offset;  // compiler to wasm data
 };
 
 struct lenv {

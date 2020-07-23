@@ -2,6 +2,12 @@
 
 #include <binaryen-c.h>
 
+#include "env.h"
+#include "fns.h"
+#include "lib.h"
+#include "lispy_mempool.h"
+#include "ltypes.h"
+#include "misc_fns.h"
 #include "platform.h"
 #include "wasm.h"
 
@@ -103,18 +109,88 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
   return drop;
 }
 
+int add_string_to_data(Wasm* wasm, char* str) {
+  int len = _strlen(str) + 1;
+  int offset = wasm->strings_offset;
+  /* printf("%d %d\n", wasm->strings_offset, len); */
+  wasm->strings = realloc(wasm->strings, offset + len);
+  _strncpy(wasm->strings + offset, str, len);
+
+  wasm->strings_offset += len;
+  /* printf("strings_offset: %d\n", wasm->strings_offset); */
+  return offset;
+}
+
+int add_lval_to_data(Wasm* wasm, Lval* lval) {
+  /* int len = _strlen(str) + 1; */
+  /* /\* printf("%d %d\n", wasm->strings_offset, len); *\/ */
+  /* wasm->strings = realloc(wasm->strings, wasm->strings_offset + len); */
+  /* _strncpy(wasm->strings + wasm->strings_offset, str, len); */
+  /* wasm->strings_offset += len; */
+  /* /\* printf("strings_offset: %d\n", wasm->strings_offset); *\/ */
+  return wasm->lvals_offset;
+}
+
+int add_fn_to_table(Wasm* wasm, char* fn_name) {
+  int free_fn_slot = wasm->fns_count;
+  wasm->fns_count++;
+  wasm->fn_names = realloc(wasm->fn_names, wasm->fns_count * sizeof(char*));
+  int len = _strlen(fn_name) + 1;
+  wasm->fn_names[free_fn_slot] = malloc(len);
+  _strncpy(wasm->fn_names[free_fn_slot], fn_name, len);
+  return free_fn_slot;
+}
+
+Lenv* interprete_file(char* file_name) {
+  Lenv* root_env = lenv_new();
+  lenv_add_builtin_fns(root_env);
+
+  Lenv* stdlib_env = lenv_new();
+  stdlib_env->parent_env = retain(root_env);
+
+  /* info("Slurping lispy/stdlib.lispy \n"); */
+  stdlib_env->is_user_env = 1;
+  slurp(stdlib_env, "lispy/stdlib.lispy");
+
+  Lenv* user_env = lenv_new();
+  user_env->parent_env = retain(stdlib_env);
+  stdlib_env->is_user_env = 0;
+  user_env->is_user_env = 1;
+
+  release(slurp(user_env, file_name));
+
+  return user_env;
+}
+
+void release_env(Lenv* env) {
+  release(env->kv);
+  env->kv = NIL;
+  Lenv* parent_env = env->parent_env;
+  release(env);
+  if (parent_env) release_env(parent_env);
+}
+
 void add_test_fn(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
-  BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
 
-  int offset = 5;
-  BinaryenExpressionRef printf = wasm_printf(wasm, offset);
-  BinaryenExpressionRef log_int = wasm_log_int(wasm, 123);
-  BinaryenExpressionRef log_string = wasm_log_string(wasm, offset);
-  BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2);
+  add_string_to_data(wasm, "foo3");
+  add_string_to_data(wasm, "bar");
+  /* printf("strings_data: %s\n", wasm->strings); */
+  /* printf("strings_data: %s\n", wasm->strings + _strlen("foo3") + 1); */
 
-  BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string,
-                                           log_string_n};
+  BinaryenType localTypes[] = {};
+  /* BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()}; */
+
+  /* int offset = 5; */
+  /* BinaryenExpressionRef printf = wasm_printf(wasm, offset); */
+  /* BinaryenExpressionRef log_int = wasm_log_int(wasm, 123); */
+  /* BinaryenExpressionRef log_string = wasm_log_string(wasm, offset); */
+  /* BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2); */
+
+  /* BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string, */
+  /*                                          log_string_n}; */
+
+  BinaryenExpressionRef my_value_list[] = {};
   BinaryenExpressionRef body =
       BinaryenBlock(module, "my-block", my_value_list,
                     sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
@@ -122,4 +198,6 @@ void add_test_fn(Wasm* wasm) {
 
   BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
                       sizeof(localTypes) / sizeof(BinaryenType), body);
+
+  BinaryenAddFunctionExport(wasm->module, "test", "test");
 }

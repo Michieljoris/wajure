@@ -225,6 +225,7 @@ void env_print(Lenv* env) {
   if (env->parent_env) {
     alist_print(env->kv);
   } else {
+    /* printf("ROOT env!!! \n"); */
     list_print(env->kv, print_kv, "\n");
   }
 }

@@ -13,4 +13,6 @@ void lenv_print(Lenv* e);
 void alist_print(Cell* alist);
 void env_print(Lenv* env);
 
+void print_kv(void* pair);
+
 #endif  // __PRINT_H_

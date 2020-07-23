@@ -1,14 +1,31 @@
-;; (defn macroexpand-all [form]
-;;   (let [form (macroexpand form)]
-;;     (if (list? form)
-;;       (if (> (count form) 0)
-;;         (cons (macroexpand-all (first form)) (macroexpand-all (rest form)))
-;;         form)
-;;       form)))
+(def bar 1)
+
+(defn test[x] (+ 1 2))
+
+(defn foo[x] (+ 1 2))
+(defn bar[x] (+ 1 2))
+;; (defn foo [x] (+ 1 x))
+;; (defn fox [x] (fn [] x))
+;; (defn foz [x] (let [a (+ x 1)
+;;                     a (+ a 1)
+;;                     b 123]
+;;                 (fn [x y] (+ a b x y bar))))
+
+;; (fn [x y a b] (+ a b x y bar))
+
+;; {:wasm-fn-ref 1
+;;  :parameter-count 2
+;;  :parameters-list (42)
+;;  :closure-list (5 7)
+;;  }
+
+
+
+;; ((foz 1) 1)
 
 
 ;; (def foo 123)
-(def fox "abc")
+;; (def fox "abc")
 ;; (print-env)
 ;; (let [a foo]
 ;;   (def fuz a))
@@ -16,14 +33,14 @@
 ;; (defn bar [x] (let [f (fn [] (+ foo x))]
 ;;                f))
 
-(defmacro m0 [x y] `(+ ~x ~y))
-(defmacro m1 [x y] `(+ ~x ~y (m0 6 7)))
-(def m2 (macro [y] `(m1 (m1 2 3) ~y)))
+;; (defmacro m0 [x y] `(+ ~x ~y))
+;; (defmacro m1 [x y] `(+ ~x ~y (m0 6 7)))
+;; (def m2 (macro [y] `(m1 (m1 2 3) ~y)))
 ;; ;; (defmacro m2 [y] `(+ 123 ~y))
 ;; (print foo)
 ;; ((bar 123))
 
-(macroexpand-all '(m2 123))
+;; (macroexpand-all '(m2 123))
 
 ;; (defn me [form]
 ;;   (macroexpand form)

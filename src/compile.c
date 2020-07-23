@@ -16,6 +16,12 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
+// Builtins:
+// special: do, let, if, try, throw, quote, quasiquote
+// maths: +, -, *, /, >, < ,<=, >=, =, not=
+// list: cons, first, list, rest, concat, count, nth, list?
+// misc: exit, print, boolean, hash
+
 char* make_err(char* fmt, ...) {
   va_list va;
   va_start(va, fmt);
@@ -55,15 +61,150 @@ int compile_expression(BinaryenModuleRef module, Lval* lval_expr) {
   return 1;
 }
 
-int strings_data_cat(Wasm* wasm, char* str) {
-  int len = _strlen(str) + 1;
-  /* printf("%d %d\n", wasm->strings_offset, len); */
-  wasm->strings = realloc(wasm->strings, wasm->strings_offset + len);
-  _strncpy(wasm->strings + wasm->strings_offset, str, len);
-  wasm->strings_offset += len;
-  /* printf("strings_offset: %d\n", wasm->strings_offset); */
-  return wasm->strings_offset;
+BinaryenType* make_type_int32_array(int count) {
+  BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
+  while (count--) types[count] = BinaryenTypeInt32();
+  return types;
 }
+
+void add_wasm_function(Wasm* wasm, char* fn_name, int params_count,
+                       int locals_count, BinaryenExpressionRef body,
+                       int results_count) {
+  BinaryenModuleRef module = wasm->module;
+
+  /* BinaryenType param_types = TypeNone; */
+  BinaryenType* _params_type = make_type_int32_array(params_count);
+  BinaryenType param_types = BinaryenTypeCreate(_params_type, params_count);
+
+  BinaryenType* _results_type = make_type_int32_array(results_count);
+  BinaryenType results_type = BinaryenTypeCreate(_results_type, results_count);
+  /* BinaryenType result_type = TypeNone; */
+  /* BinaryenType result_type = TypeInt32x1; */
+
+  BinaryenType* local_types = make_type_int32_array(locals_count);
+
+  BinaryenAddFunction(module, fn_name, param_types, results_type, local_types,
+                      locals_count, body);
+}
+
+void process_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
+  BinaryenModuleRef module = wasm->module;
+
+  char* fn_name = lval_sym->str;
+
+  /* BinaryenType param_types = TypeNone; */
+  int params_count = 1;
+  int locals_count = 3;
+  int results_count = 0;
+
+  BinaryenExpressionRef log_int = wasm_log_int(wasm, 123);
+  BinaryenExpressionRef body_list[] = {log_int};
+
+  int body_list_count = sizeof(body_list) / sizeof(BinaryenExpressionRef);
+  BinaryenExpressionRef body = BinaryenBlock(
+      module, "body", body_list, body_list_count, BinaryenTypeAuto());
+
+  lval->offset = add_fn_to_table(wasm, fn_name);
+  add_wasm_function(wasm, fn_name, params_count, locals_count, body,
+                    results_count);
+}
+
+void print_pair(Lval* lval_sym, Lval* lval) {
+  lval_print(lval_sym);
+  printf(": ");
+  lval_print(lval);
+}
+
+void process_env(Wasm* wasm, Lenv* env) {
+  Cell* cell = env->kv;
+  if (!cell || !cell->car) return;
+  while (cell) {
+    Cell* pair = cell->car;
+    Lval* lval_sym = (Lval*)((Cell*)pair)->car;
+    Lval* lval = (Lval*)((Cell*)pair)->cdr;
+
+    print_pair(lval_sym, lval);
+    if (lval->type == LVAL_FUNCTION) {
+      process_function(wasm, lval_sym, lval);
+    }
+    /* else { */
+    /*   int offset = write_lval_to_data(wasm, lval); */
+    /*   lval->offset = offset; */
+    /* } */
+    cell = cell->cdr;
+    if (cell) printf("%s", "\n");
+  }
+  printf("\n");
+
+  // walk list and encode every non function into a wasm data string, and keep
+  // tabs on the offset for each symbol.
+
+  // For functions: create a wasm function for each. Any symbol encountered
+  // resolve to lval in wasm data by offset, unless redefined in fn already.
+  // Any functions encountered again create a wasm function, but now with
+  // closure vars added.
+}
+
+/* BinaryenExpressionRef BinaryenCall(BinaryenModuleRef module, */
+/*                                    const char* target, */
+/*                                    BinaryenExpressionRef* operands, */
+/*                                    BinaryenIndex numOperands, */
+/*                                    BinaryenType returnType); */
+
+/* BINARYEN_API BinaryenExpressionRef */
+/* BinaryenCallIndirect(BinaryenModuleRef module, */
+/*                      BinaryenExpressionRef target, */
+/*                      BinaryenExpressionRef* operands, */
+/*                      BinaryenIndex numOperands, */
+/*                      BinaryenType params, */
+/*                      BinaryenType results); */
+
+int compile(char* file_name) {
+  info("Compiling %s\n", file_name);
+
+  set_log_level(LOG_LEVEL_INFO);
+  Lenv* env = interprete_file(file_name);
+  Wasm* wasm = init_wasm();
+  import_runtime(wasm);
+
+  printf("==================================================\n");
+
+  process_env(wasm, env);
+
+  printf("==================================================\n");
+
+  BinaryenAddFunctionExport(wasm->module, "test", "test");
+
+  // We only have this data _after_ compiling
+  /* add_global_section(module); */
+  add_function_table(wasm);
+  add_memory_section(wasm);
+
+  /* BinaryenModulePrint(wasm->module); */
+
+  write_wat(wasm, "compiled/lispy.wat");
+  write_wasm(wasm, "compiled/lispy.wasm");
+
+  release_env(env);
+  free_wasm(wasm);
+  return 1;
+}
+
+/* Lval* parse_file(char* file_name) { */
+/*   char* str = read_file(file_name); */
+/*   if (!str) { */
+/*     printf("Could not load file %s", str); */
+/*     return NULL; */
+/*   } */
+
+/*   int pos = 0; */
+/*   Lval* lval_list = lval_read_list(str, &pos, '\0'); */
+/*   if (lval_list->type == LVAL_ERR) { */
+/*     lval_println(lval_list); */
+/*     return NULL; */
+/*   } */
+/*   return lval_list; */
+/* } */
 
 /* void add_global_section(BinaryenModuleRef module) { */
 /*   BinaryenAddGlobalImport(module, "data_end", "env", "data_end", */
@@ -72,118 +213,7 @@ int strings_data_cat(Wasm* wasm, char* str) {
 /*   BinaryenAddGlobal(module, "a-global", BinaryenTypeInt32(), 0, */
 /*                     make_int32(module, 7)); */
 
-/*   BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1, */
+/*   BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1,
+ */
 /*                     make_int32(module, 123)); */
 /* } */
-
-int compile_list(Wasm* wasm, Lval* list) {
-  BinaryenModuleRef module = wasm->module;
-  scoped_iter Cell* i = iter_new(list);
-  Lval* lval = iter_next(i);
-  int result;
-  while (lval) {
-    result = compile_expression(module, lval);
-    if (!result) {
-      lval_print(lval);
-      return result;
-    }
-    lval = iter_next(i);
-  }
-  return 1;
-}
-
-Lval* parse_file(char* file_name) {
-  char* str = read_file(file_name);
-  if (!str) {
-    printf("Could not load file %s", str);
-    return NULL;
-  }
-
-  int pos = 0;
-  Lval* lval_list = lval_read_list(str, &pos, '\0');
-  if (lval_list->type == LVAL_ERR) {
-    lval_println(lval_list);
-    return NULL;
-  }
-  return lval_list;
-}
-
-void process_env(Lenv* env) {
-  // walk list and encode every non function into a wasm data string, and keep
-  // tabs on the offset for each symbol.
-
-  // For functions: create a wasm function for each. Any symbol encountered
-  // resolve to lval in wasm data by offset, unless redefined in fn already. Any
-  // functions encountered again create a wasm function, but now with closure
-  // vars added.
-}
-
-int compile(char* file_name) {
-  info("Compiling %s\n", file_name);
-
-  set_log_level(LOG_LEVEL_INFO);
-
-  Lenv* root_env = lenv_new();
-  lenv_add_builtin_fns(root_env);
-
-  Lenv* stdlib_env = lenv_new();
-  stdlib_env->parent_env = retain(root_env);
-
-  /* info("Slurping lispy/stdlib.lispy \n"); */
-  stdlib_env->is_user_env = 1;
-  slurp(stdlib_env, "lispy/stdlib.lispy");
-
-  Lenv* user_env = lenv_new();
-  user_env->parent_env = retain(stdlib_env);
-  stdlib_env->is_user_env = 0;
-  user_env->is_user_env = 1;
-
-  /* info("Slurping %s\n", file_name); */
-  Lval* result = slurp(user_env, file_name);
-
-  printf("Result of slurping %s:\n", file_name);
-  lval_println(result);
-  /* env_print(user_env); */
-  /* env_print(root_env); */
-
-  release(result);
-
-  release(user_env->kv);
-  user_env->kv = NIL;
-  release(user_env);
-
-  release(stdlib_env->kv);
-  stdlib_env->kv = NIL;
-  release(stdlib_env);
-
-  release(root_env);
-
-  return 1;
-  Lval* lval_list = parse_file(file_name);
-
-  // Wasm
-  Wasm* wasm = init_wasm();
-  import_runtime(wasm);
-
-  compile_list(wasm, lval_list);
-  add_test_fn(wasm);
-
-  strings_data_cat(wasm, "foo3");
-  strings_data_cat(wasm, "bar");
-  /* printf("strings_data: %s\n", wasm->strings + 4); */
-
-  BinaryenAddFunctionExport(wasm->module, "test", "test");
-
-  // We only have this data _after_ compiling
-  /* add_global_section(module); */
-  /* add_function_table(module); */
-  add_memory_section(wasm);
-
-  /* BinaryenModulePrint(wasm->module); */
-
-  write_wat(wasm, "compiled/lispy.wat");
-  write_wasm(wasm, "compiled/lispy.wasm");
-
-  free_wasm(wasm);
-  return 1;
-}
