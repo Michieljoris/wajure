@@ -1,7 +1,6 @@
 #include "math_fns.h"
 
 #include "assert.h"
-#include "env.h"
 #include "io.h"
 #include "iter.h"
 #include "lib.h"
@@ -171,7 +170,7 @@ Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
   return cmp_fn(env, arg_list, "not=");
 }
 
-Builtin math_builtins[11] = {
+Builtin math_builtins[] = {
 
     {"+", add_fn}, {"-", sub_fn},       {"*", mul_fn},  {"/", div_fn},
     {">", gt_fn},  {"<", lt_fn},        {">=", gte_fn}, {"<=", lte_fn},

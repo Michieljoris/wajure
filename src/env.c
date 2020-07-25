@@ -1,3 +1,6 @@
+#ifdef WASM
+
+#else  // not WASM
 #include <env.h>
 
 #include "io.h"
@@ -78,3 +81,5 @@ Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   next_env->kv = alist_prepend(retain(env->kv), lval_sym, lval);
   return next_env;
 }
+
+#endif  // WASM

@@ -11,14 +11,14 @@ zize_t _strlen(const char *s) {
 }
 
 /* strcpy */
-char *(_strcpy)(char *restrict s1, const char *restrict s2) {
-  char *dst = s1;
-  const char *src = s2;
+char *(_strcpy)(char *restrict dst, const char *restrict src) {
+  char *_dst = dst;
+  const char *_src = src;
   /* Do the copying in a loop.  */
-  while ((*dst++ = *src++) != '\0')
+  while ((*_dst++ = *_src++) != '\0')
     ; /* The body of this loop is left empty. */
   /* Return the destination string.  */
-  return s1;
+  return dst;
 }
 
 /* strcat */

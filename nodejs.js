@@ -67,21 +67,33 @@ async function start() {
         buf = fs.readFileSync('./compiled/lispy.wasm');
         // console.log("printf_ :", runtime.printf_);
         // const __data_end = new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end);
-        let lispyImportObject = { env: { memory: runtime.memory,
-                                         printf: runtime.printf_,
-                                         init_malloc: runtime.init_malloc,
-                                         log_int: arg => console.log(arg),
-                                         log_string: makeLogString(runtime.memory),
-                                         log_string_n: makeLogStringN(runtime.memory),
-                                         __data_end: runtime.__data_end
-                                       }};
+        // let lispyImportObject = { env: { memory: runtime.memory,
+        //                                  printf_: runtime.printf_,
+        //                                  log_int: arg => console.log(arg),
+        //                                  log_string: makeLogString(runtime.memory),
+        //                                  log_string_n: makeLogStringN(runtime.memory),
+        //                                  make_lval_num: runtime.make_lval_num,
+        //                                  __data_end: runtime.__data_end
+        //                                }};
+        let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
+                                                     log_int: arg => console.log(arg),
+                                                     log_string_n: makeLogStringN(runtime.memory),},
+                                                    runtime)};
+        console.log("Loading lispy.wat ----------------------------------------");
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
             then(res => res.instance.exports);
 
         // makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
         // makeLogString(lispy.mem)(runtime.__data_end.value);
         // console.log("test: ", lispy.test);
+
+        console.log("Running lispy.test ------------------------------");
         lispy.test();
+
+        runtime.free_lispy_mempools();
+        runtime.free_malloc();
+
+        console.log("End ------------------------------");
     } catch(e) {
         console.log(e);
     }

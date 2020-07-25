@@ -1,6 +1,5 @@
 #include "print.h"
 
-#include "env.h"
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"

@@ -1,4 +1,11 @@
 #+TITLE: Todo
+* TODO compile
+** macroexpand-all macros before compiling
+** lisp function names -> wasm fn names
+wasm fn names can only have strings, numbers and underscore.
+So we need encode or vary the names some how.
+** error handling
+** max str size, elide with warning or abort
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO

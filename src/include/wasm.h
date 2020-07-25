@@ -14,11 +14,6 @@ typedef struct {
   int fns_count;
 } Wasm;
 
-extern BinaryenType TypeInt32;
-extern BinaryenType TypeInt32x1;
-extern BinaryenType TypeInt32x2;
-extern BinaryenType TypeNone;
-
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 

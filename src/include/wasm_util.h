@@ -17,10 +17,19 @@ int add_string_to_data(Wasm* wasm, char* str);
 int add_lval_to_data(Wasm* wasm, Lval* lval);
 int add_fn_to_table(Wasm* wasm, char* fn_name);
 
+BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
+
 BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
 Lenv* interprete_file(char* file_name);
 
 void release_env(Lenv* env);
 
+BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset);
+
+BinaryenType* make_type_int32_array(int count);
+
+BinaryenType make_type_int32(int count);
+
+BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 #endif  // __WASM_UTIL_H_

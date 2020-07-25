@@ -55,7 +55,7 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
   BinaryenExpressionRef operands[] = {make_int32(module, int32)};
 
   BinaryenExpressionRef log_int =
-      BinaryenCall(module, "log_int", operands, 1, TypeNone);
+      BinaryenCall(module, "log_int", operands, 1, BinaryenTypeNone());
 
   return log_int;
 }
@@ -64,7 +64,7 @@ BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
   BinaryenModuleRef module = wasm->module;
 
   BinaryenExpressionRef wasm_data_end =
-      BinaryenGlobalGet(module, "__data_end", TypeInt32);
+      BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
 
   BinaryenExpressionRef wasm_offset = make_int32(module, offset);
 
@@ -79,7 +79,7 @@ BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
   BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset)};
 
   BinaryenExpressionRef log_string =
-      BinaryenCall(module, "log_string", operands, 1, TypeNone);
+      BinaryenCall(module, "log_string", operands, 1, BinaryenTypeNone());
 
   return log_string;
 }
@@ -91,7 +91,7 @@ BinaryenExpressionRef wasm_log_string_n(Wasm* wasm, int offset, int n) {
                                       make_int32(module, n)};
 
   BinaryenExpressionRef log_string_n =
-      BinaryenCall(module, "log_string_n", operands, 2, TypeNone);
+      BinaryenCall(module, "log_string_n", operands, 2, BinaryenTypeNone());
 
   return log_string_n;
 }
@@ -103,7 +103,7 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
                                       make_int32(module, 0)};
 
   BinaryenExpressionRef printf =
-      BinaryenCall(module, "printf", operands, 2, TypeNone);
+      BinaryenCall(module, "printf", operands, 2, BinaryenTypeNone());
 
   BinaryenExpressionRef drop = BinaryenDrop(module, printf);
   return drop;
@@ -189,7 +189,8 @@ void add_test_fn(Wasm* wasm) {
 
   /* BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string, */
   /*                                          log_string_n}; */
-
+  BinaryenType TypeNone = BinaryenTypeNone();
+  BinaryenType TypeInt32x1 = make_type_int32(1);
   BinaryenExpressionRef my_value_list[] = {};
   BinaryenExpressionRef body =
       BinaryenBlock(module, "my-block", my_value_list,
@@ -200,4 +201,15 @@ void add_test_fn(Wasm* wasm) {
                       sizeof(localTypes) / sizeof(BinaryenType), body);
 
   BinaryenAddFunctionExport(wasm->module, "test", "test");
+}
+
+BinaryenType* make_type_int32_array(int count) {
+  BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
+  while (count--) types[count] = BinaryenTypeInt32();
+  return types;
+}
+
+BinaryenType make_type_int32(int count) {
+  BinaryenType* _type = make_type_int32_array(count);
+  return BinaryenTypeCreate(_type, count);
 }

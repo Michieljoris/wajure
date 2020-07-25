@@ -1,9 +1,14 @@
 (def bar 1)
 
-(defn test[x] (+ 1 2))
+;; (defn test[x] 456 nil true false "ok")
+(defn test[x] "ok" "then" nil)
 
-(defn foo[x] (+ 1 2))
-(defn bar[x] (+ 1 2))
+;; (defn test[x] (+ 1 2))
+
+
+;; (defn foo[x] "some string" "string 2")
+
+;; (defn bar[x] (+ 1 2))
 ;; (defn foo [x] (+ 1 x))
 ;; (defn fox [x] (fn [] x))
 ;; (defn foz [x] (let [a (+ x 1)

@@ -21,11 +21,6 @@ void free_wasm(Wasm* wasm) {
   free(wasm);
 }
 
-BinaryenType TypeInt32;
-BinaryenType TypeInt32x1;
-BinaryenType TypeInt32x2;
-BinaryenType TypeNone;
-
 void add_memory_section(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
   BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
@@ -62,25 +57,33 @@ void add_function_table(Wasm* wasm) {
                            offset);
 }
 
+typedef struct {
+  char* func_name;
+  int params_count;
+  int results_count;
+} RuntimeFunction;
+
+RuntimeFunction runtime_functions[] = {
+    {"printf_", 2, 1},        {"log_int", 1, 0},
+    {"log_string", 1, 0},     {"log_string_n", 2, 0},
+    {"make_lval_num", 1, 1},  {"make_lval_nil", 0, 1},
+    {"make_lval_true", 0, 1}, {"make_lval_false", 0, 1},
+    {"make_lval_str", 1, 1},  {"lalloc_size", 1, 1},
+    {"_strcpy", 2, 1},        {NULL}};
+
 void import_runtime(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
-  TypeInt32 = BinaryenTypeInt32();
-  BinaryenType _TypeInt32x1[1] = {BinaryenTypeInt32()};
-  TypeInt32x1 = BinaryenTypeCreate(_TypeInt32x1, 1);
-  BinaryenType _TypeInt32x2[2] = {BinaryenTypeInt32(), BinaryenTypeInt32()};
-  TypeInt32x2 = BinaryenTypeCreate(_TypeInt32x2, 2);
-  TypeNone = BinaryenTypeNone();
-
-  BinaryenAddFunctionImport(module, "init_malloc", "env", "init_malloc",
-                            TypeNone, TypeNone);
-  BinaryenAddFunctionImport(module, "printf", "env", "printf", TypeInt32x2,
-                            TypeInt32);
-  BinaryenAddFunctionImport(module, "log_int", "env", "log_int", TypeInt32x1,
-                            TypeNone);
-
-  BinaryenAddFunctionImport(module, "log_string", "env", "log_string",
-                            TypeInt32x1, TypeNone);
-
-  BinaryenAddFunctionImport(module, "log_string_n", "env", "log_string_n",
-                            TypeInt32x2, TypeNone);
+  int i = 0;
+  char* func_name;
+  int params_count, results_count;
+  do {
+    func_name = runtime_functions[i].func_name;
+    if (!func_name) break;
+    params_count = runtime_functions[i].params_count;
+    results_count = runtime_functions[i].results_count;
+    BinaryenAddFunctionImport(module, func_name, "env", func_name,
+                              make_type_int32(params_count),
+                              make_type_int32(results_count));
+    i++;
+  } while (func_name);
 }

@@ -1,8 +1,7 @@
 #include "lval.h"
 
 #include "cell.h"
-#include "env.h"
-#include "hash.h"
+/* #include "hash.h" */
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -18,18 +17,18 @@ int lval_hash(Lval* lval) {
   switch (lval->type) {
     case LVAL_FUNCTION:
     case LVAL_ERR:
-      hash = murmur3_int(long_hash((unsigned long)lval), seed);
+      /* hash = murmur3_int(long_hash((unsigned long)lval), seed); */
       break;
     case LVAL_SYMBOL:
-      hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed);
+      /* hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed); */
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case STRING:
-          hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  //
+          /* hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  // */
           break;
         case NUMBER:
-          hash = murmur3_int(long_hash_munge(lval->num), seed);
+          /* hash = murmur3_int(long_hash_munge(lval->num), seed); */
           break;
         case LNIL:
           hash = 0;

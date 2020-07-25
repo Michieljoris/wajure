@@ -1,7 +1,6 @@
 #ifndef __PRINT_H_
 #define __PRINT_H_
 #include "env.h"
-#include "lval.h"
 
 void lval_debugln(Lval* v);
 void lval_infoln(Lval* v);
