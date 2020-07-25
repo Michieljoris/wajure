@@ -70,6 +70,16 @@ BinaryenExpressionRef compile_do_list(Wasm* wasm, Lval* list, int mode) {
                        BinaryenTypeAuto());
 }
 
+BinaryenExpressionRef wasm_make_lval_list(Wasm* wasm, int count) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef new_head = make_type_int32(1);
+  BinaryenExpressionRef list_cons =
+      BinaryenCall(module, "list_cons", NULL, 2, new_head);
+  BinaryenExpressionRef make_lval_list =
+      BinaryenCall(module, "make_lval_list", NULL, 0, make_type_int32(1));
+}
+
 BinaryenExpressionRef compile_symbol(Wasm* wasm, Lval* lval) {
   BinaryenModuleRef module = wasm->module;
   return make_int32(module, 0);
@@ -103,8 +113,6 @@ BinaryenExpressionRef compile_lval_literal(Wasm* wasm, Lval* lval) {
       operands = operands_num;
       break;
     case STRING:;
-      /* char* str = lalloc_size(_strlen(str)); */
-      /* _strcpy(str, lval->str); */
       int len = _strlen(lval->str);
       BinaryenExpressionRef wasm_len = make_int32(module, len);
       BinaryenExpressionRef operands_lalloc[1] = {wasm_len};
@@ -138,8 +146,13 @@ BinaryenExpressionRef compile_lval_literal(Wasm* wasm, Lval* lval) {
       return make_int32(module, 123);
   }
 
-  return BinaryenCall(module, func_name, operands, operands_count,
-                      make_type_int32(1));
+  BinaryenExpressionRef literal = BinaryenCall(
+      module, func_name, operands, operands_count, make_type_int32(1));
+
+  BinaryenExpressionRef print_operands[1] = {literal};
+  BinaryenExpressionRef print = BinaryenCall(
+      module, "lval_println", print_operands, 1, make_type_int32(1));
+  return print;
 }
 
 BinaryenExpressionRef lval_compile(Wasm* wasm, Lval* lval) {
@@ -187,41 +200,6 @@ void add_wasm_function(Wasm* wasm, char* fn_name, int params_count,
                       locals_count, body);
 }
 
-BinaryenExpressionRef call_direct(Wasm* wasm, char* fn_name,
-                                  BinaryenExpressionRef operands[],
-                                  int operands_count, int results_count) {
-  BinaryenModuleRef module = wasm->module;
-
-  return BinaryenCall(module, fn_name, operands, operands_count,
-                      make_type_int32(results_count));
-}
-
-struct table_fn {
-  char* fn_name;
-  int table_index;
-  int operands_count;
-  BinaryenType operands_type;
-  int results_count;
-};
-
-/* BinaryenExpressionRef call_indirect_example(Wasm* wasm) { */
-/*   BinaryenModuleRef module = wasm->module; */
-
-/*   BinaryenExpressionRef fn_index = make_int32(module, 0); */
-/*   BinaryenExpressionRef operands[] = {wasm_offset(wasm, 5), */
-/*                                       make_int32(module, 0)}; */
-
-/*   BinaryenType params_type = make_type_int32(2); */
-
-/*   BinaryenType results_type = make_type_int32(0); */
-
-/*   BinaryenExpressionRef call_indirect = BinaryenCallIndirect( */
-/*       module, fn_index, operands, 2, params_type, results_type); */
-
-/*   BinaryenExpressionRef drop = BinaryenDrop(module, call_indirect); */
-/*   return drop; */
-/* } */
-
 void process_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
   /* BinaryenModuleRef module = wasm->module; */
 
@@ -234,7 +212,7 @@ void process_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
 
   int params_count = 0;
   int locals_count = 0;
-  int results_count = 1;
+  int results_count = 0;
 
   BinaryenExpressionRef body =
       compile_do_list(wasm, lval->body, RETURN_ON_ERROR);
@@ -355,3 +333,29 @@ int compile(char* file_name) {
  */
 /*                     make_int32(module, 123)); */
 /* } */
+
+/* BinaryenExpressionRef call_indirect_example(Wasm* wasm) { */
+/*   BinaryenModuleRef module = wasm->module; */
+
+/*   BinaryenExpressionRef fn_index = make_int32(module, 0); */
+/*   BinaryenExpressionRef operands[] = {wasm_offset(wasm, 5), */
+/*                                       make_int32(module, 0)}; */
+
+/*   BinaryenType params_type = make_type_int32(2); */
+
+/*   BinaryenType results_type = make_type_int32(0); */
+
+/*   BinaryenExpressionRef call_indirect = BinaryenCallIndirect( */
+/*       module, fn_index, operands, 2, params_type, results_type); */
+
+/*   BinaryenExpressionRef drop = BinaryenDrop(module, call_indirect); */
+/*   return drop; */
+/* } */
+
+/* struct table_fn { */
+/*   char* fn_name; */
+/*   int table_index; */
+/*   int operands_count; */
+/*   BinaryenType operands_type; */
+/*   int results_count; */
+/* }; */

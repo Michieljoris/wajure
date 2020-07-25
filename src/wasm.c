@@ -63,13 +63,29 @@ typedef struct {
   int results_count;
 } RuntimeFunction;
 
-RuntimeFunction runtime_functions[] = {
-    {"printf_", 2, 1},        {"log_int", 1, 0},
-    {"log_string", 1, 0},     {"log_string_n", 2, 0},
-    {"make_lval_num", 1, 1},  {"make_lval_nil", 0, 1},
-    {"make_lval_true", 0, 1}, {"make_lval_false", 0, 1},
-    {"make_lval_str", 1, 1},  {"lalloc_size", 1, 1},
-    {"_strcpy", 2, 1},        {NULL}};
+RuntimeFunction runtime_functions[] = {{"printf_", 2, 1},
+                                       {"log_int", 1, 0},
+                                       {"log_string", 1, 0},
+                                       {"log_string_n", 2, 0},
+                                       {"lval_print", 1, 0},
+                                       {"lval_println", 1, 0},
+                                       // lval
+                                       {"make_lval_num", 1, 1},
+                                       {"make_lval_nil", 0, 1},
+                                       {"make_lval_true", 0, 1},
+                                       {"make_lval_false", 0, 1},
+                                       {"make_lval_str", 1, 1},
+                                       {"make_lval_list", 0, 1},
+                                       // lispy_mempool
+                                       {"lalloc_size", 1, 1},
+                                       // misc_fns
+                                       {"print_fn", 2, 1},
+                                       {"boolean_fn", 2, 1},
+                                       // list
+                                       {"list_cons", 2, 1},
+                                       // lib
+                                       {"_strcpy", 2, 1},
+                                       {NULL}};
 
 void import_runtime(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
