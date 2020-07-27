@@ -76,6 +76,8 @@ RuntimeFunction runtime_functions[] = {{"printf_", 2, 1},
                                        {"make_lval_false", 0, 1},
                                        {"make_lval_str", 1, 1},
                                        {"make_lval_list", 0, 1},
+                                       {"new_lval_list", 1, 1},
+                                       {"make_lval_sym", 1, 1},
                                        // lispy_mempool
                                        {"lalloc_size", 1, 1},
                                        // misc_fns

@@ -45,7 +45,7 @@ endif
 
 all: $(BUILD_ARTIFACT)
 	$(EXEC)
-
+#
 # c files to dep files, if c file changes, rebuild its dep file
 out/%.d : src/%.c
 	$(CC) -MM -MT $(@:.d=.o) $(CFLAGS_COMMON) $< -o $@
@@ -65,6 +65,7 @@ out/%.o: src/%.c
 endif
 
 # link object files, rebuild if any of the .o files changed
+# https://lld.llvm.org/WebAssembly.html
 $(BUILD_ARTIFACT): $(objs)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS)  -o $(BUILD_ARTIFACT)
 
