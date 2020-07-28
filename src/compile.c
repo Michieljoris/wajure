@@ -82,21 +82,46 @@ BinaryenExpressionRef compile_do_list(Wasm* wasm, Lval* list, int mode) {
 }
 
 BinaryenExpressionRef compile_symbol(Wasm* wasm, Lval* lval_symbol) {
-  BinaryenModuleRef module = wasm->module;
   Lval* lval_resolved_sym = lenv_get(wasm->env, lval_symbol);
 
   printf("resolved sym: \n");
   lval_println(lval_resolved_sym);
 
-  /* return lval_resolved_sym; */
-
-  /* int offset = write_lval_to_data(wasm, lval); */
-
-  return make_int32(module, 0);
+  return lval_compile(wasm, lval_resolved_sym);
 }
 
-BinaryenExpressionRef compile_fn_call(Wasm* wasm, Lval* lval) {
+BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval);
+
+BinaryenExpressionRef compile_fn_call(Wasm* wasm, Lval* lval_list) {
   BinaryenModuleRef module = wasm->module;
+
+  if (lval_list->head == NIL) {
+    if (!wasm->lval_empty_list_offset)
+      wasm->lval_empty_list_offset = make_lval_literal(wasm, lval_list);
+    return wasm->lval_empty_list_offset;
+  }
+
+  Lval* lval_first = lval_list->head->car;
+  switch (lval_first->type) {
+    case LVAL_SYMBOL:;
+      Lval* lval_fn = lenv_get(wasm->env, lval_first);
+
+      ;  // TODO: resolve symbol
+    case LVAL_COLLECTION:
+      switch (lval_first->subtype) {
+        case LIST:
+          return compile_fn_call(wasm, lval_first);  // TODO: ?????
+        case VECTOR:
+          // TODO: Error!!!!
+        case MAP:
+          // TODO: Error!!!!
+        default:;
+          /* return make_lval_err("Unknown seq subtype: %d ", lval->subtype); */
+      }
+      break;
+  }
+  /* scoped Lval* lval_fun = lval_compile(env, lval_first); */
+
   return make_int32(module, 0);
 }
 
@@ -147,10 +172,10 @@ BinaryenExpressionRef compile_lval_literal(Wasm* wasm, Lval* lval) {
     case NUMBER:;
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
-        if (!wasm->lval_num_offset[lval->num - wasm->lval_num_start]) {
+        if (!wasm->lval_num_offset[lval->num - wasm->lval_num_start])
           wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
               make_lval_literal(wasm, lval);
-        }
+
         return wasm->lval_num_offset[lval->num - wasm->lval_num_start];
       }
 
@@ -217,8 +242,8 @@ void add_wasm_function(Wasm* wasm, char* fn_name, int params_count,
                       locals_count, body);
 }
 
-void process_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
-  BinaryenModuleRef module = wasm->module;
+void compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
+  /* BinaryenModuleRef module = wasm->module; */
 
   printf("fn-name: %s\n", lval_sym->str);
   printf("params: ");
@@ -229,28 +254,30 @@ void process_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
 
   int params_count = 0;
   int locals_count = 0;
-  int results_count = 0;
+  int results_count = 1;
 
   BinaryenExpressionRef arg_list_head =
-      /* compile_do_list(wasm, lval->body, RETURN_ON_ERROR); */
-      compile_fn_rest_args(wasm, lval->body->head);
+      compile_do_list(wasm, lval->body, RETURN_ON_ERROR);
+  /* compile_fn_rest_args(wasm, lval->body->head); */
   /* BinaryenExpressionRef drop = call_indirect_example(wasm); */
 
-  BinaryenExpressionRef lval_list_operands[1] = {arg_list_head};
-  BinaryenExpressionRef lval_list = BinaryenCall(
-      module, "new_lval_list", lval_list_operands, 1, make_type_int32(1));
+  /* BinaryenExpressionRef lval_list_operands[1] = {arg_list_head}; */
+  /* BinaryenExpressionRef lval_list = BinaryenCall( */
+  /*     module, "new_lval_list", lval_list_operands, 1, make_type_int32(1)); */
 
-  BinaryenExpressionRef lval_println_operands[1] = {lval_list};
+  /* BinaryenExpressionRef lval_println_operands[1] = {lval_list}; */
   /* BinaryenExpressionRef lval_println_operands[1] = {wasm_offset(wasm, 22)};
    */
-  BinaryenExpressionRef body = BinaryenCall(
-      module, "lval_println", lval_println_operands, 1, BinaryenTypeNone());
+  /* BinaryenExpressionRef body = BinaryenCall( */
+  /*     module, "lval_println", lval_println_operands, 1, BinaryenTypeNone());
+   */
 
   /* BinaryenExpressionRef print_slot_size = */
   /*     BinaryenCall(module, "print_slot_size", NULL, 0, BinaryenTypeNone());
    */
   /* body = print_slot_size; */
 
+  BinaryenExpressionRef body = arg_list_head;
   lval->offset = add_fn_to_table(wasm, fn_name);
   add_wasm_function(wasm, fn_name, params_count, locals_count, body,
                     results_count);
@@ -273,7 +300,7 @@ void process_env(Wasm* wasm) {
 
     /* print_pair(lval_sym, lval); */
     if (lval->type == LVAL_FUNCTION) {
-      process_function(wasm, lval_sym, lval);
+      compile_function(wasm, lval_sym, lval);
     }
 
     cell = cell->cdr;
@@ -315,6 +342,7 @@ int compile(char* file_name) {
   Wasm* wasm = init_wasm();
   /* printf("__data_end: %d\n", wasm->__data_end); */
   wasm->env = interprete_file(file_name);
+
   import_runtime(wasm);
 
   process_env(wasm);

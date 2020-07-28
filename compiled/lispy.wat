@@ -1,12 +1,12 @@
 (module
+ (type $none_=>_i32 (func (result i32)))
  (type $i32_=>_i32 (func (param i32) (result i32)))
  (type $i32_i32_=>_i32 (func (param i32 i32) (result i32)))
  (type $i32_=>_none (func (param i32)))
- (type $none_=>_i32 (func (result i32)))
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 3124) "\01\00\00\00\00\00\00\00\00\00\00\00D\0c\00\00\02\08\00\00\08\00\00\004\0c\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 3044) "")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -31,20 +31,9 @@
  (elem (i32.const 0) $test $log_int $printf_)
  (export "test" (func $test))
  (export "mem" (memory $0))
- (func $test
-  (call $lval_println
-   (call $new_lval_list
-    (call $list_cons
-     (i32.const 3140)
-     (call $list_cons
-      (i32.const 3140)
-      (call $list_cons
-       (i32.const 3140)
-       (i32.const 0)
-      )
-     )
-    )
-   )
+ (func $test (result i32)
+  (block $body (result i32)
+   (i32.const 0)
   )
  )
 )

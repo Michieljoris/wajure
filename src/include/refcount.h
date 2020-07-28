@@ -12,7 +12,8 @@ typedef struct {
 } Slot;
 
 // Alignment
-#define PAD(siz) ((siz) + sizeof(int) - ((siz) % sizeof(int)))
+#define PAD(siz) \
+  ((siz % sizeof(int)) == 0 ? siz : (siz) + sizeof(int) - ((siz) % sizeof(int)))
 #define SLOT_SIZE(type_size) PAD(sizeof(Slot)) + PAD(type_size)
 
 void* alloc_rc_slot(Mempool* mp, Destructor destroy);

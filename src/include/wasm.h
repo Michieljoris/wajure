@@ -15,6 +15,7 @@ typedef struct {
   BinaryenExpressionRef lval_true_offset;
   BinaryenExpressionRef lval_false_offset;
   BinaryenExpressionRef lval_nil_offset;
+  BinaryenExpressionRef lval_empty_list_offset;
   int lval_num_start;
   int lval_num_end;
   BinaryenExpressionRef* lval_num_offset;

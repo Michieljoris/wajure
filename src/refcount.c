@@ -4,6 +4,7 @@
 
 #include "io.h"
 #include "ltypes.h"
+#include "print.h"
 
 void mempool_debug(Mempool* mp);
 
@@ -31,7 +32,8 @@ void free_rc_slot(Slot* slot) {
 }
 
 Slot* get_slot_p(void* data_p) {
-  return (Slot*)((char*)data_p - PAD(sizeof(Slot)));
+  int slot_size = PAD(sizeof(Slot));
+  return (Slot*)((char*)data_p - slot_size);
 }
 
 // Ups refcount for slot

@@ -1,9 +1,12 @@
-(def bar 1)
+(def foo 123)
+;; (def bar `(1 ~foo  a 3))
+(def bar '(1 2 3))
 
 ;; (defn test[x] 456 nil true false "ok")
 ;; (defn test[x] bar foo "ok" "then" 123 false true nil)
 ;; (defn test[x] "aaaaaa")
-(defn test[x] 8 8 8)
+(defn test[x] (print 123))
+;; (defn test[x] ())
 
 ;; (defn test[x] (+ 1 2))
 

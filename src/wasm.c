@@ -18,6 +18,7 @@ Wasm* init_wasm() {
                  .lval_true_offset = NULL,
                  .lval_false_offset = NULL,
                  .lval_nil_offset = NULL,
+                 .lval_empty_list_offset = NULL,
                  .__data_end = (int)_strtol(data_end_str, NULL, 10),
                  // no need to intern lval literal numbers for these common
                  // numbers (-100 till 100):

@@ -109,8 +109,7 @@ void lval_fun_print(Lval* lval) {
 
 void lval_print(Lval* lval) {
   if (!lval) {
-    printf(
-        "!! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !!");
+    printf("<Trying to print null lval");
     return;
   }
   /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
@@ -185,7 +184,7 @@ void lval_pr(Lval* lval) {
 }
 
 void lval_println(Lval* v) {
-  printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num);
+  /* printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num); */
   lval_print(v);
   putchar('\n');
 }
