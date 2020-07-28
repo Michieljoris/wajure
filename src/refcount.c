@@ -1,6 +1,9 @@
 #include "refcount.h"
 
+#include <stddef.h>
+
 #include "io.h"
+#include "ltypes.h"
 
 void mempool_debug(Mempool* mp);
 
@@ -130,4 +133,37 @@ void mempool_debug(Mempool* mp) {
   /* printf("Free slot pointer: %p\n", mp->free_slot_p); */
   /* printf("Initialised count: %i\n", mp->initialised_count); */
   ddebug("%d | ", mp->total_slot_count - mp->free_slot_count);
+}
+
+/* char* serialize_value() { */
+
+/* } */
+
+void print_slot_size() {
+  /* struct foo { */
+  /*   char* p; */
+  /*   int a; */
+  /* }; */
+  /* struct foo bar = {"hello foo", 1}; */
+  printf("slot size: %li\n", sizeof(Slot));
+  printf("char size: %li\n", sizeof(char));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, type));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, subtype));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, num));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, str));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, head));
+  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, hash));
+  /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, fun)); */
+  /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, closure)); */
+  /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, params)); */
+  /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, offset)); */
+  /* printf("slot size: %li\n", sizeof(struct foo)); */
+  /* printf("bar.a: %d\n", bar.a); */
+  /* printf("bar.p: %p\n", bar.p); */
+  /* /\* struct foo* p = &bar; *\/ */
+  /* char* p = (char*)&bar; */
+  /* printf("%s\n", p); */
+
+  /* for (int i = 0; i < sizeof(struct foo); i++) printf("bar[%d]: %x\n", i,
+   * p[i]); */
 }

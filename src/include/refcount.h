@@ -29,4 +29,6 @@ int get_free_slot_count(Mempool* mp);
 int get_taken_slot_count(Mempool* mp);
 int get_ref_count(void* data_p);
 
+void print_slot_size();
+
 #endif  // __REFCOUNT_H_

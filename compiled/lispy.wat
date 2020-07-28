@@ -6,8 +6,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $__data_end) "ok\00then\00")
- (import "env" "__data_end" (global $__data_end i32))
+ (data (i32.const 3124) "\01\00\00\00\00\00\00\00\00\00\00\00D\0c\00\00\02\08\00\00\08\00\00\004\0c\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -27,6 +26,7 @@
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "list_cons" (func $list_cons (param i32 i32) (result i32)))
  (import "env" "_strcpy" (func $_strcpy (param i32 i32) (result i32)))
+ (import "env" "print_slot_size" (func $print_slot_size))
  (table $0 3 3 funcref)
  (elem (i32.const 0) $test $log_int $printf_)
  (export "test" (func $test))
@@ -35,43 +35,12 @@
   (call $lval_println
    (call $new_lval_list
     (call $list_cons
-     (call $make_lval_str
-      (call $_strcpy
-       (call $lalloc_size
-        (i32.const 2)
-       )
-       (i32.add
-        (global.get $__data_end)
-        (i32.const 0)
-       )
-      )
-     )
+     (i32.const 3140)
      (call $list_cons
-      (call $make_lval_str
-       (call $_strcpy
-        (call $lalloc_size
-         (i32.const 4)
-        )
-        (i32.add
-         (global.get $__data_end)
-         (i32.const 3)
-        )
-       )
-      )
+      (i32.const 3140)
       (call $list_cons
-       (call $make_lval_num
-        (i32.const 123)
-       )
-       (call $list_cons
-        (call $make_lval_false)
-        (call $list_cons
-         (call $make_lval_true)
-         (call $list_cons
-          (call $make_lval_nil)
-          (i32.const 0)
-         )
-        )
-       )
+       (i32.const 3140)
+       (i32.const 0)
       )
      )
     )

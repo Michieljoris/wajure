@@ -8,10 +8,17 @@ typedef struct {
   BinaryenModuleRef module;
   char* strings;
   int strings_offset;
-  char* lvals;
-  int lvals_offset;
   char** fn_names;
   int fns_count;
+  Lenv* env;
+  int __data_end;
+  BinaryenExpressionRef lval_true_offset;
+  BinaryenExpressionRef lval_false_offset;
+  BinaryenExpressionRef lval_nil_offset;
+  int lval_num_start;
+  int lval_num_end;
+  BinaryenExpressionRef* lval_num_offset;
+
 } Wasm;
 
 Wasm* init_wasm();

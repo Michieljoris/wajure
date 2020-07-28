@@ -14,7 +14,8 @@ void write_wasm(Wasm* wasm, char* file_name);
 void add_test_fn(Wasm* wasm);
 
 int add_string_to_data(Wasm* wasm, char* str);
-int add_lval_to_data(Wasm* wasm, Lval* lval);
+
+int add_bytes_to_data(Wasm* wasm, char* str, int len);
 int add_fn_to_table(Wasm* wasm, char* fn_name);
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);

@@ -60,17 +60,22 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
   return log_int;
 }
 
+/* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */
+/*   BinaryenModuleRef module = wasm->module; */
+
+/*   BinaryenExpressionRef wasm_data_end = */
+/*       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
+
+/*   BinaryenExpressionRef wasm_offset = make_int32(module, offset); */
+
+/*   BinaryenExpressionRef str_p = */
+/*       BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
+ */
+/*   return str_p; */
+/* } */
+
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
-  BinaryenModuleRef module = wasm->module;
-
-  BinaryenExpressionRef wasm_data_end =
-      BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
-
-  BinaryenExpressionRef wasm_offset = make_int32(module, offset);
-
-  BinaryenExpressionRef str_p =
-      BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
-  return str_p;
+  return make_int32(wasm->module, wasm->__data_end + offset);
 }
 
 BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
@@ -109,6 +114,17 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
   return drop;
 }
 
+int add_bytes_to_data(Wasm* wasm, char* str, int len) {
+  int offset = wasm->strings_offset;
+  /* printf("%d %d\n", wasm->strings_offset, len); */
+  wasm->strings = realloc(wasm->strings, offset + len);
+  _memmove(wasm->strings + offset, str, len);
+
+  wasm->strings_offset += len;
+  /* printf("strings_offset: %d\n", wasm->strings_offset); */
+  return offset;
+}
+
 int add_string_to_data(Wasm* wasm, char* str) {
   int len = _strlen(str) + 1;
   int offset = wasm->strings_offset;
@@ -121,15 +137,16 @@ int add_string_to_data(Wasm* wasm, char* str) {
   return offset;
 }
 
-int add_lval_to_data(Wasm* wasm, Lval* lval) {
-  /* int len = _strlen(str) + 1; */
-  /* /\* printf("%d %d\n", wasm->strings_offset, len); *\/ */
-  /* wasm->strings = realloc(wasm->strings, wasm->strings_offset + len); */
-  /* _strncpy(wasm->strings + wasm->strings_offset, str, len); */
-  /* wasm->strings_offset += len; */
-  /* /\* printf("strings_offset: %d\n", wasm->strings_offset); *\/ */
-  return wasm->lvals_offset;
-}
+/* int add_lval_to_data(Wasm* wasm, Lval* lval) { */
+/*   /\* int len = _strlen(str) + 1; *\/ */
+/*   /\* /\\* printf("%d %d\n", wasm->strings_offset, len); *\\/ *\/ */
+/*   /\* wasm->strings = realloc(wasm->strings, wasm->strings_offset + len); *\/
+ */
+/*   /\* _strncpy(wasm->strings + wasm->strings_offset, str, len); *\/ */
+/*   /\* wasm->strings_offset += len; *\/ */
+/*   /\* /\\* printf("strings_offset: %d\n", wasm->strings_offset); *\\/ *\/ */
+/*   return wasm->lvals_offset; */
+/* } */
 
 int add_fn_to_table(Wasm* wasm, char* fn_name) {
   int free_fn_slot = wasm->fns_count;

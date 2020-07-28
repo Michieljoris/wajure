@@ -38,22 +38,22 @@ typedef struct {
 /* }; */
 
 struct lval {
-  int type;
-  int subtype;
+  char type;
+  char subtype;
 
   // Number, error, symbol or string
   long num;
-  char* str;
-  /* Function */
+  char* str; /* Function */
+
+  // List
+  Cell* head;
+  int hash;
+
   Lbuiltin fun;
   Lenv* closure;
   Lval* params;
   Lval* body;
 
-  // List
-  Cell* head;
-
-  int hash;
   int offset;  // compiler to wasm data
 };
 

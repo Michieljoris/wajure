@@ -1,7 +1,9 @@
 (def bar 1)
 
 ;; (defn test[x] 456 nil true false "ok")
-(defn test[x] "ok" "then" 123 false true nil)
+;; (defn test[x] bar foo "ok" "then" 123 false true nil)
+;; (defn test[x] "aaaaaa")
+(defn test[x] 8 8 8)
 
 ;; (defn test[x] (+ 1 2))
 

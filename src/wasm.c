@@ -2,37 +2,53 @@
 
 #include <binaryen-c.h>
 
+#include "lib.h"
+#include "misc_fns.h"
 #include "platform.h"
 #include "wasm_util.h"
 
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
+  char* data_end_str = read_file("__data_end");
   *wasm = (Wasm){.module = BinaryenModuleCreate(),
                  .strings = malloc(1),
                  .strings_offset = 0,
                  .fn_names = malloc(1),
-                 .fns_count = 0};
+                 .fns_count = 0,
+                 .lval_true_offset = NULL,
+                 .lval_false_offset = NULL,
+                 .lval_nil_offset = NULL,
+                 .__data_end = (int)_strtol(data_end_str, NULL, 10),
+                 // no need to intern lval literal numbers for these common
+                 // numbers (-100 till 100):
+                 .lval_num_start = -100,
+                 .lval_num_end = 100,
+                 .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201)};
   return wasm;
 }
 
 void free_wasm(Wasm* wasm) {
   BinaryenModuleDispose(wasm->module);
+  release_env(wasm->env);
   free(wasm->strings);
+  free(wasm->lval_num_offset);
   free(wasm);
 }
 
 void add_memory_section(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
-  BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
-                          BinaryenTypeInt32(), 0);
+  /* BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end", */
+  /*                         BinaryenTypeInt32(), 0); */
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
   const int num_segments = 1;
   const char* segments[1] = {wasm->strings};
   BinaryenIndex segmentSizes[] = {wasm->strings_offset};
 
-  BinaryenExpressionRef __data_end =
-      BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32());
-  BinaryenExpressionRef segmentOffsets[1] = {__data_end};
+  /* BinaryenExpressionRef __data_end = */
+  /*     BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
+  /* BinaryenExpressionRef segmentOffsets[1] = {__data_end}; */
+  BinaryenExpressionRef segmentOffsets[1] = {
+      make_int32(module, wasm->__data_end)};
   int8_t segmentPassive[] = {0};
 
   int initial_mem_size = 2;
@@ -87,6 +103,7 @@ RuntimeFunction runtime_functions[] = {{"printf_", 2, 1},
                                        {"list_cons", 2, 1},
                                        // lib
                                        {"_strcpy", 2, 1},
+                                       {"print_slot_size", 0, 0},
                                        {NULL}};
 
 void import_runtime(Wasm* wasm) {
