@@ -104,7 +104,27 @@ BinaryenExpressionRef compile_special_call(Wasm* wasm, Lval* lval_fn,
 BinaryenExpressionRef compile_sys_call(Wasm* wasm, Lval* lval_fn,
                                        Lval* lval_list) {
   printf("compile sys call!!!!!!!!!!!!!!!\n");
-  return make_int32(wasm->module, 123);
+  BinaryenExpressionRef arg_list_head =
+      compile_fn_rest_args(wasm, lval_list->head->cdr);
+
+  BinaryenExpressionRef lval_list_operands[1] = {arg_list_head};
+  BinaryenExpressionRef wasm_lval_list = BinaryenCall(
+      wasm->module, "new_lval_list", lval_list_operands, 1, make_type_int32(1));
+
+  BinaryenExpressionRef sys_fn_operands[2] = {make_int32(wasm->module, 0),
+                                              wasm_lval_list};
+  char* fn_name = malloc(_strlen(lval_fn->str) + 4);
+  fn_name = _strcpy(fn_name, lval_fn->str);
+  fn_name = _strcat(fn_name, "_fn");
+
+  BinaryenExpressionRef sys_fn_call = BinaryenCall(
+      wasm->module, fn_name, sys_fn_operands, 2, make_type_int32(1));
+
+  /* BinaryenExpressionRef sys_fn_call = BinaryenCall( */
+  /*     wasm->module, "lval_println", sys_fn_operands, 1, make_type_int32(0));
+   */
+
+  return sys_fn_call;
 }
 
 BinaryenExpressionRef compile_lambda_call(Wasm* wasm, Lval* lval_fn,

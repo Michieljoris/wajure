@@ -97,6 +97,17 @@ RuntimeFunction runtime_functions[] = {{"printf_", 2, 1},
                                        {"make_lval_sym", 1, 1},
                                        // lispy_mempool
                                        {"lalloc_size", 1, 1},
+                                       // math_fns
+                                       /* {"add_fn", 2, 1}, */
+                                       /* {"sub_fn", 2, 1}, */
+                                       /* {"mul_fn", 2, 1}, */
+                                       /* {"div_fn", 2, 1}, */
+                                       /* {"gt_fn", 2, 1}, */
+                                       /* {"lt_fn", 2, 1}, */
+                                       /* {"gte_fn", 2, 1}, */
+                                       /* {"lte_fn", 2, 1}, */
+                                       /* {"eq_fn", 2, 1}, */
+                                       /* {"not_eq_fn", 2, 1}, */
                                        // misc_fns
                                        {"print_fn", 2, 1},
                                        {"boolean_fn", 2, 1},
