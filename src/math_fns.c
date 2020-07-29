@@ -170,10 +170,18 @@ Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
   return cmp_fn(env, arg_list, "not=");
 }
 
-Builtin math_builtins[] = {
+LispyFn math_builtin_fns[] = {
 
-    {"+", add_fn}, {"-", sub_fn},       {"*", mul_fn},  {"/", div_fn},
-    {">", gt_fn},  {"<", lt_fn},        {">=", gte_fn}, {"<=", lte_fn},
-    {"=", eq_fn},  {"not=", not_eq_fn}, {NIL}
+    {"+", add_fn, "add_fn", 2, 1},
+    {"-", sub_fn, "sub_fn", 2, 1},
+    {"*", mul_fn, "mul_fn", 2, 1},
+    {"/", div_fn, "div_fn", 2, 1},
+    {">", gt_fn, "gt_fn", 2, 1},
+    {"<", lt_fn, "lt_fn", 2, 1},
+    {">=", gte_fn, "gte_fn", 2, 1},
+    {"<=", lte_fn, "lte_fn", 2, 1},
+    {"=", eq_fn, "eq_fn", 2, 1},
+    {"not=", not_eq_fn, "not_eq_fn", 2, 1},
+    {NIL}
 
 };

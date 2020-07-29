@@ -19,6 +19,7 @@ typedef struct {
   int lval_num_start;
   int lval_num_end;
   BinaryenExpressionRef* lval_num_offset;
+  Cell* lispy_to_c_fn_map;
 
 } Wasm;
 

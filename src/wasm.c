@@ -3,6 +3,7 @@
 #include <binaryen-c.h>
 
 #include "lib.h"
+#include "list.h"
 #include "misc_fns.h"
 #include "platform.h"
 #include "wasm_util.h"
@@ -33,6 +34,8 @@ void free_wasm(Wasm* wasm) {
   release_env(wasm->env);
   free(wasm->strings);
   free(wasm->lval_num_offset);
+  while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
+  free(wasm->fn_names);
   free(wasm);
 }
 
@@ -80,57 +83,58 @@ typedef struct {
   int results_count;
 } RuntimeFunction;
 
-RuntimeFunction runtime_functions[] = {{"printf_", 2, 1},
-                                       {"log_int", 1, 0},
-                                       {"log_string", 1, 0},
-                                       {"log_string_n", 2, 0},
-                                       {"lval_print", 1, 0},
-                                       {"lval_println", 1, 0},
-                                       // lval
-                                       {"make_lval_num", 1, 1},
-                                       {"make_lval_nil", 0, 1},
-                                       {"make_lval_true", 0, 1},
-                                       {"make_lval_false", 0, 1},
-                                       {"make_lval_str", 1, 1},
-                                       {"make_lval_list", 0, 1},
-                                       {"new_lval_list", 1, 1},
-                                       {"make_lval_sym", 1, 1},
-                                       // lispy_mempool
-                                       {"lalloc_size", 1, 1},
-                                       // math_fns
-                                       /* {"add_fn", 2, 1}, */
-                                       /* {"sub_fn", 2, 1}, */
-                                       /* {"mul_fn", 2, 1}, */
-                                       /* {"div_fn", 2, 1}, */
-                                       /* {"gt_fn", 2, 1}, */
-                                       /* {"lt_fn", 2, 1}, */
-                                       /* {"gte_fn", 2, 1}, */
-                                       /* {"lte_fn", 2, 1}, */
-                                       /* {"eq_fn", 2, 1}, */
-                                       /* {"not_eq_fn", 2, 1}, */
-                                       // misc_fns
-                                       {"print_fn", 2, 1},
-                                       {"boolean_fn", 2, 1},
-                                       // list
-                                       {"list_cons", 2, 1},
-                                       // lib
-                                       {"_strcpy", 2, 1},
-                                       {"print_slot_size", 0, 0},
-                                       {NULL}};
+LispyFn runtime_fns[] = {{NULL, NULL, "printf_", 2, 1},
+                         {NULL, NULL, "log_int", 1, 0},
+                         {NULL, NULL, "log_string", 1, 0},
+                         {NULL, NULL, "log_string_n", 2, 0},
+                         {NULL, NULL, "lval_print", 1, 0},
+                         {NULL, NULL, "lval_println", 1, 0},
+                         // lval
+                         {NULL, NULL, "make_lval_num", 1, 1},
+                         {NULL, NULL, "make_lval_nil", 0, 1},
+                         {NULL, NULL, "make_lval_true", 0, 1},
+                         {NULL, NULL, "make_lval_false", 0, 1},
+                         {NULL, NULL, "make_lval_str", 1, 1},
+                         {NULL, NULL, "make_lval_list", 0, 1},
+                         {NULL, NULL, "new_lval_list", 1, 1},
+                         {NULL, NULL, "make_lval_sym", 1, 1},
+                         // lispy_mempool
+                         {NULL, NULL, "lalloc_size", 1, 1},
 
-void import_runtime(Wasm* wasm) {
+                         // list
+                         {NULL, NULL, "list_cons", 2, 1},
+                         // lib
+                         {NULL, NULL, "_strcpy", 2, 1},
+                         {NULL, NULL, "print_slot_size", 0, 0},
+                         {NULL}};
+
+extern LispyFn list_builtin_fns[];
+extern LispyFn math_builtin_fns[];
+extern LispyFn util_builtin_fns[];
+
+void runtime_add_fns(Wasm* wasm, LispyFn lispy_fns[]) {
   BinaryenModuleRef module = wasm->module;
   int i = 0;
-  char* func_name;
+  char* c_fn_name;
   int params_count, results_count;
   do {
-    func_name = runtime_functions[i].func_name;
-    if (!func_name) break;
-    params_count = runtime_functions[i].params_count;
-    results_count = runtime_functions[i].results_count;
-    BinaryenAddFunctionImport(module, func_name, "env", func_name,
+    c_fn_name = lispy_fns[i].c_fn_name;
+    if (!c_fn_name) break;
+    params_count = lispy_fns[i].params_count;
+    results_count = lispy_fns[i].results_count;
+    BinaryenAddFunctionImport(module, c_fn_name, "env", c_fn_name,
                               make_type_int32(params_count),
                               make_type_int32(results_count));
+    if (lispy_fns[i].lispy_fn_name)
+      wasm->lispy_to_c_fn_map = alist_prepend(
+          wasm->lispy_to_c_fn_map, lispy_fns[i].lispy_fn_name, c_fn_name);
     i++;
-  } while (func_name);
+  } while (c_fn_name);
+}
+
+void import_runtime(Wasm* wasm) {
+  runtime_add_fns(wasm, runtime_fns);
+  runtime_add_fns(wasm, math_builtin_fns);
+  runtime_add_fns(wasm, list_builtin_fns);
+  runtime_add_fns(wasm, util_builtin_fns);
 }

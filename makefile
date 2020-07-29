@@ -1,5 +1,5 @@
 ifeq ($(PLATFORM),wasm)
-src = src/platform.c src/malloc.c src/refcount.c src/mempool.c src/printf.c src/lispy_mempool.c  src/lib.c  src/io.c src/print.c src/list.c src/cell.c  src/lval.c src/util_fns.c src/iter.c
+src = src/platform.c src/malloc.c src/refcount.c src/mempool.c src/printf.c src/lispy_mempool.c  src/lib.c  src/io.c src/print.c src/list.c src/cell.c  src/lval.c src/util_fns.c src/iter.c src/math_fns.c src/list_fns.c
 tmp = $(subst src,out_wasm,$(src))
 else
 src = $(wildcard src/*.c)

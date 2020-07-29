@@ -222,6 +222,7 @@ void add_test_fn(Wasm* wasm) {
 }
 
 BinaryenType* make_type_int32_array(int count) {
+  // TODO: free??
   BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
   while (count--) types[count] = BinaryenTypeInt32();
   return types;
@@ -257,6 +258,6 @@ BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
   data_lval[hash_offset] = lval->hash;
 
   int offset = add_bytes_to_data(wasm, (char*)data_lval, data_lval_size);
-
+  free(data_lval);
   return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
 }

@@ -1,7 +1,7 @@
 #include "assert.h"
 #include "cell.h"
 #include "env.h"
-#include "hash.h"
+/* #include "hash.h" */
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
@@ -18,8 +18,8 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   ITER_END
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_cons(x, lval_list->head);
-  lval_list2->hash = lval_list2->head->hash =
-      calc_list_hash(lval_list2->head, lval_list->head);
+  /* lval_list2->hash = lval_list2->head->hash = */
+  /*     calc_list_hash(lval_list2->head, lval_list->head); */
   return lval_list2;
 }
 
@@ -112,16 +112,16 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   return nth_lval;
 }
 
-Builtin list_builtins[9] = {
+LispyFn list_builtin_fns[] = {
 
-    {"cons", cons_fn},
-    {"first", first_fn},
-    {"list", list_fn},
-    {"rest", rest_fn},
-    {"concat", concat_fn},
-    {"count", count_fn},
-    {"nth", nth_fn},
-    {"list?", is_list_fn},
+    {"cons", cons_fn, "cons_fn", 2, 1},
+    {"first", first_fn, "first_fn", 2, 1},
+    {"list", list_fn, "list_fn", 2, 1},
+    {"rest", rest_fn, "rest_fn", 2, 1},
+    {"concat", concat_fn, "concat_fn", 2, 1},
+    {"count", count_fn, "count_fn", 2, 1},
+    {"nth", nth_fn, "nth_fn", 2, 1},
+    {"list?", is_list_fn, "is_list_fn", 2, 1},
     {NIL}
 
 };

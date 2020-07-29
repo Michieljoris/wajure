@@ -139,7 +139,7 @@ Lval* slurp_fn(Lenv* env, Lval* arg_list) {
   return slurp(env, arg->str);
 }
 
-Builtin misc_builtins[] = {{"eval", eval_fn},
+LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"print-env", print_env_fn},
                            {"exit", exit_fn},
                            {"slurp", slurp_fn},

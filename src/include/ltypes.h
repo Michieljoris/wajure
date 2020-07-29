@@ -19,9 +19,12 @@ typedef struct lval Lval;
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
 typedef struct {
-  char* func_name;
+  char* lispy_fn_name;
   Lbuiltin fun;
-} Builtin;
+  char* c_fn_name;
+  int params_count;
+  int results_count;
+} LispyFn;
 
 /* struct fun { */
 /*   Lbuiltin fun; */
