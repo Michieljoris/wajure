@@ -1,12 +1,30 @@
 (def foo 123)
 ;; (def bar `(1 ~foo  a 3))
-(def bar '(1 2 3))
+;; (def bar '(1 2 3))
+;; (defn my-fn [x] (+ x 1))
 
 ;; (defn test[x] 456 nil true false "ok")
 ;; (defn test[x] bar foo "ok" "then" 123 false true nil)
 ;; (defn test[x] "aaaaaa")
 (defn test[x] (print 123))
+;; (defn test2[x] (my-fn 1))
+
+;; (defn test3a[x]
+;;   (let [fn2 my-fn]
+;;     (fn2 1)))
+
+;; (defn test3b[x]
+;;   (let [fn2 (partial my-fn 123)]
+;;     (fn2 1)))
+
+;; (defn test4[x]
+;;   (let [a 1
+;;         some-fn (fn [x] (+ a 1))
+;;         fn2  some-fn
+;;         fn3 (partial some-fn 123)]
+;;     (some-fn 1)))
 ;; (defn test[x] ())
+
 
 ;; (defn test[x] (+ 1 2))
 

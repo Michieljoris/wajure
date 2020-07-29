@@ -168,6 +168,12 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   return lval;
 }
 
+Lval* make_lval_local_ref(int subtype, int offset) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_LOCAL_REF, .subtype = subtype, .offset = offset};
+  return lval;
+}
+
 /* ERROR */
 
 // System error

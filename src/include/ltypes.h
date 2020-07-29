@@ -71,19 +71,31 @@ enum {
   LVAL_FUNCTION,
   LVAL_ERR,
   /* subtypes */
+  // literal subtypes
   LNIL,
   LTRUE,
   LFALSE,
   NUMBER,
   STRING,
+  REGEX,
+  KEYWORD,
+  // function subtypes
   SYS,
   MACRO,
   SPECIAL,
   LAMBDA,
+  // collection subtypes
   LIST,
   MAP,
   VECTOR,
-  USER
+  SET,
+  // error subtypes
+  USER,
+  // compiler types
+  LVAL_LOCAL_REF,
+  // local ref subtypes
+  PARAM,
+  LOCAL
 };
 
 #endif  // __LTYPES_H_

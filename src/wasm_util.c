@@ -231,3 +231,32 @@ BinaryenType make_type_int32(int count) {
   BinaryenType* _type = make_type_int32_array(count);
   return BinaryenTypeCreate(_type, count);
 }
+
+int slot_type_size = 4 * 4;
+int lval_type_size = 5 * 4;  // type and subtype are in 4 bytes
+int ref_count_offset = 0;
+int data_p_offset = 3;
+int type_offset = 4;
+int num_offset = 5;
+int str_offset = 6;
+int head_offset = 7;
+int hash_offset = 8;
+
+BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
+  int data_lval_size = slot_type_size + lval_type_size;
+  int* data_lval = calloc(1, data_lval_size);
+  int string_offset = 0;
+  if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
+
+  data_lval[ref_count_offset] = 1;
+  data_lval[data_p_offset] = wasm->__data_end + wasm->strings_offset + 16;
+  data_lval[type_offset] = lval->type | lval->subtype << 8;
+  data_lval[num_offset] = lval->num;
+  data_lval[str_offset] = wasm->__data_end + string_offset;
+  data_lval[head_offset] = 0;  //(int)lval->head;  // TODO: add list to data!!!
+  data_lval[hash_offset] = lval->hash;
+
+  int offset = add_bytes_to_data(wasm, (char*)data_lval, data_lval_size);
+
+  return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
+}

@@ -33,4 +33,6 @@ BinaryenType* make_type_int32_array(int count);
 BinaryenType make_type_int32(int count);
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
+
+BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval);
 #endif  // __WASM_UTIL_H_

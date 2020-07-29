@@ -154,6 +154,17 @@ void lval_print(Lval* lval) {
     case LVAL_FUNCTION:
       lval_fun_print(lval);
       break;
+
+    case LVAL_LOCAL_REF:
+      switch (lval->subtype) {
+        case PARAM:
+          printf("P%d", lval->offset);
+          break;
+        case LOCAL:
+          printf("L%d", lval->offset);
+          break;
+      }
+      break;
     case LVAL_ERR:
       printf("Error: %s", lval->str);
       break;

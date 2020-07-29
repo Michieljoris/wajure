@@ -59,7 +59,7 @@ async function start() {
         let buf = fs.readFileSync('./out_wasm/runtime.wasm');
         runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
             then(res => res.instance.exports);
-        console.log("data_end =", runtime.__data_end.value);
+        // console.log("data_end =", runtime.__data_end.value);
         fs.writeFile("__data_end", "" + runtime.__data_end.value,
                      function (err) {
                          if (err) return console.log(err);

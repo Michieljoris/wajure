@@ -35,6 +35,12 @@ char* make_err(char* fmt, ...) {
   return str;
 }
 
+void quit(char* msg) {
+  printf("NOTE: Lispy compilation ended abnormally.\n");
+  if (msg) printf("%s\n", msg);
+  exit(1);
+}
+
 BinaryenExpressionRef lval_compile(Wasm* wasm, Lval* lval);
 
 enum { RETURN_ON_ERROR, RETURN_LAST_EVAL };
@@ -51,7 +57,6 @@ BinaryenExpressionRef compile_fn_rest_args(Wasm* wasm, Cell* head) {
 }
 
 BinaryenExpressionRef compile_do_list(Wasm* wasm, Lval* list, int mode) {
-  lval_println(list);
   BinaryenModuleRef module = wasm->module;
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
@@ -90,10 +95,32 @@ BinaryenExpressionRef compile_symbol(Wasm* wasm, Lval* lval_symbol) {
   return lval_compile(wasm, lval_resolved_sym);
 }
 
-BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval);
+BinaryenExpressionRef compile_special_call(Wasm* wasm, Lval* lval_fn,
+                                           Lval* lval_list) {
+  printf("compile special call!!!!!!!!!!!!!!!\n");
+  return make_int32(wasm->module, 123);
+}
+
+BinaryenExpressionRef compile_sys_call(Wasm* wasm, Lval* lval_fn,
+                                       Lval* lval_list) {
+  printf("compile sys call!!!!!!!!!!!!!!!\n");
+  return make_int32(wasm->module, 123);
+}
+
+BinaryenExpressionRef compile_lambda_call(Wasm* wasm, Lval* lval_fn,
+                                          Lval* lval_list) {
+  printf("compile lambda call!!!!!!!!!!!!!!!\n");
+  return make_int32(wasm->module, 123);
+}
+
+BinaryenExpressionRef compile_local_ref_call(Wasm* wasm, Lval* lval_fn,
+                                             Lval* lval_list) {
+  printf("compile local ref call!!!!!!!!!!!!!!!\n");
+  return make_int32(wasm->module, 123);
+}
 
 BinaryenExpressionRef compile_fn_call(Wasm* wasm, Lval* lval_list) {
-  BinaryenModuleRef module = wasm->module;
+  /* BinaryenModuleRef module = wasm->module; */
 
   if (lval_list->head == NIL) {
     if (!wasm->lval_empty_list_offset)
@@ -101,28 +128,80 @@ BinaryenExpressionRef compile_fn_call(Wasm* wasm, Lval* lval_list) {
     return wasm->lval_empty_list_offset;
   }
 
-  Lval* lval_first = lval_list->head->car;
-  switch (lval_first->type) {
-    case LVAL_SYMBOL:;
-      Lval* lval_fn = lenv_get(wasm->env, lval_first);
+  // TODO: add params of fn to env!!
 
-      ;  // TODO: resolve symbol
+  Lval* lval_first = lval_list->head->car;
+  if (lval_first->type == LVAL_SYMBOL) {
+    lval_first = lenv_get(wasm->env, lval_first);
+    // If it's a symbol it has to be known in our compiler env!!!
+    if (lval_first->type == LVAL_ERR) {
+      lval_println(lval_list);
+      lval_println(lval_first);
+      quit(NULL);
+    }
+  }
+  switch (lval_first->type) {
+    case LVAL_FUNCTION:  // as evalled in our compiler env
+      switch (lval_first->subtype) {
+        case SYS:
+          return compile_sys_call(wasm, lval_first, lval_list);
+        case SPECIAL:
+          // TODO: don't allow special symbols to be assigned to another
+          // symbol!!!!
+          return compile_special_call(wasm, lval_first, lval_list);
+        case LAMBDA:
+          return compile_lambda_call(wasm, lval_first, lval_list);
+        default:
+          printf("ERROR: Can't compile function with subtype %d\n",
+                 lval_first->subtype);
+          lval_println(lval_list);
+      }
+      break;
+    case LVAL_LOCAL_REF:
+      // we've assigned something to a local ref in wasm, but we don't know
+      // what it is, and whether it's a fn even. It'll have to be worked out
+      // at runtime. With some clever optimisations we can in some cases
+      // probably work out what it is at compile time and can reduce it to a
+      // compile_fn/lambda_cal. However the default case is that we cannot
+      // assume anything about the lval.
+      return compile_local_ref_call(wasm, lval_first, lval_list);
+      break;
     case LVAL_COLLECTION:
       switch (lval_first->subtype) {
         case LIST:
-          return compile_fn_call(wasm, lval_first);  // TODO: ?????
+          // TODO: ????? this might or might not return a fn at runtime, so we
+          // need to a compile_local_ref_call on the result of this somehow
+          return compile_fn_call(wasm, lval_first);
         case VECTOR:
-          // TODO: Error!!!!
         case MAP:
-          // TODO: Error!!!!
-        default:;
-          /* return make_lval_err("Unknown seq subtype: %d ", lval->subtype); */
+        case SET:
+          lval_println(lval_list);
+          printf("ERROR: Map/set/vector cannot be cast as fn (yet)\n");
+          break;
+        default:
+          lval_println(lval_list);
+          printf("ERROR: Unknown collectiion subtype %d", lval_first->subtype);
       }
       break;
+    case LVAL_SYMBOL:
+    case LVAL_LITERAL:
+      lval_println(lval_list);
+      printf(
+          "ERROR: Literal or symbol cannot be cast as fn (not even a keyword, "
+          "yet)\n");
+      break;
+    case LVAL_ERR:
+      lval_println(lval_first);
+      lval_println(lval_list);
+      printf("ERROR compile_fn_call: there was an error in parsing code\n");
+      break;
+    default:
+      lval_println(lval_list);
+      printf("ERROR compile_fn_call: Unknown lval type %d\n", lval_first->type);
   }
-  /* scoped Lval* lval_fun = lval_compile(env, lval_first); */
 
-  return make_int32(module, 0);
+  quit(NULL);
+  exit(1);
 }
 
 BinaryenExpressionRef compile_vector(Wasm* wasm, Lval* lval) {
@@ -133,35 +212,6 @@ BinaryenExpressionRef compile_vector(Wasm* wasm, Lval* lval) {
 BinaryenExpressionRef compile_map(Wasm* wasm, Lval* lval) {
   BinaryenModuleRef module = wasm->module;
   return make_int32(module, 0);
-}
-
-int slot_type_size = 4 * 4;
-int lval_type_size = 5 * 4;  // type and subtype are in 4 bytes
-int ref_count_offset = 0;
-int data_p_offset = 3;
-int type_offset = 4;
-int num_offset = 5;
-int str_offset = 6;
-int head_offset = 7;
-int hash_offset = 8;
-
-BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
-  int data_lval_size = slot_type_size + lval_type_size;
-  int* data_lval = calloc(1, data_lval_size);
-  int string_offset = 0;
-  if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
-
-  data_lval[ref_count_offset] = 1;
-  data_lval[data_p_offset] = wasm->__data_end + wasm->strings_offset + 16;
-  data_lval[type_offset] = lval->type | lval->subtype << 8;
-  data_lval[num_offset] = lval->num;
-  data_lval[str_offset] = wasm->__data_end + string_offset;
-  data_lval[head_offset] = 0;  //(int)lval->head;  // TODO: add list to data!!!
-  data_lval[hash_offset] = lval->hash;
-
-  int offset = add_bytes_to_data(wasm, (char*)data_lval, data_lval_size);
-
-  return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
 }
 
 BinaryenExpressionRef compile_lval_literal(Wasm* wasm, Lval* lval) {
@@ -252,24 +302,44 @@ void compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
   lval_println(lval->body);
   char* fn_name = lval_sym->str;
 
-  int params_count = 0;
-  int locals_count = 0;
+  int params_count = 0;  // TODO: for test purposes for now
+  /* int params_count2 = list_count(lval->params->head); */
   int results_count = 1;
 
+  Lenv* params_env = lenv_new();
+  Cell* cell = lval->params->head;
+  int i = 0;
+  while (cell) {
+    Lval* lval_sym = cell->car;
+    lenv_put(params_env, lval_sym, make_lval_local_ref(PARAM, i++));
+    cell = cell->cdr;
+  }
+  /* env_print(params_env); */
+  /* printf("\n"); */
+  params_env->parent_env = wasm->env;
+  wasm->env = params_env;
   BinaryenExpressionRef arg_list_head =
       compile_do_list(wasm, lval->body, RETURN_ON_ERROR);
+
+  wasm->env = wasm->env->parent_env;
+  // TODO: set this as result from compile_do_list, stored in wasm, don't
+  // forget to reset wasm->locals->count
+  int locals_count = 0;
+
   /* compile_fn_rest_args(wasm, lval->body->head); */
   /* BinaryenExpressionRef drop = call_indirect_example(wasm); */
 
   /* BinaryenExpressionRef lval_list_operands[1] = {arg_list_head}; */
   /* BinaryenExpressionRef lval_list = BinaryenCall( */
-  /*     module, "new_lval_list", lval_list_operands, 1, make_type_int32(1)); */
+  /*     module, "new_lval_list", lval_list_operands, 1, make_type_int32(1));
+   */
 
   /* BinaryenExpressionRef lval_println_operands[1] = {lval_list}; */
   /* BinaryenExpressionRef lval_println_operands[1] = {wasm_offset(wasm, 22)};
    */
   /* BinaryenExpressionRef body = BinaryenCall( */
-  /*     module, "lval_println", lval_println_operands, 1, BinaryenTypeNone());
+  /*     module, "lval_println", lval_println_operands, 1,
+   * BinaryenTypeNone());
    */
 
   /* BinaryenExpressionRef print_slot_size = */
@@ -316,22 +386,6 @@ void process_env(Wasm* wasm) {
   // Any functions encountered again create a wasm function, but now with
   // closure vars added.
 }
-
-/* BinaryenExpressionRef BinaryenCall(BinaryenModuleRef module, */
-/*                                    const char* target, */
-/*                                    BinaryenExpressionRef* operands, */
-/*                                    BinaryenIndex numOperands, */
-/*                                    BinaryenType returnType); */
-
-/* BINARYEN_API BinaryenExpressionRef */
-/* BinaryenCallIndirect(BinaryenModuleRef module, */
-/*                      BinaryenExpressionRef target, */
-/*                      BinaryenExpressionRef* operands, */
-/*                      BinaryenIndex numOperands, */
-/*                      BinaryenType params, */
-/*                      BinaryenType results); */
-
-/* int __data_end; */
 
 int compile(char* file_name) {
   info("Compiling %s\n", file_name);
@@ -438,13 +492,15 @@ int compile(char* file_name) {
 /*   BinaryenExpressionRef lalloc_size = BinaryenCall( */
 /*       module, "lalloc_size", operands_lalloc, 1, make_type_int32(1)); */
 
-/*   // TODO: see if str already exists and return that offset instead of adding
+/*   // TODO: see if str already exists and return that offset instead of
+ * adding
  */
 /*   // str again to data */
 /*   int offset = add_string_to_data(wasm, lval->str); */
 
 /*   BinaryenExpressionRef operands_strcpy[2] = {lalloc_size, */
-/*                                               wasm_offset(wasm, offset)}; */
+/*                                               wasm_offset(wasm, offset)};
+ */
 /*   BinaryenExpressionRef _strcpy = */
 /*       BinaryenCall(module, "_strcpy", operands_strcpy, 2,
  * make_type_int32(1)); */
@@ -468,7 +524,8 @@ int compile(char* file_name) {
 /*       /\* BinaryenExpressionRef wasm_len = make_int32(module, len); *\/ */
 /*       /\* BinaryenExpressionRef operands_lalloc[1] = {wasm_len}; *\/ */
 /*       /\* BinaryenExpressionRef lalloc_size = BinaryenCall( *\/ */
-/*       /\*     module, "lalloc_size", operands_lalloc, 1, make_type_int32(1));
+/*       /\*     module, "lalloc_size", operands_lalloc, 1,
+ * make_type_int32(1));
  * *\/ */
 
 /*       /\* int offset = add_string_to_data(wasm, lval->str); *\/ */
@@ -478,7 +535,8 @@ int compile(char* file_name) {
  * offset)}; */
 /*        *\/ */
 /*       /\* BinaryenExpressionRef _strcpy = BinaryenCall( *\/ */
-/*       /\*     module, "_strcpy", operands_strcpy, 2, make_type_int32(1)); *\/
+/*       /\*     module, "_strcpy", operands_strcpy, 2, make_type_int32(1));
+ * *\/
  */
 /*       /\* BinaryenExpressionRef operands_string[1] = {_strcpy}; *\/ */
 
@@ -517,3 +575,19 @@ int compile(char* file_name) {
 /*   if (i % 4 == 0) printf("|"); */
 /*   printf("%x,", s[i]); */
 /* } */
+
+/* BinaryenExpressionRef BinaryenCall(BinaryenModuleRef module, */
+/*                                    const char* target, */
+/*                                    BinaryenExpressionRef* operands, */
+/*                                    BinaryenIndex numOperands, */
+/*                                    BinaryenType returnType); */
+
+/* BINARYEN_API BinaryenExpressionRef */
+/* BinaryenCallIndirect(BinaryenModuleRef module, */
+/*                      BinaryenExpressionRef target, */
+/*                      BinaryenExpressionRef* operands, */
+/*                      BinaryenIndex numOperands, */
+/*                      BinaryenType params, */
+/*                      BinaryenType results); */
+
+/* int __data_end; */

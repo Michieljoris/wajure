@@ -33,7 +33,7 @@
  (export "mem" (memory $0))
  (func $test (result i32)
   (block $body (result i32)
-   (i32.const 0)
+   (i32.const 123)
   )
  )
 )

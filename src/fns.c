@@ -37,5 +37,5 @@ void lenv_add_builtin_fns(Lenv* env) {
   lenv_add_builtins(env, list_builtins, SYS);
   lenv_add_builtins(env, misc_builtins, SYS);
   lenv_add_builtins(env, special_builtins, SPECIAL);
-  lenv_add_builtins(env, util_builtins, SPECIAL);
+  lenv_add_builtins(env, util_builtins, SYS);
 }

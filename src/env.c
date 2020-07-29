@@ -67,8 +67,7 @@ int lenv_is_bound(Lenv* env, Lval* lval_sym) {
 }
 
 // Assoces lval_sym with lval in the kv list in env. Mutates env by updating kv
-// list in place and returns it. Both lval_sym and lval are assumed to be
-// retained already.
+// list in place. Both lval_sym and lval are assumed to be retained already.
 void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   env->kv = alist_put(env->kv, is_eq_lval_sym, lval_sym, lval);
 }
