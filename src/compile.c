@@ -3,6 +3,7 @@
 #include <binaryen-c.h>
 #include <stdlib.h>
 
+#include "compile_special.h"
 #include "env.h"
 #include "fns.h"
 #include "io.h"
@@ -11,34 +12,13 @@
 #include "list.h"
 #include "misc_fns.h"
 #include "print.h"
-#include "refcount.h"
-/* #include "misc_fns.h" */
-/* #include "print.h" */
 #include "read.h"
-/* #include "refcount.h" */
+#include "refcount.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
 // Builtins:
-// special: do, let, if, try, throw, quote, quasiquote
 // misc: exit
-
-#define Ber BinaryenExpressionRef
-
-void quit(Wasm* wasm, char* fmt, ...) {
-  if (fmt) {
-    va_list va;
-    va_start(va, fmt);
-    char* str = lalloc_size(512);
-    vsnprintf(str, 511, fmt, va);
-    str = lrealloc(str, _strlen(str) + 1);
-    va_end(va);
-    printf("str");
-  }
-  printf("NOTE: Lispy compilation ended abnormally.\n");
-  free(wasm);
-  exit(1);
-}
 
 Ber lval_compile(Wasm* wasm, Lval* lval);
 
@@ -94,26 +74,36 @@ Ber compile_symbol(Wasm* wasm, Lval* lval_symbol) {
   return lval_compile(wasm, lval_resolved_sym);
 }
 
-Ber compile_special_call(Wasm* wasm, Lval* lval_fn, Lval* lval_list) {
+Ber compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   printf("compile special call!!!!!!!!!!!!!!!\n");
-  return make_int32(wasm->module, 123);
+  char* fn_name = lval_fn_sym->str;
+  if (_strcmp(fn_name, "let") == 0) return compile_let(wasm, args);
+  if (_strcmp(fn_name, "if") == 0) return compile_if(wasm, args);
+  if (_strcmp(fn_name, "try") == 0) return compile_try(wasm, args);
+  if (_strcmp(fn_name, "throw") == 0) return compile_throw(wasm, args);
+  if (_strcmp(fn_name, "quote") == 0) return compile_quote(wasm, args);
+  if (_strcmp(fn_name, "quasiquote") == 0)
+    return compile_quasiquote(wasm, args);
+  quit(wasm, "ERROR: Unknown special form: %s", fn_name);
+  return NULL;
 }
 
 int is_eq_str(void* k1, void* k2) { return _strcmp(k1, k2) == 0; }
 
-Ber compile_sys_call(Wasm* wasm, Lval* lval_fn, Lval* lval_list) {
+Ber compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   /* printf("compile sys call!!!!!!!!!!!!!!!\n"); */
-  Ber arg_list_head = compile_fn_rest_args(wasm, lval_list->head->cdr);
+  Ber arg_list_head = compile_fn_rest_args(wasm, args);
 
   Ber lval_list_operands[1] = {arg_list_head};
   Ber wasm_lval_list = BinaryenCall(wasm->module, "new_lval_list",
                                     lval_list_operands, 1, make_type_int32(1));
 
   Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), wasm_lval_list};
-  char* c_fn_name = alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_fn->str);
+  char* c_fn_name =
+      alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_fn_sym->str);
 
   if (!c_fn_name)
-    quit(wasm, "System fn not found in runtime: %s", lval_fn->str);
+    quit(wasm, "System fn not found in runtime: %s", lval_fn_sym->str);
 
   Ber sys_fn_call = BinaryenCall(wasm->module, c_fn_name, sys_fn_operands, 2,
                                  make_type_int32(1));
@@ -121,12 +111,12 @@ Ber compile_sys_call(Wasm* wasm, Lval* lval_fn, Lval* lval_list) {
   return sys_fn_call;
 }
 
-Ber compile_lambda_call(Wasm* wasm, Lval* lval_fn, Lval* lval_list) {
+Ber compile_lambda_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   printf("compile lambda call!!!!!!!!!!!!!!!\n");
   return make_int32(wasm->module, 123);
 }
 
-Ber compile_local_ref_call(Wasm* wasm, Lval* lval_fn, Lval* lval_list) {
+Ber compile_local_ref_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   printf("compile local ref call!!!!!!!!!!!!!!!\n");
   return make_int32(wasm->module, 123);
 }
@@ -152,17 +142,18 @@ Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
       quit(wasm, NULL);
     }
   }
+  Cell* args = lval_list->head->cdr;
   switch (lval_first->type) {
     case LVAL_FUNCTION:  // as evalled in our compiler env
       switch (lval_first->subtype) {
         case SYS:
-          return compile_sys_call(wasm, lval_first, lval_list);
+          return compile_sys_call(wasm, lval_first, args);
         case SPECIAL:
           // TODO: don't allow special symbols to be assigned to another
           // symbol!!!!
-          return compile_special_call(wasm, lval_first, lval_list);
+          return compile_special_call(wasm, lval_first, args);
         case LAMBDA:
-          return compile_lambda_call(wasm, lval_first, lval_list);
+          return compile_lambda_call(wasm, lval_first, args);
         default:
           printf("ERROR: Can't compile function with subtype %d\n",
                  lval_first->subtype);
@@ -176,7 +167,7 @@ Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
       // probably work out what it is at compile time and can reduce it to a
       // compile_fn/lambda_cal. However the default case is that we cannot
       // assume anything about the lval.
-      return compile_local_ref_call(wasm, lval_first, lval_list);
+      return compile_local_ref_call(wasm, lval_first, args);
       break;
     case LVAL_COLLECTION:
       switch (lval_first->subtype) {

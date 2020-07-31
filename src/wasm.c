@@ -3,6 +3,7 @@
 #include <binaryen-c.h>
 
 #include "lib.h"
+#include "lispy_mempool.h"
 #include "list.h"
 #include "misc_fns.h"
 #include "platform.h"
@@ -137,4 +138,19 @@ void import_runtime(Wasm* wasm) {
   runtime_add_fns(wasm, math_builtin_fns);
   runtime_add_fns(wasm, list_builtin_fns);
   runtime_add_fns(wasm, util_builtin_fns);
+}
+
+void quit(Wasm* wasm, char* fmt, ...) {
+  if (fmt) {
+    va_list va;
+    va_start(va, fmt);
+    char* str = lalloc_size(512);
+    vsnprintf(str, 511, fmt, va);
+    str = lrealloc(str, _strlen(str) + 1);
+    va_end(va);
+    printf("str");
+  }
+  printf("NOTE: Lispy compilation ended abnormally.\n");
+  free(wasm);
+  exit(1);
 }

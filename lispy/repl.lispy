@@ -6,8 +6,31 @@
 ;; (defn test[x] 456 nil true false "ok")
 ;; (defn test[x] bar foo "ok" "then" 123 false true nil)
 ;; (defn test[x] "aaaaaa")
-(defn test[x] (print (cons "hello" (list 1 (+ 2 3) (list 3 5)))))
-;; (defn test[x] (print (> 2 0)))
+;; (defn test[x] (print (cons "hello" (list 1 (+ 2 3) (list 3 5)))))
+
+
+
+
+
+
+
+
+(defn test[x] (print "hello"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;; (defn test2[x] (my-fn 1))
 
 ;; (defn test3a[x]

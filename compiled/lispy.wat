@@ -6,7 +6,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4072) "hello\00\01\00\00\00\00\00\00\00\00\00\00\00\fe\0f\00\00\02\t\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\"\10\00\00\02\08\00\00\01\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00F\10\00\00\02\08\00\00\02\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00j\10\00\00\02\08\00\00\03\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\8e\10\00\00\02\08\00\00\05\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4072) "hello\00\01\00\00\00\00\00\00\00\00\00\00\00\fe\0f\00\00\02\t\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -58,54 +58,7 @@
     (i32.const 0)
     (call $new_lval_list
      (call $list_cons
-      (call $cons_fn
-       (i32.const 0)
-       (call $new_lval_list
-        (call $list_cons
-         (i32.const 4094)
-         (call $list_cons
-          (call $list_fn
-           (i32.const 0)
-           (call $new_lval_list
-            (call $list_cons
-             (i32.const 4130)
-             (call $list_cons
-              (call $add_fn
-               (i32.const 0)
-               (call $new_lval_list
-                (call $list_cons
-                 (i32.const 4166)
-                 (call $list_cons
-                  (i32.const 4202)
-                  (i32.const 0)
-                 )
-                )
-               )
-              )
-              (call $list_cons
-               (call $list_fn
-                (i32.const 0)
-                (call $new_lval_list
-                 (call $list_cons
-                  (i32.const 4202)
-                  (call $list_cons
-                   (i32.const 4238)
-                   (i32.const 0)
-                  )
-                 )
-                )
-               )
-               (i32.const 0)
-              )
-             )
-            )
-           )
-          )
-          (i32.const 0)
-         )
-        )
-       )
-      )
+      (i32.const 4094)
       (i32.const 0)
      )
     )
