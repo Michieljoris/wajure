@@ -226,6 +226,8 @@ char* lval_type_constant_to_name(int t) {
       return "false";
     case LNIL:
       return "nil";
+    case LVAL_LOCAL_REF:
+      return "Local ref";
     default:
       return "Unknown";
   }

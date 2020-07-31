@@ -23,4 +23,6 @@ Lval* make_lval_local_ref(int subtype, int offset);
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
 
+Lval* new_lval_list(void* head);
+
 #endif  // __LVAL_H_

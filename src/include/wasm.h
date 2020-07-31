@@ -7,11 +7,13 @@
 #define Ber BinaryenExpressionRef
 
 typedef struct {
+  char* msg;
   Lval* lval;
   Cell* cell;
+  int* local_count;
+  char* fn_name;
   int line;
   int pos;
-  char* msg;
   // whatever
 } Context;
 

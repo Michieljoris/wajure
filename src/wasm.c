@@ -154,7 +154,7 @@ void quit(Wasm* wasm, char* fmt, ...) {
     va_end(va);
     printf("%s\n", str);
   }
-  printf("Context:\n");
+  printf("Context: ");
   print_context(wasm);
   printf("NOTE: Lispy compilation ended abnormally.\n");
   free(wasm);

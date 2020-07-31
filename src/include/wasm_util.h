@@ -43,19 +43,29 @@ void leave_context(Wasm* wasm);
 #define compile_context __attribute__((__cleanup__(_leave_context)))
 void _leave_context(void* data);
 
-#define NEW_CONTEXT_LVAL(_msg, _lval)                 \
+#define CONTEXT(_msg)                                 \
   compile_context Wasm* __wasm = enter_context(wasm); \
-  Context* context = malloc(sizeof(Context));         \
-  context->lval = _lval;                              \
+  Context* context = __wasm->context->car;            \
   context->msg = _msg;                                \
-  __wasm->context->car = context;
+  printf("Entering context: %s\n", _msg);
 
-#define NEW_CONTEXT_CELL(_msg, _cell)                 \
-  compile_context Wasm* __wasm = enter_context(wasm); \
-  Context* context = malloc(sizeof(Context));         \
-  context->cell = _cell;                              \
-  context->msg = _msg;                                \
-  __wasm->context->car = context;
+#define CONTEXT_LVAL(_msg, _lval) \
+  CONTEXT(_msg)                   \
+  context->lval = _lval;
+
+#define CONTEXT_CELL(_msg, _cell) \
+  CONTEXT(_msg)                   \
+  context->cell = _cell;
+
+#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count) \
+  CONTEXT(_msg)                                        \
+  context->fn_name = _fn_name;                         \
+  context->local_count = malloc(sizeof(int));          \
+  *context->local_count = _local_count;
 
 void print_context(Wasm* wasm);
+
+Lenv* enter_env(Wasm* wasm);
+
+void leave_env(Wasm* wasm);
 #endif  // __WASM_UTIL_H_

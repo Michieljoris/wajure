@@ -265,18 +265,27 @@ BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
 }
 
 Wasm* enter_context(Wasm* wasm) {
+  Context* prev_context = wasm->context->car;
   Cell* cell = malloc(sizeof(Cell));
   cell->cdr = wasm->context;
   wasm->context = cell;
+  Context* new_context = malloc(sizeof(Context));
+  wasm->context->car = new_context;
+  new_context->local_count = prev_context->local_count;
+  new_context->fn_name = prev_context->fn_name;
   return wasm;
 }
 
 void leave_context(Wasm* wasm) {
-  printf("leaving context!!!!\n");
-  free(wasm->context->car);
-  Cell* prev_context = wasm->context->cdr;
+  Context* context = wasm->context->car;
+  Cell* prev_context_cell = wasm->context->cdr;
+  printf("leaving context %s\n", context->msg);
+  if (prev_context_cell &&
+      context->local_count != ((Context*)(prev_context_cell->car))->local_count)
+    free(context->local_count);
+  free(context);
   free(wasm->context);
-  wasm->context = prev_context;
+  wasm->context = prev_context_cell;
 }
 
 void print_cell(void* cell) {
@@ -301,4 +310,19 @@ void print_context(Wasm* wasm) {
       putchar('\n');
     }
   }
+}
+
+Lenv* enter_env(Wasm* wasm) {
+  Lenv* new_env = lenv_new();
+  new_env->parent_env = retain(wasm->env);
+  wasm->env = new_env;
+  return new_env;
+}
+
+void leave_env(Wasm* wasm) {
+  Lenv* env = wasm->env;
+  wasm->env = env->parent_env;
+  release(env->kv);
+  env->kv = NIL;
+  release(env);
 }

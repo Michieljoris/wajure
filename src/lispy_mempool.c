@@ -119,6 +119,9 @@ void destroy_lval(void* data) {
         /* if (debug) ddebug("\n Done freeing lval_fun"); */
       }
       break;
+
+    case LVAL_LOCAL_REF:
+      break;
     case LVAL_ERR:
       /* free(lval->str); */
       release(lval->str);

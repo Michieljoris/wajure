@@ -3,26 +3,75 @@
 #include <binaryen-c.h>
 
 #include "assert.h"
+#include "compile.h"
+#include "iter.h"
+#include "lispy_mempool.h"
 #include "list.h"
 #include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
 Ber compile_let(Wasm* wasm, Cell* arg_list) {
-  NEW_CONTEXT_CELL("compile_let", arg_list)
-  printf("compile let call!!!!!!!!!!!!!!!\n");
   BinaryenModuleRef module = wasm->module;
-  Ber let_body[] = {make_int32(module, 123)};
-  int let_body_count = 1;
+  CONTEXT_CELL("compile_let", arg_list)
+  /* printf("compile let call!!!!!!!!!!!!!!!\n"); */
+  /* Ber let_body[] = {make_int32(module, 123)}; */
 
   if (list_count(arg_list) == 0)
     quit(wasm, "Error: let needs at least binding vector");
 
-  Lval* binding_vector = arg_list->car;
+  Lval* bindings = arg_list->car;
 
-  if (binding_vector->subtype != VECTOR)
+  if (bindings->subtype != VECTOR)
     quit(wasm, "Error: Expected vector as first arg to let, got %s ",
-         lval_type_to_name(binding_vector));
+         lval_type_to_name(bindings));
+
+  int bindings_count = list_count(bindings->head);
+  if (bindings_count % 2 != 0)
+    quit(wasm, "Error: Binding vector for let has odd number of forms");
+
+  Lenv* let_env = enter_env(wasm);
+
+  Ber* let_body = malloc(bindings_count * sizeof(Ber));  // TODO: free???
+  int let_body_count = bindings_count / 2 + 1;
+
+  scoped_iter Cell* b = iter_new(bindings);
+  Lval* lval_sym = iter_next(b);
+
+  // Compile
+  int i = 0;
+  while (lval_sym) {
+    if (lval_sym->type != LVAL_SYMBOL) {
+      quit(wasm, "Canot bind non-symbol. Got %s, expected %s.",
+           lval_type_to_name(lval_sym),
+           lval_type_constant_to_name(LVAL_SYMBOL));
+    }
+
+    Lval* lval = iter_next(b);
+    Ber wasm_value = lval_compile(wasm, lval);
+    Ber local_var = BinaryenLocalSet(module, *context->local_count, wasm_value);
+    let_body[i] = local_var;
+    lenv_put(let_env, retain(lval_sym), make_lval_local_ref(LOCAL, i));
+
+    i++;
+    (*context->local_count)++;
+    /* if (lval->type == LVAL_ERR) { */
+    /*   release(let_env); */
+    /*   return lval; */
+    /* } */
+    /* Lenv* new_let_env = lenv_prepend(let_env, retain(lval_sym), lval); */
+    /* new_let_env->parent_env = let_env; */
+
+    /* let_env = new_let_env; */
+    lval_sym = iter_next(b);
+  }
+
+  if (!wasm->lval_nil_offset)
+    wasm->lval_nil_offset = make_lval_literal(wasm, make_lval_nil());
+  let_body[i] = wasm->lval_nil_offset;
+
+  // Post compile
+  leave_env(wasm);
 
   return BinaryenBlock(module, "let", let_body, let_body_count,
                        make_type_int32(1));

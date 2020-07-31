@@ -98,7 +98,7 @@ enum {
   LVAL_LOCAL_REF,
   // local ref subtypes
   PARAM,
-  LOCAL
+  LOCAL,
 };
 
 #endif  // __LTYPES_H_

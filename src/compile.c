@@ -10,10 +10,12 @@
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "list.h"
+#include "lval.h"
 #include "misc_fns.h"
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
+#include "special_fns.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
@@ -66,10 +68,14 @@ Ber compile_do_list(Wasm* wasm, Lval* list, int mode) {
 }
 
 Ber compile_symbol(Wasm* wasm, Lval* lval_symbol) {
+  printf("COMPILING SYMBOL!!! %s\n", lval_symbol->str);
   Lval* lval_resolved_sym = lenv_get(wasm->env, lval_symbol);
+  if (lval_resolved_sym->type == LVAL_ERR) {
+    quit(wasm, lval_resolved_sym->str);
+  }
 
-  printf("resolved sym: \n");
-  lval_println(lval_resolved_sym);
+  /* printf("resolved sym: \n"); */
+  /* lval_println(lval_resolved_sym); */
 
   return lval_compile(wasm, lval_resolved_sym);
 }
@@ -123,9 +129,11 @@ Ber compile_local_ref_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 
 void _leave_context(void* data) { leave_context(*(void**)data); }
 
+int compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval);
+
 Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
   /* BinaryenModuleRef module = wasm->module; */
-  NEW_CONTEXT_LVAL("compile_fn_call", lval_list);
+  CONTEXT_LVAL("compile_fn_call", lval_list);
 
   if (lval_list->head == NIL) {
     if (!wasm->lval_empty_list_offset)
@@ -136,6 +144,29 @@ Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
   // TODO: add params of fn to env!!
 
   Lval* lval_first = lval_list->head->car;
+
+  if (_strcmp(lval_first->str, "fn") == 0) {
+    Lval* arg_list = new_lval_list(retain(lval_list->head->cdr));
+    Lval* lval_fun = eval_lambda_form(NULL, arg_list, LAMBDA);
+    release(arg_list);
+    lval_println(lval_fun);
+    Lval* lval_sym = make_lval_sym(NULL);
+    char* lambda_name = lalloc_size(512);
+    _strcpy(lambda_name, context->fn_name);
+    _strcat(lambda_name, "_");
+    itostr(lambda_name + _strlen(lambda_name), wasm->fns_count + 1);
+    lambda_name = lrealloc(lambda_name, _strlen(lambda_name) + 1);
+    lval_sym->str = lambda_name;
+    int fn_offset = compile_function(wasm, lval_sym, lval_fun);
+    release(lval_sym);
+    release(lval_fun);
+    scoped Lval* lval_local_ref = make_lval_local_ref(LAMBDA, fn_offset);
+    return make_lval_literal(wasm, lval_local_ref);
+    /* Ber local_ref_fn = make_lval_listeral(wasm, lval_local_ref); */
+    /* release(lval_local_ref); */
+    /* return make_int32(wasm->module, fn_offset); */
+  }
+
   if (lval_first->type == LVAL_SYMBOL) {
     lval_first = lenv_get(wasm->env, lval_first);
     // If it's a symbol it has to be known in our compiler env!!!
@@ -255,9 +286,9 @@ Ber compile_lval_literal(Wasm* wasm, Lval* lval) {
 }
 
 Ber lval_compile(Wasm* wasm, Lval* lval) {
-  /* printf("lval_compile: "); */
-  /* lval_println(lval); */
-  /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
+  printf("lval_compile: ");
+  lval_println(lval);
+  printf("lval->type: %s\n", lval_type_constant_to_name(lval->type));
   /* BER ref = NULL; */
   switch (lval->type) {
     case LVAL_SYMBOL:
@@ -278,6 +309,8 @@ Ber lval_compile(Wasm* wasm, Lval* lval) {
           /* return make_err("Unknown seq subtype: %d ", lval->subtype); */
       }
       break;
+    case LVAL_LOCAL_REF:
+      return BinaryenLocalGet(wasm->module, lval->offset, make_type_int32(1));
     default:
       return compile_lval_literal(wasm, lval);
   }
@@ -298,7 +331,7 @@ void add_wasm_function(Wasm* wasm, char* fn_name, int params_count,
                       locals_count, body);
 }
 
-void compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
+int compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
   /* BinaryenModuleRef module = wasm->module; */
 
   printf("fn-name: %s\n", lval_sym->str);
@@ -306,56 +339,41 @@ void compile_function(Wasm* wasm, Lval* lval_sym, Lval* lval) {
   lval_println(lval->params);
   printf("body: ");
   lval_println(lval->body);
+
   char* fn_name = lval_sym->str;
 
-  int params_count = 0;  // TODO: for test purposes for now
-  /* int params_count2 = list_count(lval->params->head); */
-  int results_count = 1;
+  // Params
 
-  Lenv* params_env = lenv_new();
+  int params_count = list_count(lval->params->head);
+
+  Lenv* params_env = enter_env(wasm);
   Cell* cell = lval->params->head;
   int i = 0;
   while (cell) {
     Lval* lval_sym = cell->car;
-    lenv_put(params_env, lval_sym, make_lval_local_ref(PARAM, i++));
+    printf("ref count of lval_sym %d\n", get_ref_count(lval_sym));
+    lenv_put(params_env, retain(lval_sym), make_lval_local_ref(PARAM, i++));
     cell = cell->cdr;
   }
-  /* env_print(params_env); */
-  /* printf("\n"); */
-  params_env->parent_env = wasm->env;
-  wasm->env = params_env;
+
+  CONTEXT_FUNCTION("compile_function", lval_sym->str, params_count)
+
+  // Compile
   Ber arg_list_head = compile_do_list(wasm, lval->body, RETURN_ON_ERROR);
 
-  wasm->env = wasm->env->parent_env;
-  // TODO: set this as result from compile_do_list, stored in wasm, don't
-  // forget to reset wasm->locals->count
-  int locals_count = 0;
+  // Post compile
+  leave_env(wasm);
 
-  /* compile_fn_rest_args(wasm, lval->body->head); */
-  /* BER drop = call_indirect_example(wasm); */
-
-  /* BER lval_list_operands[1] = {arg_list_head}; */
-  /* BER lval_list = BinaryenCall( */
-  /*     module, "new_lval_list", lval_list_operands, 1, make_type_int32(1));
-   */
-
-  /* BER lval_println_operands[1] = {lval_list}; */
-  /* BER lval_println_operands[1] = {wasm_offset(wasm, 22)};
-   */
-  /* BER body = BinaryenCall( */
-  /*     module, "lval_println", lval_println_operands, 1,
-   * BinaryenTypeNone());
-   */
-
-  /* BER print_slot_size = */
-  /*     BinaryenCall(module, "print_slot_size", NULL, 0, BinaryenTypeNone());
-   */
-  /* body = print_slot_size; */
+  /* printf("local_count: %d\n", *context->local_count); */
+  int locals_count = *context->local_count - params_count;
 
   Ber body = arg_list_head;
   lval->offset = add_fn_to_table(wasm, fn_name);
+
+  int results_count = 1;
   add_wasm_function(wasm, fn_name, params_count, locals_count, body,
                     results_count);
+  return lval->offset;
 }
 
 void print_pair(Lval* lval_sym, Lval* lval) {
@@ -596,3 +614,30 @@ int compile(char* file_name) {
 /*                      BinaryenType results); */
 
 /* int __data_end; */
+
+/* compile_fn_rest_args(wasm, lval->body->head); */
+/* BER drop = call_indirect_example(wasm); */
+
+/* BER lval_list_operands[1] = {arg_list_head}; */
+/* BER lval_list = BinaryenCall( */
+/*     module, "new_lval_list", lval_list_operands, 1, make_type_int32(1));
+ */
+
+/* BER lval_println_operands[1] = {lval_list}; */
+/* BER lval_println_operands[1] = {wasm_offset(wasm, 22)};
+ */
+/* BER body = BinaryenCall( */
+/*     module, "lval_println", lval_println_operands, 1,
+ * BinaryenTypeNone());
+ */
+
+/* BER print_slot_size = */
+/*     BinaryenCall(module, "print_slot_size", NULL, 0, BinaryenTypeNone());
+ */
+/* body = print_slot_size; */
+
+/* printf("fn-name: %s\n", lval_sym->str); */
+/* printf("params: "); */
+/* lval_println(lval->params); */
+/* printf("body: "); */
+/* lval_println(lval->body); */
