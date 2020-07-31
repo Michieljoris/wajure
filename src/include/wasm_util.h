@@ -35,4 +35,27 @@ BinaryenType make_type_int32(int count);
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
 BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval);
+
+Wasm* enter_context(Wasm* wasm);
+
+void leave_context(Wasm* wasm);
+
+#define compile_context __attribute__((__cleanup__(_leave_context)))
+void _leave_context(void* data);
+
+#define NEW_CONTEXT_LVAL(_msg, _lval)                 \
+  compile_context Wasm* __wasm = enter_context(wasm); \
+  Context* context = malloc(sizeof(Context));         \
+  context->lval = _lval;                              \
+  context->msg = _msg;                                \
+  __wasm->context->car = context;
+
+#define NEW_CONTEXT_CELL(_msg, _cell)                 \
+  compile_context Wasm* __wasm = enter_context(wasm); \
+  Context* context = malloc(sizeof(Context));         \
+  context->cell = _cell;                              \
+  context->msg = _msg;                                \
+  __wasm->context->car = context;
+
+void print_context(Wasm* wasm);
 #endif  // __WASM_UTIL_H_

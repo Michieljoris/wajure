@@ -7,6 +7,15 @@
 #define Ber BinaryenExpressionRef
 
 typedef struct {
+  Lval* lval;
+  Cell* cell;
+  int line;
+  int pos;
+  char* msg;
+  // whatever
+} Context;
+
+typedef struct {
   BinaryenModuleRef module;
   char* strings;
   int strings_offset;
@@ -22,7 +31,7 @@ typedef struct {
   int lval_num_end;
   BinaryenExpressionRef* lval_num_offset;
   Cell* lispy_to_c_fn_map;
-
+  Cell* context;
 } Wasm;
 
 Wasm* init_wasm();

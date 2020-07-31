@@ -26,7 +26,10 @@ Wasm* init_wasm() {
                  // numbers (-100 till 100):
                  .lval_num_start = -100,
                  .lval_num_end = 100,
-                 .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201)};
+                 .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201),
+                 .context = malloc(sizeof(Cell))};
+  Context context = (Context){.msg = "Root context"};
+  wasm->context->car = &context;
   return wasm;
 }
 
@@ -37,6 +40,7 @@ void free_wasm(Wasm* wasm) {
   free(wasm->lval_num_offset);
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
+  free(wasm->context);  // TODO
   free(wasm);
 }
 
@@ -148,8 +152,10 @@ void quit(Wasm* wasm, char* fmt, ...) {
     vsnprintf(str, 511, fmt, va);
     str = lrealloc(str, _strlen(str) + 1);
     va_end(va);
-    printf("str");
+    printf("%s\n", str);
   }
+  printf("Context:\n");
+  print_context(wasm);
   printf("NOTE: Lispy compilation ended abnormally.\n");
   free(wasm);
   exit(1);

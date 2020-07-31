@@ -121,8 +121,11 @@ Ber compile_local_ref_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   return make_int32(wasm->module, 123);
 }
 
+void _leave_context(void* data) { leave_context(*(void**)data); }
+
 Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
   /* BinaryenModuleRef module = wasm->module; */
+  NEW_CONTEXT_LVAL("compile_fn_call", lval_list);
 
   if (lval_list->head == NIL) {
     if (!wasm->lval_empty_list_offset)
@@ -142,6 +145,7 @@ Ber compile_fn_call(Wasm* wasm, Lval* lval_list) {
       quit(wasm, NULL);
     }
   }
+
   Cell* args = lval_list->head->cdr;
   switch (lval_first->type) {
     case LVAL_FUNCTION:  // as evalled in our compiler env

@@ -6,7 +6,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4072) "hello\00\01\00\00\00\00\00\00\00\00\00\00\00\fe\0f\00\00\02\t\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4072) "")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -54,15 +54,7 @@
  (export "mem" (memory $0))
  (func $test (result i32)
   (block $body (result i32)
-   (call $print_fn
-    (i32.const 0)
-    (call $new_lval_list
-     (call $list_cons
-      (i32.const 4094)
-      (i32.const 0)
-     )
-    )
-   )
+   (i32.const 123)
   )
  )
 )

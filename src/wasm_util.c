@@ -6,9 +6,11 @@
 #include "fns.h"
 #include "lib.h"
 #include "lispy_mempool.h"
+#include "list.h"
 #include "ltypes.h"
 #include "misc_fns.h"
 #include "platform.h"
+#include "print.h"
 #include "wasm.h"
 
 void write_string(char* file_name, char* str) {
@@ -260,4 +262,43 @@ BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
   int offset = add_bytes_to_data(wasm, (char*)data_lval, data_lval_size);
   free(data_lval);
   return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
+}
+
+Wasm* enter_context(Wasm* wasm) {
+  Cell* cell = malloc(sizeof(Cell));
+  cell->cdr = wasm->context;
+  wasm->context = cell;
+  return wasm;
+}
+
+void leave_context(Wasm* wasm) {
+  printf("leaving context!!!!\n");
+  free(wasm->context->car);
+  Cell* prev_context = wasm->context->cdr;
+  free(wasm->context);
+  wasm->context = prev_context;
+}
+
+void print_cell(void* cell) {
+  printf("CELL");
+  lval_print((Lval*)((Cell*)cell)->car);
+}
+
+void print_context(Wasm* wasm) {
+  Context* c = wasm->context->car;
+  if (c) {
+    printf("%s\n", c->msg);
+    if (c->lval) lval_println(c->lval);
+    if (c->cell) {
+      putchar('(');
+      Cell* cell = c->cell;
+      while (cell) {
+        lval_print(cell->car);
+        cell = cell->cdr;
+        if (cell) putchar(' ');
+      }
+      putchar(')');
+      putchar('\n');
+    }
+  }
 }
