@@ -40,6 +40,8 @@ typedef struct {
 /*   int hash; */
 /* }; */
 
+typedef struct context Context;
+
 struct lval {
   char type;
   char subtype;
@@ -57,13 +59,33 @@ struct lval {
   Lval* params;
   Lval* body;
 
-  int offset;  // compiler to wasm data
+  // compiler to wasm data
+  Context* context;
+  int offset;
 };
 
 struct lenv {
   int is_user_env;
   Lenv* parent_env;
   Cell* kv;
+};
+
+// Compile structs
+typedef struct {
+  int local_count;
+  char* fn_name;
+  int closure_count;
+  Lenv* closure;
+} FunctionContext;
+
+struct context {
+  char* msg;
+  Lval* lval;
+  Cell* cell;
+  FunctionContext* function_context;
+  // whatever
+  int line;
+  int pos;
 };
 
 /* lval types */
@@ -95,10 +117,11 @@ enum {
   // error subtypes
   USER,
   // compiler types
-  LVAL_LOCAL_REF,
+  LVAL_WASM_REF,
   // local ref subtypes
   PARAM,
   LOCAL,
+  /* LAMBDA */
 };
 
 #endif  // __LTYPES_H_

@@ -59,13 +59,21 @@ async function start() {
         let buf = fs.readFileSync('./out_wasm/runtime.wasm');
         runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
             then(res => res.instance.exports);
-        // console.log("data_end =", runtime.__data_end.value);
+        console.log("data_end =", runtime.__data_end.value);
+        console.log("heap_base =", runtime.__heap_base.value);
         fs.writeFile("__data_end", "" + runtime.__data_end.value,
                      function (err) {
                          if (err) return console.log(err);
                      })
+
+        fs.writeFile("__heap_base", "" + runtime.__heap_base.value,
+                     function (err) {
+                         if (err) return console.log(err);
+                     })
+
         // console.log("calling init_malloc");
         runtime.init_malloc();
+        let stack_pointer = runtime._malloc(8 * 1024); //8MB stack
         runtime.init_lispy_mempools(800, 800, 800);
 
         buf = fs.readFileSync('./compiled/lispy.wasm');
@@ -81,7 +89,9 @@ async function start() {
         //                                }};
         let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
                                                      log_int: arg => console.log(arg),
-                                                     log_string_n: makeLogStringN(runtime.memory),},
+                                                     log_string_n: makeLogStringN(runtime.memory),
+                                                     stack_pointer: stack_pointer
+                                                    },
                                                     runtime)};
         console.log("Loading lispy.wat ----------------------------------------");
         let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).

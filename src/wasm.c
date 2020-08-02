@@ -12,6 +12,7 @@
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
   char* data_end_str = read_file("__data_end");
+  char* heap_base_str = read_file("__heap_base");
   *wasm = (Wasm){.module = BinaryenModuleCreate(),
                  .strings = malloc(1),
                  .strings_offset = 0,
@@ -22,6 +23,7 @@ Wasm* init_wasm() {
                  .lval_nil_offset = NULL,
                  .lval_empty_list_offset = NULL,
                  .__data_end = (int)_strtol(data_end_str, NULL, 10),
+                 .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
                  // no need to intern lval literal numbers for these common
                  // numbers (-100 till 100):
                  .lval_num_start = -100,
@@ -49,6 +51,10 @@ void add_memory_section(Wasm* wasm) {
   /* BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end", */
   /*                         BinaryenTypeInt32(), 0); */
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
+  /* BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer", */
+  /*                         BinaryenTypeInt32(), 0); */
+  BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1,
+                    make_int32(module, wasm->__heap_base));
   const int num_segments = 1;
   const char* segments[1] = {wasm->strings};
   BinaryenIndex segmentSizes[] = {wasm->strings_offset};
@@ -155,7 +161,7 @@ void quit(Wasm* wasm, char* fmt, ...) {
     printf("%s\n", str);
   }
   printf("Context: ");
-  print_context(wasm);
+  print_wasm_context(wasm);
   printf("NOTE: Lispy compilation ended abnormally.\n");
   free(wasm);
   exit(1);

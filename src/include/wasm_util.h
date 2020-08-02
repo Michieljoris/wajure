@@ -57,15 +57,21 @@ void _leave_context(void* data);
   CONTEXT(_msg)                   \
   context->cell = _cell;
 
-#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count) \
-  CONTEXT(_msg)                                        \
-  context->fn_name = _fn_name;                         \
-  context->local_count = malloc(sizeof(int));          \
-  *context->local_count = _local_count;
+#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count)         \
+  CONTEXT(_msg)                                                \
+  context->function_context = malloc(sizeof(FunctionContext)); \
+  context->function_context->fn_name = _fn_name;               \
+  context->function_context->closure_count = 0;                \
+  context->function_context->closure = lenv_new();             \
+  context->function_context->local_count = _local_count;
 
-void print_context(Wasm* wasm);
+void print_context(Context* c);
+void print_wasm_context(Wasm* wasm);
 
 Lenv* enter_env(Wasm* wasm);
 
 void leave_env(Wasm* wasm);
+
+Lval* make_lval_wasm_ref(Context* context, int subtype, int offset);
+
 #endif  // __WASM_UTIL_H_

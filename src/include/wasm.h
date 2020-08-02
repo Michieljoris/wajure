@@ -7,17 +7,6 @@
 #define Ber BinaryenExpressionRef
 
 typedef struct {
-  char* msg;
-  Lval* lval;
-  Cell* cell;
-  int* local_count;
-  char* fn_name;
-  int line;
-  int pos;
-  // whatever
-} Context;
-
-typedef struct {
   BinaryenModuleRef module;
   char* strings;
   int strings_offset;
@@ -25,6 +14,7 @@ typedef struct {
   int fns_count;
   Lenv* env;
   int __data_end;
+  int __heap_base;
   BinaryenExpressionRef lval_true_offset;
   BinaryenExpressionRef lval_false_offset;
   BinaryenExpressionRef lval_nil_offset;

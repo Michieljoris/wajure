@@ -49,12 +49,15 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
 
     Lval* lval = iter_next(b);
     Ber wasm_value = lval_compile(wasm, lval);
-    Ber local_var = BinaryenLocalSet(module, *context->local_count, wasm_value);
+    Ber local_var = BinaryenLocalSet(
+        module, context->function_context->local_count, wasm_value);
     let_body[i] = local_var;
-    lenv_put(let_env, retain(lval_sym), make_lval_local_ref(LOCAL, i));
+
+    // LENV_PUT
+    lenv_put(let_env, retain(lval_sym), make_lval_wasm_ref(context, LOCAL, i));
 
     i++;
-    (*context->local_count)++;
+    context->function_context->local_count++;
     /* if (lval->type == LVAL_ERR) { */
     /*   release(let_env); */
     /*   return lval; */

@@ -271,32 +271,44 @@ Wasm* enter_context(Wasm* wasm) {
   wasm->context = cell;
   Context* new_context = malloc(sizeof(Context));
   wasm->context->car = new_context;
-  new_context->local_count = prev_context->local_count;
-  new_context->fn_name = prev_context->fn_name;
+  new_context->function_context = prev_context->function_context;
   return wasm;
 }
 
 void leave_context(Wasm* wasm) {
   Context* context = wasm->context->car;
   Cell* prev_context_cell = wasm->context->cdr;
-  printf("leaving context %s\n", context->msg);
+  /* printf("leaving context %s\n", context->msg); */
+  /* if (prev_context_cell && */
+  /*     context->local_count !=
+   * ((Context*)(prev_context_cell->car))->local_count) */
+  /*   free(context->local_count); */
+
   if (prev_context_cell &&
-      context->local_count != ((Context*)(prev_context_cell->car))->local_count)
-    free(context->local_count);
+      context->function_context !=
+          ((Context*)(prev_context_cell->car))->function_context) {
+    release(context->function_context->closure);
+    free(context->function_context);
+  }
+
   free(context);
   free(wasm->context);
   wasm->context = prev_context_cell;
 }
+
+void _leave_context(void* data) { leave_context(*(void**)data); }
 
 void print_cell(void* cell) {
   printf("CELL");
   lval_print((Lval*)((Cell*)cell)->car);
 }
 
-void print_context(Wasm* wasm) {
-  Context* c = wasm->context->car;
+void print_context(Context* c) {
   if (c) {
-    printf("%s\n", c->msg);
+    printf("msg: %s\n", c->msg);
+    printf("fn_name: %s\n", c->function_context->fn_name);
+    printf("fn closure:\n");
+    env_print(c->function_context->closure);
     if (c->lval) lval_println(c->lval);
     if (c->cell) {
       putchar('(');
@@ -312,6 +324,11 @@ void print_context(Wasm* wasm) {
   }
 }
 
+void print_wasm_context(Wasm* wasm) {
+  Context* c = wasm->context->car;
+  print_context(c);
+}
+
 Lenv* enter_env(Wasm* wasm) {
   Lenv* new_env = lenv_new();
   new_env->parent_env = retain(wasm->env);
@@ -325,4 +342,13 @@ void leave_env(Wasm* wasm) {
   release(env->kv);
   env->kv = NIL;
   release(env);
+}
+
+Lval* make_lval_wasm_ref(Context* context, int subtype, int offset) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_WASM_REF,
+                 .subtype = subtype,
+                 .offset = offset,
+                 .context = context};
+  return lval;
 }

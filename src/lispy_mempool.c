@@ -120,7 +120,7 @@ void destroy_lval(void* data) {
       }
       break;
 
-    case LVAL_LOCAL_REF:
+    case LVAL_WASM_REF:
       break;
     case LVAL_ERR:
       /* free(lval->str); */

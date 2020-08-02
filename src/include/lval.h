@@ -18,8 +18,6 @@ Lval* make_lval_nil(void);
 Lval* make_lval_true(void);
 Lval* make_lval_false(void);
 
-Lval* make_lval_local_ref(int subtype, int offset);
-
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
 

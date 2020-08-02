@@ -6,7 +6,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4072) "\01\00\00\00\00\00\00\00\00\00\00\00\f8\0f\00\00\02\08\00\00\01\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\1c\10\00\00\02\08\00\00\02\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00@\10\00\00\15\0f\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00d\10\00\00\02\08\00\00\03\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\88\10\00\00\02\08\00\00\04\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\ac\10\00\00\15\0f\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\d0\10\00\00\02\05\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 4072) "\01\00\00\00\00\00\00\00\00\00\00\00\f8\0f\00\00\02\05\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\00\00\00\00")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -48,8 +48,9 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 5 5 funcref)
- (elem (i32.const 0) $test_1 $test_2 $test $log_int $printf_)
+ (table $0 4 4 funcref)
+ (elem (i32.const 0) $test_1 $test $log_int $printf_)
+ (global $stack_pointer (mut i32) (i32.const 69616))
  (export "test" (func $test))
  (export "mem" (memory $0))
  (func $test_1 (param $0 i32) (result i32)
@@ -58,44 +59,33 @@
     (i32.const 0)
     (call $new_lval_list
      (call $list_cons
-      (i32.const 4088)
+      (i32.load
+       (local.get $0)
+      )
       (call $list_cons
-       (i32.const 4124)
-       (i32.const 0)
+       (i32.load offset=4
+        (local.get $0)
+       )
+       (call $list_cons
+        (i32.load
+         (global.get $stack_pointer)
+        )
+        (i32.const 0)
+       )
       )
      )
     )
    )
   )
  )
- (func $test_2 (param $0 i32) (param $1 i32) (result i32)
-  (block $body (result i32)
-   (call $div_fn
-    (i32.const 0)
-    (call $new_lval_list
-     (call $list_cons
-      (i32.const 4196)
-      (call $list_cons
-       (i32.const 4232)
-       (i32.const 0)
-      )
-     )
-    )
-   )
-  )
- )
- (func $test (param $0 i32) (result i32)
-  (local $1 i32)
+ (func $test (param $0 i32) (param $1 i32) (result i32)
   (local $2 i32)
   (block $body (result i32)
    (block $let (result i32)
-    (local.set $1
-     (i32.const 4160)
-    )
     (local.set $2
-     (i32.const 4268)
+     (i32.const 123)
     )
-    (i32.const 4304)
+    (i32.const 4088)
    )
   )
  )
