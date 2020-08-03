@@ -6,4 +6,6 @@ int compile(char* file_name);
 
 Ber lval_compile(Wasm* wasm, Lval* lval);
 
+Ber compile_do_list(Wasm* wasm, Lval* list, int mode);
+
 #endif  // __COMPILE_H_

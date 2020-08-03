@@ -30,15 +30,21 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
   if (bindings_count % 2 != 0)
     quit(wasm, "Error: Binding vector for let has odd number of forms");
 
-  Lenv* let_env = enter_env(wasm);
+  bindings_count = bindings_count / 2;
 
-  Ber* let_body = malloc(bindings_count * sizeof(Ber));  // TODO: free???
-  int let_body_count = bindings_count / 2 + 1;
+  Lenv* let_env = enter_env(wasm);
+  int let_body_count = list_count(arg_list) - 1;
+  printf("let body count: %d:", let_body_count);
+  let_body_count = let_body_count == 0 ? 1 : let_body_count;
+  let_body_count += bindings_count;
+  Ber* let_body = malloc(let_body_count * sizeof(Ber));  // TODO: free???
 
   scoped_iter Cell* b = iter_new(bindings);
   Lval* lval_sym = iter_next(b);
 
   // Compile
+
+  // Bindings
   int i = 0;
   while (lval_sym) {
     if (lval_sym->type != LVAL_SYMBOL) {
@@ -54,7 +60,10 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     let_body[i] = local_var;
 
     // LENV_PUT
-    lenv_put(let_env, retain(lval_sym), make_lval_wasm_ref(context, LOCAL, i));
+    // setting offset to i + 1 because every wasm fn will have 1 parameter, ie
+    // its closure, arguments are retrieved from the lispy stack
+    lenv_put(let_env, retain(lval_sym),
+             make_lval_wasm_ref(context, LOCAL, i + 1));
 
     i++;
     context->function_context->local_count++;
@@ -69,9 +78,20 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     lval_sym = iter_next(b);
   }
 
-  if (!wasm->lval_nil_offset)
-    wasm->lval_nil_offset = make_lval_literal(wasm, make_lval_nil());
-  let_body[i] = wasm->lval_nil_offset;
+  // Body
+  if (arg_list->cdr) {
+    while (arg_list->cdr) {
+      arg_list = arg_list->cdr;
+      Ber ber = lval_compile(wasm, arg_list->car);
+      if (arg_list->cdr) ber = BinaryenDrop(module, ber);
+      let_body[i] = ber;
+      i++;
+    };
+  } else {
+    if (!wasm->lval_nil_offset)
+      wasm->lval_nil_offset = make_lval_literal(wasm, make_lval_nil());
+    let_body[i] = wasm->lval_nil_offset;
+  }
 
   // Post compile
   leave_env(wasm);

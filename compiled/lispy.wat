@@ -6,7 +6,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4072) "\01\00\00\00\00\00\00\00\00\00\00\00\f8\0f\00\00\02\05\00\00\00\00\00\00\e8\0f\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 4072) "\01\00\00\00\00\00\00\00\00\00\00\00\f8\0f\00\00\02\08\00\00{\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\1c\10\00\00\02\08\00\00c\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00@\10\00\00\02\08\00\00\01\00\00\00\e8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -54,38 +54,52 @@
  (export "test" (func $test))
  (export "mem" (memory $0))
  (func $test_1 (param $0 i32) (result i32)
+  (local $1 i32)
+  (local $2 i32)
   (block $body (result i32)
-   (call $add_fn
-    (i32.const 0)
-    (call $new_lval_list
-     (call $list_cons
-      (i32.load
-       (local.get $0)
-      )
-      (call $list_cons
-       (i32.load offset=4
-        (local.get $0)
-       )
-       (call $list_cons
-        (i32.load
-         (global.get $stack_pointer)
-        )
-        (i32.const 0)
-       )
-      )
+   (block $let (result i32)
+    (local.set $1
+     (i32.const 4124)
+    )
+    (local.set $2
+     (i32.const 4124)
+    )
+    (drop
+     (i32.load
+      (local.get $0)
      )
+    )
+    (drop
+     (i32.load offset=4
+      (local.get $0)
+     )
+    )
+    (drop
+     (i32.load
+      (global.get $stack_pointer)
+     )
+    )
+    (drop
+     (local.get $1)
+    )
+    (i32.load offset=8
+     (local.get $0)
     )
    )
   )
  )
- (func $test (param $0 i32) (param $1 i32) (result i32)
+ (func $test (param $0 i32) (result i32)
+  (local $1 i32)
   (local $2 i32)
   (block $body (result i32)
    (block $let (result i32)
+    (local.set $1
+     (i32.const 4088)
+    )
     (local.set $2
      (i32.const 123)
     )
-    (i32.const 4088)
+    (i32.const 4160)
    )
   )
  )

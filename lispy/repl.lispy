@@ -1,8 +1,12 @@
 (def foo 123)
 (defn test [a a1]
-  (let [f (fn [b] (+ a a1 b))]
+  (let [z 123
+        f (fn [b] (let [c 99 d 99]  a a1 b c z
+                    ))]
     1))
 
+;; (defn test [a b]
+;;   (let [c 1] a b c 123))
 ;; (def bar `(1 ~foo  a 3))
 ;; (def bar '(1 2 3))
 ;; (defn my-fn [x] (+ x 1))

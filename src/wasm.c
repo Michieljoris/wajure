@@ -32,6 +32,7 @@ Wasm* init_wasm() {
                  .context = malloc(sizeof(Cell))};
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
+
   return wasm;
 }
 
