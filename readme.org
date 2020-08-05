@@ -1,5 +1,8 @@
 #+TITLE: Readme
 
+NOTE: Work in progress is at compile branch currently.
+
+
 Used http://www.buildyourownlisp.com as a (re)introduction to c and to get myself an initial implementation.
 
 Removed qexpr and added quoting instead.
