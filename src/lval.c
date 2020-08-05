@@ -169,6 +169,21 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   return lval;
 }
 
+Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
+                            int has_rest_arg, Lval** closure, Lval** partials,
+                            int partial_count) {
+  Wval* wval = lalloc_type(LVAL);
+  *wval = (Wval){.type = LVAL_WASM_LAMBDA,
+                 .subtype = -1,
+                 .fn_table_index = fn_table_index,
+                 .param_count = param_count,
+                 .has_rest_arg = has_rest_arg,
+                 .closure = closure,
+                 .partials = partials,
+                 .partial_count = partial_count};
+  return (Lval*)wval;
+}
+
 /* ERROR */
 
 // System error

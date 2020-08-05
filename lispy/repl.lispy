@@ -1,9 +1,17 @@
-(def foo 123)
-(defn test [a a1]
-  (let [z 123
-        f (fn [b] (let [c 99 d 99]  a a1 b c z
-                    ))]
-    1))
+;; (def foo 123)
+;; (defn test [a a1]
+;;   (let [z 123
+;;         f (fn [b] (let [c 99 d 99]  a a1 b c z
+;;                     ))]
+;;     1))
+(def a 1)
+(defn test [b]
+  (let [c 2]
+    (fn [d]
+      (let [e 3]
+        (fn [f]
+          (+ a b c d e f))))))
+
 
 ;; (defn test [a b]
 ;;   (let [c 1] a b c 123))

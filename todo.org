@@ -1,18 +1,35 @@
 #+TITLE: Todo
 * TODO compile
+** first class functions
+** closures, partials and rest args
+** wrap sys fns so they can become lambdas
+** add root fns to function table when they get used at all
+** implement main
+All fns have only one param, ie its closure. Args are put on stack. So the
+'main' fn, as exported to js,  will have to dispatch to a wasm lispy fn.
+** implement maps and sets
+** replace list implementations of maps, sets and vectors with permanent data structures other than list
+-> vector and map hamt.
+** implement: if, do, try, throw, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor
 ** macroexpand-all macros before compiling
 ** lisp function names -> wasm fn names
 wasm fn names can only have strings, numbers and underscore.
 So we need encode or vary the names some how.
-** error handling
+** error handling and tracking of line number and pos
+Don't cut off compiling, try to continue, produce list of errors.
 ** max str size, elide with warning or abort
+** check for max closure size (currently 128 vars (CHAR512 mempool type))
+** find out about and add binaryen optimisations
+** compile test suite
+** add lispy interpreter to the runtime
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
 ** quasiquote has bug where vector becomes list
 `(let [a 1] a)
+** reader has bug where last parens gets ignored
 ** add rest of tests from mal
-** put ifdefs in for system libs so we're ready for wasm
+** DONE put ifdefs in for system libs so we're ready for wasm
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
@@ -28,28 +45,27 @@ Then there's less work for the compiler.
 *** pvector
 *** namespaces
 *** call/cc
-** compile to wasm
+** DONE compile to wasm
 and link them to compiled lispy code
 runtime includes:
-- env mechanism
 - builtin fns
-- interpreter for eval??
-- certainly for any inbuilt repl
+- memory management
 
-* Ch10
+*  More from lispy tutorial
+** Ch10
  Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
  Add a builtin function len that returns the number of elements in a Q-Expression.
  Add a builtin function init that returns all of a Q-Expression except the final element.
-* Ch12
+** Ch12
 Define a builtin_fun C function that is equivalent to the Lisp fun function.
-* Ch13
+** Ch13
 Create builtin logical operators or ||, and && and not ! and add them to the language.
 Define a recursive Lisp function that returns the nth item of that list.
 Define a recursive Lisp function that returns 1 if an element is a member of a list, otherwise 0.
 Define a Lisp function that returns the last element of a list.
 Define in Lisp logical operator functions such as or, and and not.
 Add a specific boolean type to the language with the builtin variables true and false
-* Ch14
+** Ch14
 Adapt the builtin function join to work on strings.
 Adapt the builtin function head to work on strings.
 Adapt the builtin function tail to work on strings.
@@ -68,7 +84,7 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 ** DONE reference counting
 
 * Good to know
-To create/update compile_commmands.json:
+** To create/update compile_commmands.json:
 
     make clean
     bear make
@@ -76,3 +92,6 @@ To create/update compile_commmands.json:
     rc -J
 
 https://github.com/Andersbakken/rtags/wiki/Usage
+** Emacs compile commands:
+PLATFORM=wasm make clean
+PLATFORM=wasm make

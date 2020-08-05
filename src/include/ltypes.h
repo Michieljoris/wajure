@@ -15,6 +15,7 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
+typedef struct wval Wval;
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
@@ -62,6 +63,18 @@ struct lval {
   // compiler to wasm data
   Context* context;
   int offset;
+};
+
+struct wval {
+  char type;
+  char subtype;
+
+  short fn_table_index;
+  short param_count;
+  short has_rest_arg;
+  short partial_count;
+  Lval** closure;
+  Lval** partials;
 };
 
 struct lenv {
@@ -121,7 +134,9 @@ enum {
   // local ref subtypes
   PARAM,
   LOCAL,
-  /* LAMBDA */
+
+  // lispy runtime lval fn type
+  LVAL_WASM_LAMBDA
 };
 
 #endif  // __LTYPES_H_

@@ -56,7 +56,11 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   /* printf("malloc mempools count: %d\n", SLOT_TYPE_COUNT); */
   mempools = _malloc(sizeof(Mempool*) * mempool_count);
 
+  // TODO wasm: if compiled to runtime we can reduce the size of the lval to 5 *
+  // 4 bytes, since we don't need fun, closure, params, body, context and offset
+  // attributes, we will never refer to it (by offset).
   MEMPOOL(LVAL, sizeof(Lval), lval)
+  // TODO wasm: we don't need Lenv either
   MEMPOOL(LENV, sizeof(Lenv), lenv)
   MEMPOOL(CELL, sizeof(Cell), cell)
   MEMPOOL(ITER, sizeof(Cell), cell)
@@ -118,6 +122,10 @@ void destroy_lval(void* data) {
 
         /* if (debug) ddebug("\n Done freeing lval_fun"); */
       }
+      break;
+
+    case LVAL_WASM_LAMBDA:
+      // TODO wasm: release partials and closure memory
       break;
 
     case LVAL_WASM_REF:
@@ -214,6 +222,7 @@ void* lalloc_size(int size) {
 /* void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; } */
 
 void* lrealloc(void* data_p, int size) {
+  if (!data_p) return lalloc_size(size);
   Slot* slot = get_slot_p(data_p);
   int chartype = get_mempool_chartype(size);
   /* printf("old slot type=%d\n", slot->type); */

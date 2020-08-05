@@ -110,8 +110,10 @@ LispyFn runtime_fns[] = {{NULL, NULL, "printf_", 2, 1},
                          {NULL, NULL, "make_lval_list", 0, 1},
                          {NULL, NULL, "new_lval_list", 1, 1},
                          {NULL, NULL, "make_lval_sym", 1, 1},
+                         {NULL, NULL, "make_lval_wasm_lambda", 6, 1},
                          // lispy_mempool
                          {NULL, NULL, "lalloc_size", 1, 1},
+                         {NULL, NULL, "lalloc_type", 1, 1},
 
                          // list
                          {NULL, NULL, "list_cons", 2, 1},

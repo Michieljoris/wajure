@@ -77,7 +77,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
   Lval* lval_params = arg;
 
-  Cell* param = arg->head;
+  Cell* param = lval_params->head;
   while (param) {
     LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
