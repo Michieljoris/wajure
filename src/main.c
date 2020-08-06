@@ -34,9 +34,10 @@ int main(int argc, char **argv) {
     /* run(argv[i]); */
   }
   /* make_bmodule(); */
-
+  printf("Back in main\n");
   free_lispy_mempools();
   free_malloc();
+  printf("Exiting program\n");
 
   /* test_types(); */
   /* test_features(); */

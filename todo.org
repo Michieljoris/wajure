@@ -4,6 +4,8 @@
 ** closures, partials and rest args
 ** wrap sys fns so they can become lambdas
 ** add root fns to function table when they get used at all
+** add release and retain to wasm code
+** check mem mngmnt for compiler as well
 ** implement main
 All fns have only one param, ie its closure. Args are put on stack. So the
 'main' fn, as exported to js,  will have to dispatch to a wasm lispy fn.

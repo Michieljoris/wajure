@@ -7,7 +7,7 @@
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4088) "\01\00\00\00\00\00\00\00\00\00\00\00\08\10\00\00\02\08\00\00\02\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00,\10\00\00\02\08\00\00\01\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4088) "HELLO!!!!\00\01\00\00\00\00\00\00\00\00\00\00\00\12\10\00\00\02\t\00\00\00\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\006\10\00\00\02\08\00\00\02\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00Z\10\00\00\02\08\00\00\03\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00~\10\00\00\02\08\00\00\01\00\00\00\f8\0f\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -62,7 +62,7 @@
     (i32.const 0)
     (call $new_lval_list
      (call $list_cons
-      (i32.const 4140)
+      (i32.const 4222)
       (call $list_cons
        (i32.load
         (local.get $0)
@@ -96,42 +96,95 @@
  )
  (func $test_1 (param $0 i32) (result i32)
   (local $1 i32)
+  (local $2 i32)
   (block $body (result i32)
    (block $let (result i32)
     (local.set $1
-     (i32.load
-      (local.get $0)
-     )
+     (i32.const 4186)
     )
-    (call $make_lval_wasm_lambda
-     (i32.const 0)
-     (i32.const 1)
-     (i32.const 0)
-     (call $lalloc_size
-      (i32.const 16)
+    (block $test_1_1 (result i32)
+     (local.set $2
+      (call $lalloc_size
+       (i32.const 16)
+      )
      )
-     (i32.const 0)
-     (i32.const 0)
+     (i32.store offset=12
+      (local.get $2)
+      (local.get $1)
+     )
+     (i32.store offset=8
+      (local.get $2)
+      (i32.load
+       (global.get $stack_pointer)
+      )
+     )
+     (i32.store offset=4
+      (local.get $2)
+      (i32.load
+       (local.get $0)
+      )
+     )
+     (i32.store
+      (local.get $2)
+      (i32.load offset=4
+       (local.get $0)
+      )
+     )
+     (call $make_lval_wasm_lambda
+      (i32.const 0)
+      (i32.const 1)
+      (i32.const 0)
+      (local.get $2)
+      (i32.const 0)
+      (i32.const 0)
+     )
     )
    )
   )
  )
  (func $test (param $0 i32) (result i32)
   (local $1 i32)
+  (local $2 i32)
   (block $body (result i32)
+   (drop
+    (call $print_fn
+     (i32.const 0)
+     (call $new_lval_list
+      (call $list_cons
+       (i32.const 4114)
+       (i32.const 0)
+      )
+     )
+    )
+   )
    (block $let (result i32)
     (local.set $1
-     (i32.const 4104)
+     (i32.const 4150)
     )
-    (call $make_lval_wasm_lambda
-     (i32.const 1)
-     (i32.const 1)
-     (i32.const 0)
-     (call $lalloc_size
-      (i32.const 4)
+    (block $test_1 (result i32)
+     (local.set $2
+      (call $lalloc_size
+       (i32.const 8)
+      )
      )
-     (i32.const 0)
-     (i32.const 0)
+     (i32.store offset=4
+      (local.get $2)
+      (i32.load
+       (global.get $stack_pointer)
+      )
+     )
+     (i32.store
+      (local.get $2)
+      (local.get $1)
+     )
+     (call $make_lval_wasm_lambda
+      (i32.const 1)
+      (i32.const 1)
+      (i32.const 0)
+      (local.get $2)
+      (i32.const 0)
+      (i32.const 0)
+     )
     )
    )
   )

@@ -34,7 +34,7 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
 
   Lenv* let_env = enter_env(wasm);
   int let_body_count = list_count(arg_list) - 1;
-  printf("let body count: %d:", let_body_count);
+  /* printf("let body count: %d:", let_body_count); */
   let_body_count = let_body_count == 0 ? 1 : let_body_count;
   let_body_count += bindings_count;
   Ber* let_body = malloc(let_body_count * sizeof(Ber));  // TODO: free???

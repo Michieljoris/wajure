@@ -6,11 +6,18 @@
 ;;     1))
 (def a 1)
 (defn test [b]
+  (print "HELLO!!!!")
   (let [c 2]
     (fn [d]
       (let [e 3]
         (fn [f]
           (+ a b c d e f))))))
+
+;; (defn test [b]
+;;     (fn [b] (+ a b))
+;;   ;; (let [a 1 b 2 c 3 d 4 e 5]
+;;   ;;      (fn [b] (+ a b)))
+;;   )
 
 
 ;; (defn test [a b]
