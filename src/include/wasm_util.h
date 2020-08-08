@@ -72,6 +72,6 @@ Lenv* enter_env(Wasm* wasm);
 
 void leave_env(Wasm* wasm);
 
-Lval* make_lval_wasm_ref(Context* context, int subtype, int offset);
+Lval* make_lval_compiler(Context* context, int subtype, int offset);
 
 #endif  // __WASM_UTIL_H_

@@ -155,7 +155,7 @@ void lval_print(Lval* lval) {
       lval_fun_print(lval);
       break;
 
-    case LVAL_WASM_REF:
+    case LVAL_COMPILER:
       switch (lval->subtype) {
         case PARAM:
           printf("P%d", lval->offset);

@@ -60,21 +60,16 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     let_body[i] = local_var;
 
     // LENV_PUT
-    // setting offset to i + 1 because every wasm fn will have 1 parameter, ie
-    // its closure, arguments are retrieved from the lispy stack
+    int local_index = context->function_context->local_count++;
     lenv_put(let_env, retain(lval_sym),
-             make_lval_wasm_ref(context, LOCAL, i + 1));
+             make_lval_compiler(context, LOCAL, local_index));
 
     i++;
-    context->function_context->local_count++;
     /* if (lval->type == LVAL_ERR) { */
     /*   release(let_env); */
     /*   return lval; */
     /* } */
-    /* Lenv* new_let_env = lenv_prepend(let_env, retain(lval_sym), lval); */
-    /* new_let_env->parent_env = let_env; */
 
-    /* let_env = new_let_env; */
     lval_sym = iter_next(b);
   }
 

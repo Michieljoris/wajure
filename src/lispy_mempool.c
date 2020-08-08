@@ -128,7 +128,7 @@ void destroy_lval(void* data) {
       // TODO wasm: release partials and closure memory
       break;
 
-    case LVAL_WASM_REF:
+    case LVAL_COMPILER:
       break;
     case LVAL_ERR:
       /* free(lval->str); */

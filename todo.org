@@ -6,6 +6,9 @@
 ** add root fns to function table when they get used at all
 ** add release and retain to wasm code
 ** check mem mngmnt for compiler as well
+** implement reader macro for #(+ %1 %2)
+** named fns for recursion of locally defined lambdas
+Also, clojure allows it.
 ** implement main
 All fns have only one param, ie its closure. Args are put on stack. So the
 'main' fn, as exported to js,  will have to dispatch to a wasm lispy fn.
@@ -13,6 +16,11 @@ All fns have only one param, ie its closure. Args are put on stack. So the
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
 ** implement: if, do, try, throw, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor
+*** apply
+https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
+Use core lib fn to reduce args to a single list
+Then call wasm implementation of apply* that receives a list and puts them on lispy operand stack and calls fn
+** multi arity fns!!!
 ** macroexpand-all macros before compiling
 ** lisp function names -> wasm fn names
 wasm fn names can only have strings, numbers and underscore.

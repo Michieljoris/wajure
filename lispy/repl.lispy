@@ -5,13 +5,20 @@
 ;;                     ))]
 ;;     1))
 (def a 1)
-(defn test [b]
-  (print "HELLO!!!!")
-  (let [c 2]
-    (fn [d]
-      (let [e 3]
-        (fn [f]
-          (+ a b c d e f))))))
+(defn test [x]
+  (let [f (fn [x y] (print x y))
+        ;; g (fn [x] (print "G") x)
+        ]
+
+    (f 123 4546)
+    ;; (g 123 4546)
+    ))
+;; (defn test [b]
+;;   (let [c 2]
+;;     (fn [d]
+;;       (let [e 3]
+;;         (fn [f]
+;;           (+ a b c d e f))))))
 
 ;; (defn test [b]
 ;;     (fn [b] (+ a b))

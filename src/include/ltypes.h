@@ -66,15 +66,15 @@ struct lval {
 };
 
 struct wval {
-  char type;
-  char subtype;
+  char type;     // wasm offset: 0
+  char subtype;  // 1
 
-  short fn_table_index;
-  short param_count;
-  short has_rest_arg;
-  short partial_count;
-  Lval** closure;
-  Lval** partials;
+  short fn_table_index;  // 2
+  short param_count;     // 4
+  short has_rest_arg;    // 6
+  short partial_count;   // 8
+  Lval** closure;        // 12
+  Lval** partials;       // 16
 };
 
 struct lenv {
@@ -87,6 +87,7 @@ struct lenv {
 typedef struct {
   int local_count;
   char* fn_name;
+  int param_count;
   int closure_count;
   Lenv* closure;
 } FunctionContext;
@@ -129,8 +130,9 @@ enum {
   SET,
   // error subtypes
   USER,
+
   // compiler types
-  LVAL_WASM_REF,
+  LVAL_COMPILER,
   // local ref subtypes
   PARAM,
   LOCAL,

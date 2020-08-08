@@ -346,9 +346,9 @@ void leave_env(Wasm* wasm) {
   /* release(env); */
 }
 
-Lval* make_lval_wasm_ref(Context* context, int subtype, int offset) {
+Lval* make_lval_compiler(Context* context, int subtype, int offset) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_WASM_REF,
+  *lval = (Lval){.type = LVAL_COMPILER,
                  .subtype = subtype,
                  .offset = offset,
                  .context = context};

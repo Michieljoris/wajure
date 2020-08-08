@@ -1,5 +1,7 @@
 #include "lval.h"
 
+#include <stddef.h>
+
 #include "cell.h"
 
 /* #include "hash.h" */
@@ -236,7 +238,7 @@ char* lval_type_constant_to_name(int t) {
       return "false";
     case LNIL:
       return "nil";
-    case LVAL_WASM_REF:
+    case LVAL_COMPILER:
       return "Local ref";
     default:
       return "Unknown";
@@ -288,3 +290,22 @@ char* lval_type_to_name(Lval* lval) {
       return "Unknown";
   }
 }
+
+void wval_print(Wval* wval) {
+  printf("wval pointer: %li\n", (long)wval);
+  printf("type: %d %lu\n", wval->type, offsetof(Wval, type));
+  printf("subtype: %d %lu\n", wval->subtype, offsetof(Wval, subtype));
+  printf("fn_table_index: %d %lu\n", wval->fn_table_index,
+         offsetof(Wval, fn_table_index));
+  printf("param_count: %d %lu\n", wval->param_count,
+         offsetof(Wval, param_count));
+
+  printf("has_rest_arg: %d %lu\n", wval->has_rest_arg,
+         offsetof(Wval, has_rest_arg));
+  printf("partial_count: %d %lu\n", wval->partial_count,
+         offsetof(Wval, partial_count));
+  printf("closure: %li %lu\n", (long)wval->closure, offsetof(Wval, closure));
+  printf("partials: %li %lu\n", (long)wval->partials, offsetof(Wval, partials));
+}
+
+Lval** get_wval_closure(Wval* wval) { return wval->closure; }
