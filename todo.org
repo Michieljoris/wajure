@@ -103,5 +103,12 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 
 https://github.com/Andersbakken/rtags/wiki/Usage
 ** Emacs compile commands:
+*** Build executable and run interpreter on lispy/run.lispy
+make clean
+make run
+*** Build executable and compile lispy/compile.lispy
+make clean
+make compile
+*** Build wasm runtime (compiles lispy interpreter to wasm):
 PLATFORM=wasm make clean
-PLATFORM=wasm make
+PLATFORM=wasm make runtime

@@ -26,12 +26,15 @@
 int main(int argc, char **argv) {
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(800, 800, 800);
-  // Run lispy interpreterkk
-  /* run(argc, argv); */
-
-  for (int i = 1; i < argc; ++i) {
-    /* compile(argv[i]); */
-    run(argv[i]);
+  int do_compile = 0;
+  if (_strcmp(argv[1], "-c") == 0) {
+    do_compile = 1;
+  }
+  for (int i = 2; i < argc; ++i) {
+    if (do_compile)
+      compile(argv[i]);
+    else
+      run(argv[i]);
   }
   /* make_bmodule(); */
   printf("Back in main\n");

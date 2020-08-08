@@ -39,12 +39,22 @@ else
 	BUILD_ARTIFACT = out/lispy
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
-	EXEC = out/lispy lispy/repl.lispy;  ~/bin/node nodejs.js
+	COMPILE = out/lispy -c lispy/compile.lispy;  ~/bin/node nodejs.js
+	RUN = out/lispy -r lispy/run.lispy
 endif
 
 
-all: $(BUILD_ARTIFACT)
+# all: $(BUILD_ARTIFACT)
+# 	$(RUN)
+
+run: $(BUILD_ARTIFACT)
+	$(RUN)
+
+runtime: $(BUILD_ARTIFACT)
 	$(EXEC)
+
+compile: $(BUILD_ARTIFACT)
+	$(COMPILE)
 #
 # c files to dep files, if c file changes, rebuild its dep file
 out/%.d : src/%.c
