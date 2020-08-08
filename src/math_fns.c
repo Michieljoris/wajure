@@ -96,7 +96,7 @@ MATH_FN(lte_fn, "<=", <=);
 MATH_FN(gte_fn, ">=", >=);
 
 int lval_eq(Lval* x, Lval* y) {
-  if (x->hash != y->hash) return 0;
+  /* if (x->hash != y->hash) return 0; */
   if (x->type != y->type) return 0;
 
   switch (x->type) {

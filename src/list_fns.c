@@ -41,7 +41,7 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list2 = make_lval_list();
   lval_list2->head = list_rest(lval_list->head);
   /* printf("lval_list2->head->hash %d \n", lval_list->head->hash); */
-  if (lval_list2->head) lval_list2->hash = lval_list2->head->hash;
+  /* if (lval_list2->head) lval_list2->hash = lval_list2->head->hash; */
   return lval_list2;
 }
 

@@ -59,8 +59,8 @@ void run(char* file_name) {
       after_slurp.iter - after_builtins.iter);
 
   set_log_level(LOG_LEVEL_INFO);
-  printf("USER_ENV:\n");
-  env_print(user_env);
+  /* printf("USER_ENV:\n"); */
+  /* env_print(user_env); */
   /* print_mempool_counts(); */
   /* printf("after slurping\n"); */
   /* printf("\n-------------- Now going to release user_env!!!!\n"); */

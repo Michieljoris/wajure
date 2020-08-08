@@ -6,14 +6,19 @@
 ;;     1))
 (def a 1)
 (defn f [x]
-  (print "In f!!!!!" x)
-  ;; (let [q (fn [y] (print "HELLO" x y) )]
-  ;;   q)
+  ;; (print "In f!!!!!" x)
+  (let [q (fn [y] (print "HELLO" x y) )]
+    ;; (q 777)
+    q
+    )
   )
 
 (defn test [x y]
-  (print  123 x y)
-  (f 666)
+  ;; (print  123 x y)
+  (let [g (f 123)]
+    (print "G: " g)
+    (g 456)
+    )
   ;; (let [ g (fn [x] (print "G" x))
   ;;        f (fn [x y] (g (+ x y)))
   ;;       ;; some-fn (f 1)

@@ -25,12 +25,13 @@
   `(if ~b false true))
 
 (defmacro t [expr expected & str]
-  (when (not=  (eval expr) expected)
-    (do
-      (pr "FAIL:" (first str))
-      (pr expr)
-      (pr "Expected:" expected)
-      (pr "Got::" (eval expr)))))
+  (let [evalled (eval expr)]
+    (when (not=  evalled expected)
+      (do
+        (pr "FAIL:" (first str))
+        (pr expr)
+        (pr "Expected:" expected)
+        (pr "Got:" evalled)))))
 
 
 (defmacro apply [f args]
