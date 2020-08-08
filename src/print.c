@@ -1,6 +1,5 @@
 #include "print.h"
 
-#include "env.h"
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -97,7 +96,7 @@ void lval_fun_print(Lval* lval) {
     case MACRO:;
       char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
       printf("(%s ", fn_name);
-      lval_debug(lval->params);
+      lval_print(lval->params);
       putchar(' ');
       lval_collection_print(lval->body, 0, 0);
       putchar(')');
@@ -110,8 +109,7 @@ void lval_fun_print(Lval* lval) {
 
 void lval_print(Lval* lval) {
   if (!lval) {
-    printf(
-        "!! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !! NULL LVAL !!");
+    printf("<Trying to print null lval");
     return;
   }
   /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
@@ -156,6 +154,17 @@ void lval_print(Lval* lval) {
     case LVAL_FUNCTION:
       lval_fun_print(lval);
       break;
+
+    case LVAL_COMPILER:
+      switch (lval->subtype) {
+        case PARAM:
+          printf("P%d", lval->offset);
+          break;
+        case LOCAL:
+          printf("L%d", lval->offset);
+          break;
+      }
+      break;
     case LVAL_ERR:
       printf("Error: %s", lval->str);
       break;
@@ -186,6 +195,7 @@ void lval_pr(Lval* lval) {
 }
 
 void lval_println(Lval* v) {
+  /* printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num); */
   lval_print(v);
   putchar('\n');
 }
@@ -225,6 +235,7 @@ void env_print(Lenv* env) {
   if (env->parent_env) {
     alist_print(env->kv);
   } else {
+    /* printf("ROOT env!!! \n"); */
     list_print(env->kv, print_kv, "\n");
   }
 }

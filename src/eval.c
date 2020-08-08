@@ -158,7 +158,7 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
-Lval* eval_fn_call(Lenv* env, Lval* lval_list) {
+Lval* eval_list(Lenv* env, Lval* lval_list) {
   debug("evalling fn call: ");
   lval_debugln(lval_list);
 
@@ -219,7 +219,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return eval_fn_call(env, lval);
+          return eval_list(env, lval);
         case VECTOR:
           return eval_vector(env, lval);
         case MAP:

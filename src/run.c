@@ -11,9 +11,8 @@
 #include "print.h"
 #include "repl.h"
 
-void run(int argc, char** argv) {
-  init_lispy_mempools(100, 100, 100);
-
+/* void run(int argc, char** argv) { */
+void run(char* file_name) {
   set_log_level(LOG_LEVEL_INFO);
 
   // Add builtins to root  env
@@ -24,6 +23,7 @@ void run(int argc, char** argv) {
 
   Lenv* user_env = lenv_new();
   user_env->parent_env = retain(root_env);
+  user_env->is_user_env = 1;
 
   /* set_log_level(LOG_LEVEL_DEEP_DEBUG); */
   // DEBUG
@@ -34,22 +34,20 @@ void run(int argc, char** argv) {
 
   set_log_level(LOG_LEVEL_INFO);
   // For now we only understand args to be a list of file names to be read in
-  for (int i = 1; i < argc; ++i) {
-    info("Slurping %s\n", argv[i]);
-    Lval* result = slurp(user_env, argv[i]);
+  info("Slurping %s\n", file_name);
+  Lval* result = slurp(user_env, file_name);
 
-    printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    printf("Result of slurping %s: ", argv[i]);
-    lval_println(result);
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    printf("\n");
-    /* printf("ref count of result: %d\n", get_ref_count(result)); */
-    print_mempool_counts();
-    printf("releasing result:");
-    release(result);
-    /* print_mempool_counts(); */
-    /* printf("after releasing result of slurp of %s ", argv[i]); */
-  }
+  printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+  printf("Result of slurping %s: ", file_name);
+  lval_println(result);
+  printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+  printf("\n");
+  /* printf("ref count of result: %d\n", get_ref_count(result)); */
+  print_mempool_counts();
+  printf("releasing result:");
+  release(result);
+  /* print_mempool_counts(); */
+  /* printf("after releasing result of slurp of %s ", argv[i]); */
 
   SlotCount after_slurp = get_slot_count();
   printf(
@@ -61,6 +59,8 @@ void run(int argc, char** argv) {
       after_slurp.iter - after_builtins.iter);
 
   set_log_level(LOG_LEVEL_INFO);
+  /* printf("USER_ENV:\n"); */
+  /* env_print(user_env); */
   /* print_mempool_counts(); */
   /* printf("after slurping\n"); */
   /* printf("\n-------------- Now going to release user_env!!!!\n"); */
@@ -80,5 +80,4 @@ void run(int argc, char** argv) {
   release(root_env);
   print_mempool_counts();
   printf(" after releasing root_env\n");
-  free_lispy_mempools();
 }

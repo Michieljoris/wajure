@@ -1,5 +1,11 @@
+ifeq ($(PLATFORM),wasm)
+src = src/platform.c src/malloc.c src/refcount.c src/mempool.c src/printf.c src/lispy_mempool.c  src/lib.c  src/io.c src/print.c src/list.c src/cell.c  src/lval.c src/util_fns.c src/iter.c src/math_fns.c src/list_fns.c
+tmp = $(subst src,out_wasm,$(src))
+else
 src = $(wildcard src/*.c)
 tmp = $(subst src,out,$(src))
+endif
+
 objs = $(tmp:.c=.o)
 deps = $(objs:.o=.d)
 
@@ -23,21 +29,33 @@ WASMLDFLAGS = -Lout -Wl,--no-entry \
 #,--export-dynamic  \
 
 ifeq ($(PLATFORM),wasm)
-	BUILD_ARTIFACT = out/lispy.wasm
+	BUILD_ARTIFACT = out_wasm/runtime.wasm
 	CFLAGS = $(WASMFLAGS)
 	LDFLAGS = $(WASMLDFLAGS)
-	EXEC =
+	# EXEC = wasm-opt out_wasm/runtime.wasm -O0 --print  > out_wasm/runtime.wat;  node nodejs.js
+	EXEC = wasm2wat -f --inline-imports --inline-exports out_wasm/runtime.wasm -o out_wasm/runtime.wat; node nodejs.js
+	# EXEC = wasm-opt out/lispy.wasm --print > out/lispy.wat
 else
 	BUILD_ARTIFACT = out/lispy
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
-	EXEC = out/lispy lispy/repl.lispy
+	COMPILE = out/lispy -c lispy/compile.lispy;  ~/bin/node nodejs.js
+	RUN = out/lispy -r lispy/run.lispy
 endif
 
 
-all: $(BUILD_ARTIFACT)
+# all: $(BUILD_ARTIFACT)
+# 	$(RUN)
+
+run: $(BUILD_ARTIFACT)
+	$(RUN)
+
+runtime: $(BUILD_ARTIFACT)
 	$(EXEC)
 
+compile: $(BUILD_ARTIFACT)
+	$(COMPILE)
+#
 # c files to dep files, if c file changes, rebuild its dep file
 out/%.d : src/%.c
 	$(CC) -MM -MT $(@:.d=.o) $(CFLAGS_COMMON) $< -o $@
@@ -47,12 +65,17 @@ out/%.d : src/%.c
 -include $(deps)
 
 # c files to object files
-# rebuild the .o file it its .c file changes or is marked.
+# rebuild the .o file if its .c file changes or is marked.
+ifeq ($(PLATFORM),wasm)
+out_wasm/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+else
 out/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
-
+endif
 
 # link object files, rebuild if any of the .o files changed
+# https://lld.llvm.org/WebAssembly.html
 $(BUILD_ARTIFACT): $(objs)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS)  -o $(BUILD_ARTIFACT)
 

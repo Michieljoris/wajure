@@ -3,6 +3,7 @@
 
 #include "env.h"
 
+char* read_file(char* file_name);
 Lval* slurp(Lenv* env, char* file_name);
 extern int exit_repl;
 

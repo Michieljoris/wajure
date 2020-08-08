@@ -1,4 +1,3 @@
-
 (def defmacro (macro [sym params & body]
                      `(def ~sym (macro ~params ~@body))))
 
@@ -26,12 +25,37 @@
   `(if ~b false true))
 
 (defmacro t [expr expected & str]
-  (when (not=  (eval expr) expected)
-    (do
-      (pr "FAIL:" (first str))
-      (pr expr)
-      (pr "Expected:" expected)
-      (pr "Got::" (eval expr)))))
+  (let [evalled (eval expr)]
+    (when (not=  evalled expected)
+      (do
+        (pr "FAIL:" (first str))
+        (pr expr)
+        (pr "Expected:" expected)
+        (pr "Got:" evalled)))))
+
+
+(defmacro apply [f args]
+  `(eval (cons ~f ~args)))
+
+(defn and* [args]
+  (if (= (count args) 1)
+    (first args)
+    (if (= (count args) 0)
+      true
+      (if (not (eval (first args)))
+        (first args)
+        (apply and (rest args))))))
+
+(defmacro and [& args]
+  (and* args))
+
+(defmacro macroexpand-all [form]
+  (list 'let ['form `(macroexpand ~form)]
+        '(if (list? form)
+           (if (> (count form) 0)
+             (cons (macroexpand-all (first form)) (macroexpand-all (rest form)))
+             form)
+           form)))
 
 
 ;; (defn [test cond]

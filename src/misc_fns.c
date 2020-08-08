@@ -21,7 +21,6 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       ((Lval*)(lval->head->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
     scoped Lval* lval_fun = lenv_get(env, lval->head->car);
-
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
       scoped Lval* arg_list = make_lval_list();
@@ -43,7 +42,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       }
     }
   }
-  return lval;
+  return retain(lval);
 }
 
 Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {
@@ -140,74 +139,14 @@ Lval* slurp_fn(Lenv* env, Lval* arg_list) {
   return slurp(env, arg->str);
 }
 
-Lval* print_fn(Lenv* env, Lval* arg_list) {
-  ddebug("executing print_fn:");
-  scoped_iter Cell* i = iter_new(arg_list);
-  Lval* arg = iter_next(i);
-  while (arg) {
-    lval_print(arg);
-    putchar(' ');
-    arg = iter_next(i);
-  }
-  putchar('\n');
-  return make_lval_list();
-}
-
-Lval* pr_fn(Lenv* env, Lval* arg_list) {
-  scoped_iter Cell* i = iter_new(arg_list);
-  Lval* arg = iter_next(i);
-  while (arg) {
-    lval_pr(arg);
-    putchar(' ');
-    arg = iter_next(i);
-  }
-  putchar('\n');
-  return make_lval_nil();
-}
-
-Lval* debug_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("debug", 1)
-  ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
-  int num = arg->num;
-  ITER_END
-  ddebug("debug = %il\n", num);
-  set_log_level((int)num);
-  return make_lval_nil();
-}
-
-Lval* boolean_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("boolean", 1)
-  ITER_NEXT
-  if (arg->subtype == LNIL) return make_lval_false();
-  if (arg->subtype == LFALSE) return retain(arg);
-  ITER_END
-  return make_lval_true();
-}
-
-Lval* hash_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("hash", 1)
-  ITER_NEXT
-  Lval* ret = make_lval_num(arg->hash);
-  ITER_END
-  /* printf("hash: %d\n", arg->hash); */
-  return ret;
-}
-
-Builtin misc_builtins[13] = {
-
-    {"eval", eval_fn},
-    {"print-env", print_env_fn},
-    {"exit", exit_fn},
-    {"slurp", slurp_fn},
-    /* {"mpc_load", mpc_load_fn}, */
-    {"print", print_fn},
-    {"pr", pr_fn},
-    {"read-string", read_string_fn},
-    {"macroexpand", macroexpand_fn},
-    {"macroexpand-1", macroexpand_1_fn},
-    {"debug", debug_fn},
-    {"boolean", boolean_fn},
-    {"hash", hash_fn},
-    {NIL}
+LispyFn misc_builtins[] = {{"eval", eval_fn},
+                           {"print-env", print_env_fn},
+                           {"exit", exit_fn},
+                           {"slurp", slurp_fn},
+                           /* {"mpc_load", mpc_load_fn}, */
+                           {"read-string", read_string_fn},
+                           {"macroexpand", macroexpand_fn},
+                           {"macroexpand-1", macroexpand_1_fn},
+                           {NIL}
 
 };

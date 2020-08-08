@@ -1,3 +1,6 @@
+#ifdef WASM
+
+#else  // not WASM
 #include <env.h>
 
 #include "io.h"
@@ -44,18 +47,15 @@ Lenv* get_root_env(Lenv* env) {
 }
 
 Lenv* get_user_env(Lenv* env) {
-  Lenv* user_env = NIL;
   while (env->parent_env) {
-    user_env = env;
+    if (env->is_user_env) return env;
     env = env->parent_env;
   }
-  if (!user_env) {
-    printf("Error: you can't get user_env from root env!!. Aborting");
+  printf("Error: you can't get user_env from root env!!. Aborting");
 #ifndef WASM
-    exit(1);
+  exit(1);
 #endif
-  }
-  return user_env;
+  return NULL;
 }
 
 int is_user_env(Lenv* env) {
@@ -67,8 +67,7 @@ int lenv_is_bound(Lenv* env, Lval* lval_sym) {
 }
 
 // Assoces lval_sym with lval in the kv list in env. Mutates env by updating kv
-// list in place and returns it. Both lval_sym and lval are assumed to be
-// retained already.
+// list in place. Both lval_sym and lval are assumed to be retained already.
 void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
   env->kv = alist_put(env->kv, is_eq_lval_sym, lval_sym, lval);
 }
@@ -81,3 +80,5 @@ Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   next_env->kv = alist_prepend(retain(env->kv), lval_sym, lval);
   return next_env;
 }
+
+#endif  // WASM

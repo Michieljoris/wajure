@@ -43,9 +43,9 @@ void test_plist() {
 }
 
 void print_char_cell(void* value) { printf("%s", (char*)value); }
-void print_pair(void* pair) {
-  printf("%s: %s", (char*)((Cell*)pair)->car, (char*)((Cell*)pair)->cdr);
-}
+/* void print_pair(void* pair) { */
+/*   printf("%s: %s", (char*)((Cell*)pair)->car, (char*)((Cell*)pair)->cdr); */
+/* } */
 int cmp(void* k, void* v) { return _strcmp((char*)k, (char*)v) == 0; }
 
 void test_list() {

@@ -1,6 +1,11 @@
 #ifndef __ENV_H_
 #define __ENV_H_
 
+#ifdef WASM
+
+#else   // not WASM
+#endif  // WASM
+
 #include "lval.h"
 
 enum { ROOT_ENV, LOCAL_ENV };

@@ -15,36 +15,91 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
+typedef struct wval Wval;
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
 typedef struct {
-  char* func_name;
+  char* lispy_fn_name;
   Lbuiltin fun;
-} Builtin;
+  char* c_fn_name;
+  int params_count;
+  int results_count;
+} LispyFn;
+
+/* struct fun { */
+/*   Lbuiltin fun; */
+/*   Lenv* closure; */
+/*   Lval* params; */
+/*   Lval* body; */
+/* }; */
+
+/* struct lval2 { */
+/*   int type; */
+/*   int subtype; */
+/*   void* pointer;  // num, str, fun or cell */
+/*   int hash; */
+/* }; */
+
+typedef struct context Context;
 
 struct lval {
-  int type;
-  int subtype;
+  char type;
+  char subtype;
 
   // Number, error, symbol or string
   long num;
-  char* str;
-  /* Function */
+  char* str; /* Function */
+
+  // List
+  Cell* head;
+  int hash;
+
   Lbuiltin fun;
   Lenv* closure;
   Lval* params;
   Lval* body;
 
-  // List
-  Cell* head;
+  // compiler to wasm data
+  Context* context;
+  int offset;
+};
 
-  int hash;
+struct wval {
+  char type;     // wasm offset: 0
+  char subtype;  // 1
+
+  short fn_table_index;  // 2
+  short param_count;     // 4
+  short has_rest_arg;    // 6
+  short partial_count;   // 8
+  Lval** closure;        // 12
+  Lval** partials;       // 16
 };
 
 struct lenv {
+  int is_user_env;
   Lenv* parent_env;
   Cell* kv;
+};
+
+// Compile structs
+typedef struct {
+  int local_count;
+  char* fn_name;
+  int param_count;
+  int closure_count;
+  Lenv* closure;
+} FunctionContext;
+
+struct context {
+  char* msg;
+  Lval* lval;
+  Cell* cell;
+  FunctionContext* function_context;
+  // whatever
+  int line;
+  int pos;
 };
 
 /* lval types */
@@ -55,19 +110,35 @@ enum {
   LVAL_FUNCTION,
   LVAL_ERR,
   /* subtypes */
+  // literal subtypes
   LNIL,
   LTRUE,
   LFALSE,
   NUMBER,
   STRING,
+  REGEX,
+  KEYWORD,
+  // function subtypes
   SYS,
   MACRO,
   SPECIAL,
   LAMBDA,
+  // collection subtypes
   LIST,
   MAP,
   VECTOR,
-  USER
+  SET,
+  // error subtypes
+  USER,
+
+  // compiler types
+  LVAL_COMPILER,
+  // local ref subtypes
+  PARAM,
+  LOCAL,
+
+  // lispy runtime lval fn type
+  LVAL_WASM_LAMBDA
 };
 
 #endif  // __LTYPES_H_

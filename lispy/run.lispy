@@ -1,3 +1,149 @@
+(slurp "lispy/stdlib.lispy")
+
+
+(slurp "lispy/test/test_2_eval.lispy")
+(slurp "lispy/test/test_3_env.lispy")
+(slurp "lispy/test/test_4_if_fn_do.lispy")
+(slurp "lispy/test/test_5_tco.lispy")
+(slurp "lispy/test/test_6_file.lispy")
+(slurp "lispy/test/test_7_quote.lispy")
+(slurp "lispy/test/test_8_macros.lispy")
+(slurp "lispy/test/test_9_try.lispy")
+;; (def foo 123)
+;; (defn test [a a1]
+;;   (let [z 123
+;;         f (fn [b] (let [c 99 d 99]  a a1 b c z
+;;                     ))]
+;;     1))
+(def a 1)
+;; (defn f [x]
+;;   (let [q (fn [y] (print "HELLO" x y) )]
+;;     q)
+;;   )
+
+(defn test [x y]
+  (print  123 x y)
+  ;; (let [ g (fn [x] (print "G" x))
+  ;;        f (fn [x y] (g (+ x y)))
+  ;;       ;; some-fn (f 1)
+  ;;       ]
+
+  ;;   (f 2 3)
+  ;;   ;; (some-fn 2)
+  ;;   ;; (g 123 4546)
+  ;;   )
+  )
+(test 222 333)
+;; (defn test [b]
+;;   (let [c 2]
+;;     (fn [d]
+;;       (let [e 3]
+;;         (fn [f]
+;;           (+ a b c d e f))))))
+
+;; (defn test [b]
+;;     (fn [b] (+ a b))
+;;   ;; (let [a 1 b 2 c 3 d 4 e 5]
+;;   ;;      (fn [b] (+ a b)))
+;;   )
+
+
+;; (defn test [a b]
+;;   (let [c 1] a b c 123))
+;; (def bar `(1 ~foo  a 3))
+;; (def bar '(1 2 3))
+;; (defn my-fn [x] (+ x 1))
+
+;; (defn test[x] 456 nil true false "ok")
+;; (defn test[x] bar foo "ok" "then" 123 false true nil)
+;; (defn test[x] "aaaaaa")
+;; (defn test[x] (print (cons "hello" (list 1 (+ 2 3) (list 3 5)))))
+;; (defn test[x] (print (nth (list 0 "one" 2) 1)))
+;; (defn test2[x] (my-fn 1))
+
+;; (defn test3a[x]
+;;   (let [fn2 my-fn]
+;;     (fn2 1)))
+
+;; (defn test3b[x]
+;;   (let [fn2 (partial my-fn 123)]
+;;     (fn2 1)))
+
+;; (defn test4[x]
+;;   (let [a 1
+;;         some-fn (fn [x] (+ a 1))
+;;         fn2  some-fn
+;;         fn3 (partial some-fn 123)]
+;;     (some-fn 1)))
+;; (defn test[x] ())
+
+
+;; (defn test[x] (+ 1 2))
+
+
+;; (defn foo[x] "some string" "string 2")
+
+;; (defn bar[x] (+ 1 2))
+;; (defn foo [x] (+ 1 x))
+;; (defn fox [x] (fn [] x))
+;; (defn foz [x] (let [a (+ x 1)
+;;                     a (+ a 1)
+;;                     b 123]
+;;                 (fn [x y] (+ a b x y bar))))
+
+;; (fn [x y a b] (+ a b x y bar))
+
+;; {:wasm-fn-ref 1
+;;  :parameter-count 2
+;;  :parameters-list (42)
+;;  :closure-list (5 7)
+;;  }
+
+
+
+;; ((foz 1) 1)
+
+
+;; (def foo 123)
+;; (def fox "abc")
+;; (print-env)
+;; (let [a foo]
+;;   (def fuz a))
+;; (def fux (let [a 1] a))
+;; (defn bar [x] (let [f (fn [] (+ foo x))]
+;;                f))
+
+;; (defmacro m0 [x y] `(+ ~x ~y))
+;; (defmacro m1 [x y] `(+ ~x ~y (m0 6 7)))
+;; (def m2 (macro [y] `(m1 (m1 2 3) ~y)))
+;; ;; (defmacro m2 [y] `(+ 123 ~y))
+;; (print foo)
+;; ((bar 123))
+
+;; (macroexpand-all '(m2 123))
+
+;; (defn me [form]
+;;   (macroexpand form)
+;;   )
+
+;; (me '(m2 123))
+;; (print "foo")
+
+
+;; (macroexpand-all '(m2 1))
+;; (and (+ 1 2) (= 1 2) (print "FOOOOO"))
+;; (macroexpand (list 1 2))
+
+;; (and false (print "foo"))
+
+
+;; (macroexpand-all '(a b c))
+;; (and (= 1 0) true)
+
+;; (macroexpand '(apply + '(1 2)))
+;; (apply and '(1 2))
+;; (cons (first '(a b c))  (rest '(a b c)))
+;; (+ 1 2)
 ;; (slurp "lispy/stdlib.lispy")
 ;; (slurp "lispy/test/test_2_eval.lispy")
 ;; (slurp "lispy/test/test_3_env.lispy")
@@ -14,11 +160,11 @@
 
 ;; (print (boolean 123))
 ;; (print (hash 2))
-(list 1 2)
-(print (hash (cons 1 (list 2 3))))
-(print (hash (cons 1 (list 2 (+ 2 1)))))
-(print (hash (cons 1 '(2 3))))
-(print (hash (rest (cons 1 (list 2 3)))))
+;; (list 1 2)
+;; (print (hash (cons 1 (list 2 3))))
+;; (print (hash (cons 1 (list 2 (+ 2 1)))))
+;; (print (hash (cons 1 '(2 3))))
+;; (print (hash (rest (cons 1 (list 2 3)))))
 ;; "ok"
 ;; foobar
 ;; (t ( (fn [& more] (count more)) 1 2 3)

@@ -1,7 +1,13 @@
 #+TITLE: Readme
 
-NOTE: Work in progress is at compile branch currently.
 
+* WIP:
+
+Interpreter passes most mal tests but is rather minimal.
+
+Compiler is getting on, lambdas are starting to work.
+
+* Intro
 
 Used http://www.buildyourownlisp.com as a (re)introduction to c and to get myself an initial implementation.
 
@@ -129,7 +135,7 @@ There's a few disadvantages:
 
 
 
-* Run
+* Run/compie
 For editline lib do
 
    sudo apt-get install libedit-dev
@@ -140,11 +146,23 @@ For binaryen clone the repo, edit CMakeLists.txt (see note below) and do
 
 Then:
 
-    make (also runs the binary, with repl.lispy as arg)
+** Build executable and run interpreter on lispy/run.lispy
+make clean
+make run
+** Build executable and compile lispy/compile.lispy
+make clean
+make compile
+** Build wasm runtime (compiles lispy interpreter to wasm):
+PLATFORM=wasm make clean
+PLATFORM=wasm make runtime
 
 Alternatively:
 
-    out/lispy lispy/repl.lispy
+    out/lispy -r lispy/run.lispy
+
+or
+
+    out/lispy -c lispy/compile.lispy
 
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 

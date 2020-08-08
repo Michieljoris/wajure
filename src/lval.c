@@ -1,8 +1,10 @@
 #include "lval.h"
 
+#include <stddef.h>
+
 #include "cell.h"
-#include "env.h"
-#include "hash.h"
+
+/* #include "hash.h" */
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -18,18 +20,18 @@ int lval_hash(Lval* lval) {
   switch (lval->type) {
     case LVAL_FUNCTION:
     case LVAL_ERR:
-      hash = murmur3_int(long_hash((unsigned long)lval), seed);
+      /* hash = murmur3_int(long_hash((unsigned long)lval), seed); */
       break;
     case LVAL_SYMBOL:
-      hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed);
+      /* hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed); */
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case STRING:
-          hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  //
+          /* hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  // */
           break;
         case NUMBER:
-          hash = murmur3_int(long_hash_munge(lval->num), seed);
+          /* hash = murmur3_int(long_hash_munge(lval->num), seed); */
           break;
         case LNIL:
           hash = 0;
@@ -78,6 +80,13 @@ Lval* make_lval_sym(char* s) {
 Lval* make_lval_list(void) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST};
+  lval->hash = lval_hash(lval);
+  return lval;
+}
+
+Lval* new_lval_list(void* head) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST, .head = head};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -162,12 +171,28 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   return lval;
 }
 
+Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
+                            int has_rest_arg, Lval** closure, Lval** partials,
+                            int partial_count) {
+  Wval* wval = lalloc_type(LVAL);
+  *wval = (Wval){.type = LVAL_WASM_LAMBDA,
+                 .subtype = -1,
+                 .fn_table_index = fn_table_index,
+                 .param_count = param_count,
+                 .has_rest_arg = has_rest_arg,
+                 .closure = closure,
+                 .partials = partials,
+                 .partial_count = partial_count};
+  return (Lval*)wval;
+}
+
 /* ERROR */
 
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .str = lalloc_size(512)};
+
   va_list va;
   va_start(va, fmt);
   vsnprintf(lval->str, 511, fmt, va);
@@ -213,6 +238,8 @@ char* lval_type_constant_to_name(int t) {
       return "false";
     case LNIL:
       return "nil";
+    case LVAL_COMPILER:
+      return "Local ref";
     default:
       return "Unknown";
   }
@@ -263,3 +290,22 @@ char* lval_type_to_name(Lval* lval) {
       return "Unknown";
   }
 }
+
+void wval_print(Wval* wval) {
+  printf("wval pointer: %li\n", (long)wval);
+  printf("type: %d %lu\n", wval->type, offsetof(Wval, type));
+  printf("subtype: %d %lu\n", wval->subtype, offsetof(Wval, subtype));
+  printf("fn_table_index: %d %lu\n", wval->fn_table_index,
+         offsetof(Wval, fn_table_index));
+  printf("param_count: %d %lu\n", wval->param_count,
+         offsetof(Wval, param_count));
+
+  printf("has_rest_arg: %d %lu\n", wval->has_rest_arg,
+         offsetof(Wval, has_rest_arg));
+  printf("partial_count: %d %lu\n", wval->partial_count,
+         offsetof(Wval, partial_count));
+  printf("closure: %li %lu\n", (long)wval->closure, offsetof(Wval, closure));
+  printf("partials: %li %lu\n", (long)wval->partials, offsetof(Wval, partials));
+}
+
+Lval** get_wval_closure(Wval* wval) { return wval->closure; }

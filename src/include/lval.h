@@ -17,8 +17,13 @@ Lval* make_lval_exception(char* msg);
 Lval* make_lval_nil(void);
 Lval* make_lval_true(void);
 Lval* make_lval_false(void);
+Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
+                            int has_rest_arg, Lval** closure, Lval** partials,
+                            int partial_count);
 
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
+
+Lval* new_lval_list(void* head);
 
 #endif  // __LVAL_H_
