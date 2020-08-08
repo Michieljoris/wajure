@@ -1,5 +1,7 @@
 #+TITLE: Todo
 * TODO compile
+** Gets tests to pass again interpreter
+** Fix memory leak for interpreter
 ** first class functions
 ** closures, partials and rest args
 ** wrap sys fns so they can become lambdas

@@ -31,10 +31,13 @@ int main(int argc, char **argv) {
     do_compile = 1;
   }
   for (int i = 2; i < argc; ++i) {
-    if (do_compile)
+    if (do_compile) {
+      printf("COMPILING!!!\n");
       compile(argv[i]);
-    else
+    } else {
+      printf("INTERPRETING!!!\n");
       run(argv[i]);
+    }
   }
   /* make_bmodule(); */
   printf("Back in main\n");

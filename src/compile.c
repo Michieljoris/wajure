@@ -440,12 +440,8 @@ Ber compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   return sys_fn_call;
 }
 
-Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
-  printf("compile lambda call!!!!!!!!!!!!!!!\n");
-  return make_int32(wasm->module, 123);
-}
-
-Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
+Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
+                         Cell* args) {
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
   printf("compile local ref call!!!!!!!!!!!!!!!\n");
@@ -453,10 +449,11 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
   // pointer points at <
   int i = 0;
   int args_count = list_count(args);
-  int wasm_args_count = args_count + 4 + 1;  // args,  update stackpointer,
-                                             // call, reset stackpointer, result
+  int wasm_args_count = args_count + 4;  // args,  update stackpointer,
+                                         // call, reset stackpointer, result
+  /* wasm_args_count++; //for wval_print */
   Ber* wasm_args = malloc(sizeof(Ber) * wasm_args_count);
-  int sp_offset = args_count * 4;  // extra slot for args_count itself
+  int sp_offset = args_count * 4;
   printf("SP_OFFSET: %d\n", sp_offset);
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
@@ -490,20 +487,30 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
   // else print "unimplemented!!!" and leave 123 on stack.
   // Call fn
 
-  // get fn_index and closure pointer from lval_wasm_ref
-  Ber wasm_fn_index =
-      BinaryenLoad(module, 2, 0, 2, 0, BinaryenTypeInt32(), lval_wasm_ref);
-  /* wasm_fn_index = make_int32(module, 1); */
-  Ber wasm_closure_pointer =
-      BinaryenLoad(module, 4, 0, 12, 0, BinaryenTypeInt32(), lval_wasm_ref);
-  Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};
-  BinaryenType params_type = make_type_int32(2);
-  Ber result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
-                                    params_type, BinaryenTypeInt32());
-  Ber wval_operands[] = {lval_wasm_ref};
-  Ber wval_print =
-      BinaryenCall(module, "wval_print", wval_operands, 1, BinaryenTypeNone());
-  wasm_args[i++] = wval_print;
+  Ber result = NULL;
+  if (lval_wasm_ref) {
+    // get fn_index and closure pointer from lval_wasm_ref
+    Ber wasm_fn_index =
+        BinaryenLoad(module, 2, 0, 2, 0, BinaryenTypeInt32(), lval_wasm_ref);
+    /* wasm_fn_index = make_int32(module, 1); */
+    Ber wasm_closure_pointer =
+        BinaryenLoad(module, 4, 0, 12, 0, BinaryenTypeInt32(), lval_wasm_ref);
+    Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};
+    BinaryenType params_type = make_type_int32(2);
+
+    /* Ber wval_operands[] = {lval_wasm_ref}; */
+    /* Ber wval_print = BinaryenCall(module, "wval_print", wval_operands, 1, */
+    /*                               BinaryenTypeNone()); */
+    /* wasm_args[i++] = wval_print; */
+
+    result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
+                                  params_type, BinaryenTypeInt32());
+  }
+
+  if (fn_name) {
+    Ber operands[] = {make_int32(module, 0), make_int32(module, args_count)};
+    result = BinaryenCall(module, fn_name, operands, 2, BinaryenTypeInt32());
+  }
 
   // Store result in local var
   int result_index = context->function_context->local_count++;
@@ -533,28 +540,32 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
   // Write fns to deal with keyword, vector, set and map, dispatch by type and
   // pass first node plus args to fn
 
-  // It's the callee's responsibility to check correct number of args (so could
-  // be disabled by flag). Without flag it's possible to call a fn with too few
-  // args, which would have unpredictable results. Too many doesn't hurt
-  // necessarily. It's also callee's responsibility to wrap up excess args into
-  // a rest arg. Otherwise we would have to check for this for every fn call.
-  // Throw error if count of args < param count (without any rest arg): [a b]
-  // has param count of 2, but [a b & c] has param count of 2 as well. If fn has
-  // rest arg then insert code that gathers excess args up into list and stores
-  // that list in a local var to be referred to in the rest of the fn. Only
-  // insert param checking code when lispy compiler flag is set for it. Same for
-  // rest arg, only insert wasm code for it when appropriate.
+  // It's the callee's responsibility to check correct number of args (so
+  // could be disabled by flag). Without flag it's possible to call a fn with
+  // too few args, which would have unpredictable results. Too many doesn't
+  // hurt necessarily. It's also callee's responsibility to wrap up excess
+  // args into a rest arg. Otherwise we would have to check for this for every
+  // fn call. Throw error if count of args < param count (without any rest
+  // arg): [a b] has param count of 2, but [a b & c] has param count of 2 as
+  // well. If fn has rest arg then insert code that gathers excess args up
+  // into list and stores that list in a local var to be referred to in the
+  // rest of the fn. Only insert param checking code when lispy compiler flag
+  // is set for it. Same for rest arg, only insert wasm code for it when
+  // appropriate.
 
-  // When a LVAL_WASM_LAMBDA is a result of a partial its fn_table_index points
-  // to a wrapper fn that puts the partial args after the current stack pointer
-  // and increases sp by partial_count, and then calls the actual fn (which
-  // again might be a partial).
+  // When a LVAL_WASM_LAMBDA is a result of a partial its fn_table_index
+  // points to a wrapper fn that puts the partial args after the current stack
+  // pointer and increases sp by partial_count, and then calls the actual fn
+  // (which again might be a partial).
 
   // Call indirect fn with the right offset, and one arg (pointer to closure)
   // Set stack pointer to free mem; (so add param_count + 1  to sp, last slot
   // holds param_count itself).
   // On return from this call set stack pointer back.
-  return make_int32(wasm->module, 123);
+}
+
+Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
+  return compile_wasm_fn_call(wasm, NULL, lval_fn_sym->str, args);
 }
 
 Ber compile_list(Wasm* wasm, Lval* lval_list);
@@ -565,7 +576,7 @@ Ber compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
       switch (lval->subtype) {
         case LIST:;
           Ber compiled_list = compile_list(wasm, lval);
-          return compile_wasm_fn_call(wasm, compiled_list, args);
+          return compile_wasm_fn_call(wasm, compiled_list, NULL, args);
         case VECTOR:
         case MAP:
         case SET:
@@ -648,7 +659,7 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
         // compile_list/lambda_cal. However the default case is that we cannot
         // assume anything about the lval.
         Ber compiled_symbol = resolve_symbol_and_compile(wasm, lval_first);
-        return compile_wasm_fn_call(wasm, compiled_symbol, args);
+        return compile_wasm_fn_call(wasm, compiled_symbol, NULL, args);
       case LVAL_SYMBOL:
         quit(wasm, "ERROR: A symbol can't ve cast to a fn: %s",
              resolved_symbol->str);
