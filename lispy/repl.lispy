@@ -1,3 +1,12 @@
+;; (slurp "lispy/stdlib.lispy")
+;; (slurp "lispy/test/test_2_eval.lispy")
+;; (slurp "lispy/test/test_3_env.lispy")
+;; (slurp "lispy/test/test_4_if_fn_do.lispy")
+;; (slurp "lispy/test/test_5_tco.lispy")
+;; (slurp "lispy/test/test_6_file.lispy")
+;; (slurp "lispy/test/test_7_quote.lispy")
+;; (slurp "lispy/test/test_8_macros.lispy")
+;; (slurp "lispy/test/test_9_try.lispy")
 ;; (def foo 123)
 ;; (defn test [a a1]
 ;;   (let [z 123
@@ -5,14 +14,24 @@
 ;;                     ))]
 ;;     1))
 (def a 1)
-(defn test [x]
-  (let [f (fn [x y] (print x y))
-        ;; g (fn [x] (print "G") x)
-        ]
+;; (defn f [x]
+;;   (let [q (fn [y] (print "HELLO" x y) )]
+;;     q)
+;;   )
 
-    (f 123 4546)
-    ;; (g 123 4546)
-    ))
+(defn test [x y]
+  (print  123 x y)
+  ;; (let [ g (fn [x] (print "G" x))
+  ;;        f (fn [x y] (g (+ x y)))
+  ;;       ;; some-fn (f 1)
+  ;;       ]
+
+  ;;   (f 2 3)
+  ;;   ;; (some-fn 2)
+  ;;   ;; (g 123 4546)
+  ;;   )
+  )
+(test 222 333)
 ;; (defn test [b]
 ;;   (let [c 2]
 ;;     (fn [d]

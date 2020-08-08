@@ -33,6 +33,8 @@ Wasm* init_wasm() {
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
 
+  BinaryenModuleSetFeatures(wasm->module, BinaryenFeatureMutableGlobals());
+
   return wasm;
 }
 
@@ -49,13 +51,15 @@ void free_wasm(Wasm* wasm) {
 
 void add_memory_section(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
-  /* BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end", */
-  /*                         BinaryenTypeInt32(), 0); */
+  BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
+                          BinaryenTypeInt32(), 0);
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
-  /* BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer", */
-  /*                         BinaryenTypeInt32(), 0); */
-  BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1,
-                    make_int32(module, wasm->__heap_base));
+  BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer",
+                          BinaryenTypeInt32(), 1);
+
+  /* BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1, */
+  /*                   make_int32(module, wasm->__heap_base)); */
+  BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer");
   const int num_segments = 1;
   const char* segments[1] = {wasm->strings};
   BinaryenIndex segmentSizes[] = {wasm->strings_offset};
@@ -111,7 +115,7 @@ LispyFn runtime_fns[] = {{NULL, NULL, "printf_", 2, 1},
                          {NULL, NULL, "new_lval_list", 1, 1},
                          {NULL, NULL, "make_lval_sym", 1, 1},
                          {NULL, NULL, "make_lval_wasm_lambda", 6, 1},
-                         {NULL, NULL, "wval_print", 1, 1},
+                         {NULL, NULL, "wval_print", 1, 0},
                          // lispy_mempool
                          {NULL, NULL, "lalloc_size", 1, 1},
                          {NULL, NULL, "lalloc_type", 1, 1},

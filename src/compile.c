@@ -340,7 +340,7 @@ Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
   Ber fn_table_index = make_int32(module, function_data.fn_table_index);
   Ber partial_count = make_int32(module, 0);
   Ber partials = make_int32(module, 0);  // NULL
-  Ber wasm_param_count = make_int32(module, function_data.param_count);
+  Ber lispy_param_count = make_int32(module, function_data.param_count);
   Ber wasm_has_rest_arg = make_int32(module, function_data.has_rest_arg);
 
   Ber* lambda_list =
@@ -390,8 +390,8 @@ Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[6] = {fn_table_index,       wasm_param_count, wasm_has_rest_arg,
-                     wasm_closure_pointer, partials,         partial_count};
+  Ber operands[6] = {fn_table_index,       lispy_param_count, wasm_has_rest_arg,
+                     wasm_closure_pointer, partials,          partial_count};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
       wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
 
@@ -453,8 +453,8 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
   // pointer points at <
   int i = 0;
   int args_count = list_count(args);
-  int wasm_args_count = args_count + 4;  // args,  update stackpointer, call,
-                                         // reset stackpointer, result
+  int wasm_args_count = args_count + 4 + 1;  // args,  update stackpointer,
+                                             // call, reset stackpointer, result
   Ber* wasm_args = malloc(sizeof(Ber) * wasm_args_count);
   int sp_offset = args_count * 4;  // extra slot for args_count itself
   printf("SP_OFFSET: %d\n", sp_offset);
@@ -493,15 +493,17 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, Cell* args) {
   // get fn_index and closure pointer from lval_wasm_ref
   Ber wasm_fn_index =
       BinaryenLoad(module, 2, 0, 2, 0, BinaryenTypeInt32(), lval_wasm_ref);
+  /* wasm_fn_index = make_int32(module, 1); */
   Ber wasm_closure_pointer =
       BinaryenLoad(module, 4, 0, 12, 0, BinaryenTypeInt32(), lval_wasm_ref);
   Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};
   BinaryenType params_type = make_type_int32(2);
   Ber result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
                                     params_type, BinaryenTypeInt32());
-  /* Ber operands[] = {lval_wasm_ref}; */
-  /* Ber result = */
-  /*     BinaryenCall(module, "wval_print", operands, 1, BinaryenTypeNone()); */
+  Ber wval_operands[] = {lval_wasm_ref};
+  Ber wval_print =
+      BinaryenCall(module, "wval_print", wval_operands, 1, BinaryenTypeNone());
+  wasm_args[i++] = wval_print;
 
   // Store result in local var
   int result_index = context->function_context->local_count++;
@@ -578,7 +580,8 @@ Ber compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
            "keyword, "
            "yet)\n");
     case LVAL_ERR:
-      quit(wasm, "ERROR compile_list: there was an error in parsing code\n");
+      quit(wasm, "ERROR compile_list: there was an error in parsing code: %s\n",
+           lval->str);
     default:
       quit(wasm, "ERROR compile_list: Unknown lval type %d\n", lval->type);
   }
@@ -607,11 +610,12 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
 
   // Fn call > (symbol args ...)
   if (lval_first->type == LVAL_SYMBOL) {
+    printf("resolving symbol %s\n", lval_first->str);
     // Let's see if the symbol refers to something we know how to compile
     // already
     Lval* resolved_symbol = lenv_get(wasm->env, lval_first);
     // If it's a symbol it has to be known in our compiler env!!!
-    if (lval_first->type == LVAL_ERR) {
+    if (resolved_symbol->type == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_first);
       quit(wasm, "ERROR: Unknowm symbol while trying to compile a list %s",
@@ -994,3 +998,9 @@ int compile(char* file_name) {
  * local_types, */
 /*                       locals_count, body); */
 /* } */
+
+/* TODO: */
+//
+// call root fn
+// check whether wasm ref is a a lambda/set/map/vector, print error msg if not
+// wasmify sys and root fns

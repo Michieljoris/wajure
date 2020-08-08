@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
   /* run(argc, argv); */
 
   for (int i = 1; i < argc; ++i) {
-    compile(argv[i]);
-    /* run(argv[i]); */
+    /* compile(argv[i]); */
+    run(argv[i]);
   }
   /* make_bmodule(); */
   printf("Back in main\n");

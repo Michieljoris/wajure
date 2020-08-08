@@ -7,7 +7,9 @@
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4264) "\01\00\00\00\00\00\00\00\00\00\00\00\b8\10\00\00\02\08\00\00{\00\00\00\a8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\dc\10\00\00\02\08\00\00\c2\11\00\00\a8\10\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4264) "\01\00\00\00\00\00\00\00\00\00\00\00\b8\10\00\00\02\08\00\00{\00\00\00\a8\10\00\00\00\00\00\00\ff\ff\ff\ff")
+ (import "env" "__data_end" (global $__data_end i32))
+ (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
@@ -23,7 +25,7 @@
  (import "env" "new_lval_list" (func $new_lval_list (param i32) (result i32)))
  (import "env" "make_lval_sym" (func $make_lval_sym (param i32) (result i32)))
  (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32 i32 i32) (result i32)))
- (import "env" "wval_print" (func $wval_print (param i32) (result i32)))
+ (import "env" "wval_print" (func $wval_print (param i32)))
  (import "env" "lalloc_size" (func $lalloc_size (param i32) (result i32)))
  (import "env" "lalloc_type" (func $lalloc_type (param i32) (result i32)))
  (import "env" "list_cons" (func $list_cons (param i32 i32) (result i32)))
@@ -52,93 +54,36 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 4 4 funcref)
- (elem (i32.const 0) $test_1 $test $log_int $printf_)
- (global $stack_pointer (mut i32) (i32.const 69808))
+ (table $0 3 3 funcref)
+ (elem (i32.const 0) $test $log_int $printf_)
  (export "test" (func $test))
+ (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
- (func $test_1 (param $0 i32) (param $1 i32) (result i32)
+ (func $test (param $0 i32) (param $1 i32) (result i32)
   (block $body (result i32)
    (call $print_fn
     (i32.const 0)
     (call $new_lval_list
      (call $list_cons
-      (i32.load offset=4
-       (i32.sub
-        (global.get $stack_pointer)
-        (i32.const 8)
-       )
-      )
+      (i32.const 4280)
       (call $list_cons
-       (i32.load
+       (i32.load offset=4
         (i32.sub
          (global.get $stack_pointer)
          (i32.const 8)
         )
        )
-       (i32.const 0)
-      )
-     )
-    )
-   )
-  )
- )
- (func $test (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (local $3 i32)
-  (local $4 i32)
-  (block $body (result i32)
-   (block $let (result i32)
-    (local.set $3
-     (block $test_1 (result i32)
-      (local.set $2
-       (call $lalloc_size
+       (call $list_cons
+        (i32.load
+         (i32.sub
+          (global.get $stack_pointer)
+          (i32.const 8)
+         )
+        )
         (i32.const 0)
        )
       )
-      (call $make_lval_wasm_lambda
-       (i32.const 0)
-       (i32.const 2)
-       (i32.const 0)
-       (local.get $2)
-       (i32.const 0)
-       (i32.const 0)
-      )
      )
-    )
-    (block $lambda_call (result i32)
-     (i32.store offset=4
-      (global.get $stack_pointer)
-      (i32.const 4280)
-     )
-     (i32.store
-      (global.get $stack_pointer)
-      (i32.const 4316)
-     )
-     (global.set $stack_pointer
-      (i32.add
-       (global.get $stack_pointer)
-       (i32.const 8)
-      )
-     )
-     (local.set $4
-      (call_indirect (type $i32_i32_=>_i32)
-       (i32.load offset=12
-        (local.get $3)
-       )
-       (i32.const 2)
-       (i32.load16_u offset=2
-        (local.get $3)
-       )
-      )
-     )
-     (global.set $stack_pointer
-      (i32.sub
-       (global.get $stack_pointer)
-       (i32.const 8)
-      )
-     )
-     (local.get $4)
     )
    )
   )

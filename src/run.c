@@ -80,5 +80,4 @@ void run(char* file_name) {
   release(root_env);
   print_mempool_counts();
   printf(" after releasing root_env\n");
-  free_lispy_mempools();
 }

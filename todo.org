@@ -7,11 +7,11 @@
 ** add release and retain to wasm code
 ** check mem mngmnt for compiler as well
 ** implement reader macro for #(+ %1 %2)
+** pass floats, strings, maps, vectors, sets etc from js to lispy fn
+Currently only ints work
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
-** implement main
-All fns have only one param, ie its closure. Args are put on stack. So the
-'main' fn, as exported to js,  will have to dispatch to a wasm lispy fn.
+** DONE implement calling lispy fn from js
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.

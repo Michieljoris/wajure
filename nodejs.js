@@ -20,13 +20,13 @@ var importObject = {
         process.stdout.write(String.fromCharCode(arg))
     },
            grow_memory: () => { //console.log("grow_memory");
-                                if (++page_count > max_page_count) {
-                                    console.log("Error: can't allocate memory beyond max\n");
-                                    // throw "Error: can't allocate memory beyond max\n";
-                                    return 0;
-                                }
-                                memory = runtime.memory.grow(1);
-                                return 1; },
+               if (++page_count > max_page_count) {
+                   console.log("Error: can't allocate memory beyond max\n");
+                   // throw "Error: can't allocate memory beyond max\n";
+                   return 0;
+               }
+               memory = runtime.memory.grow(1);
+               return 1; },
            get_mem_end:  () => { //console.log("get_mem_end");
                return page_count * page_size},
            // memory:  new WebAssembly.Memory({initial: initial_page_count,
@@ -54,58 +54,85 @@ function makeLogStringN(memory, offset, length) {
     }
 }
 
+async function run_lispy_fn(fn_name, ...args) {
+    const lispy = this;
+    let stack_pointer = lispy.user.stack_pointer.value;
+    console.log("stack_pointer: ", stack_pointer);
+
+    let args_count = args.length;
+
+    var int32s = new Uint32Array(runtime.memory.buffer, 0);
+    stack_pointer /= 4;
+    for (i = 0; i < args_count; i++) {
+        let arg = lispy.runtime.make_lval_num(args[i]);
+        int32s[stack_pointer + i] = arg
+    }
+    lispy.user.stack_pointer.value += args_count * 4;
+
+    let closure_pointer = 0;
+    lispy.user[fn_name](closure_pointer, args_count);
+
+    lispy.runtime.free_lispy_mempools();
+    lispy.runtime.free_malloc();
+
+}
+
+async function load_lispy(runtime, stack_size, lispy_wasm_file_name) {
+
+    let stack_pointer = runtime._malloc(stack_size); //8MB stack
+    runtime.init_lispy_mempools(800, 800, 800);
+
+    const stack_pointer_global = new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer)
+
+    let buf = fs.readFileSync(lispy_wasm_file_name);
+    let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
+                                                 log_int: arg => console.log(arg),
+                                                 log_string_n: makeLogStringN(runtime.memory),
+                                                 stack_pointer: stack_pointer_global
+                                                },
+                                                runtime)};
+
+    let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
+        then(res => res.instance.exports);
+    return lispy;
+}
+
+async function load_runtime(runtime_wasm_file_name) {
+    let buf = fs.readFileSync(runtime_wasm_file_name);
+    runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
+        then(res => res.instance.exports);
+
+    fs.writeFile("__data_end", "" + runtime.__data_end.value,
+                 function (err) {
+                     if (err) return console.log(err);
+                 })
+
+    runtime.init_malloc();
+    return runtime;
+}
+
+async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_size}) {
+
+    console.log("Loading lispy runtime ------------------------------------");
+    const runtime = await load_runtime('./out_wasm/runtime.wasm');
+
+    console.log("Loading lispy.wat ----------------------------------------");
+    const user = await load_lispy(runtime, stack_size, './compiled/lispy.wasm');
+
+    const run = run_lispy_fn
+    return {runtime_wasm_file_name, lispy_wasm_file_name, stack_size, user, runtime, run};
+}
+
 async function start() {
     try {
-        let buf = fs.readFileSync('./out_wasm/runtime.wasm');
-        runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
-            then(res => res.instance.exports);
-        console.log("data_end =", runtime.__data_end.value);
-        console.log("heap_base =", runtime.__heap_base.value);
-        fs.writeFile("__data_end", "" + runtime.__data_end.value,
-                     function (err) {
-                         if (err) return console.log(err);
-                     })
+        const lispy_config = { runtime_wasm_file_name:  './out_wasm/runtime.wasm',
+                               lispy_wasm_file_name: './compiled/lispy.wasm',
+                               stack_size: 8 * 1024
+                             }
 
-        fs.writeFile("__heap_base", "" + runtime.__heap_base.value,
-                     function (err) {
-                         if (err) return console.log(err);
-                     })
-
-        // console.log("calling init_malloc");
-        runtime.init_malloc();
-        let stack_pointer = runtime._malloc(8 * 1024); //8MB stack
-        runtime.init_lispy_mempools(800, 800, 800);
-
-        buf = fs.readFileSync('./compiled/lispy.wasm');
-        // console.log("printf_ :", runtime.printf_);
-        // const __data_end = new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end);
-        // let lispyImportObject = { env: { memory: runtime.memory,
-        //                                  printf_: runtime.printf_,
-        //                                  log_int: arg => console.log(arg),
-        //                                  log_string: makeLogString(runtime.memory),
-        //                                  log_string_n: makeLogStringN(runtime.memory),
-        //                                  make_lval_num: runtime.make_lval_num,
-        //                                  __data_end: runtime.__data_end
-        //                                }};
-        let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
-                                                     log_int: arg => console.log(arg),
-                                                     log_string_n: makeLogStringN(runtime.memory),
-                                                     stack_pointer: stack_pointer
-                                                    },
-                                                    runtime)};
-        console.log("Loading lispy.wat ----------------------------------------");
-        let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
-            then(res => res.instance.exports);
-
-        // makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
-        // makeLogString(lispy.mem)(runtime.__data_end.value);
-        // console.log("test: ", lispy.test);
-
+        const lispy = await init_lispy(lispy_config);
         console.log("Running lispy.test ------------------------------");
-        lispy.test();
-
-        runtime.free_lispy_mempools();
-        runtime.free_malloc();
+        lispy.run("test", 888, 777);
 
         console.log("End ------------------------------");
     } catch(e) {
@@ -117,3 +144,30 @@ async function start() {
 
 start();
 
+
+
+
+
+// console.log("printf_ :", runtime.printf_);
+// const __data_end = new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end);
+// let lispyImportObject = { env: { memory: runtime.memory,
+//                                  printf_: runtime.printf_,
+//                                  log_int: arg => console.log(arg),
+//                                  log_string: makeLogString(runtime.memory),
+//                                  log_string_n: makeLogStringN(runtime.memory),
+//                                  make_lval_num: runtime.make_lval_num,
+//                                  __data_end: runtime.__data_end
+//                                }};
+
+// makeLogStringN(lispy.mem)(runtime.__data_end.value , 4);
+// makeLogString(lispy.mem)(runtime.__data_end.value);
+// console.log("test: ", lispy.test);
+
+
+// console.log("data_end =", runtime.__data_end.value);
+// console.log("heap_base =", runtime.__heap_base.value);
+
+// fs.writeFile("__heap_base", "" + runtime.__heap_base.value,
+//              function (err) {
+//                  if (err) return console.log(err);
+//              })
