@@ -24,6 +24,8 @@
 
 Ber lval_compile(Wasm* wasm, Lval* lval);
 
+Ber wasmify_literal(Wasm* wasm, Lval* lval);
+
 Ber compile_fn_rest_args(Wasm* wasm, Cell* head) {
   BinaryenModuleRef module = wasm->module;
   if (!head) {
@@ -36,21 +38,32 @@ Ber compile_fn_rest_args(Wasm* wasm, Cell* head) {
   return BinaryenCall(module, "list_cons", operands, 2, make_type_int32(1));
 }
 
-Ber compile_do_list(Wasm* wasm, Lval* list, int mode) {
+Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
+  printf("COMPILE_DO_LIST!!!!\n");
   BinaryenModuleRef module = wasm->module;
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
   int count = list_count(list->head);
+  int do_list_count = count;
+  int is_do_list_empty = count == 0;
+
+  if (is_do_list_empty) count++;  // room for returning nil list;
+  if (!is_do_list_empty && init_rest_arg)
+    count++;  // room for initing rest arg on stack
+
   Ber* do_list = malloc(count * sizeof(Ber));  // TODO: free???
 
-  /* int result = 0; */
-  int do_list_count = 0;
+  int do_list_index = 0;
+
+  if (!is_do_list_empty && init_rest_arg)
+    do_list[do_list_index++] = init_rest_arg;
 
   while (lval) {
     Ber literal = lval_compile(wasm, lval);
-    if (do_list_count + 1 < count) literal = BinaryenDrop(module, literal);
+    if (do_list_index + 1 < do_list_count)
+      literal = BinaryenDrop(module, literal);
 
-    do_list[do_list_count++] = literal;
+    do_list[do_list_index++] = literal;
 
     /* if (result->type == LVAL_ERR) { */
     /*   lval_print(lval); */
@@ -61,11 +74,16 @@ Ber compile_do_list(Wasm* wasm, Lval* list, int mode) {
     lval = iter_next(i);
   }
 
-  return BinaryenBlock(module, "body", do_list, do_list_count,
+  if (is_do_list_empty) {
+    do_list[0] = wasmify_literal(wasm, make_lval_nil());
+    do_list_index++;
+  }
+  return BinaryenBlock(module, "body", do_list, do_list_index,
                        BinaryenTypeAuto());
 }
 
 Ber wasmify_sys_fn(Wasm* wasm, Lval* lval) {
+  printf("WASMIFY SYS FN!!!!!\n");
   return make_int32(wasm->module, 123);
 }
 
@@ -228,6 +246,29 @@ typedef struct {
   int has_rest_arg;
 } FunctionData;
 
+Ber make_init_rest_arg(Wasm* wasm, int rest_arg_index) {
+  if (!rest_arg_index) return NULL;
+  BinaryenModuleRef module = wasm->module;
+  Ber args_count = BinaryenLocalGet(
+      wasm->module, 1,
+      BinaryenTypeInt32());  // first param to fn is closure pointer
+  Ber offset = BinaryenBinary(module, BinaryenMulInt32(), make_int32(module, 4),
+                              args_count);
+
+  Ber stack_pointer =
+      BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
+  Ber args_start =
+      BinaryenBinary(module, BinaryenSubInt32(), stack_pointer, offset);
+
+  Ber rest_arg_length = BinaryenBinary(module, BinaryenSubInt32(), args_count,
+                                       make_int32(module, rest_arg_index - 1));
+  Ber operands[] = {args_start, rest_arg_length};
+  Ber init_rest_arg =
+      BinaryenCall(module, "init_rest_args", operands, 2, BinaryenTypeNone());
+
+  return init_rest_arg;
+}
+
 FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   /* BinaryenModuleRef module = wasm->module; */
 
@@ -247,16 +288,16 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   Lenv* params_env = enter_env(wasm);
   Cell* param = lval_fun->params->head;
   int lispy_param_count = 0;
-  int has_rest_arg = 0;
+  int rest_arg_index = 0;
   int i = 0;
   while (param) {
-    if (has_rest_arg && lispy_param_count == has_rest_arg) {
+    if (rest_arg_index && lispy_param_count == rest_arg_index) {
       lval_println(lval_fun);
       quit(wasm, "ERROR: only one rest arg allowed");
     }
     Lval* lval_sym = param->car;
     if (_strcmp(lval_sym->str, "&") == 0) {
-      has_rest_arg = i + 1;  // number of params
+      rest_arg_index = i + 1;  // number of params
       param = param->cdr;
       continue;
     }
@@ -267,12 +308,14 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   }
   context->function_context->param_count = lispy_param_count;
 
-  if (has_rest_arg && lispy_param_count != has_rest_arg) {
+  if (rest_arg_index && lispy_param_count != rest_arg_index) {
     quit(wasm, "ERROR: rest arg missing");
   }
 
+  Ber init_rest_arg = make_init_rest_arg(wasm, rest_arg_index);
+
   // Compile body
-  Ber body = compile_do_list(wasm, lval_fun->body, 0);
+  Ber body = compile_do_list(wasm, lval_fun->body, init_rest_arg);
   printf("Done compile_do_list\n");
 
   // Post compile
@@ -297,7 +340,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   FunctionData function_data = {lval_fun->offset,
                                 retain(context->function_context->closure),
                                 context->function_context->closure_count,
-                                lispy_param_count, has_rest_arg};
+                                lispy_param_count, rest_arg_index};
   return function_data;
 }
 
@@ -318,9 +361,11 @@ Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
 
   Context* context = wasm->context->car;
   Lval* arg_list = new_lval_list(retain(lval_list->head->cdr));
+
+  // Eval the lambda form to get info on params and body
   Lval* lval_fun = eval_lambda_form(NULL, arg_list, LAMBDA);
   release(arg_list);
-  lval_println(lval_fun);
+
   Lval* lval_sym = make_lval_sym(NULL);
   char* lambda_name = lalloc_size(512);
   _strcpy(lambda_name, context->function_context->fn_name);
@@ -331,8 +376,8 @@ Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
 
   FunctionData function_data = add_wasm_function(wasm, lval_sym, lval_fun);
 
-  printf("COMPILED FUNCTION!!! %d %d\n", function_data.fn_table_index,
-         function_data.closure_count);
+  /* printf("COMPILED FUNCTION!!! %d %d\n", function_data.fn_table_index, */
+  /*        function_data.closure_count); */
 
   release(lval_sym);
   release(lval_fun);
@@ -526,8 +571,13 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
       BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
   wasm_args[i++] = result_from_local;
 
-  Ber call_block = BinaryenBlock(module, "lambda_call", wasm_args,
+  char* lambda_call_name = lalloc_size(512);
+  _strcpy(lambda_call_name, "lambda_call");
+  _strcat(lambda_call_name, "_");
+  itostr(lambda_call_name + _strlen(lambda_call_name), wasm->id++);
+  Ber call_block = BinaryenBlock(module, lambda_call_name, wasm_args,
                                  wasm_args_count, BinaryenTypeInt32());
+  release(lambda_call_name);
   return call_block;
 
   // Write wasm that does the following:
@@ -723,6 +773,9 @@ void print_pair(Lval* lval_sym, Lval* lval) {
 
 int compile(char* file_name) {
   info("Compiling %s\n", file_name);
+  /* Lval* lval_array[] = {make_lval_nil(), make_lval_num(123)}; */
+  /* Lval* lval_list = make_rest_args(lval_array, 2); */
+  /* lval_println(lval_list); */
   /* print_slot_size(); */
 
   set_log_level(LOG_LEVEL_INFO);

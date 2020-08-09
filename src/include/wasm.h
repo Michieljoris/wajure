@@ -24,6 +24,7 @@ typedef struct {
   BinaryenExpressionRef* lval_num_offset;
   Cell* lispy_to_c_fn_map;
   Cell* context;
+  int id;
 } Wasm;
 
 Wasm* init_wasm();

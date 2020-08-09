@@ -62,20 +62,6 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
   return log_int;
 }
 
-/* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */
-/*   BinaryenModuleRef module = wasm->module; */
-
-/*   BinaryenExpressionRef wasm_data_end = */
-/*       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
-
-/*   BinaryenExpressionRef wasm_offset = make_int32(module, offset); */
-
-/*   BinaryenExpressionRef str_p = */
-/*       BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
- */
-/*   return str_p; */
-/* } */
-
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
   return make_int32(wasm->module, wasm->__data_end + offset);
 }
@@ -354,3 +340,17 @@ Lval* make_lval_compiler(Context* context, int subtype, int offset) {
                  .context = context};
   return lval;
 }
+
+/* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */
+/*   BinaryenModuleRef module = wasm->module; */
+
+/*   BinaryenExpressionRef wasm_data_end = */
+/*       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
+
+/*   BinaryenExpressionRef wasm_offset = make_int32(module, offset); */
+
+/*   BinaryenExpressionRef str_p = */
+/*       BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
+ */
+/*   return str_p; */
+/* } */

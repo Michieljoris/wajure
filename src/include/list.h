@@ -30,4 +30,6 @@ Cell* alist_put(Cell* alist, int key_cmp(void*, void*), void* key, void* value);
 Cell* alist_prepend(Cell* alist, void* key, void* value);
 /* Cell* alist_passoc(Cell* alist, int key_cmp(void*, void*), void* key, */
 /*                    void* value); */
+
+void init_rest_args(Lval** lval_array, int rest_arg_length);
 #endif  // __LIST_H_

@@ -1,9 +1,12 @@
 #+TITLE: Todo
 * TODO compile
-** Gets tests to pass again interpreter
+** DONE empty fn body should return nil
+** DONE Gets tests to pass again interpreter
 ** Fix memory leak for interpreter
-** first class functions
-** closures, partials and rest args
+** DONE first class functions
+** DONE closures
+** partials
+** rest args
 ** wrap sys fns so they can become lambdas
 ** add root fns to function table when they get used at all
 ** add release and retain to wasm code

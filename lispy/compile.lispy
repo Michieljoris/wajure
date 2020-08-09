@@ -1,34 +1,35 @@
-;; (def foo 123)
+(def foo 123)
 ;; (defn test [a a1]
 ;;   (let [z 123
 ;;         f (fn [b] (let [c 99 d 99]  a a1 b c z
 ;;                     ))]
 ;;     1))
-(def a 1)
-(defn f [x]
-  ;; (print "In f!!!!!" x)
-  (let [q (fn [y] (print "HELLO" x y) )]
-    ;; (q 777)
-    q
-    )
-  )
+;; (def a 1)
+;; (defn f [x]
+;;   ;; (print "In f!!!!!" x)
+;;   (let [q (fn [y] (print "HELLO" x y) )]
+;;     ;; (q 777)
+;;     q
+;;     )
+;;   )
 
-(defn test [x y]
-  ;; (print  123 x y)
-  (let [g (f 123)]
-    (print "G: " g)
-    (g 456)
-    )
-  ;; (let [ g (fn [x] (print "G" x))
-  ;;        f (fn [x y] (g (+ x y)))
-  ;;       ;; some-fn (f 1)
-  ;;       ]
+;; (defn test [x y]
+;;   ;; (print  123 x y)
+;;   (let [g (f 123)]
+;;     (print "G: " g)
+;;     (g 456)
+;;     ;; 123
+;;     )
+;;   ;; (let [ g (fn [x] (print "G" x))
+;;   ;;        f (fn [x y] (g (+ x y)))
+;;   ;;       ;; some-fn (f 1)
+;;   ;;       ]
 
-  ;;   (f 2 3)
-  ;;   ;; (some-fn 2)
-  ;;   ;; (g 123 4546)
-  ;;   )
-  )
+;;   ;;   (f 2 3)
+;;   ;;   ;; (some-fn 2)
+;;   ;;   ;; (g 123 4546)
+;;   ;;   )
+;;   )
 ;; (test 222 333)
 ;; (defn test [b]
 ;;   (let [c 2]
@@ -85,7 +86,22 @@
 ;; (defn foz [x] (let [a (+ x 1)
 ;;                     a (+ a 1)
 ;;                     b 123]
-;;                 (fn [x y] (+ a b x y bar))))
+;;                 (fn [x y] (list a b x y ))))
+;; (defn adder [x]
+;;   (fn [y] (+ x y)))
+(defn foo [a & rest]
+  ;; (print "a b: " a b)
+  ;; (print "rest: " rest)
+ ;; 1
+  (print  rest)
+  )
+
+(defn test [x y]
+  (foo 1 2 3 4)
+  ;; (let [my-print print]
+  ;;   (my-print "HELLO")
+  ;;   )
+    )
 
 ;; (fn [x y a b] (+ a b x y bar))
 

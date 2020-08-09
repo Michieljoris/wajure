@@ -29,7 +29,8 @@ Wasm* init_wasm() {
                  .lval_num_start = -100,
                  .lval_num_end = 100,
                  .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201),
-                 .context = malloc(sizeof(Cell))};
+                 .context = malloc(sizeof(Cell)),
+                 .id = 1};
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
 
@@ -122,6 +123,7 @@ LispyFn runtime_fns[] = {{NULL, NULL, "printf_", 2, 1},
 
                          // list
                          {NULL, NULL, "list_cons", 2, 1},
+                         {NULL, NULL, "init_rest_args", 2, 0},
                          // lib
                          {NULL, NULL, "_strcpy", 2, 1},
                          {NULL, NULL, "print_slot_size", 0, 0},
