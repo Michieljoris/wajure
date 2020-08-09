@@ -22,6 +22,8 @@ BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
 BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
+BinaryenExpressionRef wasm_runtime_error(Wasm* wasm, int offset);
+
 Lenv* interprete_file(char* file_name);
 
 void release_env(Lenv* env);

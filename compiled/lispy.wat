@@ -1,7 +1,7 @@
 (module
  (type $i32_i32_=>_i32 (func (param i32 i32) (result i32)))
- (type $i32_=>_i32 (func (param i32) (result i32)))
  (type $i32_=>_none (func (param i32)))
+ (type $i32_=>_i32 (func (param i32) (result i32)))
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $none_=>_none (func))
@@ -16,6 +16,7 @@
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
  (import "env" "lval_print" (func $lval_print (param i32)))
  (import "env" "lval_println" (func $lval_println (param i32)))
+ (import "env" "runtime_error" (func $runtime_error (param i32)))
  (import "env" "make_lval_num" (func $make_lval_num (param i32) (result i32)))
  (import "env" "make_lval_nil" (func $make_lval_nil (result i32)))
  (import "env" "make_lval_true" (func $make_lval_true (result i32)))

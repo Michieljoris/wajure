@@ -106,6 +106,7 @@ LispyFn runtime_fns[] = {{NULL, NULL, "printf_", 2, 1},
                          {NULL, NULL, "log_string_n", 2, 0},
                          {NULL, NULL, "lval_print", 1, 0},
                          {NULL, NULL, "lval_println", 1, 0},
+                         {NULL, NULL, "runtime_error", 1, 0},
                          // lval
                          {NULL, NULL, "make_lval_num", 1, 1},
                          {NULL, NULL, "make_lval_nil", 0, 1},

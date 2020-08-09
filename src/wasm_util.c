@@ -77,6 +77,17 @@ BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
   return log_string;
 }
 
+BinaryenExpressionRef wasm_runtime_error(Wasm* wasm, int offset) {
+  BinaryenModuleRef module = wasm->module;
+
+  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset)};
+
+  BinaryenExpressionRef runtime_error =
+      BinaryenCall(module, "runtime_error", operands, 1, BinaryenTypeNone());
+
+  return runtime_error;
+}
+
 BinaryenExpressionRef wasm_log_string_n(Wasm* wasm, int offset, int n) {
   BinaryenModuleRef module = wasm->module;
 

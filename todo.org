@@ -2,6 +2,8 @@
 * TODO compile
 ** DONE empty fn body should return nil
 ** DONE Gets tests to pass again interpreter
+** check parameter count!!!
+warn if too many parameters. abort when too few
 ** Fix memory leak for interpreter
 ** DONE first class functions
 ** DONE closures

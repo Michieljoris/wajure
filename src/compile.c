@@ -266,6 +266,9 @@ Ber make_init_rest_arg(Wasm* wasm, int rest_arg_index) {
   Ber init_rest_arg =
       BinaryenCall(module, "init_rest_args", operands, 2, BinaryenTypeNone());
 
+  /* int msg_offset = add_string_to_data(wasm, "Too many params"); */
+  /* Ber runtime_error = wasm_runtime_error(wasm, msg_offset); */
+  /* return runtime_error; */
   return init_rest_arg;
 }
 

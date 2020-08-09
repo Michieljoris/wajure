@@ -45,6 +45,16 @@ function makeLogString(memory, offset) {
     }
 }
 
+function make_runtime_error_fn(memory, offset) {
+    return function(offset) {
+        var bytes = new Uint8Array(memory.buffer, offset);
+        var length = 0;
+        while (bytes[length] != 0) length++;
+        var bytes = new Uint8Array(memory.buffer, offset, length);
+        var string = new TextDecoder('utf8').decode(bytes);
+        throw string;
+    }
+}
 
 function makeLogStringN(memory, offset, length) {
     return function(offset, length) {
@@ -70,7 +80,12 @@ async function run_lispy_fn(fn_name, ...args) {
     lispy.user.stack_pointer.value += args_count * 4;
 
     let closure_pointer = 0;
+    try {
     lispy.user[fn_name](closure_pointer, args_count);
+    } catch (e) {
+        console.log("RUNTIME ERROR");
+        console.log(e);
+    }
 
     lispy.runtime.free_lispy_mempools();
     lispy.runtime.free_malloc();
@@ -88,7 +103,8 @@ async function load_lispy(runtime, stack_size, lispy_wasm_file_name) {
     let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
                                                  log_int: arg => console.log(arg),
                                                  log_string_n: makeLogStringN(runtime.memory),
-                                                 stack_pointer: stack_pointer_global
+                                                 stack_pointer: stack_pointer_global,
+                                                 runtime_error: make_runtime_error_fn(runtime.memory)
                                                 },
                                                 runtime)};
 
