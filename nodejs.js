@@ -67,7 +67,7 @@ function makeLogStringN(memory, offset, length) {
 async function run_lispy_fn(fn_name, ...args) {
     const lispy = this;
     let stack_pointer = lispy.user.stack_pointer.value;
-    console.log("stack_pointer: ", stack_pointer);
+    // console.log("stack_pointer: ", stack_pointer);
 
     let args_count = args.length;
 

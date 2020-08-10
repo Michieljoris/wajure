@@ -1,15 +1,19 @@
 #+TITLE: Todo
 * TODO compile
+** make sure that every fn added has unique wasm name
+So wasmified sys fns are called eg sys_print
+And lambdas found in compile env should be called l_foobar
+Anonymous lambdas found in fns become l_foobar_1, l_foobar_2 etc.
 ** DONE empty fn body should return nil
 ** DONE Gets tests to pass again interpreter
-** check parameter count!!!
-warn if too many parameters. abort when too few
+** DONE check parameter count!!!
+abort if too many parameters. abort when too few
 ** Fix memory leak for interpreter
 ** DONE first class functions
 ** DONE closures
 ** partials
 ** DONE rest args
-** wrap sys fns so they can become lambdas
+** DONE wrap sys fns so they can become lambdas
 ** add root fns to function table when they get used at all
 ** add release and retain to wasm code
 ** check mem mngmnt for compiler as well

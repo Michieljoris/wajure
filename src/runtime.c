@@ -25,7 +25,7 @@ Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
 
 // Used in runtime of lispy compiler
 void init_rest_args(Lval** lval_array, int rest_arg_length) {
-  printf("Args_count: %d\n", rest_arg_length);
+  /* printf("Args_count: %d\n", rest_arg_length); */
   Lval* lval_list = make_lval_list();
   Cell* head = NULL;
   int i = 0;

@@ -82,12 +82,76 @@ Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
                        BinaryenTypeAuto());
 }
 
-Ber wasmify_sys_fn(Wasm* wasm, Lval* lval) {
+int is_eq_str(void* k1, void* k2) { return _strcmp(k1, k2) == 0; }
+
+Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index);
+
+Ber wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
   printf("WASMIFY SYS FN!!!!!\n");
-  return make_int32(wasm->module, 123);
+  BinaryenModuleRef module = wasm->module;
+
+  char* fn_name = lalloc_size(512);
+  _strcpy(fn_name, "sys_");
+  _strcat(fn_name, lval_sym->str);
+
+  int fn_table_index;
+  Lval* lval_num = alist_get(wasm->fn_to_offset_map, is_eq_str, fn_name);
+  if (lval_num) {
+    fn_table_index = lval_num->num;
+  } else {
+    int wasm_params_count = 2;  // the function's closure and args count
+    int results_count = 1;
+    BinaryenType params_type = make_type_int32(wasm_params_count);
+    BinaryenType results_type = make_type_int32(results_count);
+    int locals_count = 0;
+    char* c_fn_name =
+        alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_sym->str);
+
+    if (!c_fn_name)
+      quit(wasm, "System fn not found in runtime: %s", lval_sym->str);
+    /* Ber rest_arg = NULL; */
+
+    Ber stack_pointer =
+        BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
+    int sp_adjustment = 1 * 4;
+    stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
+                                   make_int32(module, sp_adjustment));
+    int _signed = 0;
+    int _aligned = 0;
+    int offset = 0;
+    Ber rest_arg = BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
+                                BinaryenTypeInt32(), stack_pointer);
+    Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
+
+    Ber process_args = wasm_process_args(wasm, 1, 1);
+    Ber call_sys_fn =
+        BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
+    Ber block_children[] = {process_args, call_sys_fn};
+    Ber body =
+        BinaryenBlock(module, "body", block_children, 2, BinaryenTypeInt32());
+    BinaryenAddFunction(module, fn_name, params_type, results_type, NULL,
+                        locals_count, body);
+
+    fn_table_index = add_fn_to_table(wasm, fn_name);
+    wasm->fn_to_offset_map = alist_prepend(wasm->fn_to_offset_map, fn_name,
+                                           make_lval_num(fn_table_index));
+  }
+
+  Ber wasm_fn_table_index = make_int32(module, fn_table_index);
+  Ber lispy_param_count = make_int32(module, 1);  // rest arg
+  Ber rest_arg_index = make_int32(module, 1);
+  Ber wasm_closure_pointer = make_int32(module, 0);
+  Ber partials = make_int32(module, 0);
+  Ber partial_count = make_int32(module, 0);
+  Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
+                     wasm_closure_pointer, partials,          partial_count};
+  Ber make_lval_wasm_lambda_call = BinaryenCall(
+      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+  return make_lval_wasm_lambda_call;
 }
 
 Ber wasmify_root_lambda_fn(Wasm* wasm, Lval* lval) {
+  printf("wasmify root lambda fn!!!\n");
   return make_int32(wasm->module, 123);
 }
 
@@ -255,7 +319,7 @@ Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
       BinaryenTypeInt32());  // second param to fn is args count
 
   Ber check_args_count = NULL;
-  if (wasm->runtime_check_args_count) {
+  if (wasm->runtime_check_args_count && rest_arg_index != 1) {
     Ber wasm_param_count = make_int32(module, param_count);
     Ber check_operands[3] = {wasm_param_count, args_count,
                              make_int32(module, rest_arg_index)};
@@ -315,14 +379,6 @@ Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
 }
 
 FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
-  /* BinaryenModuleRef module = wasm->module; */
-
-  /* printf("fn-name: %s\n", lval_sym->str); */
-  /* printf("params: "); */
-  /* lval_println(lval_fun->params); */
-  /* printf("body: "); */
-  /* lval_println(lval_fun->body); */
-
   char* fn_name = lval_sym->str;
 
   int wasm_params_count = 2;  // the function's closure and args count
@@ -507,8 +563,6 @@ Ber compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   quit(wasm, "ERROR: Unknown special form: %s", fn_name);
   return NULL;
 }
-
-int is_eq_str(void* k1, void* k2) { return _strcmp(k1, k2) == 0; }
 
 Ber compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   /* printf("compile sys call!!!!!!!!!!!!!!!\n"); */
@@ -1110,3 +1164,11 @@ int compile(char* file_name) {
 /* BinaryenOp ge = BinaryenGeUInt32(); */
 /* Ber ifge = BinaryenBinary(module, ge, args_count, wasm_param_count); */
 /* Ber if = BinaryenIf(module, condition, if_true, if_false); */
+
+/* BinaryenModuleRef module = wasm->module; */
+
+/* printf("fn-name: %s\n", lval_sym->str); */
+/* printf("params: "); */
+/* lval_println(lval_fun->params); */
+/* printf("body: "); */
+/* lval_println(lval_fun->body); */

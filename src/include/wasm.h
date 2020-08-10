@@ -23,6 +23,7 @@ typedef struct {
   int lval_num_end;
   BinaryenExpressionRef* lval_num_offset;
   Cell* lispy_to_c_fn_map;
+  Cell* fn_to_offset_map;
   Cell* context;
   int id;
   // whether to check at runtime if correct number of args passed into function
