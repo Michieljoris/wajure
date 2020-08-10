@@ -193,15 +193,3 @@ Cell* alist_put(Cell* alist, int cmp_key(void*, void*), void* key,
 /*     return alist_prepend(alist, key, value); */
 /*   } */
 /* } */
-
-// Used in runtime of lispy compiler
-void init_rest_args(Lval** lval_array, int rest_arg_length) {
-  printf("Args_count: %d\n", rest_arg_length);
-  Lval* lval_list = make_lval_list();
-  Cell* head = NULL;
-  int i = 0;
-  while (i < rest_arg_length) head = list_cons(lval_array[i++], head);
-  lval_list->head = head;
-  /* lval_println(lval_list); */
-  lval_array[rest_arg_length - 1] = lval_list;
-}

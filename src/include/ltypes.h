@@ -141,4 +141,7 @@ enum {
   LVAL_WASM_LAMBDA
 };
 
+// Compiler
+enum { TOO_MANY_ARGS, TOO_FEW_ARGS, ARGS_MATCH_PARAMS };
+
 #endif  // __LTYPES_H_

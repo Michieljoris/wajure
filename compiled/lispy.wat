@@ -5,18 +5,19 @@
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $none_=>_none (func))
+ (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4296) "\01\00\00\00\00\00\00\00\00\00\00\00\d8\10\00\00\02\08\00\00\01\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\fc\10\00\00\02\08\00\00\02\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00 \11\00\00\02\08\00\00\03\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00D\11\00\00\02\08\00\00\04\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4296) "Too many args passed to test\00Too few args passed to test\00\01\00\00\00\00\00\00\00\00\00\00\00\11\11\00\00\02\08\00\00\01\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\005\11\00\00\02\08\00\00\02\00\00\00\c8\10\00\00\00\00\00\00\ff\ff\ff\ffToo many args passed to foo\00Too few args passed to foo\00")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
- (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
+ (import "env" "runtime_error" (func $runtime_error (param i32)))
  (import "env" "lval_print" (func $lval_print (param i32)))
  (import "env" "lval_println" (func $lval_println (param i32)))
- (import "env" "runtime_error" (func $runtime_error (param i32)))
+ (import "env" "printf_" (func $printf_ (param i32 i32) (result i32)))
  (import "env" "make_lval_num" (func $make_lval_num (param i32) (result i32)))
  (import "env" "make_lval_nil" (func $make_lval_nil (result i32)))
  (import "env" "make_lval_true" (func $make_lval_true (result i32)))
@@ -25,14 +26,15 @@
  (import "env" "make_lval_list" (func $make_lval_list (result i32)))
  (import "env" "new_lval_list" (func $new_lval_list (param i32) (result i32)))
  (import "env" "make_lval_sym" (func $make_lval_sym (param i32) (result i32)))
- (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32 i32 i32) (result i32)))
- (import "env" "wval_print" (func $wval_print (param i32)))
  (import "env" "lalloc_size" (func $lalloc_size (param i32) (result i32)))
  (import "env" "lalloc_type" (func $lalloc_type (param i32) (result i32)))
  (import "env" "list_cons" (func $list_cons (param i32 i32) (result i32)))
- (import "env" "init_rest_args" (func $init_rest_args (param i32 i32)))
  (import "env" "_strcpy" (func $_strcpy (param i32 i32) (result i32)))
  (import "env" "print_slot_size" (func $print_slot_size))
+ (import "env" "wval_print" (func $wval_print (param i32)))
+ (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32 i32 i32) (result i32)))
+ (import "env" "init_rest_args" (func $init_rest_args (param i32 i32)))
+ (import "env" "check_args_count" (func $check_args_count (param i32 i32 i32) (result i32)))
  (import "env" "add_fn" (func $add_fn (param i32 i32) (result i32)))
  (import "env" "sub_fn" (func $sub_fn (param i32 i32) (result i32)))
  (import "env" "mul_fn" (func $mul_fn (param i32 i32) (result i32)))
@@ -64,39 +66,58 @@
  (func $test (param $0 i32) (param $1 i32) (result i32)
   (local $2 i32)
   (block $body (result i32)
+   (if
+    (i32.eq
+     (call $check_args_count
+      (i32.const 2)
+      (local.get $1)
+      (i32.const 0)
+     )
+     (i32.const 0)
+    )
+    (call $runtime_error
+     (i32.const 4296)
+    )
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 2)
+       (local.get $1)
+       (i32.const 0)
+      )
+      (i32.const 1)
+     )
+     (call $runtime_error
+      (i32.const 4325)
+     )
+     (nop)
+    )
+   )
    (block $lambda_call_1 (result i32)
-    (i32.store offset=12
-     (global.get $stack_pointer)
-     (i32.const 4312)
-    )
-    (i32.store offset=8
-     (global.get $stack_pointer)
-     (i32.const 4348)
-    )
     (i32.store offset=4
      (global.get $stack_pointer)
-     (i32.const 4384)
+     (i32.const 4369)
     )
     (i32.store
      (global.get $stack_pointer)
-     (i32.const 4420)
+     (i32.const 4405)
     )
     (global.set $stack_pointer
      (i32.add
       (global.get $stack_pointer)
-      (i32.const 16)
+      (i32.const 8)
      )
     )
     (local.set $2
      (call $foo
       (i32.const 0)
-      (i32.const 4)
+      (i32.const 2)
      )
     )
     (global.set $stack_pointer
      (i32.sub
       (global.get $stack_pointer)
-      (i32.const 16)
+      (i32.const 8)
      )
     )
     (local.get $2)
@@ -105,17 +126,31 @@
  )
  (func $foo (param $0 i32) (param $1 i32) (result i32)
   (block $body (result i32)
-   (call $init_rest_args
-    (i32.sub
-     (global.get $stack_pointer)
-     (i32.mul
-      (i32.const 4)
+   (if
+    (i32.eq
+     (call $check_args_count
+      (i32.const 1)
       (local.get $1)
+      (i32.const 0)
      )
+     (i32.const 0)
     )
-    (i32.sub
-     (local.get $1)
-     (i32.const 1)
+    (call $runtime_error
+     (i32.const 4425)
+    )
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 1)
+       (local.get $1)
+       (i32.const 0)
+      )
+      (i32.const 1)
+     )
+     (call $runtime_error
+      (i32.const 4453)
+     )
+     (nop)
     )
    )
    (call $print_fn
@@ -125,7 +160,7 @@
       (i32.load
        (i32.sub
         (global.get $stack_pointer)
-        (i32.const 8)
+        (i32.const 4)
        )
       )
       (i32.const 0)

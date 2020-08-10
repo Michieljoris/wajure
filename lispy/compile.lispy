@@ -89,15 +89,15 @@
 ;;                 (fn [x y] (list a b x y ))))
 ;; (defn adder [x]
 ;;   (fn [y] (+ x y)))
-(defn foo [a & rest]
+(defn foo [a]
   ;; (print "a b: " a b)
   ;; (print "rest: " rest)
  ;; 1
-  (print  rest)
+  (print  a)
   )
 
 (defn test [x y]
-  (foo 1 2 3 4)
+  (foo 1 2)
   ;; (let [my-print print]
   ;;   (my-print "HELLO")
   ;;   )

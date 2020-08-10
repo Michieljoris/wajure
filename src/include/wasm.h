@@ -25,6 +25,8 @@ typedef struct {
   Cell* lispy_to_c_fn_map;
   Cell* context;
   int id;
+  // whether to check at runtime if correct number of args passed into function
+  int runtime_check_args_count;
 } Wasm;
 
 Wasm* init_wasm();

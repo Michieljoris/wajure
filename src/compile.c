@@ -246,30 +246,72 @@ typedef struct {
   int has_rest_arg;
 } FunctionData;
 
-Ber make_init_rest_arg(Wasm* wasm, int rest_arg_index) {
-  if (!rest_arg_index) return NULL;
+Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
   BinaryenModuleRef module = wasm->module;
+  Context* context = wasm->context->car;
+  char* fn_name = context->function_context->fn_name;
   Ber args_count = BinaryenLocalGet(
       wasm->module, 1,
-      BinaryenTypeInt32());  // first param to fn is closure pointer
-  Ber offset = BinaryenBinary(module, BinaryenMulInt32(), make_int32(module, 4),
-                              args_count);
+      BinaryenTypeInt32());  // second param to fn is args count
 
-  Ber stack_pointer =
-      BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
-  Ber args_start =
-      BinaryenBinary(module, BinaryenSubInt32(), stack_pointer, offset);
+  Ber check_args_count = NULL;
+  if (wasm->runtime_check_args_count) {
+    Ber wasm_param_count = make_int32(module, param_count);
+    Ber check_operands[3] = {wasm_param_count, args_count,
+                             make_int32(module, rest_arg_index)};
+    Ber check_args_count_call_result = BinaryenCall(
+        module, "check_args_count", check_operands, 3, BinaryenTypeInt32());
+    BinaryenOp eq = BinaryenEqInt32();
+    Ber is_too_few_args =
+        BinaryenBinary(module, eq, check_args_count_call_result,
+                       make_int32(module, TOO_FEW_ARGS));
+    Ber is_too_many_args =
+        BinaryenBinary(module, eq, check_args_count_call_result,
+                       make_int32(module, TOO_MANY_ARGS));
+    char* err_msg = lalloc_size(512);
+    _strcpy(err_msg, "Too many args passed to ");
+    _strcat(err_msg, fn_name);
+    int msg_offset = add_string_to_data(wasm, err_msg);
+    Ber runtime_error_too_many_args = wasm_runtime_error(wasm, msg_offset);
+    _strcpy(err_msg, "Too few args passed to ");
+    _strcat(err_msg, fn_name);
+    msg_offset = add_string_to_data(wasm, err_msg);
+    release(err_msg);
+    Ber runtime_error_too_few_args = wasm_runtime_error(wasm, msg_offset);
+    Ber all_ok = BinaryenNop(module);
+    Ber if_too_few =
+        BinaryenIf(module, is_too_few_args, runtime_error_too_few_args, all_ok);
+    Ber if_too_many = BinaryenIf(module, is_too_many_args,
+                                 runtime_error_too_many_args, if_too_few);
 
-  Ber rest_arg_length = BinaryenBinary(module, BinaryenSubInt32(), args_count,
-                                       make_int32(module, rest_arg_index - 1));
-  Ber operands[] = {args_start, rest_arg_length};
-  Ber init_rest_arg =
-      BinaryenCall(module, "init_rest_args", operands, 2, BinaryenTypeNone());
+    check_args_count = if_too_many;
+  }
 
-  /* int msg_offset = add_string_to_data(wasm, "Too many params"); */
-  /* Ber runtime_error = wasm_runtime_error(wasm, msg_offset); */
-  /* return runtime_error; */
-  return init_rest_arg;
+  Ber init_rest_arg = NULL;
+  if (rest_arg_index) {
+    Ber offset = BinaryenBinary(module, BinaryenMulInt32(),
+                                make_int32(module, 4), args_count);
+
+    Ber stack_pointer =
+        BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
+    Ber args_start =
+        BinaryenBinary(module, BinaryenSubInt32(), stack_pointer, offset);
+
+    Ber rest_arg_length =
+        BinaryenBinary(module, BinaryenSubInt32(), args_count,
+                       make_int32(module, rest_arg_index - 1));
+    Ber operands[] = {args_start, rest_arg_length};
+    init_rest_arg =
+        BinaryenCall(module, "init_rest_args", operands, 2, BinaryenTypeNone());
+    if (check_args_count == NULL) return init_rest_arg;
+  }
+  if (check_args_count) {
+    if (!init_rest_arg) return check_args_count;
+    Ber block_children[2] = {check_args_count, init_rest_arg};
+    return BinaryenBlock(module, "process_args", block_children, 2,
+                         BinaryenTypeNone());
+  }
+  return NULL;
 }
 
 FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
@@ -290,6 +332,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   // Params
   Lenv* params_env = enter_env(wasm);
   Cell* param = lval_fun->params->head;
+  // Includes any rest arg, so [a & b] has lispy_param_count = 2
   int lispy_param_count = 0;
   int rest_arg_index = 0;
   int i = 0;
@@ -315,10 +358,10 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
     quit(wasm, "ERROR: rest arg missing");
   }
 
-  Ber init_rest_arg = make_init_rest_arg(wasm, rest_arg_index);
+  Ber process_args = wasm_process_args(wasm, lispy_param_count, rest_arg_index);
 
   // Compile body
-  Ber body = compile_do_list(wasm, lval_fun->body, init_rest_arg);
+  Ber body = compile_do_list(wasm, lval_fun->body, process_args);
   printf("Done compile_do_list\n");
 
   // Post compile
@@ -506,12 +549,6 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
 
-  // Put args_count on stack
-  /* Ber push_args_count = */
-  /*     BinaryenStore(module, 4, 0, 0, stack_pointer, */
-  /*                   make_int32(module, args_count), BinaryenTypeInt32()); */
-  /* wasm_args[i++] = push_args_count; */
-
   // Put args on stack
   while (args) {
     Ber push_arg =
@@ -527,29 +564,22 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   wasm_args[i++] = BinaryenGlobalSet(module, "stack_pointer", sp_plus_offset);
 
   // Call fn
-  /* BinaryenType params_type = make_type_int32(1); */
-  /* BinaryenType results_type = make_type_int32(1); */
-  // TODO: write in wasm:
-  // see if lval_wasm_ref === LVAL_WASM_LAMBDA
-  // if so call indirect, get fn_index and closure pointer first
-  // else print "unimplemented!!!" and leave 123 on stack.
-  // Call fn
-
   Ber result = NULL;
   if (lval_wasm_ref) {
-    // get fn_index and closure pointer from lval_wasm_ref
+    // TODO: write in wasm:
+    // see if lval_wasm_ref === LVAL_WASM_LAMBDA
+    // if so call indirect, as below, get fn_index and closure pointer first
+    // else print "unimplemented!!!" and leave 123 on stack or something
+
+    // Get fn_index and closure pointer from lval_wasm_ref
     Ber wasm_fn_index =
         BinaryenLoad(module, 2, 0, 2, 0, BinaryenTypeInt32(), lval_wasm_ref);
-    /* wasm_fn_index = make_int32(module, 1); */
     Ber wasm_closure_pointer =
         BinaryenLoad(module, 4, 0, 12, 0, BinaryenTypeInt32(), lval_wasm_ref);
+
+    // Pass closure pointer and args count to wasm fn
     Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};
     BinaryenType params_type = make_type_int32(2);
-
-    /* Ber wval_operands[] = {lval_wasm_ref}; */
-    /* Ber wval_print = BinaryenCall(module, "wval_print", wval_operands, 1, */
-    /*                               BinaryenTypeNone()); */
-    /* wasm_args[i++] = wval_print; */
 
     result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
                                   params_type, BinaryenTypeInt32());
@@ -1071,3 +1101,12 @@ int compile(char* file_name) {
 // call root fn
 // check whether wasm ref is a a lambda/set/map/vector, print error msg if not
 // wasmify sys and root fns
+
+/* Ber wval_operands[] = {lval_wasm_ref}; */
+/* Ber wval_print = BinaryenCall(module, "wval_print", wval_operands, 1, */
+/*                               BinaryenTypeNone()); */
+/* wasm_args[i++] = wval_print; */
+
+/* BinaryenOp ge = BinaryenGeUInt32(); */
+/* Ber ifge = BinaryenBinary(module, ge, args_count, wasm_param_count); */
+/* Ber if = BinaryenIf(module, condition, if_true, if_false); */

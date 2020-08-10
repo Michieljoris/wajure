@@ -8,7 +8,7 @@ warn if too many parameters. abort when too few
 ** DONE first class functions
 ** DONE closures
 ** partials
-** rest args
+** DONE rest args
 ** wrap sys fns so they can become lambdas
 ** add root fns to function table when they get used at all
 ** add release and retain to wasm code
@@ -22,7 +22,7 @@ Also, clojure allows it.
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement: if, do, try, throw, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor
+** implement: if, do, try, throw, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq
 *** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
