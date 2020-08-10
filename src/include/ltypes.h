@@ -63,6 +63,8 @@ struct lval {
   // compiler to wasm data
   Context* context;
   int offset;
+  int param_count;
+  int rest_arg_index;
 };
 
 struct wval {

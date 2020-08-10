@@ -1,9 +1,9 @@
-(defn foo [] (print "from foo"))
+(defn foo [x & rest] (print "from foo" x rest))
 
 (defn test [x y]
   (let [f foo]
-    (f)
-    (print "from test")
+    (f 123 1 2 3)
+    ;; (print "from test")
     ;; (f)
 
  ))

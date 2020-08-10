@@ -150,8 +150,41 @@ Ber wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
   return make_lval_wasm_lambda_call;
 }
 
-Ber wasmify_root_lambda_fn(Wasm* wasm, Lval* lval) {
-  printf("wasmify root lambda fn!!!\n");
+typedef struct {
+  int fn_table_index;
+  Lenv* closure;
+  int closure_count;
+  int param_count;
+  int has_rest_arg;
+} FunctionData;
+
+FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun);
+
+Ber wasmify_root_lambda_fn(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
+  /* printf("wasmify root lambda fn %d!!!\n", lval_fun->offset); */
+
+  BinaryenModuleRef module = wasm->module;
+  if (lval_fun->offset == -1) {
+    add_wasm_function(wasm, lval_sym, lval_fun);
+  }
+  int fn_table_index = lval_fun->offset;
+  Ber wasm_fn_table_index = make_int32(module, fn_table_index);
+
+  // TODO: bit sloppy adding this info to lval_fun. Should make and use compiler
+  // lookup map
+  Ber lispy_param_count = make_int32(module, lval_fun->param_count);
+  Ber rest_arg_index = make_int32(module, lval_fun->rest_arg_index);
+
+  Ber wasm_closure_pointer = make_int32(module, 0);
+  Ber partials = make_int32(module, 0);
+  Ber partial_count = make_int32(module, 0);
+
+  Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
+                     wasm_closure_pointer, partials,          partial_count};
+  Ber make_lval_wasm_lambda_call = BinaryenCall(
+      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+  return make_lval_wasm_lambda_call;
+
   return make_int32(wasm->module, 123);
 }
 
@@ -262,22 +295,22 @@ Ber compile_lval_compiler(Wasm* wasm, Lval* lval_symbol, Lval* lval_compiler) {
 // Resolve symbol in our compiler env and compile it. At runtime there's no
 // notion of environments or symbols that resolve to other lvalues. Symbols at
 // runtime are just that, a literal similar to strings, numbers etc
-Ber resolve_symbol_and_compile(Wasm* wasm, Lval* lval_symbol) {
+Ber resolve_symbol_and_compile(Wasm* wasm, Lval* lval_sym) {
   /* printf(">>>>>>>>>>>>\n"); */
   /* printf("COMPILING SYMBOL!!! %s\n", lval_symbol->str); */
-  Lval* lval_resolved_sym = lenv_get(wasm->env, lval_symbol);
+  Lval* lval_resolved_sym = lenv_get(wasm->env, lval_sym);
   /* lval_println(lval_resolved_sym); */
   switch (lval_resolved_sym->type) {
     case LVAL_ERR:
       quit(wasm, lval_resolved_sym->str);
     case LVAL_COMPILER:
-      return compile_lval_compiler(wasm, lval_symbol, lval_resolved_sym);
+      return compile_lval_compiler(wasm, lval_sym, lval_resolved_sym);
     case LVAL_FUNCTION:  // as evalled in our compiler env
       switch (lval_resolved_sym->subtype) {
         case SYS:
           return wasmify_sys_fn(wasm, lval_resolved_sym);
         case LAMBDA:  // root functions in compiler env
-          return wasmify_root_lambda_fn(wasm, lval_resolved_sym);
+          return wasmify_root_lambda_fn(wasm, lval_sym, lval_resolved_sym);
         case SPECIAL:
           quit(wasm, "ERROR: Can't take value of a special form such as %s",
                lval_resolved_sym->str);
@@ -301,14 +334,6 @@ Ber resolve_symbol_and_compile(Wasm* wasm, Lval* lval_symbol) {
 
   return lval_compile(wasm, lval_resolved_sym);
 }
-
-typedef struct {
-  int fn_table_index;
-  Lenv* closure;
-  int closure_count;
-  int param_count;
-  int has_rest_arg;
-} FunctionData;
 
 Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
   BinaryenModuleRef module = wasm->module;
@@ -427,6 +452,11 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   int locals_count = context->function_context->local_count - wasm_params_count;
 
   lval_fun->offset = add_fn_to_table(wasm, fn_name);
+  lval_fun->param_count = lispy_param_count;
+  lval_fun->rest_arg_index = rest_arg_index;
+
+  /* printf(">>>>>>>>>> adding fn to table: %s %d\n", fn_name,
+   * lval_fun->offset); */
 
   BinaryenModuleRef module = wasm->module;
 
@@ -870,6 +900,7 @@ int compile(char* file_name) {
   Wasm* wasm = init_wasm();
   /* printf("__data_end: %d\n", wasm->__data_end); */
   wasm->env = interprete_file(file_name);
+  env_print(wasm->env);
 
   import_runtime(wasm);
 
@@ -881,7 +912,7 @@ int compile(char* file_name) {
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
 
     /* print_pair(lval_sym, lval); */
-    if (lval->type == LVAL_FUNCTION) {
+    if (lval->type == LVAL_FUNCTION && lval->offset == -1) {
       add_wasm_function(wasm, lval_sym, lval);
     }
 

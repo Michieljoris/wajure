@@ -154,7 +154,8 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
                  .fun = func,
-                 .str = retain(func_name)};
+                 .str = retain(func_name),
+                 .offset = -1};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -166,7 +167,8 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
                  .subtype = subtype,
                  .closure = env,
                  .params = params,
-                 .body = body};
+                 .body = body,
+                 .offset = -1};
   lval->hash = lval_hash(lval);
   return lval;
 }
