@@ -1,0 +1,85 @@
+(defn and* [args]
+  (if (= (count args) 1)
+    (first args)
+    (if (= (count args) 0)
+      true
+      `(if (not (first (list ~@args)))
+         (first (list ~@args))
+         (apply and (rest (list ~@args)))))))
+
+(defmacro and [& args]
+  (and* args))
+
+(defmacro apply [f args]
+  `(eval (cons ~f ~args)))
+
+
+
+;; (defn and* [args]
+;;   (if (= (count args) 1)
+;;     (first args)
+;;     (if (= (count args) 0)
+;;       true
+;;       (if (not (eval (first args)))
+;;         (first args)
+;;         (apply and (rest args))))))
+
+
+
+
+;; (defn [test cond]
+;;   {if (eval cond)
+;;    {print cond}
+
+;;    })
+
+
+;; (defn {unpack f xs}
+;;   {eval (join (list f) xs)})
+
+;; (defn {pack f & xs}
+;;   {f xs})
+
+;; (def {uncurry} pack)
+
+;; (def {curry} unpack)
+
+;; (def {apply} unpack)
+
+;; (defn {len l}
+;;   {if (= l {})
+;;    {0}
+;;    {+ 1 (len (tail l))}})
+
+;; (defn {reverse l} {
+;;   if (= l {})
+;;     {{}}
+;;     {join (reverse (tail l)) (head l)}
+;; })
+
+;; (defn {when cond body}
+;;   {if cond
+;;    {eval body}
+;;    {}})
+
+;; (defn {test cond}
+;;   {if (eval cond)
+;;    {}
+;;    {print cond}})
+
+;; ;; (print "stdlib loaded")
+
+
+;; (def defn
+;;   (fn [args body]
+;;    (def (first args)
+;;     (fn (rest args) body))))
+
+;; (defmacro defun [s params & body]
+;;   `(def ~s (fn ~params ~@body)))
+
+(defn debug-on []
+  (debug 1))
+
+(defn debug-off []
+  (debug 0))

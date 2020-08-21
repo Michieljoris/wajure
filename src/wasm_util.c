@@ -174,8 +174,6 @@ Lenv* interprete_file(char* file_name) {
   user_env->is_user_env = 1;
 
   release(slurp(user_env, file_name));
-  // stdlib is only used to interprete
-  user_env->parent_env = root_env;
   return user_env;
 }
 

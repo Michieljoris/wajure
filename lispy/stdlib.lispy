@@ -12,12 +12,6 @@
             (throw "odd number of forms to cond"))
           (cons 'cond (rest (rest xs))))))
 
-(defn debug-on []
-  (debug 1))
-
-(defn debug-off []
-  (debug 0))
-
 (defmacro when [cond body]
   `(if ~cond ~body))
 
@@ -25,33 +19,13 @@
   `(if ~b false true))
 
 (defmacro t [expr expected & str]
-  (let [evalled (eval expr)]
-    (when (not=  evalled expected)
+  `(let [evalled ~expr]
+     (when (not= evalled (quote ~expected))
       (do
-        (pr "FAIL:" (first str))
-        (pr expr)
-        (pr "Expected:" expected)
-        (pr "Got:" evalled)))))
-
-(defmacro t2 [expr expected & str]
-
-  )
-
-
-(defmacro apply [f args]
-  `(eval (cons ~f ~args)))
-
-(defn and* [args]
-  (if (= (count args) 1)
-    (first args)
-    (if (= (count args) 0)
-      true
-      (if (not (eval (first args)))
-        (first args)
-        (apply and (rest args))))))
-
-(defmacro and [& args]
-  (and* args))
+        (pr "FAIL" ~@str)
+        (pr (quote ~expr) )
+        (pr "Expected:" (quote ~expected))
+        (pr "Got:" ~expr)))))
 
 (defmacro macroexpand-all [form]
   (list 'let ['form `(macroexpand ~form)]
@@ -61,55 +35,3 @@
              form)
            form)))
 
-
-
-;; (defn [test cond]
-;;   {if (eval cond)
-;;    {print cond}
-
-;;    })
-
-
-;; (defn {unpack f xs}
-;;   {eval (join (list f) xs)})
-
-;; (defn {pack f & xs}
-;;   {f xs})
-
-;; (def {uncurry} pack)
-
-;; (def {curry} unpack)
-
-;; (def {apply} unpack)
-
-;; (defn {len l}
-;;   {if (= l {})
-;;    {0}
-;;    {+ 1 (len (tail l))}})
-
-;; (defn {reverse l} {
-;;   if (= l {})
-;;     {{}}
-;;     {join (reverse (tail l)) (head l)}
-;; })
-
-;; (defn {when cond body}
-;;   {if cond
-;;    {eval body}
-;;    {}})
-
-;; (defn {test cond}
-;;   {if (eval cond)
-;;    {}
-;;    {print cond}})
-
-;; ;; (print "stdlib loaded")
-
-
-;; (def defn
-;;   (fn [args body]
-;;    (def (first args)
-;;     (fn (rest args) body))))
-
-;; (defmacro defun [s params & body]
-;;   `(def ~s (fn ~params ~@body)))

@@ -1,14 +1,17 @@
-(defmacro my-macro [x] `(+ 1 ~x))
+;; (defmacro my-macro [x] `(+ 1 ~x))
 
 (defn foo [x & rest] (print "from foo" x rest))
 
 (defn test [x y]
-  (let [f foo]
-    (f 123 1 2 3)
-    ;; (print "from test")
-    ;; (f)
+  (when true (print "when macro!!!"))
+  ;; (my-macro 2)
+ ;;  (let [f foo]
+ ;;    (f 123 1 2 3)
+ ;;    ;; (print "from test")
+ ;;    ;; (f)
 
- ))
+ ;; )
+  )
 
 ;; (def foo 123)
 ;; (defn test [a a1]

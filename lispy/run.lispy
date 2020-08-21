@@ -1,5 +1,8 @@
 (slurp "lispy/stdlib.lispy")
 
+;; (print (and 1 nil 0 true))
+;; (print (macroexpand (apply print (list "hello"))))
+;; (apply print (list "hello" "foo"))
 
 (slurp "lispy/test/test_2_eval.lispy")
 (slurp "lispy/test/test_3_env.lispy")
@@ -9,6 +12,16 @@
 (slurp "lispy/test/test_7_quote.lispy")
 (slurp "lispy/test/test_8_macros.lispy")
 (slurp "lispy/test/test_9_try.lispy")
+
+;; (defmacro unless2 [pred a b] (list 'if (list 'not pred) a b))
+;; (print (defmacro unless2 [pred a b] `(list )))
+
+;; (t (macroexpand '(unless2 2 3 4))
+;;    (if (not 2) 3 4))
+;; (print (macroexpand '(unless2 2 3 4)))
+;; (print (macroexpand  '(t2 (+ 1 2) 3 "Should be equal")))
+;; (t (+ 1 2) 4 "Testing addition")
+
 ;; (def foo 123)
 ;; (defn test [a a1]
 ;;   (let [z 123

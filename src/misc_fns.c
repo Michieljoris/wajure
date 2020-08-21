@@ -27,22 +27,25 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       arg_list->head = retain(lval->head->cdr);
       /* Bind the macro with its args */
       Lval* bound_macro = expand_macro(lval_fun, arg_list);
-      debug("\nbound_macro *******************************************\n");
-      lval_debugln(bound_macro);
-      debug("*******************************************\n");
+      /* info("\nbound_macro *******************************************\n"); */
+      /* lval_println(bound_macro); */
+      /* info("*******************************************\n"); */
       // release fun and args
       if (bound_macro->type == LVAL_ERR) {
         return bound_macro;
       }
       /* Recursively expand  */
       if (do_recurse) {
-        return macroexpand(env, bound_macro, do_recurse);
+        Lval* ret = macroexpand(env, bound_macro, do_recurse);
+        release(bound_macro);
+        return ret;
       } else {
         return bound_macro;
       }
     }
   }
-  return lval;
+
+  return retain(lval);
 }
 
 Lval* macroexpand_1_fn(Lenv* env, Lval* arg_list) {

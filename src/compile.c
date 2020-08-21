@@ -796,7 +796,7 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
     if (resolved_symbol->type == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_first);
-      quit(wasm, "ERROR: Unknowm symbol while trying to compile a list %s",
+      quit(wasm, "ERROR: Unknowm symbol while trying to compile a list: %s",
            lval_first->str);
     }
 
@@ -810,6 +810,7 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
           case LAMBDA:  // root functions in compiler env
             return compile_root_fn_call(wasm, lval_first, args);
           case MACRO:
+
             // TODO: macroexpand-all on this sucker!!
             quit(wasm, "ERROR: Can't compile macro!!");
           default:

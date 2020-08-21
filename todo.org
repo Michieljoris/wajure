@@ -7,7 +7,7 @@ So wasmified sys fns are called eg sys_print
 And lambdas found in compile env should be called l_foobar
 Anonymous lambdas found in fns become l_foobar_1, l_foobar_2 etc.
 abort if too many parameters. abort when too few
-** Fix memory leak for interpreter
+** DONE Fix memory leak for interpreter
 ** (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** add release and retain to wasm code
@@ -49,7 +49,7 @@ Don't cut off compiling, try to continue, produce list of errors.
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO
-** quasiquote has bug where vector becomes list
+** DONE quasiquote has bug where vector becomes list
 `(let [a 1] a)
 ** reader has bug where last parens gets ignored
 ** add rest of tests from mal
@@ -108,6 +108,7 @@ Add functions to wrap all of C's file handling functions such as fopen and fgets
 ** DONE reference counting
 
 * Good to know
+** rename lispy to wajure ??
 ** To create/update compile_commmands.json:
 
     make clean

@@ -172,11 +172,13 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
     } else {
       /* if node is a list apply quasiquote recursively */
       if (arg->type == LVAL_COLLECTION) {
+        int subtype = arg->subtype;
         arg = eval_quasiquote_nodes(env, arg);
         if (arg->type == LVAL_ERR) {
           release(evalled_list);
           return arg;
         }
+        arg->subtype = subtype;
       } else {
         retain(arg);
       }
@@ -218,6 +220,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
           break;
         case VECTOR:
           ret = eval_quasiquote_nodes(env, qq_arg);
+          ret->subtype = VECTOR;
           break;
         case MAP:
 
