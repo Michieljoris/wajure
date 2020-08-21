@@ -5,6 +5,7 @@
 
 #include "compile_special.h"
 #include "env.h"
+#include "eval.h"
 #include "fns.h"
 #include "io.h"
 #include "iter.h"
@@ -804,15 +805,21 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
         switch (resolved_symbol->subtype) {
           case SYS:
-            return compile_sys_call(wasm, lval_first, args);
+            lval_println(resolved_symbol);
+            printf("sys fn: %s\n", resolved_symbol->str);
+            return compile_sys_call(wasm, resolved_symbol, args);
           case SPECIAL:
-            return compile_special_call(wasm, lval_first, args);
+            return compile_special_call(wasm, resolved_symbol, args);
           case LAMBDA:  // root functions in compiler env
             return compile_root_fn_call(wasm, lval_first, args);
-          case MACRO:
-
-            // TODO: macroexpand-all on this sucker!!
-            quit(wasm, "ERROR: Can't compile macro!!");
+          case MACRO:;
+            Lval* arg_list = make_lval_list();
+            arg_list->head = retain(args);
+            Lval* bound_macro = expand_macro(resolved_symbol, arg_list);
+            release(arg_list);
+            Ber result = lval_compile(wasm, bound_macro);
+            release(bound_macro);
+            return result;
           default:
             /* lval_println(resolved_symbol); */
             quit(wasm,
@@ -913,7 +920,8 @@ int compile(char* file_name) {
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
 
     /* print_pair(lval_sym, lval); */
-    if (lval->type == LVAL_FUNCTION && lval->offset == -1) {
+    if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA &&
+        lval->offset == -1) {
       add_wasm_function(wasm, lval_sym, lval);
     }
 

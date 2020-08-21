@@ -8,7 +8,7 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4280) "Too many args passed to test\00Too few args passed to test\00Too many args passed to foo\00Too few args passed to foo\00from foo\00\01\00\00\00\00\00\00\00\00\00\00\00A\11\00\00\02\t\00\00\00\00\00\00(\11\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00e\11\00\00\02\08\00\00{\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\89\11\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\ad\11\00\00\02\08\00\00\02\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\d1\11\00\00\02\08\00\00\03\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ffToo many args passed to my-macro\00Too few args passed to my-macro\00")
+ (data (i32.const 4280) "Too many args passed to test\00Too few args passed to test\00Too many args passed to foo\00Too few args passed to foo\00\01\00\00\00\00\00\00\00\00\00\00\008\11\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -59,76 +59,31 @@
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
  (table $0 5 5 funcref)
- (elem (i32.const 0) $foo $test $my-macro $log_int $printf_)
+ (elem (i32.const 0) $sys_+ $test $foo $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
- (func $foo (param $0 i32) (param $1 i32) (result i32)
+ (func $sys_+ (param $0 i32) (param $1 i32) (result i32)
   (block $body (result i32)
-   (block $process_args
-    (if
-     (i32.eq
-      (call $check_args_count
-       (i32.const 2)
-       (local.get $1)
-       (i32.const 2)
-      )
-      (i32.const 0)
-     )
-     (call $runtime_error
-      (i32.const 4337)
-     )
-     (if
-      (i32.eq
-       (call $check_args_count
-        (i32.const 2)
-        (local.get $1)
-        (i32.const 2)
-       )
-       (i32.const 1)
-      )
-      (call $runtime_error
-       (i32.const 4365)
-      )
-      (nop)
+   (call $init_rest_args
+    (i32.sub
+     (global.get $stack_pointer)
+     (i32.mul
+      (i32.const 4)
+      (local.get $1)
      )
     )
-    (call $init_rest_args
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.mul
-       (i32.const 4)
-       (local.get $1)
-      )
-     )
-     (i32.sub
-      (local.get $1)
-      (i32.const 1)
-     )
+    (i32.sub
+     (local.get $1)
+     (i32.const 0)
     )
    )
-   (call $print_fn
+   (call $add_fn
     (i32.const 0)
-    (call $new_lval_list
-     (call $list_cons
-      (i32.const 4417)
-      (call $list_cons
-       (i32.load offset=4
-        (i32.sub
-         (global.get $stack_pointer)
-         (i32.const 8)
-        )
-       )
-       (call $list_cons
-        (i32.load
-         (i32.sub
-          (global.get $stack_pointer)
-          (i32.const 8)
-         )
-        )
-        (i32.const 0)
-       )
-      )
+    (i32.load
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.const 4)
      )
     )
    )
@@ -136,7 +91,6 @@
  )
  (func $test (param $0 i32) (param $1 i32) (result i32)
   (local $2 i32)
-  (local $3 i32)
   (block $body (result i32)
    (if
     (i32.eq
@@ -169,59 +123,26 @@
     (local.set $2
      (call $make_lval_wasm_lambda
       (i32.const 0)
-      (i32.const 2)
-      (i32.const 2)
+      (i32.const 1)
+      (i32.const 1)
       (i32.const 0)
       (i32.const 0)
       (i32.const 0)
      )
     )
-    (block $lambda_call_1 (result i32)
-     (i32.store offset=12
-      (global.get $stack_pointer)
-      (i32.const 4453)
-     )
-     (i32.store offset=8
-      (global.get $stack_pointer)
-      (i32.const 4489)
-     )
-     (i32.store offset=4
-      (global.get $stack_pointer)
-      (i32.const 4525)
-     )
-     (i32.store
-      (global.get $stack_pointer)
-      (i32.const 4561)
-     )
-     (global.set $stack_pointer
-      (i32.add
-       (global.get $stack_pointer)
-       (i32.const 16)
+    (call $print_fn
+     (i32.const 0)
+     (call $new_lval_list
+      (call $list_cons
+       (local.get $2)
+       (i32.const 0)
       )
      )
-     (local.set $3
-      (call_indirect (type $i32_i32_=>_i32)
-       (i32.load offset=12
-        (local.get $2)
-       )
-       (i32.const 4)
-       (i32.load16_u offset=2
-        (local.get $2)
-       )
-      )
-     )
-     (global.set $stack_pointer
-      (i32.sub
-       (global.get $stack_pointer)
-       (i32.const 16)
-      )
-     )
-     (local.get $3)
     )
    )
   )
  )
- (func $my-macro (param $0 i32) (param $1 i32) (result i32)
+ (func $foo (param $0 i32) (param $1 i32) (result i32)
   (block $body (result i32)
    (if
     (i32.eq
@@ -233,7 +154,7 @@
      (i32.const 0)
     )
     (call $runtime_error
-     (i32.const 4581)
+     (i32.const 4337)
     )
     (if
      (i32.eq
@@ -245,12 +166,12 @@
       (i32.const 1)
      )
      (call $runtime_error
-      (i32.const 4614)
+      (i32.const 4365)
      )
      (nop)
     )
    )
-   (i32.const 0)
+   (i32.const 4408)
   )
  )
 )

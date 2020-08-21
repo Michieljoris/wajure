@@ -27,6 +27,7 @@ typedef struct {
   int results_count;
 } LispyFn;
 
+// TODO: refactor!!!
 /* struct fun { */
 /*   Lbuiltin fun; */
 /*   Lenv* closure; */
@@ -34,9 +35,11 @@ typedef struct {
 /*   Lval* body; */
 /* }; */
 
+// Better and more succinct lval
 /* struct lval2 { */
-/*   int type; */
-/*   int subtype; */
+/*   int type; */  // more like the protocol (collection, function, literal etc)
+/*   int subtype; */  // more like the actual type (list, map, vector, lambda,
+                      // macro etc)
 /*   void* pointer;  // num, str, fun or cell */
 /*   int hash; */
 /* }; */

@@ -95,7 +95,10 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
                        make_type_int32(1));
 }
 
-Ber compile_if(Wasm* wasm, Cell* args) { return make_int32(wasm->module, 0); }
+Ber compile_if(Wasm* wasm, Cell* args) {
+  printf("Compiling if!!!!\n");
+  return make_int32(wasm->module, 0);
+}
 
 Ber compile_try(Wasm* wasm, Cell* args) { return make_int32(wasm->module, 0); }
 

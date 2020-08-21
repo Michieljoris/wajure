@@ -1,7 +1,7 @@
 #+TITLE: Todo
 * TODO compile
-** macroexpand-all macros before compiling
-** test macro
+** DONE macroexpand macros before compiling
+** DONE test macro
 ** make sure that every fn added has unique wasm name
 So wasmified sys fns are called eg sys_print
 And lambdas found in compile env should be called l_foobar
