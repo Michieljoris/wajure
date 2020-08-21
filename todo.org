@@ -1,20 +1,15 @@
 #+TITLE: Todo
 * TODO compile
+** macroexpand-all macros before compiling
+** test macro
 ** make sure that every fn added has unique wasm name
 So wasmified sys fns are called eg sys_print
 And lambdas found in compile env should be called l_foobar
 Anonymous lambdas found in fns become l_foobar_1, l_foobar_2 etc.
-** DONE empty fn body should return nil
-** DONE Gets tests to pass again interpreter
-** DONE check parameter count!!!
 abort if too many parameters. abort when too few
 ** Fix memory leak for interpreter
-** DONE first class functions
-** DONE closures
-** partials
-** DONE rest args
-** DONE wrap sys fns so they can become lambdas
-** add root fns to function table when they get used at all
+** (let [a 1] (def f [] a)), so use in non root form
+This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** add release and retain to wasm code
 ** check mem mngmnt for compiler as well
 ** implement reader macro for #(+ %1 %2)
@@ -22,17 +17,16 @@ abort if too many parameters. abort when too few
 Currently only ints work
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
-** DONE implement calling lispy fn from js
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement: if, do, try, throw, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq
-*** apply
+** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering
+** partial
+** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
 Then call wasm implementation of apply* that receives a list and puts them on lispy operand stack and calls fn
 ** multi arity fns!!!
-** macroexpand-all macros before compiling
 ** lisp function names -> wasm fn names
 wasm fn names can only have strings, numbers and underscore.
 So we need encode or vary the names some how.
@@ -43,6 +37,15 @@ Don't cut off compiling, try to continue, produce list of errors.
 ** find out about and add binaryen optimisations
 ** compile test suite
 ** add lispy interpreter to the runtime
+** DONE empty fn body should return nil
+** DONE Gets tests to pass again interpreter
+** DONE check parameter count!!!
+** DONE first class functions
+** DONE closures
+** DONE rest args
+** DONE wrap sys fns so they can become lambdas
+** DONE add root fns to function table when they get used at all
+** DONE implement calling lispy fn from js
 * Implement as much as possible in lispy itself
 Then there's less work for the compiler.
 * TODO

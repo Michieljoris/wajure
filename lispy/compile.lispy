@@ -1,3 +1,5 @@
+(defmacro my-macro [x] `(+ 1 ~x))
+
 (defn foo [x & rest] (print "from foo" x rest))
 
 (defn test [x y]

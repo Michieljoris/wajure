@@ -8,7 +8,7 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4280) "Too many args passed to test\00Too few args passed to test\00Too many args passed to foo\00Too few args passed to foo\00from foo\00\01\00\00\00\00\00\00\00\00\00\00\00A\11\00\00\02\t\00\00\00\00\00\00(\11\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00e\11\00\00\02\08\00\00{\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\89\11\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\ad\11\00\00\02\08\00\00\02\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\d1\11\00\00\02\08\00\00\03\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4280) "Too many args passed to test\00Too few args passed to test\00Too many args passed to foo\00Too few args passed to foo\00from foo\00\01\00\00\00\00\00\00\00\00\00\00\00A\11\00\00\02\t\00\00\00\00\00\00(\11\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00e\11\00\00\02\08\00\00{\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\89\11\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\ad\11\00\00\02\08\00\00\02\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\d1\11\00\00\02\08\00\00\03\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ffToo many args passed to my-macro\00Too few args passed to my-macro\00")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -58,8 +58,8 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 4 4 funcref)
- (elem (i32.const 0) $foo $test $log_int $printf_)
+ (table $0 5 5 funcref)
+ (elem (i32.const 0) $foo $test $my-macro $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
@@ -219,6 +219,38 @@
      (local.get $3)
     )
    )
+  )
+ )
+ (func $my-macro (param $0 i32) (param $1 i32) (result i32)
+  (block $body (result i32)
+   (if
+    (i32.eq
+     (call $check_args_count
+      (i32.const 1)
+      (local.get $1)
+      (i32.const 0)
+     )
+     (i32.const 0)
+    )
+    (call $runtime_error
+     (i32.const 4581)
+    )
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 1)
+       (local.get $1)
+       (i32.const 0)
+      )
+      (i32.const 1)
+     )
+     (call $runtime_error
+      (i32.const 4614)
+     )
+     (nop)
+    )
+   )
+   (i32.const 0)
   )
  )
 )

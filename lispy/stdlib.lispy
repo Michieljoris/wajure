@@ -33,6 +33,10 @@
         (pr "Expected:" expected)
         (pr "Got:" evalled)))))
 
+(defmacro t2 [expr expected & str]
+
+  )
+
 
 (defmacro apply [f args]
   `(eval (cons ~f ~args)))
@@ -56,6 +60,7 @@
              (cons (macroexpand-all (first form)) (macroexpand-all (rest form)))
              form)
            form)))
+
 
 
 ;; (defn [test cond]
