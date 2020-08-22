@@ -1,14 +1,28 @@
-(def plus +)
-(def mylet (if true let))
+;; (compile "lispy/test_compile.lispy")
+
+;; (def plus +)
+;; (def mylet (if true let))
 ;; (defmacro my-macro2 [x] `(plus 1 ~x))
 ;; (defmacro my-macro [x] `(plus 1 ~x (my-macro2 1)))
 
 ;; (defn foo [x & rest] (print "from foo" x rest))
-(defn foo [x] 1)
+;; (defn foo [x] 1)
 
 (defn test [x y]
-  (mylet [x plus]
-         (print x))
+  ;; (do 1 1)
+  ;; 1
+  ;; (let [x 1]
+  ;;   (if x nil ))
+  ;; (print (if true 1 2))
+  ;; (print "Testing!!!")
+  (t (list 1  3) (1 2 3))
+  (print "from test")
+
+
+ 
+  ;; (mylet [x plus
+  ;;         y plus]
+  ;;        (print x y))
   ;; (when true (print "when macro!!!"))
   ;; (let [p print]
   ;;   (p (my-macro 1)))

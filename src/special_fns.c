@@ -354,6 +354,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
+// Not really a special form
 Lval* eval_do(Lenv* env, Lval* body) {
   return do_list(env, body, RETURN_ON_ERROR);
 }

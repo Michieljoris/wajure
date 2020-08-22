@@ -173,7 +173,11 @@ Lenv* interprete_file(char* file_name) {
   stdlib_env->is_user_env = 0;
   user_env->is_user_env = 1;
 
-  release(slurp(user_env, file_name));
+  Lval* result = slurp(user_env, file_name);
+  if (result->type == LVAL_ERR) {
+    exit(1);
+  }
+  release(result);
   return user_env;
 }
 

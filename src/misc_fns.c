@@ -1,6 +1,7 @@
 #include "misc_fns.h"
 
 #include "assert.h"
+#include "compile.h"
 #include "eval.h"
 #include "io.h"
 #include "iter.h"
@@ -136,10 +137,18 @@ Lval* slurp(Lenv* env, char* file_name) {
 }
 
 Lval* slurp_fn(Lenv* env, Lval* arg_list) {
-  ddebug("\nload_fn: ");
-  ITER_NEW_N("load", 1)
+  ddebug("\nslurp_fn: ");
+  ITER_NEW_N("slurp", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
   return slurp(env, arg->str);
+}
+
+Lval* compile_fn(Lenv* env, Lval* arg_list) {
+  ddebug("\ncompile_fn: ");
+  ITER_NEW_N("compile", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
+  compile(arg->str);
+  return make_lval_list();
 }
 
 LispyFn misc_builtins[] = {{"eval", eval_fn},
@@ -150,6 +159,7 @@ LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"read-string", read_string_fn},
                            {"macroexpand", macroexpand_fn},
                            {"macroexpand-1", macroexpand_1_fn},
+                           {"compile", compile_fn},
                            {NIL}
 
 };

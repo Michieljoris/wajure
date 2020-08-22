@@ -45,7 +45,7 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
     if (iter_peek(i)) {
       result = lval_eval(env, lval);
       if (result->type == LVAL_ERR) {
-        lval_print(lval);
+        lval_println(lval);
         lval_println(result);
         if (mode == RETURN_ON_ERROR) return result;
       }

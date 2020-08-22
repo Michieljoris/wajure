@@ -41,30 +41,32 @@ Ber compile_fn_rest_args(Wasm* wasm, Cell* head) {
 
 Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
   printf("COMPILE_DO_LIST!!!!\n");
+  lval_println(list);
   BinaryenModuleRef module = wasm->module;
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
-  int count = list_count(list->head);
-  int do_list_count = count;
-  int is_do_list_empty = count == 0;
+  int do_list_count = list_count(list->head);
+  int is_do_list_empty = do_list_count == 0;
 
-  if (is_do_list_empty) count++;  // room for returning nil list;
-  if (!is_do_list_empty && init_rest_arg)
-    count++;  // room for initing rest arg on stack
+  if (is_do_list_empty) {
+    init_rest_arg = 0;
+    do_list_count++;  // room for returning nil list;
+  }
+  if (init_rest_arg) {
+    do_list_count++;  // room for initing rest arg on stack
+  }
 
-  Ber* do_list = malloc(count * sizeof(Ber));  // TODO: free???
+  Ber* do_list = malloc(do_list_count * sizeof(Ber));  // TODO: free???
 
   int do_list_index = 0;
 
-  if (!is_do_list_empty && init_rest_arg)
-    do_list[do_list_index++] = init_rest_arg;
+  if (init_rest_arg) do_list[do_list_index++] = init_rest_arg;
 
   while (lval) {
-    Ber literal = lval_compile(wasm, lval);
-    if (do_list_index + 1 < do_list_count)
-      literal = BinaryenDrop(module, literal);
+    Ber ber = lval_compile(wasm, lval);
+    if (do_list_index + 1 < do_list_count) ber = BinaryenDrop(module, ber);
 
-    do_list[do_list_index++] = literal;
+    do_list[do_list_index++] = ber;
 
     /* if (result->type == LVAL_ERR) { */
     /*   lval_print(lval); */
@@ -79,7 +81,7 @@ Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
     do_list[0] = wasmify_literal(wasm, make_lval_nil());
     do_list_index++;
   }
-  return BinaryenBlock(module, "body", do_list, do_list_index,
+  return BinaryenBlock(module, NULL, do_list, do_list_index,
                        BinaryenTypeAuto());
 }
 
@@ -586,6 +588,13 @@ Ber compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   char* fn_name = lval_fn_sym->str;
   if (_strcmp(fn_name, "let") == 0) return compile_let(wasm, args);
   if (_strcmp(fn_name, "if") == 0) return compile_if(wasm, args);
+  if (_strcmp(fn_name, "do") == 0) {
+    Lval* do_list = make_lval_list();
+    do_list->head = retain(args);
+    Ber result = compile_do_list(wasm, do_list, NULL);
+    release(do_list);
+    return result;
+  }
   if (_strcmp(fn_name, "try") == 0) return compile_try(wasm, args);
   if (_strcmp(fn_name, "throw") == 0) return compile_throw(wasm, args);
   if (_strcmp(fn_name, "quote") == 0) return compile_quote(wasm, args);
@@ -697,39 +706,6 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
                                  wasm_args_count, BinaryenTypeInt32());
   release(lambda_call_name);
   return call_block;
-
-  // Write wasm that does the following:
-  // Compile the args to wasm, put them on lispy stack in reverse order, with
-  // count of args on top slot.
-
-  // Check whether the local ref is a lambda (which might be a wrapper for sys
-  // and named fns)
-  //
-  // Write fns to deal with keyword, vector, set and map, dispatch by type and
-  // pass first node plus args to fn
-
-  // It's the callee's responsibility to check correct number of args (so
-  // could be disabled by flag). Without flag it's possible to call a fn with
-  // too few args, which would have unpredictable results. Too many doesn't
-  // hurt necessarily. It's also callee's responsibility to wrap up excess
-  // args into a rest arg. Otherwise we would have to check for this for every
-  // fn call. Throw error if count of args < param count (without any rest
-  // arg): [a b] has param count of 2, but [a b & c] has param count of 2 as
-  // well. If fn has rest arg then insert code that gathers excess args up
-  // into list and stores that list in a local var to be referred to in the
-  // rest of the fn. Only insert param checking code when lispy compiler flag
-  // is set for it. Same for rest arg, only insert wasm code for it when
-  // appropriate.
-
-  // When a LVAL_WASM_LAMBDA is a result of a partial its fn_table_index
-  // points to a wrapper fn that puts the partial args after the current stack
-  // pointer and increases sp by partial_count, and then calls the actual fn
-  // (which again might be a partial).
-
-  // Call indirect fn with the right offset, and one arg (pointer to closure)
-  // Set stack pointer to free mem; (so add param_count + 1  to sp, last slot
-  // holds param_count itself).
-  // On return from this call set stack pointer back.
 }
 
 Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
@@ -1212,3 +1188,36 @@ int compile(char* file_name) {
 /* lval_println(lval_fun->params); */
 /* printf("body: "); */
 /* lval_println(lval_fun->body); */
+
+// Write wasm that does the following:
+// Compile the args to wasm, put them on lispy stack in reverse order, with
+// count of args on top slot.
+
+// Check whether the local ref is a lambda (which might be a wrapper for sys
+// and named fns)
+//
+// Write fns to deal with keyword, vector, set and map, dispatch by type and
+// pass first node plus args to fn
+
+// It's the callee's responsibility to check correct number of args (so
+// could be disabled by flag). Without flag it's possible to call a fn with
+// too few args, which would have unpredictable results. Too many doesn't
+// hurt necessarily. It's also callee's responsibility to wrap up excess
+// args into a rest arg. Otherwise we would have to check for this for every
+// fn call. Throw error if count of args < param count (without any rest
+// arg): [a b] has param count of 2, but [a b & c] has param count of 2 as
+// well. If fn has rest arg then insert code that gathers excess args up
+// into list and stores that list in a local var to be referred to in the
+// rest of the fn. Only insert param checking code when lispy compiler flag
+// is set for it. Same for rest arg, only insert wasm code for it when
+// appropriate.
+
+// When a LVAL_WASM_LAMBDA is a result of a partial its fn_table_index
+// points to a wrapper fn that puts the partial args after the current stack
+// pointer and increases sp by partial_count, and then calls the actual fn
+// (which again might be a partial).
+
+// Call indirect fn with the right offset, and one arg (pointer to closure)
+// Set stack pointer to free mem; (so add param_count + 1  to sp, last slot
+// holds param_count itself).
+// On return from this call set stack pointer back.

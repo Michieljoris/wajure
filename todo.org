@@ -1,13 +1,13 @@
-#+TITLE: Todo
-* TODO compile
-** DONE macroexpand macros before compiling
-** DONE test macro
+* TODO compiler
+** compile test suite
 ** make sure that every fn added has unique wasm name
 So wasmified sys fns are called eg sys_print
 And lambdas found in compile env should be called l_foobar
 Anonymous lambdas found in fns become l_foobar_1, l_foobar_2 etc.
 abort if too many parameters. abort when too few
-** DONE Fix memory leak for interpreter
+** lisp function names -> wasm fn names
+wasm fn names can only have strings, numbers and underscore.
+So we need encode or vary the names some how.
 ** (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** add release and retain to wasm code
@@ -20,23 +20,27 @@ Also, clojure allows it.
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering
+** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces
 ** partial
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
 Then call wasm implementation of apply* that receives a list and puts them on lispy operand stack and calls fn
 ** multi arity fns!!!
-** lisp function names -> wasm fn names
-wasm fn names can only have strings, numbers and underscore.
-So we need encode or vary the names some how.
 ** error handling and tracking of line number and pos
 Don't cut off compiling, try to continue, produce list of errors.
 ** max str size, elide with warning or abort
 ** check for max closure size (currently 128 vars (CHAR512 mempool type))
 ** find out about and add binaryen optimisations
-** compile test suite
 ** add lispy interpreter to the runtime
+* TODO interpreter
+** reader has bug where last parens gets ignored
+** add rest of tests from mal
+
+* done compiler
+** DONE macroexpand macros before compiling
+** DONE test macro
+** DONE Fix memory leak for interpreter
 ** DONE empty fn body should return nil
 ** DONE Gets tests to pass again interpreter
 ** DONE check parameter count!!!
@@ -46,60 +50,19 @@ Don't cut off compiling, try to continue, produce list of errors.
 ** DONE wrap sys fns so they can become lambdas
 ** DONE add root fns to function table when they get used at all
 ** DONE implement calling lispy fn from js
-* Implement as much as possible in lispy itself
-Then there's less work for the compiler.
-* TODO
+* done interpreter
 ** DONE quasiquote has bug where vector becomes list
 `(let [a 1] a)
-** reader has bug where last parens gets ignored
-** add rest of tests from mal
 ** DONE put ifdefs in for system libs so we're ready for wasm
 #include <stdarg.h>  //va_start, va_list
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
-** More
-*** loop recur
-*** doseq
-*** maps
-*** stdlib
-**** map, reduce, apply, when, unpack (apply, curry), pack (uncurry)
-
-*** keywords
-*** hamt for symbol lookup and lispy maps
-*** pvector
-*** namespaces
-*** call/cc
-** DONE compile to wasm
+** DONE compile runtime to wasm
 and link them to compiled lispy code
 runtime includes:
 - builtin fns
 - memory management
 
-*  More from lispy tutorial
-** Ch10
- Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
- Add a builtin function len that returns the number of elements in a Q-Expression.
- Add a builtin function init that returns all of a Q-Expression except the final element.
-** Ch12
-Define a builtin_fun C function that is equivalent to the Lisp fun function.
-** Ch13
-Create builtin logical operators or ||, and && and not ! and add them to the language.
-Define a recursive Lisp function that returns the nth item of that list.
-Define a recursive Lisp function that returns 1 if an element is a member of a list, otherwise 0.
-Define a Lisp function that returns the last element of a list.
-Define in Lisp logical operator functions such as or, and and not.
-Add a specific boolean type to the language with the builtin variables true and false
-** Ch14
-Adapt the builtin function join to work on strings.
-Adapt the builtin function head to work on strings.
-Adapt the builtin function tail to work on strings.
-Create a builtin function read that reads in and converts a string to a Q-expression.
-Create a builtin function show that can print the contents of strings as it is (unescaped).
-Create a special value ok to return instead of empty expressions ().
-Add functions to wrap all of C's file handling functions such as fopen and fgets.
-
-
-* done
 ** DONE closures
 ** DONE returning partials from fn not working
 ** DONE memory pool
@@ -127,3 +90,21 @@ make compile
 *** Build wasm runtime (compiles lispy interpreter to wasm):
 PLATFORM=wasm make clean
 PLATFORM=wasm make runtime
+
+*  More from lispy tutorial
+** Ch10
+ Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
+ Add a builtin function len that returns the number of elements in a Q-Expression.
+ Add a builtin function init that returns all of a Q-Expression except the final element.
+** Ch13
+Create builtin logical operators or ||, and && and not ! and add them to the language.
+Define a recursive Lisp function that returns the nth item of that list.
+Define a recursive Lisp function that returns 1 if an element is a member of a list, otherwise 0.
+Define a Lisp function that returns the last element of a list.
+Define in Lisp logical operator functions such as or, and and not.
+** Ch14
+Adapt the builtin function join to work on strings.
+Adapt the builtin function head to work on strings.
+Adapt the builtin function tail to work on strings.
+Create a builtin function show that can print the contents of strings as it is (unescaped).
+Add functions to wrap all of C's file handling functions such as fopen and fgets.
