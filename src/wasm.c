@@ -31,6 +31,7 @@ Wasm* init_wasm() {
                  .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201),
                  .context = malloc(sizeof(Cell)),
                  .id = 1,
+                 .is_fn_call = 0,
                  .runtime_check_args_count = 1};
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
@@ -124,6 +125,9 @@ LispyFn runtime_fns[] = {
     // lispy_mempool
     {NULL, NULL, "lalloc_size", 1, 1},
     {NULL, NULL, "lalloc_type", 1, 1},
+    // refcount
+    {NULL, NULL, "retain", 1, 1},
+    {NULL, NULL, "release", 1, 0},
 
     // list
     {NULL, NULL, "list_cons", 2, 1},
@@ -168,7 +172,7 @@ void import_runtime(Wasm* wasm) {
   runtime_add_fns(wasm, util_builtin_fns);
 }
 
-void quit(Wasm* wasm, char* fmt, ...) {
+void* quit(Wasm* wasm, char* fmt, ...) {
   if (fmt) {
     va_list va;
     va_start(va, fmt);

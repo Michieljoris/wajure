@@ -55,11 +55,10 @@ export_wasm void free_mempool(Mempool* mempool) {
 #endif
 }
 
-int c = 0;
 // Only initialises a new slot when needed.
 export_wasm void* alloc_slot(Mempool* mempool) {
   // Resizing
-  if (mempool->free_slot_count == 0 && c++ < 30) {
+  if (mempool->free_slot_count == 0) {
     if (mempool->auto_resize) {
       mempool->log("MEMPOOL: data block full, resizing from %i slots to %i\n",
                    mempool->total_slot_count, mempool->total_slot_count * 2);
@@ -85,7 +84,6 @@ export_wasm void* alloc_slot(Mempool* mempool) {
     free_slot_p = (void*)mempool->free_slot_p;
     // Set pool's next free slot pointer to dereferenced current free slot
     mempool->free_slot_p = *(void**)mempool->free_slot_p;
-    /* mempool->free_slot_p = (char *)get_dword_at(mempool->free_slot_p); */
   }
 
   mempool->free_slot_count--;
@@ -95,7 +93,6 @@ export_wasm void* alloc_slot(Mempool* mempool) {
 export_wasm void free_slot(Mempool* mempool, void* slot) {
   // Put the pointer to current next free slot into this to be freed slot
   *(void**)slot = mempool->free_slot_p;
-  /* set_dword_at(slot, (int)mempool->free_slot_p); */
   // Point our free slot pointer to the freed slot
   mempool->free_slot_p = slot;
   // We have one more free slot!!

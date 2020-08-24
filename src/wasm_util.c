@@ -13,6 +13,25 @@
 #include "print.h"
 #include "wasm.h"
 
+Ber wasm_retain(Wasm* wasm, Ber wval) {
+  BinaryenModuleRef module = wasm->module;
+  Ber operands[] = {wval};
+  return BinaryenCall(module, "retain", operands, 1, BinaryenTypeInt32());
+}
+
+Ber wasm_retain_and_drop(Wasm* wasm, Ber wval) {
+  BinaryenModuleRef module = wasm->module;
+  Ber operands[] = {wval};
+  return BinaryenDrop(
+      module, BinaryenCall(module, "retain", operands, 1, BinaryenTypeInt32()));
+}
+
+Ber wasm_release(Wasm* wasm, Ber wval) {
+  BinaryenModuleRef module = wasm->module;
+  Ber operands[] = {wval};
+  return BinaryenCall(module, "release", operands, 1, BinaryenTypeInt32());
+}
+
 void write_string(char* file_name, char* str) {
   FILE* f = fopen(file_name, "wb");
   fputs(str, f);
@@ -77,10 +96,19 @@ BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
   return log_string;
 }
 
-BinaryenExpressionRef wasm_runtime_error(Wasm* wasm, int offset) {
+Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...) {
+  va_list va;
+  va_start(va, fmt);
+  char* err_msg = lalloc_size(512);
+  vsnprintf(err_msg, 511, fmt, va);
+  /* err_msg = lrealloc(err_msg, _strlen(err_msg) + 1); */
+  va_end(va);
+  int msg_offset = add_string_to_data(wasm, err_msg);
+  release(err_msg);
+
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset)};
+  BinaryenExpressionRef operands[] = {wasm_offset(wasm, msg_offset)};
 
   BinaryenExpressionRef runtime_error =
       BinaryenCall(module, "runtime_error", operands, 1, BinaryenTypeNone());
@@ -247,7 +275,7 @@ BinaryenType make_type_int32(int count) {
 #define head_offset 7
 #define hash_offset 8
 
-BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
+BinaryenExpressionRef inter_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
   if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
@@ -257,7 +285,7 @@ BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval) {
   data_lval[type_offset] = lval->type | lval->subtype << 8;
   data_lval[num_offset] = lval->num;
   data_lval[str_offset] = wasm->__data_end + string_offset;
-  data_lval[head_offset] = 0;  //(int)lval->head;  // TODO: add list to data!!!
+  data_lval[head_offset] = (int)lval->head;  // TODO: add list to data!!!
   data_lval[hash_offset] = lval->hash;
 
   int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_size);

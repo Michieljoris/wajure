@@ -36,12 +36,14 @@ Ber compile_fn_rest_args(Wasm* wasm, Cell* head) {
   Ber operands[] = {literal,
                     // recursive call:
                     compile_fn_rest_args(wasm, head->cdr)};
+  // TODO: don't use list_cons, list_cons version that doesn't retain cells, but
+  // does still retain its car
   return BinaryenCall(module, "list_cons", operands, 2, make_type_int32(1));
 }
 
 Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
-  printf("COMPILE_DO_LIST!!!!\n");
-  lval_println(list);
+  /* printf("COMPILE_DO_LIST!!!!\n"); */
+  /* lval_println(list); */
   BinaryenModuleRef module = wasm->module;
   scoped_iter Cell* i = iter_new(list);
   Lval* lval = iter_next(i);
@@ -126,7 +128,10 @@ Ber wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
                                 BinaryenTypeInt32(), stack_pointer);
     Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
 
+    // We pretend this fn has 1 param, namely a rest param, so any args past
+    // into this fn will be wrapped in a list, ready to be passed to our sys fn.
     Ber process_args = wasm_process_args(wasm, 1, 1);
+    // Actually call this sys fn with the rest args
     Ber call_sys_fn =
         BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
     Ber block_children[] = {process_args, call_sys_fn};
@@ -164,7 +169,7 @@ typedef struct {
 FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun);
 
 Ber wasmify_root_lambda_fn(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
-  /* printf("wasmify root lambda fn %d!!!\n", lval_fun->offset); */
+  printf("wasmify root lambda fn %d!!!\n", lval_fun->offset);
 
   BinaryenModuleRef module = wasm->module;
   if (lval_fun->offset == -1) {
@@ -192,45 +197,64 @@ Ber wasmify_root_lambda_fn(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
 }
 
 Ber wasmify_collection(Wasm* wasm, Lval* lval) {
-  return make_int32(wasm->module, 123);
+  // List, map, set, vector;
+  switch (lval->subtype) {
+    case LIST:
+      return inter_lval(wasm, lval);
+    case VECTOR:;
+    case MAP:;
+    case SET:;
+    default:
+      quit(wasm, "Unknown or unimplemented collection subtype %d",
+           lval->subtype);
+      return NULL;
+  }
 }
 
 Ber wasmify_literal(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
-    /* case STRING:; */
-    /* case KEYWORD:; */
-    /* case SYMBOL:; */
     case NUMBER:;
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
         if (!wasm->lval_num_offset[lval->num - wasm->lval_num_start])
           wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
-              make_lval_literal(wasm, lval);
+              inter_lval(wasm, lval);
 
         return wasm->lval_num_offset[lval->num - wasm->lval_num_start];
       }
 
-      return make_lval_literal(wasm, lval);
+      return inter_lval(wasm, lval);
     case LTRUE:
       if (!wasm->lval_true_offset)
-        wasm->lval_true_offset = make_lval_literal(wasm, lval);
+        wasm->lval_true_offset = inter_lval(wasm, lval);
       return wasm->lval_true_offset;
     case LFALSE:
       if (!wasm->lval_false_offset)
-        wasm->lval_false_offset = make_lval_literal(wasm, lval);
+        wasm->lval_false_offset = inter_lval(wasm, lval);
       return wasm->lval_false_offset;
     case LNIL:
       if (!wasm->lval_nil_offset)
-        wasm->lval_nil_offset = make_lval_literal(wasm, lval);
+        wasm->lval_nil_offset = inter_lval(wasm, lval);
       return wasm->lval_nil_offset;
+    /* case STRING:; */
+    /* case KEYWORD:; */
+    /* case SYMBOL:; */
     default:
-      return make_lval_literal(wasm, lval);
+      return inter_lval(wasm, lval);
   }
+}
+
+Ber wasmify_lval(Wasm* wasm, Lval* lval) {
+  if (lval->type == LVAL_COLLECTION)
+    return wasmify_collection(wasm, lval);
+  else
+    return wasmify_literal(wasm, lval);
 }
 
 Ber compile_lval_compiler(Wasm* wasm, Lval* lval_symbol, Lval* lval_compiler) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
-  printf("We've got a LVAL_WASM_REF!!!\n");
+  printf("We've got a LVAL_COMPILER (param or local binding)!!! %s\n",
+         lval_symbol->str);
   /* lval_println(lval_wasm_ref); */
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
@@ -269,7 +293,7 @@ Ber compile_lval_compiler(Wasm* wasm, Lval* lval_symbol, Lval* lval_compiler) {
              lval_compiler->subtype);
         return NULL;
     }
-  } else {
+  } else {  // ref to closure val
     Lval* closure_lval =
         lenv_get(context->function_context->closure, lval_symbol);
     int closure_offset;
@@ -305,8 +329,9 @@ Ber resolve_symbol_and_compile(Wasm* wasm, Lval* lval_sym) {
   /* lval_println(lval_resolved_sym); */
   switch (lval_resolved_sym->type) {
     case LVAL_ERR:
-      quit(wasm, lval_resolved_sym->str);
-    case LVAL_COMPILER:
+      return quit(wasm, lval_resolved_sym->str);
+    case LVAL_COMPILER:  // symbol has been added to env while compiling, so
+                         // it's a closure var, param or local (let) var
       return compile_lval_compiler(wasm, lval_sym, lval_resolved_sym);
     case LVAL_FUNCTION:  // as evalled in our compiler env
       switch (lval_resolved_sym->subtype) {
@@ -315,27 +340,28 @@ Ber resolve_symbol_and_compile(Wasm* wasm, Lval* lval_sym) {
         case LAMBDA:  // root functions in compiler env
           return wasmify_root_lambda_fn(wasm, lval_sym, lval_resolved_sym);
         case SPECIAL:
-          quit(wasm, "ERROR: Can't take value of a special form such as %s",
-               lval_resolved_sym->str);
+          return quit(wasm,
+                      "ERROR: Can't take value of a special form such as %s",
+                      lval_resolved_sym->str);
         case MACRO:
-          quit(wasm, "ERROR: Can't take value of a macro such as %s",
-               lval_resolved_sym->str);
+          return quit(wasm, "ERROR: Can't take value of a macro such as %s",
+                      lval_resolved_sym->str);
         default:;
-          quit(wasm, "ERROR: Can't compile function with subtype %d\n",
-               lval_resolved_sym->subtype);
+          return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
+                      lval_resolved_sym->subtype);
       }
       break;
-    case LVAL_COLLECTION:
-      return wasmify_collection(wasm, lval_resolved_sym);
-    case LVAL_SYMBOL:
-    case LVAL_LITERAL:
-      return wasmify_literal(wasm, lval_resolved_sym);
+    default:  // as evalled in our compiler env
+      return wasmify_lval(wasm, lval_resolved_sym);
+      /* case LVAL_COLLECTION: */
+      /*   return wasmify_collection(wasm, lval_resolved_sym); */
+      /* case LVAL_SYMBOL: */
+      /* case LVAL_LITERAL: */
+      /*   return wasmify_literal(wasm, lval_resolved_sym); */
   }
 
   /* printf("resolved sym: \n"); */
   /* lval_println(lval_resolved_sym); */
-
-  return lval_compile(wasm, lval_resolved_sym);
 }
 
 Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
@@ -360,21 +386,14 @@ Ber wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
     Ber is_too_many_args =
         BinaryenBinary(module, eq, check_args_count_call_result,
                        make_int32(module, TOO_MANY_ARGS));
-    char* err_msg = lalloc_size(512);
-    _strcpy(err_msg, "Too many args passed to ");
-    _strcat(err_msg, fn_name);
-    int msg_offset = add_string_to_data(wasm, err_msg);
-    Ber runtime_error_too_many_args = wasm_runtime_error(wasm, msg_offset);
-    _strcpy(err_msg, "Too few args passed to ");
-    _strcat(err_msg, fn_name);
-    msg_offset = add_string_to_data(wasm, err_msg);
-    release(err_msg);
-    Ber runtime_error_too_few_args = wasm_runtime_error(wasm, msg_offset);
     Ber all_ok = BinaryenNop(module);
-    Ber if_too_few =
-        BinaryenIf(module, is_too_few_args, runtime_error_too_few_args, all_ok);
-    Ber if_too_many = BinaryenIf(module, is_too_many_args,
-                                 runtime_error_too_many_args, if_too_few);
+    Ber if_too_few = BinaryenIf(
+        module, is_too_few_args,
+        wasm_runtime_error(wasm, "Too few args passed to ", fn_name), all_ok);
+    Ber if_too_many = BinaryenIf(
+        module, is_too_many_args,
+        wasm_runtime_error(wasm, "Too many args passed to %s", fn_name),
+        if_too_few);
 
     check_args_count = if_too_many;
   }
@@ -446,7 +465,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
 
   // Compile body
   Ber body = compile_do_list(wasm, lval_fun->body, process_args);
-  printf("Done compile_do_list\n");
+  /* printf("Done compile_do_list\n"); */
 
   // Post compile
   leave_env(wasm);
@@ -491,11 +510,11 @@ Ber wasm_lalloc_size(Wasm* wasm, int size) {
                       make_type_int32(1));
 }
 
-Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
+Ber compile_lambda(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
 
   Context* context = wasm->context->car;
-  Lval* arg_list = new_lval_list(retain(lval_list->head->cdr));
+  Lval* arg_list = new_lval_list(retain(args));
 
   // Eval the lambda form to get info on params and body
   Lval* lval_fun = eval_lambda_form(NULL, arg_list, LAMBDA);
@@ -527,7 +546,7 @@ Ber compile_lambda(Wasm* wasm, Lval* lval_list) {
       malloc((function_data.closure_count + 2) * sizeof(Ber));  // TODO: free???
 
   /* env_print(function_data.closure); */
-  printf("closure from compiled fn:\n");
+  /* printf("closure from compiled fn:\n"); */
   Cell* closure_cell = function_data.closure->kv;
   int lambda_block_count = 0;
 
@@ -595,8 +614,14 @@ Ber compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
     release(do_list);
     return result;
   }
+
+  if (_strcmp(fn_name, "fn") == 0) return compile_lambda(wasm, args);
   if (_strcmp(fn_name, "try") == 0) return compile_try(wasm, args);
   if (_strcmp(fn_name, "throw") == 0) return compile_throw(wasm, args);
+
+  /* if (_strcmp(fn_name, "loop") == 0) return compile_loop(wasm, args); */
+  /* if (_strcmp(fn_name, "recur") == 0) return compile_recur(wasm, args); */
+
   if (_strcmp(fn_name, "quote") == 0) return compile_quote(wasm, args);
   if (_strcmp(fn_name, "quasiquote") == 0)
     return compile_quasiquote(wasm, args);
@@ -621,6 +646,7 @@ Ber compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 
   Ber sys_fn_call = BinaryenCall(wasm->module, c_fn_name, sys_fn_operands, 2,
                                  make_type_int32(1));
+  // TODO: after sys call, release list, which will also release all its cells.
 
   return sys_fn_call;
 }
@@ -629,25 +655,54 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
                          Cell* args) {
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
-  printf("compile local ref call!!!!!!!!!!!!!!!\n");
+  /* printf("compile local ref call!!!!!!!!!!!!!!!\n"); */
   // Puts args of a fn like (f a b c) on stack like this: <c b a 3> where stack
   // pointer points at <
   int i = 0;
   int args_count = list_count(args);
-  int wasm_args_count = args_count + 4;  // args,  update stackpointer,
-                                         // call, reset stackpointer, result
+  int wasm_args_count =
+      args_count + 5;  // args,  update stackpointer,
+                       // call, reset stackpointer, release_locals, result
   /* wasm_args_count++; //for wval_print */
   Ber* wasm_args = malloc(sizeof(Ber) * wasm_args_count);
   int sp_offset = args_count * 4;
-  printf("SP_OFFSET: %d\n", sp_offset);
+  /* printf("SP_OFFSET: %d\n", sp_offset); */
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
 
+  int local_indices[128];
+  int local_indices_count = 0;
   // Put args on stack
+
+  printf("compile_wasm_fn_call %s\n", fn_name);
   while (args) {
-    Ber push_arg =
-        BinaryenStore(module, 4, sp_offset - (i + 1) * 4, 0, stack_pointer,
-                      lval_compile(wasm, args->car), BinaryenTypeInt32());
+    // NOTE: setting flags like is bad coding. Ideally we would like to return
+    // not a Ber but a struct with data on the compile. We can include in there
+    // whether we just compiled a fn call or not, together with the resultant
+    // Ber.
+    wasm->is_fn_call = 0;
+    Ber compiled_arg = lval_compile(wasm, args->car);
+    Ber push_arg = NULL;
+    if (wasm->is_fn_call) {
+      printf("is_fn_call: %d -> ", local_indices_count);
+      int local_index = local_indices[local_indices_count++] =
+          context->function_context->local_count++;
+      if (local_indices_count == 128)
+        return quit(
+            wasm,
+            "ERROR: A function can only be directly called with a maximum "
+            "of 128 args that are fn calls%s\n",
+            fn_name);
+
+      compiled_arg = BinaryenLocalTee(module, local_index, compiled_arg,
+                                      BinaryenTypeInt32());
+    } else {
+      printf("arg: ");
+    }
+
+    lval_println(args->car);
+    push_arg = BinaryenStore(module, 4, sp_offset - (i + 1) * 4, 0,
+                             stack_pointer, compiled_arg, BinaryenTypeInt32());
     wasm_args[i++] = push_arg;
     args = args->cdr;
   }
@@ -661,9 +716,10 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   Ber result = NULL;
   if (lval_wasm_ref) {
     // TODO: write in wasm:
-    // see if lval_wasm_ref === LVAL_WASM_LAMBDA
-    // if so call indirect, as below, get fn_index and closure pointer first
-    // else print "unimplemented!!!" and leave 123 on stack or something
+    // currently we assume lval_wasm_ref === LVAL_WASM_LAMBDA
+    // so we call indirect, as below
+    // TODO: implement using maps and sets and vectors as fns.
+    // else throw runtime error. (let [a 1] (a 2)) , can't use number as fn
 
     // Get fn_index and closure pointer from lval_wasm_ref
     Ber wasm_fn_index =
@@ -679,12 +735,15 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
                                   params_type, BinaryenTypeInt32());
   }
 
-  if (fn_name) {
+  else if (fn_name) {
+    printf("BinaryenCall\n");
     Ber operands[] = {make_int32(module, 0), make_int32(module, args_count)};
     result = BinaryenCall(module, fn_name, operands, 2, BinaryenTypeInt32());
-  }
+  } else
+    quit(wasm,
+         "Pass either a fn_name or a lval_wasm_ref to compile_wasm_fn_call ");
 
-  // Store result in local var
+  // Store result in local wasm var
   int result_index = context->function_context->local_count++;
   wasm_args[i++] = BinaryenLocalSet(module, result_index, result);
 
@@ -693,7 +752,21 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
       module, BinaryenSubInt32(), stack_pointer, make_int32(module, sp_offset));
   wasm_args[i++] = BinaryenGlobalSet(module, "stack_pointer", sp_minus_offset);
 
-  // Put result on stack
+  // Release results of fn calls
+  Ber release_locals[local_indices_count];
+  Ber get_local[1];
+  for (int i = 0; i < local_indices_count; i++) {
+    get_local[0] =
+        BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32());
+    release_locals[i] =
+        BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
+  }
+
+  Ber release_locals_block = BinaryenBlock(
+      module, NULL, release_locals, local_indices_count, BinaryenTypeNone());
+  wasm_args[i++] = release_locals_block;
+
+  // Get result from local wasm var
   Ber result_from_local =
       BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
   wasm_args[i++] = result_from_local;
@@ -704,13 +777,15 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   itostr(lambda_call_name + _strlen(lambda_call_name), wasm->id++);
   Ber call_block = BinaryenBlock(module, lambda_call_name, wasm_args,
                                  wasm_args_count, BinaryenTypeInt32());
+
   release(lambda_call_name);
+  printf("Returning call block\n");
   return call_block;
 }
 
-Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
-  return compile_wasm_fn_call(wasm, NULL, lval_fn_sym->str, args);
-}
+/* Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) { */
+/*   return compile_wasm_fn_call(wasm, NULL, lval_fn_sym->str, args); */
+/* } */
 
 Ber compile_list(Wasm* wasm, Lval* lval_list);
 
@@ -726,7 +801,7 @@ Ber compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
         case SET:
           quit(wasm, "ERROR: Map/set/vector cannot be cast as fn (yet)\n");
         default:
-          quit(wasm, "ERROR: Unknown collectiion subtype %d", lval->subtype);
+          quit(wasm, "ERROR: Unknown collection subtype %d", lval->subtype);
       }
       break;
     case LVAL_LITERAL:
@@ -750,22 +825,18 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
   // Empty list
   if (lval_list->head == NIL) {
     if (!wasm->lval_empty_list_offset)
-      wasm->lval_empty_list_offset = make_lval_literal(wasm, lval_list);
+      wasm->lval_empty_list_offset = inter_lval(wasm, lval_list);
     return wasm->lval_empty_list_offset;  // pointer to empty lval list
   }
 
   Lval* lval_first = lval_list->head->car;
 
-  // Lambda
-  if (_strcmp(lval_first->str, "fn") == 0) {
-    return compile_lambda(wasm, lval_list);
-  }
-
   Cell* args = lval_list->head->cdr;
+  Ber fn_call = NULL;
 
   // Fn call > (symbol args ...)
   if (lval_first->type == LVAL_SYMBOL) {
-    printf("resolving symbol %s\n", lval_first->str);
+    /* printf("resolving symbol %s\n", lval_first->str); */
     // Let's see if the symbol refers to something we know how to compile
     // already
     Lval* resolved_symbol = lenv_get(wasm->env, lval_first);
@@ -781,13 +852,18 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
         switch (resolved_symbol->subtype) {
           case SYS:
-            lval_println(resolved_symbol);
-            printf("sys fn: %s\n", resolved_symbol->str);
-            return compile_sys_call(wasm, resolved_symbol, args);
+            /* lval_println(resolved_symbol); */
+            /* printf("sys fn: %s\n", resolved_symbol->str); */
+            fn_call = compile_sys_call(wasm, resolved_symbol, args);
+            break;
           case SPECIAL:
-            return compile_special_call(wasm, resolved_symbol, args);
+            fn_call = compile_special_call(wasm, resolved_symbol, args);
+            break;
           case LAMBDA:  // root functions in compiler env
-            return compile_root_fn_call(wasm, lval_first, args);
+            printf("Calling lambda!! %s\n", lval_first->str);
+            fn_call = compile_wasm_fn_call(wasm, NULL, lval_first->str, args);
+            break;
+            /* return compile_root_fn_call(wasm, lval_first, args); */
           case MACRO:;
             Lval* arg_list = make_lval_list();
             arg_list->head = retain(args);
@@ -802,6 +878,7 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
                  "ERROR: Can't compile function with unknown subtype %d\n",
                  lval_first->subtype);
         }
+        break;
       case LVAL_COMPILER:;
         // we've assigned something to a local ref in wasm, but we don't know
         // what it is, and whether it's a fn even. It'll have to be worked out
@@ -810,9 +887,10 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
         // compile_list/lambda_cal. However the default case is that we cannot
         // assume anything about the lval.
         Ber compiled_symbol = resolve_symbol_and_compile(wasm, lval_first);
-        return compile_wasm_fn_call(wasm, compiled_symbol, NULL, args);
+        fn_call = compile_wasm_fn_call(wasm, compiled_symbol, NULL, args);
+        break;
       case LVAL_SYMBOL:
-        quit(wasm, "ERROR: A symbol can't ve cast to a fn: %s",
+        quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
              resolved_symbol->str);
       case LVAL_COLLECTION:
         switch (resolved_symbol->subtype) {
@@ -820,18 +898,18 @@ Ber compile_list(Wasm* wasm, Lval* lval_list) {
             quit(wasm, "ERROR: A list can't be cast to a fn");
           default:;
         }
-      default:
+      default:;
         // Not a function or wasm ref, perhaps it's something else we can use
         // as a fn
-        return compile_as_fn_call(wasm, resolved_symbol, args);
+        fn_call = compile_as_fn_call(wasm, resolved_symbol, args);
     }
-  } else
+  } else {
     // Not a function or wasm ref, perhaps it's something else we can use as a
     // fn
-    return compile_as_fn_call(wasm, lval_first, args);
-
-  quit(wasm, NULL);
-  exit(1);
+    fn_call = compile_as_fn_call(wasm, lval_first, args);
+  }
+  wasm->is_fn_call = 1;
+  return fn_call;
 }
 
 // This will compile an unevalled lval (so which is composed of only literals,
@@ -848,20 +926,23 @@ Ber lval_compile(Wasm* wasm, Lval* lval) {
     case LVAL_SYMBOL:
       return resolve_symbol_and_compile(wasm, lval);
     case LVAL_COLLECTION:
-      switch (lval->subtype) {
-        case LIST:
-          return compile_list(wasm, lval);  // fn call
-        case SET:
-        case MAP:
-        case VECTOR:
-          return wasmify_collection(wasm, lval);
-        default:;
-          quit(wasm, "ERROR: unknown collection subtype: %d", lval->subtype);
-      }
-    case LVAL_LITERAL:
-      return wasmify_literal(wasm, lval);
-    default:;
-      quit(wasm, "ERROR: Unknown lval type: %d", lval->type);
+      if (lval->subtype == LIST) return compile_list(wasm, lval);  // fn call
+      /* switch (lval->subtype) { */
+      /*   case LIST: */
+      /*     return compile_list(wasm, lval);  // fn call */
+      /*   case SET: */
+      /*   case MAP: */
+      /*   case VECTOR: */
+      /*     return wasmify_collection(wasm, lval); */
+      /*   default:; */
+      /*     quit(wasm, "ERROR: unknown collection subtype: %d", lval->subtype);
+       */
+      /* } */
+      /* case LVAL_LITERAL: */
+    default:
+      return wasmify_lval(wasm, lval);
+      /* default:; */
+      /*   quit(wasm, "ERROR: Unknown lval type: %d", lval->type); */
   }
   return NULL;
 }

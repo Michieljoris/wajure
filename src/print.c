@@ -170,7 +170,7 @@ void lval_print(Lval* lval) {
       }
       break;
     case LVAL_WASM_LAMBDA:
-      wval_print((Wval*)lval);
+      wval_print((WvalFun*)lval);
       break;
     case LVAL_ERR:
       printf("Error: %s", lval->str);

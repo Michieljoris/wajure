@@ -15,7 +15,6 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
   BinaryenModuleRef module = wasm->module;
   CONTEXT_CELL("compile_let", arg_list)
   /* printf("compile let call!!!!!!!!!!!!!!!\n"); */
-  /* Ber let_body[] = {make_int32(module, 123)}; */
 
   if (list_count(arg_list) == 0)
     quit(wasm, "Error: let needs at least binding vector");
@@ -44,6 +43,9 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
 
   // Compile
 
+  int local_indices[128];
+  int local_indices_count = 0;
+
   // Bindings
   int i = 0;
   while (lval_sym) {
@@ -54,9 +56,20 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     }
 
     Lval* lval = iter_next(b);
+    wasm->is_fn_call = 0;
     Ber wasm_value = lval_compile(wasm, lval);
     Ber local_var = BinaryenLocalSet(
         module, context->function_context->local_count, wasm_value);
+
+    if (wasm->is_fn_call) {
+      local_indices[local_indices_count++] =
+          context->function_context->local_count;
+      if (local_indices_count == 128)
+        return quit(wasm,
+                    "ERROR: Let can only be invoked with a maximum "
+                    "of 128 bindings and body forms that are fn calls%s\n");
+    }
+
     let_body[i] = local_var;
 
     // LENV_PUT
@@ -73,21 +86,74 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     lval_sym = iter_next(b);
   }
 
+  Ber let_result = NULL;
   // Body
   if (arg_list->cdr) {
-    while (arg_list->cdr) {
+    /* while (arg_list->cdr) { */
+    do {
       arg_list = arg_list->cdr;
+      wasm->is_fn_call = 0;
       Ber ber = lval_compile(wasm, arg_list->car);
-      if (arg_list->cdr) ber = BinaryenDrop(module, ber);
-      let_body[i] = ber;
-      i++;
-    };
+
+      // This is not the last lval in the body of let
+      if (arg_list->cdr) {
+        // Drop the value, but store it in a local var if it's a fn call so we
+        // can release it before returning
+        if (wasm->is_fn_call) {
+          int local_index = local_indices[local_indices_count++] =
+              context->function_context->local_count++;
+          if (local_indices_count == 128)
+            return quit(wasm,
+                        "ERROR: Let can only be invoked with a maximum "
+                        "of 128 bindings and body forms that are fn calls%s\n");
+
+          ber = BinaryenLocalSet(module, local_index, ber);
+        } else {
+          ber = BinaryenDrop(module, ber);
+        }
+        let_body[i++] = ber;
+
+      } else {
+        // ber is the last value in the body of let
+        let_result = ber;
+        if (!wasm->is_fn_call) {
+          Ber retain_operand[1] = {let_result};
+          // Retain value when not result of fn call (a literal)
+          let_result = BinaryenCall(module, "retain", retain_operand, 1,
+                                    BinaryenTypeInt32());
+        }
+      }
+    } while (arg_list->cdr);
   } else {
     if (!wasm->lval_nil_offset)
-      wasm->lval_nil_offset = make_lval_literal(wasm, make_lval_nil());
-    let_body[i] = wasm->lval_nil_offset;
+      wasm->lval_nil_offset = inter_lval(wasm, make_lval_nil());
+    let_result = wasm->lval_nil_offset;
+    Ber retain_operand[1] = {let_result};
+    let_result =
+        BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
   }
 
+  // Release results of fn calls
+  Ber release_locals[local_indices_count];
+  Ber get_local[1];
+  for (int i = 0; i < local_indices_count; i++) {
+    get_local[0] =
+        BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32());
+    release_locals[i] =
+        BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
+  }
+
+  Ber release_locals_block = BinaryenBlock(
+      module, NULL, release_locals, local_indices_count, BinaryenTypeNone());
+  int let_result_index = context->function_context->local_count++;
+  Ber set_local_to_let_result =
+      BinaryenLocalSet(module, let_result_index, let_result);
+  Ber get_let_result_from_local =
+      BinaryenLocalGet(module, let_result_index, BinaryenTypeInt32());
+  Ber let_body_result[] = {set_local_to_let_result, release_locals_block,
+                           get_let_result_from_local};
+  let_body[i] = BinaryenBlock(module, "let_body_result", let_body_result, 3,
+                              BinaryenTypeInt32());
   // Post compile
   leave_env(wasm);
 
@@ -121,8 +187,23 @@ Ber compile_try(Wasm* wasm, Cell* args) { return make_int32(wasm->module, 0); }
 Ber compile_throw(Wasm* wasm, Cell* args) {
   return make_int32(wasm->module, 0);
 }
+
 Ber compile_quote(Wasm* wasm, Cell* args) {
-  return make_int32(wasm->module, 0);
+  if (list_count(args) != 1) {
+    quit(wasm, "Wrong number of args (%d) passed to quote, expected 1",
+         list_count(args));
+  }
+  Lval* arg = args->car;
+  switch (arg->type) {
+    case LVAL_COLLECTION:
+      return wasmify_collection(wasm, arg);
+    case LVAL_SYMBOL:
+    case LVAL_LITERAL:
+      return wasmify_literal(wasm, arg);
+    default:
+      quit(wasm, "Unknown lval type, can't wasmify it for quote fn!!!!");
+  }
+  return NULL;
 }
 Ber compile_quasiquote(Wasm* wasm, Cell* args) {
   return make_int32(wasm->module, 0);

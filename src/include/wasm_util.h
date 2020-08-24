@@ -7,6 +7,10 @@
 #include "platform.h"
 #include "wasm.h"
 
+Ber wasm_retain(Wasm* wasm, Ber wval);
+Ber wasm_retain_and_drop(Wasm* wasm, Ber wval);
+Ber wasm_release(Wasm* wasm, Ber wval);
+
 BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x);
 void write_wat(Wasm* wasm, char* file_name);
 
@@ -22,8 +26,6 @@ BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
 BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
-BinaryenExpressionRef wasm_runtime_error(Wasm* wasm, int offset);
-
 Lenv* interprete_file(char* file_name);
 
 void release_env(Lenv* env);
@@ -36,7 +38,7 @@ BinaryenType make_type_int32(int count);
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
-BinaryenExpressionRef make_lval_literal(Wasm* wasm, Lval* lval);
+BinaryenExpressionRef inter_lval(Wasm* wasm, Lval* lval);
 
 Wasm* enter_context(Wasm* wasm);
 
@@ -75,5 +77,7 @@ Lenv* enter_env(Wasm* wasm);
 void leave_env(Wasm* wasm);
 
 Lval* make_lval_compiler(Context* context, int subtype, int offset);
+
+Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...);
 
 #endif  // __WASM_UTIL_H_

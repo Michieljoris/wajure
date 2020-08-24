@@ -15,10 +15,11 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
-typedef struct wval Wval;
+typedef struct wval_fun WvalFun;
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
+// Used to store data on runtime builtin fns
 typedef struct {
   char* lispy_fn_name;
   Lbuiltin fun;
@@ -28,21 +29,23 @@ typedef struct {
 } LispyFn;
 
 // TODO: refactor!!!
-/* struct fun { */
-/*   Lbuiltin fun; */
-/*   Lenv* closure; */
-/*   Lval* params; */
-/*   Lval* body; */
-/* }; */
+struct fun {
+  Lbuiltin fun;
+  Lenv* closure;
+  Lval* params;
+  Lval* body;
+};
 
-// Better and more succinct lval
-/* struct lval2 { */
-/*   int type; */  // more like the protocol (collection, function, literal etc)
-/*   int subtype; */  // more like the actual type (list, map, vector, lambda,
-                      // macro etc)
-/*   void* pointer;  // num, str, fun or cell */
-/*   int hash; */
-/* }; */
+// TODO: refactor: Better and more succinct lval
+struct lval2 {
+  char type;     // more like the protocol (collection, function, literal etc)
+  char subtype;  // more like the actual type (list, map, vector, lambda, macro
+                 // etc)
+  // num, str, symbol, keyword or pointer to fun or cell (or persistent map
+  // (hamt) or pvector)
+  void* data;
+  int hash;  // or pointer to compiler data
+};
 
 typedef struct context Context;
 
@@ -70,7 +73,8 @@ struct lval {
   int rest_arg_index;
 };
 
-struct wval {
+// Used in wasm runtime. We stuff info on a wasm lambda into a lval
+struct wval_fun {
   char type;     // wasm offset: 0
   char subtype;  // 1
 
@@ -143,6 +147,7 @@ enum {
   LOCAL,
 
   // lispy runtime lval fn type
+  // TODO: we can just use the LAMBDA constant
   LVAL_WASM_LAMBDA
 };
 

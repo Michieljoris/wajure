@@ -8,34 +8,74 @@ abort if too many parameters. abort when too few
 ** lisp function names -> wasm fn names
 wasm fn names can only have strings, numbers and underscore.
 So we need encode or vary the names some how.
+** better compile time arg count checking
+You could be a bit smarter about it at compile time.
+1. When a symbol resolves to a sys fn you can check arg count
+2. When a symbol resolves to a root lambda fn (as found in compiler env) you can check arg count
+3. When a symbol resolves to lval_compiler in some cases we can know whether the
+   lval_compiler is a ref to a lambda, and which one eg:
+   (let [f (fn [x] x)] (f 123)) but also in:
+    (let [f (fn [x y] ..) g (partial f 1)] (g 2)) but not in:
+    (fn [g] (g 123))
 ** (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** add release and retain to wasm code
 ** check mem mngmnt for compiler as well
-** implement reader macro for #(+ %1 %2)
-** pass floats, strings, maps, vectors, sets etc from js to lispy fn
+** pass floats, strings, maps, vectors, sets etc from js to wajure fn
 Currently only ints work
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces
+** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces, meta data
 ** partial
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
-Then call wasm implementation of apply* that receives a list and puts them on lispy operand stack and calls fn
+Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
 ** multi arity fns!!!
-** error handling and tracking of line number and pos
-Don't cut off compiling, try to continue, produce list of errors.
 ** max str size, elide with warning or abort
 ** check for max closure size (currently 128 vars (CHAR512 mempool type))
 ** find out about and add binaryen optimisations
-** add lispy interpreter to the runtime
+** add wajure interpreter to the runtime
+** add stdlib (defined in wajure and compiled) to runtime
+Similar to clojure.core. Probably needs namespaces implemented first
 * TODO interpreter
 ** reader has bug where last parens gets ignored
 ** add rest of tests from mal
+** implement: str, loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces, meta data
+** partial
+** apply
+https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
+Use core lib fn to reduce args to a single list
+Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
+** implement maps and sets
+** replace list implementations of maps, sets and vectors with permanent data structures other than list
+-> vector and map hamt.
+** implement partial, apply,
+** named fns for recursion of locally defined lambdas
+Also, clojure allows it.
+** multi-arity fns
+* TODO Both interpreter and compiler:
+** error handling and tracking of line number and pos
+Don't cut off compiling, try to continue, produce list of errors.
+** gensym and #foo in macro
+http://clojure-doc.org/articles/language/macros.html
+** implement reader macro for #(+ %1 %2)
+** Two special variables are available inside defmacro for more advanced usages:
+
+    &form - the actual form (as data) that is being invoked
+
+    &env - a map of local bindings at the point of macro expansion. The env map is from symbols to objects holding compiler information about that binding.
+
+
+** implement/copy from clojure.core various macros:
+Branching: and or when when-not when-let when-first if-not if-let cond condp cond-> cond->>
+Looping (see also Sequences): for doseq dotimes while
+Working with vars (see also Vars and Environment): ns declare defmethod defmulti defn- defonce
+Arranging code differently: .. doto -> ->>
+Documenting code: assert comment doc
 
 * done compiler
 ** DONE macroexpand macros before compiling
@@ -49,7 +89,7 @@ Don't cut off compiling, try to continue, produce list of errors.
 ** DONE rest args
 ** DONE wrap sys fns so they can become lambdas
 ** DONE add root fns to function table when they get used at all
-** DONE implement calling lispy fn from js
+** DONE implement calling wajure fn from js
 * done interpreter
 ** DONE quasiquote has bug where vector becomes list
 `(let [a 1] a)
@@ -58,7 +98,7 @@ Don't cut off compiling, try to continue, produce list of errors.
 #include <stdio.h>   //printf, puts
 #include <stdlib.h>  //malloc, calloc, realloc
 ** DONE compile runtime to wasm
-and link them to compiled lispy code
+and link them to compiled wajure code
 runtime includes:
 - builtin fns
 - memory management
@@ -71,7 +111,7 @@ runtime includes:
 ** DONE reference counting
 
 * Good to know
-** rename lispy to wajure ??
+** rename wajure to wajure ??
 ** To create/update compile_commmands.json:
 
     make clean
@@ -81,17 +121,17 @@ runtime includes:
 
 https://github.com/Andersbakken/rtags/wiki/Usage
 ** Emacs compile commands:
-*** Build executable and run interpreter on lispy/run.lispy
+*** Build executable and run interpreter on wajure/run.wajure
 make clean
 make run
-*** Build executable and compile lispy/compile.lispy
+*** Build executable and compile wajure/compile.wajure
 make clean
 make compile
-*** Build wasm runtime (compiles lispy interpreter to wasm):
+*** Build wasm runtime (compiles wajure interpreter to wasm):
 PLATFORM=wasm make clean
 PLATFORM=wasm make runtime
 
-*  More from lispy tutorial
+*  More from wajure tutorial
 ** Ch10
  Add a builtin function cons that takes a value and a Q-Expression and appends it to the front.
  Add a builtin function len that returns the number of elements in a Q-Expression.

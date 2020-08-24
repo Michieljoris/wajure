@@ -11,15 +11,15 @@
 Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
                             int has_rest_arg, Lval** closure, Lval** partials,
                             int partial_count) {
-  Wval* wval = lalloc_type(LVAL);
-  *wval = (Wval){.type = LVAL_WASM_LAMBDA,
-                 .subtype = -1,
-                 .fn_table_index = fn_table_index,
-                 .param_count = param_count,
-                 .has_rest_arg = has_rest_arg,
-                 .closure = closure,
-                 .partials = partials,
-                 .partial_count = partial_count};
+  WvalFun* wval = lalloc_type(LVAL);
+  *wval = (WvalFun){.type = LVAL_WASM_LAMBDA,
+                    .subtype = -1,
+                    .fn_table_index = fn_table_index,
+                    .param_count = param_count,
+                    .has_rest_arg = has_rest_arg,
+                    .closure = closure,
+                    .partials = partials,
+                    .partial_count = partial_count};
   return (Lval*)wval;
 }
 
@@ -35,22 +35,23 @@ void init_rest_args(Lval** lval_array, int rest_arg_length) {
   lval_array[rest_arg_length - 1] = lval_list;
 }
 
-void wval_print(Wval* wval) {
+void wval_print(WvalFun* wval) {
   printf("WVAL:\n");
   printf("wval pointer: %li\n", (long)wval);
-  printf("type: %d %lu\n", wval->type, offsetof(Wval, type));
-  printf("subtype: %d %lu\n", wval->subtype, offsetof(Wval, subtype));
+  printf("type: %d %lu\n", wval->type, offsetof(WvalFun, type));
+  printf("subtype: %d %lu\n", wval->subtype, offsetof(WvalFun, subtype));
   printf("fn_table_index: %d %lu\n", wval->fn_table_index,
-         offsetof(Wval, fn_table_index));
+         offsetof(WvalFun, fn_table_index));
   printf("param_count: %d %lu\n", wval->param_count,
-         offsetof(Wval, param_count));
+         offsetof(WvalFun, param_count));
 
   printf("has_rest_arg: %d %lu\n", wval->has_rest_arg,
-         offsetof(Wval, has_rest_arg));
+         offsetof(WvalFun, has_rest_arg));
   printf("partial_count: %d %lu\n", wval->partial_count,
-         offsetof(Wval, partial_count));
-  printf("closure: %li %lu\n", (long)wval->closure, offsetof(Wval, closure));
-  printf("partials: %li %lu\n", (long)wval->partials, offsetof(Wval, partials));
+         offsetof(WvalFun, partial_count));
+  printf("closure: %li %lu\n", (long)wval->closure, offsetof(WvalFun, closure));
+  printf("partials: %li %lu\n", (long)wval->partials,
+         offsetof(WvalFun, partials));
 }
 
 int check_args_count(int param_count, int args_count, int has_rest_arg) {
@@ -63,4 +64,4 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
-Lval** get_wval_closure(Wval* wval) { return wval->closure; }
+Lval** get_wval_closure(WvalFun* wval) { return wval->closure; }
