@@ -1,13 +1,21 @@
 * TODO compiler
+** freeing a lval_wasm_lambda!!!
+we need to free its closure and partials!!
+** Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
+- so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
+- we might be able to do optimisations, such as mutually cancelling retain and release calls
 ** compile test suite
-** make sure that every fn added has unique wasm name
+** DONE make sure that every fn added has unique wasm name
 So wasmified sys fns are called eg sys_print
-And lambdas found in compile env should be called l_foobar
-Anonymous lambdas found in fns become l_foobar_1, l_foobar_2 etc.
-abort if too many parameters. abort when too few
-** lisp function names -> wasm fn names
-wasm fn names can only have strings, numbers and underscore.
-So we need encode or vary the names some how.
+
+And lambdas (such as foobar) found in compile env should be renamed and
+numbered, eg: l1_foobar, no I don't think that's needed: we use the latest lval
+defined for a symbol in the compiler env.
+
+Anonymous lambdas found in fns become foobar#1, foobar#2 etc.
+** DONE abort if too many parameters. abort when too few
+** better stackpointer handling
+** load args into local vars!!!
 ** better compile time arg count checking
 You could be a bit smarter about it at compile time.
 1. When a symbol resolves to a sys fn you can check arg count
@@ -71,11 +79,16 @@ http://clojure-doc.org/articles/language/macros.html
 
 
 ** implement/copy from clojure.core various macros:
-Branching: and or when when-not when-let when-first if-not if-let cond condp cond-> cond->>
-Looping (see also Sequences): for doseq dotimes while
-Working with vars (see also Vars and Environment): ns declare defmethod defmulti defn- defonce
-Arranging code differently: .. doto -> ->>
-Documenting code: assert comment doc
+*** Branching:
+and or when when-not when-let when-first if-not if-let cond condp cond-> cond->>
+*** Looping (see also Sequences):
+for doseq dotimes while
+*** Working with vars (see also Vars and Environment):
+ns declare defmethod defmulti defn- defonce
+*** Arranging code differently:
+.. doto -> ->>
+*** Documenting code:
+assert comment doc
 
 * done compiler
 ** DONE macroexpand macros before compiling

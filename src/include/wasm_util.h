@@ -82,4 +82,20 @@ Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...);
 
 char* uniquify_name(Wasm* wasm, char* name);
 
+typedef struct {
+  int* local_indices;
+  int local_indices_count;
+} LocalIndices;
+
+LocalIndices* li_init();
+
+int li_new(Wasm* wasm);
+int li_get(Wasm* wasm);
+int li_track(Wasm* wasm, LocalIndices* li, int index);
+Ber li_release(Wasm* wasm, LocalIndices* li, char* name);
+
+Ber li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
+                           Ber release_locals, Ber result);
+void li_close(LocalIndices* li);
+
 #endif  // __WASM_UTIL_H_

@@ -67,10 +67,15 @@ char* lval_str_escape(char x) {
   return "";
 }
 
+// NOTE: quote ('), backquote (`) and hash (#) are allowed here as symbol chars
 char* valid_symbol_chars =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789_+-*\\/=<>!&?";
+    "0123456789_+-*\\/!?=<>&|%$#'`";
+
+// but they are also reader tags if a 'symbol' starts with them, so they're
+// included here
+char* invalid_symbol_first_chars = "'`#";
 
 Lval* lval_read_sym(char* s, int* i) {
   /* Allocate Empty String */
@@ -314,7 +319,8 @@ Lval* lval_read(char* s, int* i) {
 
   char next_char = s[*i];
 
-  if (_strchr(valid_symbol_chars, next_char)) {
+  if (_strchr(valid_symbol_chars, next_char) &&
+      !_strchr(invalid_symbol_first_chars, next_char)) {
     x = lval_read_sym(s, i);
   } else
     switch (next_char) {
@@ -348,7 +354,11 @@ Lval* lval_read(char* s, int* i) {
       case '~':
         x = lval_read_tilde(s, i);
         break;
+      /* case '#': */
+      /*   x = lval_read_tag(s, i); */
+      /*   break; */
       default:
+        printf("Reader error: Unexpected character %c\n", s[*i]);
         x = make_lval_err("Unexpected character %c", s[*i]);
     }
 

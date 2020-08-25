@@ -394,49 +394,80 @@ char* uniquify_name(Wasm* wasm, char* name) {
   return str;
 }
 
-typedef struct {
-  int* local_indices;
-  int local_indices_count;
-} LocalIndices;
-
 #define MAX_LOCAL_INDICES 128
 
-LocalIndices li_init() {
-  LocalIndices li = {
-      .local_indices = lalloc_size(MAX_LOCAL_INDICES * 4),  // 512
-      .local_indices_count = 0};
+LocalIndices* li_init() {
+  LocalIndices* li = malloc(sizeof(LocalIndices));
+  *li = (LocalIndices){.local_indices = malloc(MAX_LOCAL_INDICES * 4),  // 512
+                       .local_indices_count = 0};
   return li;
 }
 
-int li_get(Wasm* wasm) {
+int li_new(Wasm* wasm) {
   Context* context = wasm->context->car;
   return context->function_context->local_count++;
 }
 
-int li_get_and_track(Wasm* wasm, LocalIndices li) {
-  int index = li.local_indices[li.local_indices_count++] = li_get(wasm);
-
-  if (li.local_indices_count == MAX_LOCAL_INDICES)
-    quit(wasm, "ERROR: Can't keep track of more than %d local indices",
-         MAX_LOCAL_INDICES);
-  return index;
+int li_get(Wasm* wasm) {
+  Context* context = wasm->context->car;
+  return context->function_context->local_count;
 }
 
-Ber li_release(Wasm* wasm, LocalIndices li) {
+int li_track(Wasm* wasm, LocalIndices* li, int index) {
+  int ret = li->local_indices[li->local_indices_count++] = index;
+  if (li->local_indices_count == MAX_LOCAL_INDICES)
+    quit(wasm, "ERROR: Can't keep track of more than %d local indices",
+         MAX_LOCAL_INDICES);
+  return ret;
+}
+
+/* int li_get_and_track(Wasm* wasm, LocalIndices* li) { */
+/*   int index = li->local_indices[li->local_indices_count++] = li_new(wasm); */
+/*   printf("LI: %d %d", li->local_indices_count, */
+/*          li->local_indices[li->local_indices_count - 1]); */
+/*   if (li->local_indices_count == MAX_LOCAL_INDICES) */
+/*     quit(wasm, "ERROR: Can't keep track of more than %d local indices", */
+/*          MAX_LOCAL_INDICES); */
+/*   return index; */
+/* } */
+
+Ber li_release(Wasm* wasm, LocalIndices* li, char* name) {
+  if (li->local_indices_count == 0) {
+    return NULL;
+  }
   BinaryenModuleRef module = wasm->module;
-  Ber release_locals[li.local_indices_count];
+  Ber release_locals[li->local_indices_count];
   Ber get_local[1];
-  for (int i = 0; i < li.local_indices_count; i++) {
+  for (int i = 0; i < li->local_indices_count; i++) {
     get_local[0] =
-        BinaryenLocalGet(module, li.local_indices[i], BinaryenTypeInt32());
+        BinaryenLocalGet(module, li->local_indices[i], BinaryenTypeInt32());
     release_locals[i] =
         BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
   }
 
   Ber release_locals_block =
-      BinaryenBlock(module, uniquify_name(wasm, "release_locals_for_fn_call"),
-                    release_locals, li.local_indices_count, BinaryenTypeNone());
+      BinaryenBlock(module, uniquify_name(wasm, name), release_locals,
+                    li->local_indices_count, BinaryenTypeNone());
   return release_locals_block;
+}
+
+Ber li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
+                           Ber release_locals, Ber result) {
+  if (!release_locals) return result;
+  BinaryenModuleRef module = wasm->module;
+  int result_index = li_new(wasm);
+  Ber set_local_to_result = BinaryenLocalSet(module, result_index, result);
+  Ber get_result_from_local =
+      BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
+  Ber body_result[] = {set_local_to_result, release_locals,
+                       get_result_from_local};
+  return BinaryenBlock(module, uniquify_name(wasm, name), body_result, 3,
+                       BinaryenTypeInt32());
+}
+
+void li_close(LocalIndices* li) {
+  free(li->local_indices);
+  free(li);
 }
 
 /* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */

@@ -41,50 +41,103 @@ Ber compile_fn_rest_args(Wasm* wasm, Cell* head) {
   return BinaryenCall(module, "list_cons", operands, 2, make_type_int32(1));
 }
 
-Ber compile_do_list(Wasm* wasm, Lval* list, Ber init_rest_arg) {
+Ber compile_do_list(Wasm* wasm, Lval* lval_list, Ber init_rest_arg) {
   /* printf("COMPILE_DO_LIST!!!!\n"); */
   /* lval_println(list); */
   BinaryenModuleRef module = wasm->module;
-  scoped_iter Cell* i = iter_new(list);
-  Lval* lval = iter_next(i);
-  int do_list_count = list_count(list->head);
-  int is_do_list_empty = do_list_count == 0;
+  /* scoped_iter Cell* i = iter_new(lval_list); */
+  /* Lval* lval = iter_next(i); */
+  int do_list_count = list_count(lval_list->head) + 1;  // room for
+                                                        // init_rest_arg
+  /* int is_do_list_empty = do_list_count == 0; */
 
-  if (is_do_list_empty) {
-    init_rest_arg = 0;
-    do_list_count++;  // room for returning nil list;
-  }
-  if (init_rest_arg) {
-    do_list_count++;  // room for initing rest arg on stack
-  }
+  LocalIndices* li = li_init();
 
-  Ber* do_list = malloc(do_list_count * sizeof(Ber));  // TODO: free???
+  /* if (is_do_list_empty) { */
+  /*   init_rest_arg = 0; */
+  /*   do_list_count++;  // room for returning nil list; */
+  /* } */
+  /* if (init_rest_arg) { */
+  /*   do_list_count++;  // room for initing rest arg on stack */
+  /* } */
+
+  if (do_list_count < 2) do_list_count = 2;
+  Ber* do_body = malloc(do_list_count * sizeof(Ber));  // TODO: free???
 
   int do_list_index = 0;
 
-  if (init_rest_arg) do_list[do_list_index++] = init_rest_arg;
+  if (init_rest_arg) do_body[do_list_index++] = init_rest_arg;
 
-  while (lval) {
-    Ber ber = lval_compile(wasm, lval);
-    if (do_list_index + 1 < do_list_count) ber = BinaryenDrop(module, ber);
+  Ber do_result = NULL;
 
-    do_list[do_list_index++] = ber;
+  Cell* list = lval_list->head;
+  if (list) {
+    do {
+      wasm->is_fn_call = 0;
+      Ber ber = lval_compile(wasm, list->car);
+      if (do_list_index + 1 < do_list_count) {
+        // Not last value, so we drop it
+        if (wasm->is_fn_call) {
+          // And release it if it's a fn call
+          int local_index = li_track(wasm, li, li_new(wasm));
+          ber = BinaryenLocalSet(module, local_index, ber);
+        } else
+          ber = BinaryenDrop(module, ber);
 
-    /* if (result->type == LVAL_ERR) { */
-    /*   lval_print(lval); */
-    /*   printf(" resulted in: "); */
-    /*   lval_println(result); */
-    /* } */
-    /* return result; */
-    lval = iter_next(i);
+        do_body[do_list_index++] = ber;
+      } else {
+        // ber is the last value in the body of let
+        do_result = ber;
+        if (!wasm->is_fn_call) {
+          Ber retain_operand[1] = {do_result};
+          // Retain value when not result of fn call (a literal)
+          do_result = BinaryenCall(module, "retain", retain_operand, 1,
+                                   BinaryenTypeInt32());
+        }
+      }
+
+      /* if (result->type == LVAL_ERR) { */
+      /*   lval_print(lval); */
+      /*   printf(" resulted in: "); */
+      /*   lval_println(result); */
+      /* } */
+      /* return result; */
+      /* lval = iter_next(i); */
+      list = list->cdr;
+    } while (list);
+  } else {
+    do_result = wasmify_literal(wasm, make_lval_nil());
+    Ber retain_operand[1] = {do_result};
+    do_result =
+        BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
   }
 
-  if (is_do_list_empty) {
-    do_list[0] = wasmify_literal(wasm, make_lval_nil());
-    do_list_index++;
-  }
-  return BinaryenBlock(module, NULL, do_list, do_list_index,
-                       BinaryenTypeAuto());
+  Ber release_locals_block = li_release(wasm, li, "release_locals_for_do");
+
+  do_body[do_list_index++] = li_result_with_release(
+      wasm, li, "do_body_result", release_locals_block, do_result);
+
+  /* if (release_locals_block) { */
+  /*   int do_result_index = li_new(wasm); */
+  /*   Ber set_local_to_do_result = */
+  /*       BinaryenLocalSet(module, do_result_index, do_result); */
+  /*   Ber get_do_result_from_local = */
+  /*       BinaryenLocalGet(module, do_result_index, BinaryenTypeInt32());
+   */
+  /*   Ber do_body_result[] = {set_local_to_do_result, release_locals_block,
+   */
+  /*                           get_do_result_from_local}; */
+  /*   do_body[do_list_index++] = */
+  /*       BinaryenBlock(module, uniquify_name(wasm, "do_body_result"), */
+  /*                     do_body_result, 3, BinaryenTypeInt32()); */
+  /* } else */
+  /*   do_body[do_list_index++] = do_result; */
+
+  Ber ret = BinaryenBlock(module, uniquify_name(wasm, "do"), do_body,
+                          do_list_index, BinaryenTypeInt32());
+  li_close(li);
+  free(do_body);
+  return ret;
 }
 
 int is_eq_str(void* k1, void* k2) { return _strcmp(k1, k2) == 0; }
@@ -523,9 +576,8 @@ Ber compile_lambda(Wasm* wasm, Cell* args) {
   Lval* lval_sym = make_lval_sym(NULL);
   char* lambda_name = lalloc_size(512);
   _strcpy(lambda_name, context->function_context->fn_name);
-  _strcat(lambda_name, "_");
+  _strcat(lambda_name, "#");
   itostr(lambda_name + _strlen(lambda_name), wasm->fns_count + 1);
-  lambda_name = lrealloc(lambda_name, _strlen(lambda_name) + 1);
   lval_sym->str = retain(lambda_name);
 
   FunctionData function_data = add_wasm_function(wasm, lval_sym, lval_fun);
@@ -598,6 +650,7 @@ Ber compile_lambda(Wasm* wasm, Cell* args) {
 
   Ber lambda_block = BinaryenBlock(module, lambda_name, lambda_list,
                                    lambda_block_count, BinaryenTypeAuto());
+  free(lambda_list);
   release(lambda_name);
   return lambda_block;
 }
@@ -658,20 +711,21 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   /* printf("compile local ref call!!!!!!!!!!!!!!!\n"); */
   // Puts args of a fn like (f a b c) on stack like this: <c b a 3> where stack
   // pointer points at <
-  int i = 0;
+  int wasm_args_count = 0;
   int args_count = list_count(args);
-  int wasm_args_count =
+  int max_wasm_args_count =
       args_count + 5;  // args,  update stackpointer,
                        // call, reset stackpointer, release_locals, result
   /* wasm_args_count++; //for wval_print */
-  Ber* wasm_args = malloc(sizeof(Ber) * wasm_args_count);
+  Ber* wasm_args = malloc(sizeof(Ber) * max_wasm_args_count);
   int sp_offset = args_count * 4;
   /* printf("SP_OFFSET: %d\n", sp_offset); */
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
 
-  int local_indices[128];
-  int local_indices_count = 0;
+  /* int local_indices[128]; */
+  /* int local_indices_count = 0; */
+  LocalIndices* li = li_init();
   // Put args on stack
 
   printf("compile_wasm_fn_call %s\n", fn_name);
@@ -684,16 +738,7 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     Ber compiled_arg = lval_compile(wasm, args->car);
     Ber push_arg = NULL;
     if (wasm->is_fn_call) {
-      /* printf("is_fn_call: %d -> ", local_indices_count); */
-      int local_index = local_indices[local_indices_count++] =
-          context->function_context->local_count++;
-      if (local_indices_count == 128)
-        return quit(
-            wasm,
-            "ERROR: A function can only be directly called with a maximum "
-            "of 128 args that are fn calls%s\n",
-            fn_name);
-
+      int local_index = li_track(wasm, li, li_new(wasm));
       compiled_arg = BinaryenLocalTee(module, local_index, compiled_arg,
                                       BinaryenTypeInt32());
     } else {
@@ -701,16 +746,18 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     }
 
     lval_println(args->car);
-    push_arg = BinaryenStore(module, 4, sp_offset - (i + 1) * 4, 0,
-                             stack_pointer, compiled_arg, BinaryenTypeInt32());
-    wasm_args[i++] = push_arg;
+    push_arg =
+        BinaryenStore(module, 4, sp_offset - (wasm_args_count + 1) * 4, 0,
+                      stack_pointer, compiled_arg, BinaryenTypeInt32());
+    wasm_args[wasm_args_count++] = push_arg;
     args = args->cdr;
   }
 
   // Increase stack pointer to free mem.
   BinaryenExpressionRef sp_plus_offset = BinaryenBinary(
       module, BinaryenAddInt32(), stack_pointer, make_int32(module, sp_offset));
-  wasm_args[i++] = BinaryenGlobalSet(module, "stack_pointer", sp_plus_offset);
+  wasm_args[wasm_args_count++] =
+      BinaryenGlobalSet(module, "stack_pointer", sp_plus_offset);
 
   // Call fn
   Ber result = NULL;
@@ -745,42 +792,29 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
 
   // Store result in local wasm var
   int result_index = context->function_context->local_count++;
-  wasm_args[i++] = BinaryenLocalSet(module, result_index, result);
+  wasm_args[wasm_args_count++] = BinaryenLocalSet(module, result_index, result);
 
   // Reset stack pointer;
   BinaryenExpressionRef sp_minus_offset = BinaryenBinary(
       module, BinaryenSubInt32(), stack_pointer, make_int32(module, sp_offset));
-  wasm_args[i++] = BinaryenGlobalSet(module, "stack_pointer", sp_minus_offset);
+  wasm_args[wasm_args_count++] =
+      BinaryenGlobalSet(module, "stack_pointer", sp_minus_offset);
 
   // Release results of fn calls
-  Ber release_locals[local_indices_count];
-  Ber get_local[1];
-  for (int i = 0; i < local_indices_count; i++) {
-    get_local[0] =
-        BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32());
-    release_locals[i] =
-        BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
-  }
-
-  Ber release_locals_block =
-      BinaryenBlock(module, uniquify_name(wasm, "release_locals_for_fn_call"),
-                    release_locals, local_indices_count, BinaryenTypeNone());
-  wasm_args[i++] = release_locals_block;
+  Ber release_locals_block = li_release(wasm, li, "release_locals_for_fn_call");
+  if (release_locals_block) wasm_args[wasm_args_count++] = release_locals_block;
 
   // Get result from local wasm var
   Ber result_from_local =
       BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
-  wasm_args[i++] = result_from_local;
+  wasm_args[wasm_args_count++] = result_from_local;
 
-  /* char* lambda_call_name = lalloc_size(512); */
-  /* _strcpy(lambda_call_name, "lambda_call"); */
-  /* _strcat(lambda_call_name, "_"); */
-  /* itostr(lambda_call_name + _strlen(lambda_call_name), wasm->id++); */
   Ber call_block =
       BinaryenBlock(module, uniquify_name(wasm, "lambda_call"), wasm_args,
                     wasm_args_count, BinaryenTypeInt32());
 
-  /* release(lambda_call_name); */
+  free(wasm_args);
+  li_close(li);
   printf("Returning call block\n");
   return call_block;
 }
@@ -929,22 +963,8 @@ Ber lval_compile(Wasm* wasm, Lval* lval) {
       return resolve_symbol_and_compile(wasm, lval);
     case LVAL_COLLECTION:
       if (lval->subtype == LIST) return compile_list(wasm, lval);  // fn call
-      /* switch (lval->subtype) { */
-      /*   case LIST: */
-      /*     return compile_list(wasm, lval);  // fn call */
-      /*   case SET: */
-      /*   case MAP: */
-      /*   case VECTOR: */
-      /*     return wasmify_collection(wasm, lval); */
-      /*   default:; */
-      /*     quit(wasm, "ERROR: unknown collection subtype: %d", lval->subtype);
-       */
-      /* } */
-      /* case LVAL_LITERAL: */
     default:
       return wasmify_lval(wasm, lval);
-      /* default:; */
-      /*   quit(wasm, "ERROR: Unknown lval type: %d", lval->type); */
   }
   return NULL;
 }
@@ -1033,9 +1053,10 @@ int compile(char* file_name) {
 
 /* void add_global_section(BinaryenModuleRef module) { */
 /*   BinaryenAddGlobalImport(module, "data_end", "env", "data_end", */
-/*                           BinaryenTypeInt32(), 0); */
-
-/*   BinaryenAddGlobal(module, "a-global", BinaryenTypeInt32(), 0, */
+/*                           BinaryenTypeInt32(), 0); */ /*   BinaryenAddGlobal(module,
+                                                            "a-global",
+                                                            BinaryenTypeInt32(),
+                                                            0, */
 /*                     make_int32(module, 7)); */
 
 /*   BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1,

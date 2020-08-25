@@ -32,22 +32,19 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
   bindings_count = bindings_count / 2;
 
   Lenv* let_env = enter_env(wasm);
-  int let_body_count = list_count(arg_list) - 1;
-  /* printf("let body count: %d:", let_body_count); */
-  let_body_count = let_body_count == 0 ? 1 : let_body_count;
-  let_body_count += bindings_count;
-  Ber* let_body = malloc(let_body_count * sizeof(Ber));  // TODO: free???
+  int let_body_count_max = list_count(arg_list);
+  let_body_count_max += bindings_count;
+  Ber* let_body = malloc(let_body_count_max * sizeof(Ber));  // TODO: free???
 
   scoped_iter Cell* b = iter_new(bindings);
   Lval* lval_sym = iter_next(b);
 
   // Compile
 
-  int local_indices[128];
-  int local_indices_count = 0;
+  LocalIndices* li = li_init();
 
   // Bindings
-  int i = 0;
+  int let_body_count = 0;
   while (lval_sym) {
     if (lval_sym->type != LVAL_SYMBOL) {
       quit(wasm, "Canot bind non-symbol. Got %s, expected %s.",
@@ -62,22 +59,23 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
         module, context->function_context->local_count, wasm_value);
 
     if (wasm->is_fn_call) {
-      local_indices[local_indices_count++] =
-          context->function_context->local_count;
-      if (local_indices_count == 128)
-        return quit(wasm,
-                    "ERROR: Let can only be invoked with a maximum "
-                    "of 128 bindings and body forms that are fn calls%s\n");
+      li_track(wasm, li, li_get(wasm));
+      /* local_indices[local_indices_count++] = */
+      /*     context->function_context->local_count; */
+      /* if (local_indices_count == 128) */
+      /*   return quit(wasm, */
+      /*               "ERROR: Let can only be invoked with a maximum " */
+      /*               "of 128 bindings and body forms that are fn calls%s\n");
+       */
     }
-
-    let_body[i] = local_var;
 
     // LENV_PUT
     int local_index = context->function_context->local_count++;
     lenv_put(let_env, retain(lval_sym),
              make_lval_compiler(context, LOCAL, local_index));
 
-    i++;
+    let_body[let_body_count++] = local_var;
+
     /* if (lval->type == LVAL_ERR) { */
     /*   release(let_env); */
     /*   return lval; */
@@ -89,7 +87,7 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
   Ber let_result = NULL;
   // Body
   if (arg_list->cdr) {
-    /* while (arg_list->cdr) { */
+    // We've got forms in the body of let
     do {
       arg_list = arg_list->cdr;
       wasm->is_fn_call = 0;
@@ -100,18 +98,13 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
         // Drop the value, but store it in a local var if it's a fn call so we
         // can release it before returning
         if (wasm->is_fn_call) {
-          int local_index = local_indices[local_indices_count++] =
-              context->function_context->local_count++;
-          if (local_indices_count == 128)
-            return quit(wasm,
-                        "ERROR: Let can only be invoked with a maximum "
-                        "of 128 bindings and body forms that are fn calls%s\n");
+          int local_index = li_track(wasm, li, li_new(wasm));
 
           ber = BinaryenLocalSet(module, local_index, ber);
         } else {
           ber = BinaryenDrop(module, ber);
         }
-        let_body[i++] = ber;
+        let_body[let_body_count++] = ber;
 
       } else {
         // ber is the last value in the body of let
@@ -125,41 +118,35 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
       }
     } while (arg_list->cdr);
   } else {
-    if (!wasm->lval_nil_offset)
-      wasm->lval_nil_offset = inter_lval(wasm, make_lval_nil());
-    let_result = wasm->lval_nil_offset;
+    // Empty body
+    let_result = wasmify_literal(wasm, make_lval_nil());
     Ber retain_operand[1] = {let_result};
     let_result =
         BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
   }
 
-  // Release results of fn calls
-  Ber release_locals[local_indices_count];
-  Ber get_local[1];
-  for (int i = 0; i < local_indices_count; i++) {
-    get_local[0] =
-        BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32());
-    release_locals[i] =
-        BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
-  }
+  Ber release_locals_block = li_release(wasm, li, "release_locals_for_let");
+  let_body[let_body_count++] = li_result_with_release(
+      wasm, li, "let_body_result", release_locals_block, let_result);
 
-  Ber release_locals_block =
-      BinaryenBlock(module, uniquify_name(wasm, "release_locals_of_let"),
-                    release_locals, local_indices_count, BinaryenTypeNone());
-  int let_result_index = context->function_context->local_count++;
-  Ber set_local_to_let_result =
-      BinaryenLocalSet(module, let_result_index, let_result);
-  Ber get_let_result_from_local =
-      BinaryenLocalGet(module, let_result_index, BinaryenTypeInt32());
-  Ber let_body_result[] = {set_local_to_let_result, release_locals_block,
-                           get_let_result_from_local};
-  let_body[i] = BinaryenBlock(module, uniquify_name(wasm, "let_body_result"),
-                              let_body_result, 3, BinaryenTypeInt32());
+  /* int let_result_index = li_new(wasm); */
+  /* Ber set_local_to_let_result = */
+  /*     BinaryenLocalSet(module, let_result_index, let_result); */
+  /* Ber get_let_result_from_local = */
+  /*     BinaryenLocalGet(module, let_result_index, BinaryenTypeInt32()); */
+  /* Ber let_body_result[] = {set_local_to_let_result, release_locals_block, */
+  /*                          get_let_result_from_local}; */
+  /* let_body[i] = BinaryenBlock( */
+  /*     module, uniquify_name(wasm, uniquify_name(wasm, "let_body_result")), */
+  /*     let_body_result, 3, BinaryenTypeInt32()); */
   // Post compile
   leave_env(wasm);
 
-  return BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
-                       let_body_count, make_type_int32(1));
+  Ber ret = BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
+                          let_body_count, BinaryenTypeInt32());
+  li_close(li);
+  free(let_body);
+  return ret;
 }
 
 Ber compile_if(Wasm* wasm, Cell* args) {
@@ -209,3 +196,26 @@ Ber compile_quote(Wasm* wasm, Cell* args) {
 Ber compile_quasiquote(Wasm* wasm, Cell* args) {
   return make_int32(wasm->module, 0);
 }
+
+// Release results of fn calls
+/* Ber release_locals[local_indices_count]; */
+/* Ber get_local[1]; */
+/* for (int i = 0; i < local_indices_count; i++) { */
+/*   get_local[0] = */
+/*       BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32()); */
+/*   release_locals[i] = */
+/*       BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone()); */
+/* } */
+
+/* Ber release_locals_block = */
+/*     BinaryenBlock(module, uniquify_name(wasm, "release_locals_of_let"), */
+/*                   release_locals, local_indices_count, BinaryenTypeNone());
+ */
+
+/* int local_index = local_indices[local_indices_count++] = */
+/*     context->function_context->local_count++; */
+/* if (local_indices_count == 128) */
+/*   return quit(wasm, */
+/*               "ERROR: Let can only be invoked with a maximum " */
+/*               "of 128 bindings and body forms that are fn
+ * calls%s\n"); */
