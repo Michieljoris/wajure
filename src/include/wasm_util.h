@@ -80,4 +80,6 @@ Lval* make_lval_compiler(Context* context, int subtype, int offset);
 
 Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...);
 
+char* uniquify_name(Wasm* wasm, char* name);
+
 #endif  // __WASM_UTIL_H_

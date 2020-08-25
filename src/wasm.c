@@ -30,7 +30,6 @@ Wasm* init_wasm() {
                  .lval_num_end = 100,
                  .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201),
                  .context = malloc(sizeof(Cell)),
-                 .id = 1,
                  .is_fn_call = 0,
                  .runtime_check_args_count = 1};
   Context context = (Context){.msg = "Root context"};

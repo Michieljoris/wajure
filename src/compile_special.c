@@ -143,8 +143,9 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
         BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
   }
 
-  Ber release_locals_block = BinaryenBlock(
-      module, NULL, release_locals, local_indices_count, BinaryenTypeNone());
+  Ber release_locals_block =
+      BinaryenBlock(module, uniquify_name(wasm, "release_locals_of_let"),
+                    release_locals, local_indices_count, BinaryenTypeNone());
   int let_result_index = context->function_context->local_count++;
   Ber set_local_to_let_result =
       BinaryenLocalSet(module, let_result_index, let_result);
@@ -152,13 +153,13 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
       BinaryenLocalGet(module, let_result_index, BinaryenTypeInt32());
   Ber let_body_result[] = {set_local_to_let_result, release_locals_block,
                            get_let_result_from_local};
-  let_body[i] = BinaryenBlock(module, "let_body_result", let_body_result, 3,
-                              BinaryenTypeInt32());
+  let_body[i] = BinaryenBlock(module, uniquify_name(wasm, "let_body_result"),
+                              let_body_result, 3, BinaryenTypeInt32());
   // Post compile
   leave_env(wasm);
 
-  return BinaryenBlock(module, "let", let_body, let_body_count,
-                       make_type_int32(1));
+  return BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
+                       let_body_count, make_type_int32(1));
 }
 
 Ber compile_if(Wasm* wasm, Cell* args) {

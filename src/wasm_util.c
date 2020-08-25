@@ -382,6 +382,63 @@ Lval* make_lval_compiler(Context* context, int subtype, int offset) {
   return lval;
 }
 
+int id = 1;
+char str[1024];
+
+char* uniquify_name(Wasm* wasm, char* name) {
+  if (_strlen(name) > 512)
+    quit(wasm, "ERROR: Can't uniquify names longer than 512 chars");
+  _strcpy(str, name);
+  _strcat(str, "_");
+  itostr(str + _strlen(str), id++);
+  return str;
+}
+
+typedef struct {
+  int* local_indices;
+  int local_indices_count;
+} LocalIndices;
+
+#define MAX_LOCAL_INDICES 128
+
+LocalIndices li_init() {
+  LocalIndices li = {
+      .local_indices = lalloc_size(MAX_LOCAL_INDICES * 4),  // 512
+      .local_indices_count = 0};
+  return li;
+}
+
+int li_get(Wasm* wasm) {
+  Context* context = wasm->context->car;
+  return context->function_context->local_count++;
+}
+
+int li_get_and_track(Wasm* wasm, LocalIndices li) {
+  int index = li.local_indices[li.local_indices_count++] = li_get(wasm);
+
+  if (li.local_indices_count == MAX_LOCAL_INDICES)
+    quit(wasm, "ERROR: Can't keep track of more than %d local indices",
+         MAX_LOCAL_INDICES);
+  return index;
+}
+
+Ber li_release(Wasm* wasm, LocalIndices li) {
+  BinaryenModuleRef module = wasm->module;
+  Ber release_locals[li.local_indices_count];
+  Ber get_local[1];
+  for (int i = 0; i < li.local_indices_count; i++) {
+    get_local[0] =
+        BinaryenLocalGet(module, li.local_indices[i], BinaryenTypeInt32());
+    release_locals[i] =
+        BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
+  }
+
+  Ber release_locals_block =
+      BinaryenBlock(module, uniquify_name(wasm, "release_locals_for_fn_call"),
+                    release_locals, li.local_indices_count, BinaryenTypeNone());
+  return release_locals_block;
+}
+
 /* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */
 /*   BinaryenModuleRef module = wasm->module; */
 

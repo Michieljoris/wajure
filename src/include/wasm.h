@@ -25,7 +25,6 @@ typedef struct {
   Cell* lispy_to_c_fn_map;
   Cell* fn_to_offset_map;
   Cell* context;
-  int id;
   // Every lval is either the result of a fn/lambda call, special form or a
   // retrieving of interred values or previously calculated dynamic values. This
   // flag keeps track of what we just put on the wasm stack is the result of

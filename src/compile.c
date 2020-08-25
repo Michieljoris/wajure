@@ -684,7 +684,7 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     Ber compiled_arg = lval_compile(wasm, args->car);
     Ber push_arg = NULL;
     if (wasm->is_fn_call) {
-      printf("is_fn_call: %d -> ", local_indices_count);
+      /* printf("is_fn_call: %d -> ", local_indices_count); */
       int local_index = local_indices[local_indices_count++] =
           context->function_context->local_count++;
       if (local_indices_count == 128)
@@ -762,8 +762,9 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
         BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
   }
 
-  Ber release_locals_block = BinaryenBlock(
-      module, NULL, release_locals, local_indices_count, BinaryenTypeNone());
+  Ber release_locals_block =
+      BinaryenBlock(module, uniquify_name(wasm, "release_locals_for_fn_call"),
+                    release_locals, local_indices_count, BinaryenTypeNone());
   wasm_args[i++] = release_locals_block;
 
   // Get result from local wasm var
@@ -771,14 +772,15 @@ Ber compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
       BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
   wasm_args[i++] = result_from_local;
 
-  char* lambda_call_name = lalloc_size(512);
-  _strcpy(lambda_call_name, "lambda_call");
-  _strcat(lambda_call_name, "_");
-  itostr(lambda_call_name + _strlen(lambda_call_name), wasm->id++);
-  Ber call_block = BinaryenBlock(module, lambda_call_name, wasm_args,
-                                 wasm_args_count, BinaryenTypeInt32());
+  /* char* lambda_call_name = lalloc_size(512); */
+  /* _strcpy(lambda_call_name, "lambda_call"); */
+  /* _strcat(lambda_call_name, "_"); */
+  /* itostr(lambda_call_name + _strlen(lambda_call_name), wasm->id++); */
+  Ber call_block =
+      BinaryenBlock(module, uniquify_name(wasm, "lambda_call"), wasm_args,
+                    wasm_args_count, BinaryenTypeInt32());
 
-  release(lambda_call_name);
+  /* release(lambda_call_name); */
   printf("Returning call block\n");
   return call_block;
 }
