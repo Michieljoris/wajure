@@ -5,7 +5,29 @@
 
 Interpreter passes most mal tests but is rather minimal.
 
-Compiler is getting on, lambdas are starting to work.
+Compiler to wasm.
+
+TODO:
+
+- [x] first class fns
+- [x] macros
+- [x] rest args
+- [x] memory managment (mempool + refcount)
+- [x] basic data types (int, string, list)
+- [ ] compile test suite
+- [ ] namespaces
+- [ ] partial
+- [ ] loop/recur
+- [ ] try/throw/catch
+- [ ] apply
+- [ ] multi-arity fns
+- [ ] keywords
+- [ ] persistent maps/sets
+- [ ] multimethods
+- [ ] map/reduce
+- [ ] meta data
+- [ ] lazy seqs
+
 
 * Intro
 
