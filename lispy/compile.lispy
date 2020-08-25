@@ -25,8 +25,10 @@
   )
 
 
+
 (defn test [x y]
-  (let [x 1 y (bar 1)] x  (bar y))
+  ;; x y
+  (let [a 1 b (bar 1)] x  (bar x y))
   ;; (let [f? (fn [x] x)] (f? 1))
   ;; (let [a (foo 12 3) d (+ 1 2) b (bar 1) e 1] b e)
   ;; (foo (bar 1) (bar 1))

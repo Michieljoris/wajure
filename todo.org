@@ -1,21 +1,27 @@
 * TODO compiler
-** freeing a lval_wasm_lambda!!!
+** add release and retain to wasm code
+*** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
+*** deciding whether a compiled macro was a fn call!!
+*** releasing args to sys fn!!!
+
+** wasmify_lval, finish compile_quote
+** partial
+** apply
+https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
+Use core lib fn to reduce args to a single list
+Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
+** multi arity fns!!!
+** compile test suite
+** loop/recur
+** namespaces
+** multimethods
+** try/throw/catch
+** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
+** ----------------------------
 ** Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
 - so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
 - we might be able to do optimisations, such as mutually cancelling retain and release calls
-** compile test suite
-** DONE make sure that every fn added has unique wasm name
-So wasmified sys fns are called eg sys_print
-
-And lambdas (such as foobar) found in compile env should be renamed and
-numbered, eg: l1_foobar, no I don't think that's needed: we use the latest lval
-defined for a symbol in the compiler env.
-
-Anonymous lambdas found in fns become foobar#1, foobar#2 etc.
-** DONE abort if too many parameters. abort when too few
-** better stackpointer handling
-** load args into local vars!!!
 ** better compile time arg count checking
 You could be a bit smarter about it at compile time.
 1. When a symbol resolves to a sys fn you can check arg count
@@ -27,22 +33,13 @@ You could be a bit smarter about it at compile time.
     (fn [g] (g 123))
 ** (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
-** add release and retain to wasm code
-** check mem mngmnt for compiler as well
 ** pass floats, strings, maps, vectors, sets etc from js to wajure fn
 Currently only ints work
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
-** implement maps and sets
-** replace list implementations of maps, sets and vectors with permanent data structures other than list
--> vector and map hamt.
-** implement: if, do, try, throw, str, loop/recur, quote, quasiquote, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces, meta data
-** partial
-** apply
-https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
-Use core lib fn to reduce args to a single list
-Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
-** multi arity fns!!!
+** add and implement maps and sets and vectors with permanent data structures
+ hamt
+** implement lazy seqs
 ** max str size, elide with warning or abort
 ** check for max closure size (currently 128 vars (CHAR512 mempool type))
 ** find out about and add binaryen optimisations
@@ -53,11 +50,6 @@ Similar to clojure.core. Probably needs namespaces implemented first
 ** reader has bug where last parens gets ignored
 ** add rest of tests from mal
 ** implement: str, loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces, meta data
-** partial
-** apply
-https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
-Use core lib fn to reduce args to a single list
-Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
@@ -91,6 +83,18 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+** DONE make sure that every fn added has unique wasm name
+So wasmified sys fns are called eg sys_print
+
+And lambdas (such as foobar) found in compile env should be renamed and
+numbered, eg: l1_foobar, no I don't think that's needed: we use the latest lval
+defined for a symbol in the compiler env.
+
+Anonymous lambdas found in fns become foobar#1, foobar#2 etc.
+** DONE abort if too many parameters. abort when too few
+** DONE better stackpointer handling
+** DONE load args into local vars!!!
+** DONE check mem mngmnt for compiler as well
 ** DONE macroexpand macros before compiling
 ** DONE test macro
 ** DONE Fix memory leak for interpreter
@@ -124,6 +128,30 @@ runtime includes:
 ** DONE reference counting
 
 * Good to know
+** stack
+Before we call a fn we put all args on the stack, then adjust the stackpointer
+to point to the first free mem again. After returning we set the sp back again.
+When calling fn we know how many args are passed so we can hardcode the sp
+adjustment. When in the fn we have to subtract offset from the sp to get at the
+args.
+
+Alternatively we could adjust the sp in the fn itself but we'd have to rely on
+the wasm arg count arg that any fn gets passed in. We'd add that arg count to
+the sp before adding args to the stack frame and then calling a fn. On return
+we'd subtract it again. When getting at the lispy params on the stack we'd have
+to first add the arg count, then subtract the expected arg count, again relying
+on the passed in arg count in second wasm param.
+
+First solution uses hardcoded values, second doesn't.
+
+Stack looks like this btw:
+
+arg2 arg1 arg0 | x x rest_arg arg1 arg0 | etc.
+
+where sp points at the |'s and we extract the args from the stack frame just
+before the sp.
+
+This is so that we can easily add partial args on top (as found in a lval_wasm_lambda)
 ** rename wajure to wajure ??
 ** To create/update compile_commmands.json:
 

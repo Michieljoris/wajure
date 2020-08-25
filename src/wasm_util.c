@@ -246,12 +246,10 @@ void add_test_fn(Wasm* wasm) {
 
   BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
                       sizeof(localTypes) / sizeof(BinaryenType), body);
-
   BinaryenAddFunctionExport(wasm->module, "test", "test");
 }
 
 BinaryenType* make_type_int32_array(int count) {
-  // TODO: free??
   BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
   while (count--) types[count] = BinaryenTypeInt32();
   return types;
@@ -259,7 +257,9 @@ BinaryenType* make_type_int32_array(int count) {
 
 BinaryenType make_type_int32(int count) {
   BinaryenType* _type = make_type_int32_array(count);
-  return BinaryenTypeCreate(_type, count);
+  BinaryenType ret = BinaryenTypeCreate(_type, count);
+  free(_type);
+  return ret;
 }
 
 #define slot_type_size 4 * 4

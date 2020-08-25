@@ -34,7 +34,7 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
   Lenv* let_env = enter_env(wasm);
   int let_body_count_max = list_count(arg_list);
   let_body_count_max += bindings_count;
-  Ber* let_body = malloc(let_body_count_max * sizeof(Ber));  // TODO: free???
+  Ber* let_body = malloc(let_body_count_max * sizeof(Ber));
 
   scoped_iter Cell* b = iter_new(bindings);
   Lval* lval_sym = iter_next(b);

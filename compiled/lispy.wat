@@ -71,7 +71,10 @@
   (local $4 i32)
   (local $5 i32)
   (local $6 i32)
-  (block $do_6 (result i32)
+  (local $7 i32)
+  (local $8 i32)
+  (local $9 i32)
+  (block $do_7 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -99,12 +102,30 @@
      (nop)
     )
    )
-   (block $let_5 (result i32)
+   (block $store_args_in_locals_1
     (local.set $2
-     (i32.const 4349)
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.const 8)
+     )
+    )
+    (local.set $3
+     (i32.load offset=4
+      (local.get $2)
+     )
     )
     (local.set $4
-     (block $lambda_call_1 (result i32)
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (block $let_6 (result i32)
+    (local.set $5
+     (i32.const 4349)
+    )
+    (local.set $7
+     (block $lambda_call_2 (result i32)
       (i32.store
        (global.get $stack_pointer)
        (i32.const 4349)
@@ -115,7 +136,7 @@
         (i32.const 4)
        )
       )
-      (local.set $3
+      (local.set $6
        (call $bar
         (i32.const 0)
         (i32.const 1)
@@ -127,15 +148,19 @@
         (i32.const 4)
        )
       )
-      (local.get $3)
+      (local.get $6)
      )
     )
     (drop
-     (local.get $2)
+     (local.get $3)
     )
-    (block $let_body_result_4 (result i32)
-     (local.set $6
-      (block $lambda_call_2 (result i32)
+    (block $let_body_result_5 (result i32)
+     (local.set $9
+      (block $lambda_call_3 (result i32)
+       (i32.store offset=4
+        (global.get $stack_pointer)
+        (local.get $3)
+       )
        (i32.store
         (global.get $stack_pointer)
         (local.get $4)
@@ -143,36 +168,38 @@
        (global.set $stack_pointer
         (i32.add
          (global.get $stack_pointer)
-         (i32.const 4)
+         (i32.const 8)
         )
        )
-       (local.set $5
+       (local.set $8
         (call $bar
          (i32.const 0)
-         (i32.const 1)
+         (i32.const 2)
         )
        )
        (global.set $stack_pointer
         (i32.sub
          (global.get $stack_pointer)
-         (i32.const 4)
+         (i32.const 8)
         )
        )
-       (local.get $5)
+       (local.get $8)
       )
      )
-     (block $release_locals_for_let_3
+     (block $release_locals_for_let_4
       (call $release
-       (local.get $4)
+       (local.get $7)
       )
      )
-     (local.get $6)
+     (local.get $9)
     )
    )
   )
  )
  (func $bar (param $0 i32) (param $1 i32) (result i32)
-  (block $do_7 (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (block $do_9 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -200,18 +227,29 @@
      (nop)
     )
    )
-   (call $retain
-    (i32.load
+   (block $store_args_in_locals_8
+    (local.set $2
      (i32.sub
       (global.get $stack_pointer)
       (i32.const 4)
      )
     )
+    (local.set $3
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (call $retain
+    (local.get $3)
    )
   )
  )
  (func $foo (param $0 i32) (param $1 i32) (result i32)
-  (block $do_8 (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (local $4 i32)
+  (block $do_11 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -239,13 +277,26 @@
      (nop)
     )
    )
-   (call $retain
-    (i32.load offset=4
+   (block $store_args_in_locals_10
+    (local.set $2
      (i32.sub
       (global.get $stack_pointer)
       (i32.const 8)
      )
     )
+    (local.set $3
+     (i32.load offset=4
+      (local.get $2)
+     )
+    )
+    (local.set $4
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (call $retain
+    (local.get $3)
    )
   )
  )
