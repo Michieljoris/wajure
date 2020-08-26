@@ -18,20 +18,21 @@ Wasm* init_wasm() {
                  .data_offset = 0,
                  .fn_names = malloc(1),
                  .fns_count = 0,
-                 .lval_true_offset = NULL,
-                 .lval_false_offset = NULL,
-                 .lval_nil_offset = NULL,
-                 .lval_empty_list_offset = NULL,
+                 .lval_true_offset = cnull(),
+                 .lval_false_offset = cnull(),
+                 .lval_nil_offset = cnull(),
+                 .lval_empty_list_offset = cnull(),
                  .__data_end = (int)_strtol(data_end_str, NULL, 10),
                  .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
                  // no need to intern lval literal numbers for these common
                  // numbers (-100 till 100):
                  .lval_num_start = -100,
                  .lval_num_end = 100,
-                 .lval_num_offset = calloc(sizeof(BinaryenExpressionRef), 201),
+                 .lval_num_offset = calloc(sizeof(CResult), 201),
                  .context = malloc(sizeof(Cell)),
                  .is_fn_call = 0,
                  .runtime_check_args_count = 1};
+  for (int i = 0; i < 201; i++) wasm->lval_num_offset[i] = cnull();
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
 

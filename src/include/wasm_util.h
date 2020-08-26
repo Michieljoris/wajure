@@ -39,6 +39,9 @@ BinaryenType make_type_int32(int count);
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
 CResult inter_lval(Wasm* wasm, Lval* lval);
+CResult inter_cell(Wasm* wasm, Cell* cell);
+
+CResult inter_list(Wasm* wasm, Lval* lval);
 
 Wasm* enter_context(Wasm* wasm);
 

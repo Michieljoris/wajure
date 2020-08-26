@@ -226,50 +226,50 @@ CResult wasmify_root_lambda_fn(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
 }
 
 CResult wasmify_collection(Wasm* wasm, Lval* lval) {
-  Ber ber = make_int32(wasm->module, 123);
-  CResult cresult = {.ber = ber, .is_fn_call = 0};
-  return cresult;
-  /* printf("wasmify_collection\n"); */
-  /* lval_println(lval); */
-  /* // List, map, set, vector; */
-  /* switch (lval->subtype) { */
-  /*   case LIST: */
-  /*     return inter_lval(wasm, lval); */
-  /*   case VECTOR:; */
-  /*   case MAP:; */
-  /*   case SET:; */
-  /*   default: */
-  /*     quit(wasm, "Unknown or unimplemented collection subtype %s %d", */
-  /*          lval_type_to_name(lval), lval->subtype); */
-  /*     return NULL; */
-  /* } */
+  printf("wasmify_collection\n");
+  lval_println(lval);
+  // List, map, set, vector;
+  switch (lval->subtype) {
+    case LIST:
+      return inter_list(wasm, lval);
+    case VECTOR:;
+    case MAP:;
+    case SET:;
+    default:
+      return quit(wasm, "Unknown or unimplemented collection subtype %s %d",
+                  lval_type_to_name(lval), lval->subtype);
+  }
 }
 
 CResult wasmify_literal(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
     case NUMBER:;
+      lval_println(lval);
+      printf("wasmifying number\n");
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
-        if (!wasm->lval_num_offset[lval->num - wasm->lval_num_start])
-          wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
-              inter_lval(wasm, lval).ber;
-
-        return cresult(wasm->lval_num_offset[lval->num - wasm->lval_num_start]);
+        CResult cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];
+        if (!cache.ber) {
+          printf("CREATING LVAL_DATA\n");
+          cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
+              inter_lval(wasm, lval);
+        }
+        return cache;
       }
 
       return inter_lval(wasm, lval);
     case LTRUE:
-      if (!wasm->lval_true_offset)
-        wasm->lval_true_offset = inter_lval(wasm, lval).ber;
-      return cresult(wasm->lval_true_offset);
+      if (!wasm->lval_true_offset.ber)
+        wasm->lval_true_offset = inter_lval(wasm, lval);
+      return wasm->lval_true_offset;
     case LFALSE:
-      if (!wasm->lval_false_offset)
-        wasm->lval_false_offset = inter_lval(wasm, lval).ber;
-      return cresult(wasm->lval_false_offset);
+      if (!wasm->lval_false_offset.ber)
+        wasm->lval_false_offset = inter_lval(wasm, lval);
+      return wasm->lval_false_offset;
     case LNIL:
-      if (!wasm->lval_nil_offset)
-        wasm->lval_nil_offset = inter_lval(wasm, lval).ber;
-      return cresult(wasm->lval_nil_offset);
+      if (!wasm->lval_nil_offset.ber)
+        wasm->lval_nil_offset = inter_lval(wasm, lval);
+      return wasm->lval_nil_offset;
     /* case STRING:; */
     /* case KEYWORD:; */
     /* case SYMBOL:; */
@@ -897,9 +897,9 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
 
   // Empty list
   if (lval_list->head == NIL) {
-    if (!wasm->lval_empty_list_offset)
-      wasm->lval_empty_list_offset = inter_lval(wasm, lval_list).ber;
-    return cresult(wasm->lval_empty_list_offset);  // pointer to empty lval list
+    if (!wasm->lval_empty_list_offset.ber)
+      wasm->lval_empty_list_offset = inter_lval(wasm, lval_list);
+    return wasm->lval_empty_list_offset;  // pointer to empty lval list
   }
 
   Lval* lval_first = lval_list->head->car;

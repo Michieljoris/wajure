@@ -2,6 +2,7 @@
 
 #include <binaryen-c.h>
 
+#include "compile.h"
 #include "env.h"
 #include "fns.h"
 #include "lib.h"
@@ -269,26 +270,37 @@ BinaryenType make_type_int32(int count) {
 #define ref_count_offset 0
 #define data_p_offset 3
 #define wcell_size slot_type_size + cell_type_size
-#define car_offset 4
-#define cdr_offset 5
-#define cell_hash_offset 6
+#define cell_hash_offset 4
+#define car_offset 5
+#define cdr_offset 6
 
 // pointers are 32 bits in our wasm, max mem reachable mem is about 4gb
 int ptr_to_int(void* p) { return (int)((long)p & 0xFFFFFFFF); }
 
-BinaryenExpressionRef inter_cell(Wasm* wasm, Cell* cell) {
+int* make_data_cell(Wasm* wasm, Cell* cell) {
   int* data_cell = calloc(1, wcell_size);
 
   data_cell[ref_count_offset] = 1;
   data_cell[data_p_offset] =
       wasm->__data_end + wasm->data_offset + slot_type_size;
-  data_cell[car_offset] = ptr_to_int(cell->car);
-  data_cell[cdr_offset] = ptr_to_int(cell->cdr);
+  data_cell[car_offset] = 0;
+  data_cell[cdr_offset] = 0;
   data_cell[cell_hash_offset] = cell->hash;
+  return data_cell;
+}
 
+CResult inter_data_cell(Wasm* wasm, int* data_cell) {
   int offset = add_bytes_to_data(wasm, (char*)data_cell, wcell_size);
   free(data_cell);
-  return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
+  int wcell_ptr = wasm->__data_end + offset + slot_type_size;
+  CResult ret = {.ber = make_int32(wasm->module, wcell_ptr),
+                 .wasm_ptr = wcell_ptr};
+  return ret;
+}
+
+CResult inter_cell(Wasm* wasm, Cell* cell) {
+  int* data_cell = make_data_cell(wasm, cell);
+  return inter_data_cell(wasm, data_cell);
 }
 
 #define lval_type_size 5 * 4  // type and subtype are in 4 bytes
@@ -301,7 +313,7 @@ BinaryenExpressionRef inter_cell(Wasm* wasm, Cell* cell) {
 #define head_offset 7
 #define hash_offset 8
 
-CResult inter_lval(Wasm* wasm, Lval* lval) {
+int* make_data_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
   if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
@@ -312,13 +324,48 @@ CResult inter_lval(Wasm* wasm, Lval* lval) {
   data_lval[type_offset] = lval->type | lval->subtype << 8;
   data_lval[num_offset] = lval->num;
   data_lval[str_offset] = wasm->__data_end + string_offset;
-  data_lval[head_offset] = ptr_to_int(lval->head);  // TODO: add list to data!!!
+  data_lval[head_offset] = 0;
   data_lval[hash_offset] = lval->hash;
 
+  return data_lval;
+}
+
+CResult inter_data_lval(Wasm* wasm, int* data_lval) {
   int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_size);
   free(data_lval);
-  return cresult(
-      make_int32(wasm->module, wasm->__data_end + offset + slot_type_size));
+  int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  CResult ret = {.ber = make_int32(wasm->module, wval_ptr),
+                 .wasm_ptr = wval_ptr};
+  return ret;
+}
+
+// Primitive types (int, true, false, nil, str)
+CResult inter_lval(Wasm* wasm, Lval* lval) {
+  int* data_lval = make_data_lval(wasm, lval);
+  return inter_data_lval(wasm, data_lval);
+}
+
+CResult inter_list(Wasm* wasm, Lval* lval) {
+  Cell* head = lval->head;
+  int count = list_count(head);
+  int* data_cells[count];
+  int i = 0;
+  while (head) {
+    int v_ptr = wasmify_lval(wasm, head->car).wasm_ptr;
+    int* data_cell = make_data_cell(wasm, head);
+    data_cell[car_offset] = v_ptr;
+    data_cells[i++] = data_cell;
+    head = head->cdr;
+  }
+  int cdr = 0;
+  while (i--) {
+    int* data_cell = data_cells[i];
+    data_cell[cdr_offset] = cdr;
+    cdr = inter_data_cell(wasm, data_cell).wasm_ptr;
+  }
+  int* data_list = make_data_lval(wasm, lval);
+  data_list[head_offset] = cdr;
+  return inter_data_lval(wasm, data_list);
 }
 
 Wasm* enter_context(Wasm* wasm) {

@@ -7,6 +7,12 @@
 #define Ber BinaryenExpressionRef
 
 typedef struct {
+  Ber ber;
+  int wasm_ptr;
+  int is_fn_call;
+} CResult;
+
+typedef struct {
   BinaryenModuleRef module;
   char* strings;
   int data_offset;
@@ -15,13 +21,13 @@ typedef struct {
   Lenv* env;
   int __data_end;
   int __heap_base;
-  BinaryenExpressionRef lval_true_offset;
-  BinaryenExpressionRef lval_false_offset;
-  BinaryenExpressionRef lval_nil_offset;
-  BinaryenExpressionRef lval_empty_list_offset;
+  CResult lval_true_offset;
+  CResult lval_false_offset;
+  CResult lval_nil_offset;
+  CResult lval_empty_list_offset;
   int lval_num_start;
   int lval_num_end;
-  BinaryenExpressionRef* lval_num_offset;
+  CResult* lval_num_offset;
   Cell* lispy_to_c_fn_map;
   Cell* fn_to_offset_map;
   Cell* context;
@@ -52,11 +58,6 @@ typedef struct {
   // function
   int runtime_check_args_count;
 } Wasm;
-
-typedef struct {
-  Ber ber;
-  int is_fn_call;
-} CResult;
 
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
