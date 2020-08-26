@@ -144,11 +144,11 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
   return drop;
 }
 
-int add_bytes_to_data(Wasm* wasm, char* str, int len) {
+int add_bytes_to_data(Wasm* wasm, char* data, int len) {
   int offset = wasm->data_offset;
   /* printf("%d %d\n", wasm->strings_offset, len); */
-  wasm->strings = realloc(wasm->strings, offset + len);
-  _memmove(wasm->strings + offset, str, len);
+  wasm->data = realloc(wasm->data, offset + len);
+  _memmove(wasm->data + offset, data, len);
 
   wasm->data_offset += len;
   /* printf("strings_offset: %d\n", wasm->strings_offset); */
@@ -159,8 +159,8 @@ int add_string_to_data(Wasm* wasm, char* str) {
   int len = _strlen(str) + 1;
   int offset = wasm->data_offset;
   /* printf("%d %d\n", wasm->strings_offset, len); */
-  wasm->strings = realloc(wasm->strings, offset + len);
-  _strncpy(wasm->strings + offset, str, len);
+  wasm->data = realloc(wasm->data, offset + len);
+  _strncpy(wasm->data + offset, str, len);
 
   wasm->data_offset += len;
   /* printf("strings_offset: %d\n", wasm->strings_offset); */
@@ -352,6 +352,7 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
   int i = 0;
   while (head) {
     int v_ptr = wasmify_lval(wasm, head->car).wasm_ptr;
+    lval_println(head->car);
     int* data_cell = make_data_cell(wasm, head);
     data_cell[car_offset] = v_ptr;
     data_cells[i++] = data_cell;
@@ -367,6 +368,53 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
   data_list[head_offset] = cdr;
   return inter_data_lval(wasm, data_list);
 }
+
+#define wval_fun_type_size 5 * 4
+#define wval_fun_size slot_type_size + wval_fun_type_size
+
+/* #define type_offset 4  // 0 and 1 */
+
+/* #define fn_table_index_offset 0  // 2 */
+/* /\* #define param_count;     // 4 *\/ */
+/* #define has_rest_arg_offset 1  // 6 */
+/* /\* #define partial_count;   // 8 *\/ */
+/* #define closure_offset 2  // 12 */
+/* #define partials_offset 3  // 16 */
+/* /\* #define str_offset 4  // 20 *\/ */
+
+CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
+  int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_fun_size);
+  release(data_lval);  // TODO: write destroy code for WvalFun
+  int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  CResult ret = {.ber = make_int32(wasm->module, wval_ptr),
+                 .wasm_ptr = wval_ptr};
+  return ret;
+}
+
+/* int* make_data_lval_wasm_lambda(Wasm* wasm, Lval* lval_fun) { */
+/*   int* data_lval = calloc(1, wval_fun_size); */
+/*   /\* int string_offset = 0; *\/ */
+/*   /\* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); *\/
+ */
+
+/*   data_lval[ref_count_offset] = 1; */
+/*   data_lval[data_p_offset] = */
+/*       wasm->__data_end + wasm->data_offset + slot_type_size; */
+
+/*   data_lval[type_offset] = LVAL_WASM_LAMBDA | 0xFF << 8; */
+/*   data_lval += type_offset + 2; */
+
+/*   data_lval[fn_table_index_offset] = lval_fun->offset; */
+/*   // param_count */
+/*   data_lval[has_rest_arg_offset] = 0; */
+/*   // partial_count */
+/*   data_lval[closure_offset] = 0; */
+/*   data_lval[partials_offset] = 0; */
+
+/*   return data_lval; */
+/* } */
+
+/* CResult inter_lval_wasm_lambda(Wasm* wasm, Lval* lval_fun) {} */
 
 Wasm* enter_context(Wasm* wasm) {
   Context* prev_context = wasm->context->car;

@@ -8,9 +8,9 @@
 #include "ltypes.h"
 #include "lval.h"
 
-Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
-                            int has_rest_arg, Lval** closure, Lval** partials,
-                            int partial_count) {
+WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
+                               int has_rest_arg, int closure, int partials,
+                               int partial_count) {
   WvalFun* wval = lalloc_type(LVAL);
   *wval = (WvalFun){.type = LVAL_WASM_LAMBDA,
                     .subtype = -1,
@@ -19,8 +19,9 @@ Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
                     .has_rest_arg = has_rest_arg,
                     .closure = closure,
                     .partials = partials,
-                    .partial_count = partial_count};
-  return (Lval*)wval;
+                    .partial_count = partial_count,
+                    /* .str = "fn_name:TODO" */};
+  return wval;
 }
 
 // Used in runtime of lispy compiler
@@ -64,4 +65,4 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
-Lval** get_wval_closure(WvalFun* wval) { return wval->closure; }
+/* Lval** get_wval_closure(WvalFun* wval) { return wval->closure; } */

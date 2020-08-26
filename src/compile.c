@@ -16,6 +16,7 @@
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
+#include "runtime.h"
 #include "special_fns.h"
 #include "wasm.h"
 #include "wasm_util.h"
@@ -176,17 +177,33 @@ CResult wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
                                            make_lval_num(fn_table_index));
   }
 
-  Ber wasm_fn_table_index = make_int32(module, fn_table_index);
-  Ber lispy_param_count = make_int32(module, 1);  // rest arg
-  Ber rest_arg_index = make_int32(module, 1);
-  Ber wasm_closure_pointer = make_int32(module, 0);
-  Ber partials = make_int32(module, 0);
-  Ber partial_count = make_int32(module, 0);
-  Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
-                     wasm_closure_pointer, partials,          partial_count};
-  Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
-  return cresult(make_lval_wasm_lambda_call);
+  /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
+  /* Ber lispy_param_count = make_int32(module, 1);  // rest arg */
+  /* Ber rest_arg_index = make_int32(module, 1); */
+  /* Ber wasm_closure_pointer = make_int32(module, 0); */
+  /* Ber partials = make_int32(module, 0); */
+  /* Ber partial_count = make_int32(module, 0); */
+  /* Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
+   */
+  /*                    wasm_closure_pointer, partials,          partial_count};
+   */
+
+  /* Ber make_lval_wasm_lambda_call = BinaryenCall( */
+  /*     wasm->module, "make_lval_wasm_lambda", operands, 6,
+   * make_type_int32(1)); */
+  /* return cresult(make_lval_wasm_lambda_call); */
+
+  int* data_lval = (int*)make_lval_wasm_lambda(fn_table_index, 1, 1, 0, 0, 0);
+  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval).wasm_ptr;
+  return cresult(make_int32(module, lval_ptr));
+  /* printf("data_lval 0 %d %d\n", data_lval[0], LVAL_WASM_LAMBDA); */
+  /* printf("data_lval 1 %d\n", data_lval[1]); */
+  /* short* foo = (short*)(data_lval + 2); */
+
+  /* printf("data_lval 2 %d\n", foo[0]); */
+  /* printf("data_lval 3 %d\n", foo[1]); */
+  /* printf("data_lval 4 %d\n", foo[2]); */
+  /* printf("data_lval 5 %d\n", foo[3]); */
 }
 
 typedef struct {
@@ -231,8 +248,8 @@ CResult wasmify_collection(Wasm* wasm, Lval* lval) {
   // List, map, set, vector;
   switch (lval->subtype) {
     case LIST:
-      return inter_list(wasm, lval);
     case VECTOR:;
+      return inter_list(wasm, lval);
     case MAP:;
     case SET:;
     default:
@@ -245,12 +262,10 @@ CResult wasmify_literal(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
     case NUMBER:;
       lval_println(lval);
-      printf("wasmifying number\n");
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
         CResult cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];
         if (!cache.ber) {
-          printf("CREATING LVAL_DATA\n");
           cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
               inter_lval(wasm, lval);
         }
@@ -279,8 +294,12 @@ CResult wasmify_literal(Wasm* wasm, Lval* lval) {
 }
 
 CResult wasmify_lval(Wasm* wasm, Lval* lval) {
+  /* printf("wasmify_lval\n"); */
+  /* lval_println(lval); */
   if (lval->type == LVAL_COLLECTION) {
     return wasmify_collection(wasm, lval);
+  } else if (lval->type == LVAL_FUNCTION) {
+    return quit(wasm, "LAMBDA!!!!");
   } else
     return wasmify_literal(wasm, lval);
 }
@@ -752,15 +771,11 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   int max_wasm_args_count =
       args_count + 5;  // args,  update stackpointer,
                        // call, reset stackpointer, release_locals, result
-  /* wasm_args_count++; //for wval_print */
   Ber* wasm_args = malloc(sizeof(Ber) * max_wasm_args_count);
   int sp_offset = args_count * 4;
-  /* printf("SP_OFFSET: %d\n", sp_offset); */
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
 
-  /* int local_indices[128]; */
-  /* int local_indices_count = 0; */
   LocalIndices* li = li_init();
   // Put args on stack
 
@@ -778,10 +793,10 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
       compiled_arg = BinaryenLocalTee(module, local_index, compiled_arg,
                                       BinaryenTypeInt32());
     } else {
-      printf("arg: ");
+      /* printf("arg: "); */
     }
 
-    lval_println(args->car);
+    /* lval_println(args->car); */
     push_arg =
         BinaryenStore(module, 4, sp_offset - (wasm_args_count + 1) * 4, 0,
                       stack_pointer, compiled_arg, BinaryenTypeInt32());
@@ -805,10 +820,13 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     // else throw runtime error. (let [a 1] (a 2)) , can't use number as fn
 
     // Get fn_index and closure pointer from lval_wasm_ref
-    Ber wasm_fn_index =
-        BinaryenLoad(module, 2, 0, 2, 0, BinaryenTypeInt32(), lval_wasm_ref);
+    int fn_table_index_offset = 2;
+    Ber wasm_fn_index = BinaryenLoad(module, 2, 0, fn_table_index_offset, 0,
+                                     BinaryenTypeInt32(), lval_wasm_ref);
+    int closure_pointer_offset = 12;
     Ber wasm_closure_pointer =
-        BinaryenLoad(module, 4, 0, 12, 0, BinaryenTypeInt32(), lval_wasm_ref);
+        BinaryenLoad(module, 4, 0, closure_pointer_offset, 0,
+                     BinaryenTypeInt32(), lval_wasm_ref);
 
     // Pass closure pointer and args count to wasm fn
     Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};

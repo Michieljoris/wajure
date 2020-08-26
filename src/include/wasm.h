@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
   BinaryenModuleRef module;
-  char* strings;
+  char* data;
   int data_offset;
   char** fn_names;
   int fns_count;

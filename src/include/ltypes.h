@@ -82,8 +82,9 @@ struct wval_fun {
   short param_count;     // 4
   short has_rest_arg;    // 6
   short partial_count;   // 8
-  Lval** closure;        // 12
-  Lval** partials;       // 16
+  int closure;           // 12
+  int partials;          // 16
+  /* char* str;             // 20 */
 };
 
 struct lenv {

@@ -14,7 +14,7 @@ Wasm* init_wasm() {
   char* data_end_str = read_file("__data_end");
   char* heap_base_str = read_file("__heap_base");
   *wasm = (Wasm){.module = BinaryenModuleCreate(),
-                 .strings = malloc(1),
+                 .data = malloc(1),
                  .data_offset = 0,
                  .fn_names = malloc(1),
                  .fns_count = 0,
@@ -44,7 +44,7 @@ Wasm* init_wasm() {
 void free_wasm(Wasm* wasm) {
   BinaryenModuleDispose(wasm->module);
   release_env(wasm->env);
-  free(wasm->strings);
+  free(wasm->data);
   free(wasm->lval_num_offset);
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
@@ -64,7 +64,7 @@ void add_memory_section(Wasm* wasm) {
   /*                   make_int32(module, wasm->__heap_base)); */
   BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer");
   const int num_segments = 1;
-  const char* segments[1] = {wasm->strings};
+  const char* segments[1] = {wasm->data};
   BinaryenIndex segmentSizes[] = {wasm->data_offset};
 
   /* BinaryenExpressionRef __data_end = */

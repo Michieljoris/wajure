@@ -43,6 +43,9 @@ CResult inter_cell(Wasm* wasm, Cell* cell);
 
 CResult inter_list(Wasm* wasm, Lval* lval);
 
+int* make_data_lval_wasm_lambda(Wasm* wasm, Lval* lval_fun);
+CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval);
+
 Wasm* enter_context(Wasm* wasm);
 
 void leave_context(Wasm* wasm);

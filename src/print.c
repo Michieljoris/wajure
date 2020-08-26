@@ -113,7 +113,7 @@ void lval_fun_print(Lval* lval) {
 
 void lval_print(Lval* lval) {
   if (!lval) {
-    printf("<Trying to print null lval");
+    printf("<Trying to print null lval>");
     return;
   }
   /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */

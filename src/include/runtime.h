@@ -3,9 +3,9 @@
 
 #include "ltypes.h"
 
-Lval* make_lval_wasm_lambda(int fn_table_index, int param_count,
-                            int has_rest_arg, Lval** closure, Lval** partials,
-                            int partial_count);
+WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
+                               int has_rest_arg, int closure, int partials,
+                               int partial_count);
 
 void init_rest_args(Lval** lval_array, int rest_arg_length);
 
