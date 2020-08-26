@@ -9,7 +9,7 @@
 typedef struct {
   BinaryenModuleRef module;
   char* strings;
-  int strings_offset;
+  int data_offset;
   char** fn_names;
   int fns_count;
   Lenv* env;
@@ -53,6 +53,11 @@ typedef struct {
   int runtime_check_args_count;
 } Wasm;
 
+typedef struct {
+  Ber ber;
+  int is_fn_call;
+} CResult;
+
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 
@@ -60,6 +65,6 @@ void import_runtime(Wasm* wasm);
 void add_memory_section(Wasm* wasm);
 void add_function_table(Wasm* wasm);
 
-void* quit(Wasm* wasm, char* fmt, ...);
+CResult quit(Wasm* wasm, char* fmt, ...);
 
 #endif  // __WASM_INIT_H_

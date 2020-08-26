@@ -13,23 +13,25 @@
 #include "print.h"
 #include "wasm.h"
 
-Ber wasm_retain(Wasm* wasm, Ber wval) {
+CResult wasm_retain(Wasm* wasm, Ber wval) {
   BinaryenModuleRef module = wasm->module;
   Ber operands[] = {wval};
-  return BinaryenCall(module, "retain", operands, 1, BinaryenTypeInt32());
+  return cresult(
+      BinaryenCall(module, "retain", operands, 1, BinaryenTypeInt32()));
 }
 
-Ber wasm_retain_and_drop(Wasm* wasm, Ber wval) {
+CResult wasm_retain_and_drop(Wasm* wasm, Ber wval) {
   BinaryenModuleRef module = wasm->module;
   Ber operands[] = {wval};
-  return BinaryenDrop(
-      module, BinaryenCall(module, "retain", operands, 1, BinaryenTypeInt32()));
+  return cresult(BinaryenDrop(module, BinaryenCall(module, "retain", operands,
+                                                   1, BinaryenTypeInt32())));
 }
 
-Ber wasm_release(Wasm* wasm, Ber wval) {
+CResult wasm_release(Wasm* wasm, Ber wval) {
   BinaryenModuleRef module = wasm->module;
   Ber operands[] = {wval};
-  return BinaryenCall(module, "release", operands, 1, BinaryenTypeInt32());
+  return cresult(
+      BinaryenCall(module, "release", operands, 1, BinaryenTypeInt32()));
 }
 
 void write_string(char* file_name, char* str) {
@@ -96,7 +98,7 @@ BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
   return log_string;
 }
 
-Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...) {
+CResult wasm_runtime_error(Wasm* wasm, char* fmt, ...) {
   va_list va;
   va_start(va, fmt);
   char* err_msg = lalloc_size(512);
@@ -113,7 +115,7 @@ Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...) {
   BinaryenExpressionRef runtime_error =
       BinaryenCall(module, "runtime_error", operands, 1, BinaryenTypeNone());
 
-  return runtime_error;
+  return cresult(runtime_error);
 }
 
 BinaryenExpressionRef wasm_log_string_n(Wasm* wasm, int offset, int n) {
@@ -142,24 +144,24 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
 }
 
 int add_bytes_to_data(Wasm* wasm, char* str, int len) {
-  int offset = wasm->strings_offset;
+  int offset = wasm->data_offset;
   /* printf("%d %d\n", wasm->strings_offset, len); */
   wasm->strings = realloc(wasm->strings, offset + len);
   _memmove(wasm->strings + offset, str, len);
 
-  wasm->strings_offset += len;
+  wasm->data_offset += len;
   /* printf("strings_offset: %d\n", wasm->strings_offset); */
   return offset;
 }
 
 int add_string_to_data(Wasm* wasm, char* str) {
   int len = _strlen(str) + 1;
-  int offset = wasm->strings_offset;
+  int offset = wasm->data_offset;
   /* printf("%d %d\n", wasm->strings_offset, len); */
   wasm->strings = realloc(wasm->strings, offset + len);
   _strncpy(wasm->strings + offset, str, len);
 
-  wasm->strings_offset += len;
+  wasm->data_offset += len;
   /* printf("strings_offset: %d\n", wasm->strings_offset); */
   return offset;
 }
@@ -263,10 +265,34 @@ BinaryenType make_type_int32(int count) {
 }
 
 #define slot_type_size 4 * 4
-#define lval_type_size 5 * 4  // type and subtype are in 4 bytes
-#define wval_size slot_type_size + lval_type_size
+#define cell_type_size 3 * 4
 #define ref_count_offset 0
 #define data_p_offset 3
+#define wcell_size slot_type_size + cell_type_size
+#define car_offset 4
+#define cdr_offset 5
+#define cell_hash_offset 6
+
+// pointers are 32 bits in our wasm, max mem reachable mem is about 4gb
+int ptr_to_int(void* p) { return (int)((long)p & 0xFFFFFFFF); }
+
+BinaryenExpressionRef inter_cell(Wasm* wasm, Cell* cell) {
+  int* data_cell = calloc(1, wcell_size);
+
+  data_cell[ref_count_offset] = 1;
+  data_cell[data_p_offset] =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
+  data_cell[car_offset] = ptr_to_int(cell->car);
+  data_cell[cdr_offset] = ptr_to_int(cell->cdr);
+  data_cell[cell_hash_offset] = cell->hash;
+
+  int offset = add_bytes_to_data(wasm, (char*)data_cell, wcell_size);
+  free(data_cell);
+  return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
+}
+
+#define lval_type_size 5 * 4  // type and subtype are in 4 bytes
+#define wval_size slot_type_size + lval_type_size
 
 #define type_offset 4
 
@@ -275,22 +301,24 @@ BinaryenType make_type_int32(int count) {
 #define head_offset 7
 #define hash_offset 8
 
-BinaryenExpressionRef inter_lval(Wasm* wasm, Lval* lval) {
+CResult inter_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
   if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
 
   data_lval[ref_count_offset] = 1;
-  data_lval[data_p_offset] = wasm->__data_end + wasm->strings_offset + 16;
+  data_lval[data_p_offset] =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
   data_lval[type_offset] = lval->type | lval->subtype << 8;
   data_lval[num_offset] = lval->num;
   data_lval[str_offset] = wasm->__data_end + string_offset;
-  data_lval[head_offset] = (int)lval->head;  // TODO: add list to data!!!
+  data_lval[head_offset] = ptr_to_int(lval->head);  // TODO: add list to data!!!
   data_lval[hash_offset] = lval->hash;
 
   int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_size);
   free(data_lval);
-  return make_int32(wasm->module, wasm->__data_end + offset + slot_type_size);
+  return cresult(
+      make_int32(wasm->module, wasm->__data_end + offset + slot_type_size));
 }
 
 Wasm* enter_context(Wasm* wasm) {
@@ -339,6 +367,7 @@ void print_context(Context* c) {
     printf("fn closure:\n");
     env_print(c->function_context->closure);
     if (c->lval) lval_println(c->lval);
+
     if (c->cell) {
       putchar('(');
       Cell* cell = c->cell;
@@ -431,9 +460,9 @@ int li_track(Wasm* wasm, LocalIndices* li, int index) {
 /*   return index; */
 /* } */
 
-Ber li_release(Wasm* wasm, LocalIndices* li, char* name) {
+CResult li_release(Wasm* wasm, LocalIndices* li, char* name) {
   if (li->local_indices_count == 0) {
-    return NULL;
+    return cnull();
   }
   BinaryenModuleRef module = wasm->module;
   Ber release_locals[li->local_indices_count];
@@ -448,12 +477,12 @@ Ber li_release(Wasm* wasm, LocalIndices* li, char* name) {
   Ber release_locals_block =
       BinaryenBlock(module, uniquify_name(wasm, name), release_locals,
                     li->local_indices_count, BinaryenTypeNone());
-  return release_locals_block;
+  return cresult(release_locals_block);
 }
 
-Ber li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
-                           Ber release_locals, Ber result) {
-  if (!release_locals) return result;
+CResult li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
+                               Ber release_locals, Ber result) {
+  if (!release_locals) return cresult(result);
   BinaryenModuleRef module = wasm->module;
   int result_index = li_new(wasm);
   Ber set_local_to_result = BinaryenLocalSet(module, result_index, result);
@@ -461,8 +490,8 @@ Ber li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
       BinaryenLocalGet(module, result_index, BinaryenTypeInt32());
   Ber body_result[] = {set_local_to_result, release_locals,
                        get_result_from_local};
-  return BinaryenBlock(module, uniquify_name(wasm, name), body_result, 3,
-                       BinaryenTypeInt32());
+  return cresult(BinaryenBlock(module, uniquify_name(wasm, name), body_result,
+                               3, BinaryenTypeInt32()));
 }
 
 void li_close(LocalIndices* li) {
@@ -470,16 +499,12 @@ void li_close(LocalIndices* li) {
   free(li);
 }
 
-/* BinaryenExpressionRef wasm_offset_old(Wasm* wasm, int offset) { */
-/*   BinaryenModuleRef module = wasm->module; */
+CResult cresult(Ber ber) {
+  CResult cr = {.ber = ber};
+  return cr;
+}
 
-/*   BinaryenExpressionRef wasm_data_end = */
-/*       BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
-
-/*   BinaryenExpressionRef wasm_offset = make_int32(module, offset); */
-
-/*   BinaryenExpressionRef str_p = */
-/*       BinaryenBinary(module, BinaryenAddInt32(), wasm_data_end, wasm_offset);
- */
-/*   return str_p; */
-/* } */
+CResult cnull() {
+  CResult cr = {};
+  return cr;
+}

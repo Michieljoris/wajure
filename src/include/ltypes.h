@@ -4,9 +4,9 @@
 typedef struct cell Cell;
 
 struct cell {
-  int hash;
   void* car;
   Cell* cdr;
+  int hash;
 };
 
 struct lenv;

@@ -5,7 +5,7 @@
 
 Interpreter passes most mal tests but is rather minimal.
 
-Compiler to wasm.
+Compiler to wasm:
 
 TODO:
 
@@ -22,7 +22,7 @@ TODO:
 - [ ] apply
 - [ ] multi-arity fns
 - [ ] keywords
-- [ ] persistent maps/sets
+- [ ] persistent maps/sets/vectors
 - [ ] multimethods
 - [ ] map/reduce
 - [ ] meta data
@@ -157,7 +157,7 @@ There's a few disadvantages:
 
 
 
-* Run/compie
+* Run/compile
 For editline lib do
 
    sudo apt-get install libedit-dev

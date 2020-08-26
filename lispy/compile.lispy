@@ -7,7 +7,7 @@
 
 ;; (defn foo [x & rest] (print "from foo" x rest))
 ;; (defn foo [x] 1)
-(def v [ 1 2 3 ])
+;; (def v [ 1 2 3 ])
 
 ;; (defn test2 [x]
 ;;   (let [a (f "abc" Rl(+ 1 1) 1 Rl(+ 1 x) x)
@@ -20,15 +20,16 @@
 
 ;;     )
 ;;   )
-(defn foo [foo-x y] foo-x)
-(defn bar [x] x ;; (+ 1 1)
-  )
+;; (defn foo [foo-x y] foo-x)
+;; (defn bar [x] (print x) ;; (+ 1 1)
+;;   )
 
-
+(def a (list 1 2 3))
 
 (defn test [x y]
+  ;; (print a)
   ;; x y
-  (let [a 1 b (bar 1)] x  (bar x y))
+  (let [a 1 ] (bar 1))
   ;; (let [f? (fn [x] x)] (f? 1))
   ;; (let [a (foo 12 3) d (+ 1 2) b (bar 1) e 1] b e)
   ;; (foo (bar 1) (bar 1))

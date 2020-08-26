@@ -3,9 +3,9 @@
 
 #include "wasm.h"
 int compile(char* file_name);
-Ber wasmify_literal(Wasm* wasm, Lval* lval);
-Ber wasmify_collection(Wasm* wasm, Lval* lval);
+CResult wasmify_literal(Wasm* wasm, Lval* lval);
+CResult wasmify_collection(Wasm* wasm, Lval* lval);
 
-Ber lval_compile(Wasm* wasm, Lval* lval);
+CResult lval_compile(Wasm* wasm, Lval* lval);
 
 #endif  // __COMPILE_H_

@@ -1,27 +1,31 @@
 * TODO compiler
+** wasmify_lval, finish compile_quote
+** quote
+** compile the beginning of a test suite
+** partial
+** ----------------
 ** add release and retain to wasm code
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
 *** deciding whether a compiled macro was a fn call!!
 *** releasing args to sys fn!!!
 
-** wasmify_lval, finish compile_quote
-** partial
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
 Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
 ** multi arity fns!!!
-** compile test suite
 ** loop/recur
 ** namespaces
 ** multimethods
 ** try/throw/catch
 ** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
-** ----------------------------
 ** Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
 - so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
 - we might be able to do optimisations, such as mutually cancelling retain and release calls
+** ----------------------------
+** don't reuse Ber's!!!
+As per warning in Binaryen docs. When reusing optimisations might screw things up.
 ** better compile time arg count checking
 You could be a bit smarter about it at compile time.
 1. When a symbol resolves to a sys fn you can check arg count

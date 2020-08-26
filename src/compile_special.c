@@ -11,10 +11,10 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
-Ber compile_let(Wasm* wasm, Cell* arg_list) {
+CResult compile_let(Wasm* wasm, Cell* arg_list) {
   BinaryenModuleRef module = wasm->module;
   CONTEXT_CELL("compile_let", arg_list)
-  /* printf("compile let call!!!!!!!!!!!!!!!\n"); */
+  /* printf("compile let call!!!!!!!!!!!!!!! %p\n", arg_list); */
 
   if (list_count(arg_list) == 0)
     quit(wasm, "Error: let needs at least binding vector");
@@ -54,7 +54,7 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
 
     Lval* lval = iter_next(b);
     wasm->is_fn_call = 0;
-    Ber wasm_value = lval_compile(wasm, lval);
+    Ber wasm_value = lval_compile(wasm, lval).ber;
     Ber local_var = BinaryenLocalSet(
         module, context->function_context->local_count, wasm_value);
 
@@ -91,7 +91,7 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     do {
       arg_list = arg_list->cdr;
       wasm->is_fn_call = 0;
-      Ber ber = lval_compile(wasm, arg_list->car);
+      Ber ber = lval_compile(wasm, arg_list->car).ber;
 
       // This is not the last lval in the body of let
       if (arg_list->cdr) {
@@ -119,37 +119,28 @@ Ber compile_let(Wasm* wasm, Cell* arg_list) {
     } while (arg_list->cdr);
   } else {
     // Empty body
-    let_result = wasmify_literal(wasm, make_lval_nil());
+    let_result = wasmify_literal(wasm, make_lval_nil()).ber;
     Ber retain_operand[1] = {let_result};
     let_result =
         BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
   }
 
-  Ber release_locals_block = li_release(wasm, li, "release_locals_for_let");
-  let_body[let_body_count++] = li_result_with_release(
-      wasm, li, "let_body_result", release_locals_block, let_result);
+  Ber release_locals_block = li_release(wasm, li, "release_locals_for_let").ber;
+  let_body[let_body_count++] =
+      li_result_with_release(wasm, li, "let_body_result", release_locals_block,
+                             let_result)
+          .ber;
 
-  /* int let_result_index = li_new(wasm); */
-  /* Ber set_local_to_let_result = */
-  /*     BinaryenLocalSet(module, let_result_index, let_result); */
-  /* Ber get_let_result_from_local = */
-  /*     BinaryenLocalGet(module, let_result_index, BinaryenTypeInt32()); */
-  /* Ber let_body_result[] = {set_local_to_let_result, release_locals_block, */
-  /*                          get_let_result_from_local}; */
-  /* let_body[i] = BinaryenBlock( */
-  /*     module, uniquify_name(wasm, uniquify_name(wasm, "let_body_result")), */
-  /*     let_body_result, 3, BinaryenTypeInt32()); */
-  // Post compile
   leave_env(wasm);
 
   Ber ret = BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
                           let_body_count, BinaryenTypeInt32());
   li_close(li);
   free(let_body);
-  return ret;
+  return cresult(ret);
 }
 
-Ber compile_if(Wasm* wasm, Cell* args) {
+CResult compile_if(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
   printf("Compiling if!!!!\n");
   if (!args) quit(wasm, "Too few arguments to if");
@@ -159,42 +150,43 @@ Ber compile_if(Wasm* wasm, Cell* args) {
   Lval* if_true = args->car;
   args = args->cdr;
   Lval* if_false = NULL;
-  if (args) {
-    if_false = args->car;
-  }
+  if (args) if_false = args->car;
   if (args && args->cdr) quit(wasm, "Too many arguments to if");
-  Ber if_wasm =
-      BinaryenIf(module, lval_compile(wasm, cond), lval_compile(wasm, if_true),
-                 if_false ? lval_compile(wasm, if_false)
-                          : wasmify_literal(wasm, make_lval_nil()));
-  return if_wasm;
+  Ber if_wasm = BinaryenIf(
+      module, lval_compile(wasm, cond).ber, lval_compile(wasm, if_true).ber,
+      if_false ? lval_compile(wasm, if_false).ber
+               : wasmify_literal(wasm, make_lval_nil()).ber);
+  return cresult(if_wasm);
 }
 
-Ber compile_try(Wasm* wasm, Cell* args) { return make_int32(wasm->module, 0); }
-
-Ber compile_throw(Wasm* wasm, Cell* args) {
-  return make_int32(wasm->module, 0);
+CResult compile_try(Wasm* wasm, Cell* args) {
+  return cresult(make_int32(wasm->module, 0));
 }
 
-Ber compile_quote(Wasm* wasm, Cell* args) {
+CResult compile_throw(Wasm* wasm, Cell* args) {
+  return cresult(make_int32(wasm->module, 0));
+}
+
+CResult compile_quote(Wasm* wasm, Cell* args) {
   if (list_count(args) != 1) {
     quit(wasm, "Wrong number of args (%d) passed to quote, expected 1",
          list_count(args));
   }
   Lval* arg = args->car;
   switch (arg->type) {
-    case LVAL_COLLECTION:
-      return wasmify_collection(wasm, arg);
+    case LVAL_COLLECTION:;
+      CResult cresult = wasmify_collection(wasm, arg);
+      return cresult;
     case LVAL_SYMBOL:
     case LVAL_LITERAL:
       return wasmify_literal(wasm, arg);
     default:
-      quit(wasm, "Unknown lval type, can't wasmify it for quote fn!!!!");
+      return quit(wasm, "Unknown lval type, can't wasmify it for quote fn!!!!");
   }
-  return NULL;
 }
-Ber compile_quasiquote(Wasm* wasm, Cell* args) {
-  return make_int32(wasm->module, 0);
+
+CResult compile_quasiquote(Wasm* wasm, Cell* args) {
+  return cresult(make_int32(wasm->module, 0));
 }
 
 // Release results of fn calls

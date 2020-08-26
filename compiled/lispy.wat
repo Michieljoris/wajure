@@ -8,7 +8,7 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4280) "Too few args passed to \00Too many args passed to test\00\01\00\00\00\00\00\00\00\00\00\00\00\fd\10\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ffToo few args passed to \00Too many args passed to bar\00Too few args passed to \00Too many args passed to foo\00")
+ (data (i32.const 4280) "Too few args passed to \00Too many args passed to test\00\01\00\00\00\00\00\00\00\00\00\00\00\fd\10\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ffToo few args passed to \00Too many args passed to bar\00")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -60,8 +60,8 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 5 5 funcref)
- (elem (i32.const 0) $test $bar $foo $log_int $printf_)
+ (table $0 4 4 funcref)
+ (elem (i32.const 0) $test $bar $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
@@ -120,6 +120,9 @@
      )
     )
    )
+   (drop
+    (i32.const 123)
+   )
    (block $let_6 (result i32)
     (local.set $5
      (i32.const 4349)
@@ -157,30 +160,26 @@
     (block $let_body_result_5 (result i32)
      (local.set $9
       (block $lambda_call_3 (result i32)
-       (i32.store offset=4
-        (global.get $stack_pointer)
-        (local.get $3)
-       )
        (i32.store
         (global.get $stack_pointer)
-        (local.get $4)
+        (local.get $5)
        )
        (global.set $stack_pointer
         (i32.add
          (global.get $stack_pointer)
-         (i32.const 8)
+         (i32.const 4)
         )
        )
        (local.set $8
         (call $bar
          (i32.const 0)
-         (i32.const 2)
+         (i32.const 1)
         )
        )
        (global.set $stack_pointer
         (i32.sub
          (global.get $stack_pointer)
-         (i32.const 8)
+         (i32.const 4)
         )
        )
        (local.get $8)
@@ -240,63 +239,14 @@
      )
     )
    )
-   (call $retain
-    (local.get $3)
-   )
-  )
- )
- (func $foo (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (local $3 i32)
-  (local $4 i32)
-  (block $do_11 (result i32)
-   (if
-    (i32.eq
-     (call $check_args_count
-      (i32.const 2)
-      (local.get $1)
+   (call $print_fn
+    (i32.const 0)
+    (call $new_lval_list
+     (call $list_cons
+      (local.get $3)
       (i32.const 0)
      )
-     (i32.const 0)
     )
-    (call $runtime_error
-     (i32.const 4445)
-    )
-    (if
-     (i32.eq
-      (call $check_args_count
-       (i32.const 2)
-       (local.get $1)
-       (i32.const 0)
-      )
-      (i32.const 1)
-     )
-     (call $runtime_error
-      (i32.const 4421)
-     )
-     (nop)
-    )
-   )
-   (block $store_args_in_locals_10
-    (local.set $2
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 8)
-     )
-    )
-    (local.set $3
-     (i32.load offset=4
-      (local.get $2)
-     )
-    )
-    (local.set $4
-     (i32.load
-      (local.get $2)
-     )
-    )
-   )
-   (call $retain
-    (local.get $3)
    )
   )
  )

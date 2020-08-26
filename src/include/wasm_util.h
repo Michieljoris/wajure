@@ -7,9 +7,9 @@
 #include "platform.h"
 #include "wasm.h"
 
-Ber wasm_retain(Wasm* wasm, Ber wval);
-Ber wasm_retain_and_drop(Wasm* wasm, Ber wval);
-Ber wasm_release(Wasm* wasm, Ber wval);
+CResult wasm_retain(Wasm* wasm, Ber wval);
+CResult wasm_retain_and_drop(Wasm* wasm, Ber wval);
+CResult wasm_release(Wasm* wasm, Ber wval);
 
 BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x);
 void write_wat(Wasm* wasm, char* file_name);
@@ -38,7 +38,7 @@ BinaryenType make_type_int32(int count);
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
-BinaryenExpressionRef inter_lval(Wasm* wasm, Lval* lval);
+CResult inter_lval(Wasm* wasm, Lval* lval);
 
 Wasm* enter_context(Wasm* wasm);
 
@@ -51,6 +51,7 @@ void _leave_context(void* data);
   compile_context Wasm* __wasm = enter_context(wasm); \
   Context* context = __wasm->context->car;            \
   context->msg = _msg;                                \
+  context->cell = NULL;                               \
   printf("Entering context: %s\n", _msg);
 
 #define CONTEXT_LVAL(_msg, _lval) \
@@ -78,7 +79,7 @@ void leave_env(Wasm* wasm);
 
 Lval* make_lval_compiler(Context* context, int subtype, int offset);
 
-Ber wasm_runtime_error(Wasm* wasm, char* fmt, ...);
+CResult wasm_runtime_error(Wasm* wasm, char* fmt, ...);
 
 char* uniquify_name(Wasm* wasm, char* name);
 
@@ -92,10 +93,13 @@ LocalIndices* li_init();
 int li_new(Wasm* wasm);
 int li_get(Wasm* wasm);
 int li_track(Wasm* wasm, LocalIndices* li, int index);
-Ber li_release(Wasm* wasm, LocalIndices* li, char* name);
+CResult li_release(Wasm* wasm, LocalIndices* li, char* name);
 
-Ber li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
-                           Ber release_locals, Ber result);
+CResult li_result_with_release(Wasm* wasm, LocalIndices* li, char* name,
+                               Ber release_locals, Ber result);
 void li_close(LocalIndices* li);
+
+CResult cresult(Ber ber);
+CResult cnull();
 
 #endif  // __WASM_UTIL_H_

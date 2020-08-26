@@ -15,7 +15,7 @@ Wasm* init_wasm() {
   char* heap_base_str = read_file("__heap_base");
   *wasm = (Wasm){.module = BinaryenModuleCreate(),
                  .strings = malloc(1),
-                 .strings_offset = 0,
+                 .data_offset = 0,
                  .fn_names = malloc(1),
                  .fns_count = 0,
                  .lval_true_offset = NULL,
@@ -64,7 +64,7 @@ void add_memory_section(Wasm* wasm) {
   BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer");
   const int num_segments = 1;
   const char* segments[1] = {wasm->strings};
-  BinaryenIndex segmentSizes[] = {wasm->strings_offset};
+  BinaryenIndex segmentSizes[] = {wasm->data_offset};
 
   /* BinaryenExpressionRef __data_end = */
   /*     BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
@@ -171,7 +171,7 @@ void import_runtime(Wasm* wasm) {
   runtime_add_fns(wasm, util_builtin_fns);
 }
 
-void* quit(Wasm* wasm, char* fmt, ...) {
+CResult quit(Wasm* wasm, char* fmt, ...) {
   if (fmt) {
     va_list va;
     va_start(va, fmt);
@@ -186,4 +186,5 @@ void* quit(Wasm* wasm, char* fmt, ...) {
   printf("NOTE: Lispy compilation ended abnormally.\n");
   free(wasm);
   exit(1);
+  return cnull();
 }
