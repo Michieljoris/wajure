@@ -151,10 +151,12 @@ CResult compile_if(Wasm* wasm, Cell* args) {
 }
 
 CResult compile_try(Wasm* wasm, Cell* args) {
+  printf("NOTE!!!!!: try/catch is not implemented yet\n");
   return cresult(make_int32(wasm->module, 0));
 }
 
 CResult compile_throw(Wasm* wasm, Cell* args) {
+  printf("NOTE!!!!!: throw is not implemented yet\n");
   return cresult(make_int32(wasm->module, 0));
 }
 
@@ -164,41 +166,10 @@ CResult compile_quote(Wasm* wasm, Cell* args) {
          list_count(args));
   }
   Lval* arg = args->car;
-  switch (arg->type) {
-    case LVAL_COLLECTION:;
-      CResult cresult = wasmify_collection(wasm, arg);
-      return cresult;
-    case LVAL_SYMBOL:
-    case LVAL_LITERAL:
-      return wasmify_literal(wasm, arg);
-    default:
-      return quit(wasm, "Unknown lval type, can't wasmify it for quote fn!!!!");
-  }
+  return wasmify_lval(wasm, arg);
 }
 
 CResult compile_quasiquote(Wasm* wasm, Cell* args) {
+  printf("NOTE!!!!!: quasiquote is not implemented yet\n");
   return cresult(make_int32(wasm->module, 0));
 }
-
-// Release results of fn calls
-/* Ber release_locals[local_indices_count]; */
-/* Ber get_local[1]; */
-/* for (int i = 0; i < local_indices_count; i++) { */
-/*   get_local[0] = */
-/*       BinaryenLocalGet(module, local_indices[i], BinaryenTypeInt32()); */
-/*   release_locals[i] = */
-/*       BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone()); */
-/* } */
-
-/* Ber release_locals_block = */
-/*     BinaryenBlock(module, uniquify_name(wasm, "release_locals_of_let"), */
-/*                   release_locals, local_indices_count, BinaryenTypeNone());
- */
-
-/* int local_index = local_indices[local_indices_count++] = */
-/*     context->function_context->local_count++; */
-/* if (local_indices_count == 128) */
-/*   return quit(wasm, */
-/*               "ERROR: Let can only be invoked with a maximum " */
-/*               "of 128 bindings and body forms that are fn
- * calls%s\n"); */

@@ -14,8 +14,9 @@ TODO:
 - [x] rest args
 - [x] memory managment (mempool + refcount)
 - [x] basic data types (int, string, list)
-- [ ] compile test suite
+- [x] quote
 - [ ] namespaces
+- [ ] compile test suite
 - [ ] partial
 - [ ] loop/recur
 - [ ] try/throw/catch

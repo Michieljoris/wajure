@@ -227,6 +227,8 @@ char* lval_type_constant_to_name(int t) {
       return "nil";
     case LVAL_COMPILER:
       return "Local ref";
+    case LVAL_WASM_LAMBDA:
+      return "lval wasm lambda";
     default:
       return "Unknown";
   }

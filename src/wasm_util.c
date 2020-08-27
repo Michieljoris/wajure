@@ -206,6 +206,7 @@ Lenv* interprete_file(char* file_name) {
 
   Lval* result = slurp(user_env, file_name);
   if (result->type == LVAL_ERR) {
+    /* lval_println(result); */
     exit(1);
   }
   release(result);
@@ -269,6 +270,7 @@ BinaryenType make_type_int32(int count) {
 #define cell_type_size 3 * 4
 #define ref_count_offset 0
 #define data_p_offset 3
+
 #define wcell_size slot_type_size + cell_type_size
 #define cell_hash_offset 4
 #define car_offset 5
@@ -350,6 +352,7 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
   int count = list_count(head);
   int* data_cells[count];
   int i = 0;
+  printf("inter list\n");
   while (head) {
     int v_ptr = wasmify_lval(wasm, head->car).wasm_ptr;
     lval_println(head->car);
@@ -372,49 +375,49 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
 #define wval_fun_type_size 5 * 4
 #define wval_fun_size slot_type_size + wval_fun_type_size
 
-/* #define type_offset 4  // 0 and 1 */
+#define wval_type_offset 0
+#define subtype_offset 1
 
-/* #define fn_table_index_offset 0  // 2 */
-/* /\* #define param_count;     // 4 *\/ */
-/* #define has_rest_arg_offset 1  // 6 */
-/* /\* #define partial_count;   // 8 *\/ */
-/* #define closure_offset 2  // 12 */
-/* #define partials_offset 3  // 16 */
-/* /\* #define str_offset 4  // 20 *\/ */
+#define fn_table_index_offset 2
+#define param_count_offset 4
+#define has_rest_arg_offset 6
+#define partial_count_offset 8
+#define closure_offset 12
+#define partials_offset 16
+/* #define str_offset 4  // 20 */
+
+int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
+                                int has_rest_arg) {
+  int* data_lval = calloc(1, wval_fun_size);
+  long p = (long)data_lval;
+  /* int string_offset = 0; */
+  /* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); */
+
+  *(int*)(p + ref_count_offset * 4) = 1;
+  *(int*)(p + data_p_offset * 4) =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
+  p += slot_type_size;
+
+  *(char*)(p + wval_type_offset) = LVAL_WASM_LAMBDA;
+  *(char*)(p + subtype_offset) = -1;
+  *(short*)(p + fn_table_index_offset) = fn_table_index;
+  *(short*)(p + param_count_offset) = param_count;
+  *(short*)(p + has_rest_arg_offset) = has_rest_arg;
+  *(short*)(p + partial_count_offset) = 0;
+  *(int*)(p + closure_offset) = 0;
+  *(int*)(p + partials_offset) = 0;
+
+  return (int*)data_lval;
+}
 
 CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
   int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_fun_size);
-  release(data_lval);  // TODO: write destroy code for WvalFun
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  printf("wval_ptr %d\n", wval_ptr);
   CResult ret = {.ber = make_int32(wasm->module, wval_ptr),
                  .wasm_ptr = wval_ptr};
   return ret;
 }
-
-/* int* make_data_lval_wasm_lambda(Wasm* wasm, Lval* lval_fun) { */
-/*   int* data_lval = calloc(1, wval_fun_size); */
-/*   /\* int string_offset = 0; *\/ */
-/*   /\* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); *\/
- */
-
-/*   data_lval[ref_count_offset] = 1; */
-/*   data_lval[data_p_offset] = */
-/*       wasm->__data_end + wasm->data_offset + slot_type_size; */
-
-/*   data_lval[type_offset] = LVAL_WASM_LAMBDA | 0xFF << 8; */
-/*   data_lval += type_offset + 2; */
-
-/*   data_lval[fn_table_index_offset] = lval_fun->offset; */
-/*   // param_count */
-/*   data_lval[has_rest_arg_offset] = 0; */
-/*   // partial_count */
-/*   data_lval[closure_offset] = 0; */
-/*   data_lval[partials_offset] = 0; */
-
-/*   return data_lval; */
-/* } */
-
-/* CResult inter_lval_wasm_lambda(Wasm* wasm, Lval* lval_fun) {} */
 
 Wasm* enter_context(Wasm* wasm) {
   Context* prev_context = wasm->context->car;

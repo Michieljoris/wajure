@@ -1,6 +1,5 @@
 * TODO compiler
 ** wasmify_lval, finish compile_quote
-** quote
 ** compile the beginning of a test suite
 ** partial
 ** ----------------
@@ -20,10 +19,22 @@ Then call wasm implementation of apply* that receives a list and puts them on wa
 ** multimethods
 ** try/throw/catch
 ** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
+** too few args to ... gets added every time to data!!!!
+So break string into two, and inter strings only once, and do two prints
 ** DONE Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
 - so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
 - we might be able to do optimisations, such as mutually cancelling retain and release calls
 ** ----------------------------
+** dynamic namespaces, or rather a repl into compiled code.
+Currently vars of a namespace are/will be hardcoded into the fns that then refer
+to them statically. Alternatively we could store them in a namespace env and
+refer to them dynamically. This way we could have a 'image' that we can modify
+in a repl. We could then redefine values quite easily (with an interpreter built
+into the runtime). However interpreter fun objects are different from compiled
+fun objects. So they would have to be bridged. Either by building in a compiler,
+but the wasm would have to be reloaded then, or by relaying any call to an
+interpreted fn to the interpreter's repl. Interpreter and runtime can easily
+share env though.
 ** don't reuse Ber's!!!
 As per warning in Binaryen docs. When reusing optimisations might screw things up.
 ** better compile time arg count checking

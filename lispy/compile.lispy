@@ -23,20 +23,38 @@
 ;; (defn foo [foo-x y] foo-x)
 ;; (defn bar [x] (print x) ;; (+ 1 1)
 ;;   )
-
-;; (def a (list 'a (fn [x] x))
-;;   ;;[1 2] ;; (list (fn [x] x))
+;; (def z 123)
+;; (def a
+;;   ;; (let [b 1]
+;;   ;;   (fn [] 1)
+;;   ;;   ;; (list 'a (fn [] a))
+;;   ;;   )
+;;  (let [b 456]
+;;    (list (fn [] b)))
 ;;   )
 
-(defn foo [x] (print x))
+(let [b 777]
+  (def a (list (fn [] '(1 2 3 5))))
+  )
+
+;; (defn foo [x y & z] x)
+;; (def plus +)
+;; (defn foo [x y & z] (print x))
 
 (defn test [x y]
-  (let [f foo
-        f2 +]
-    ;; (f 123)
-    )
+  ;; (let [f foo]
+
+  ;; (print '(1 (fn [x] x) 3))
+  ;;   (print f)
+  ;;   ;; (print (list (fn [x] x) ))
+  ;;   )
+  (print   ((first a)) )
+  ;; (let [f foo
+  ;;       f2 +]
+  ;;   ;; (f 123)
+  ;;   )
   ;; (let [v (list (fn [x] x))]
-  ;;   (print a v)
+  ;;   (print  v)
   ;;   ;; (f 1 )
   ;;   )
   ;; (print a)

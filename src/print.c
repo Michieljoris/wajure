@@ -116,7 +116,8 @@ void lval_print(Lval* lval) {
     printf("<Trying to print null lval>");
     return;
   }
-  /* printf("in lval print %s\n", lval_type_constant_to_name(lval)); */
+  /* printf("in lval print %d %s\n", lval->type, */
+  /*        lval_type_constant_to_name(lval->type)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
       printf("%s", lval->str);
