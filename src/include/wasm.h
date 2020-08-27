@@ -31,29 +31,6 @@ typedef struct {
   Cell* lispy_to_c_fn_map;
   Cell* fn_to_offset_map;
   Cell* context;
-  // Every lval is either the result of a fn/lambda call, special form or a
-  // retrieving of interred values or previously calculated dynamic values. This
-  // flag keeps track of what we just put on the wasm stack is the result of
-  // retrieving of a value, or the result of wasn fn call or special form (in a
-  // wasm block). We need to keep track of this because we want release all
-  // calculated values after they've been passed to another fn, eg in (f (+ 1 2)
-  // some-var 123) we want to release the result of (+ 1 2) after f returns, but
-  // not some-var and 123.
-  //
-  // Similarly at the end of a do/let block or fn body we want release all
-  // values that were the result of a fn call eg: in (do 123 some-var (+ 1 2) 1)
-  // we want to release (+ 1 2) and retain 1. In (do 123 (+ 1 2)) we want to
-  // retain (+ 1 2). In (do 123 (+ 1 2) some-var) we want to release (+ 1 2) and
-  // retain some-var.
-  //
-  // In (let [x 1 y (+ 1 x) some-var (+ 1 x)] x some-var) we want to retain
-  // some-var, but also release also all bindings that are result of fn calls
-  // (so y and some-var)
-  //
-  // So after any lval_compile we check whether this flag is set. If so we know
-  // that we just either made a fn call or we have the result of the execution
-  // of a special form on the wasm stack.
-  int is_fn_call;
   // whether to check at runtime if correct number of args is passed into
   // function
   int runtime_check_args_count;

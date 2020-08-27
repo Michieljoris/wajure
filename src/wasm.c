@@ -30,7 +30,6 @@ Wasm* init_wasm() {
                  .lval_num_end = 100,
                  .lval_num_offset = calloc(sizeof(CResult), 201),
                  .context = malloc(sizeof(Cell)),
-                 .is_fn_call = 0,
                  .runtime_check_args_count = 1};
   for (int i = 0; i < 201; i++) wasm->lval_num_offset[i] = cnull();
   Context context = (Context){.msg = "Root context"};

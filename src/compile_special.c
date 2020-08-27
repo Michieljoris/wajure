@@ -53,21 +53,13 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
     }
 
     Lval* lval = iter_next(b);
-    wasm->is_fn_call = 0;
-    Ber wasm_value = lval_compile(wasm, lval).ber;
+    CResult result = lval_compile(wasm, lval);
+    Ber wasm_value = result.ber;
     Ber local_var = BinaryenLocalSet(
         module, context->function_context->local_count, wasm_value);
-
-    if (wasm->is_fn_call) {
-      li_track(wasm, li, li_get(wasm));
-      /* local_indices[local_indices_count++] = */
-      /*     context->function_context->local_count; */
-      /* if (local_indices_count == 128) */
-      /*   return quit(wasm, */
-      /*               "ERROR: Let can only be invoked with a maximum " */
-      /*               "of 128 bindings and body forms that are fn calls%s\n");
-       */
-    }
+    printf("let lval: is_fn? %d", result.is_fn_call);
+    lval_println(lval);
+    if (result.is_fn_call) li_track(wasm, li, li_get(wasm));
 
     // LENV_PUT
     int local_index = context->function_context->local_count++;
@@ -90,14 +82,13 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
     // We've got forms in the body of let
     do {
       arg_list = arg_list->cdr;
-      wasm->is_fn_call = 0;
-      Ber ber = lval_compile(wasm, arg_list->car).ber;
-
+      CResult result = lval_compile(wasm, arg_list->car);
+      Ber ber = result.ber;
       // This is not the last lval in the body of let
       if (arg_list->cdr) {
         // Drop the value, but store it in a local var if it's a fn call so we
         // can release it before returning
-        if (wasm->is_fn_call) {
+        if (result.is_fn_call) {
           int local_index = li_track(wasm, li, li_new(wasm));
 
           ber = BinaryenLocalSet(module, local_index, ber);
@@ -109,7 +100,7 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
       } else {
         // ber is the last value in the body of let
         let_result = ber;
-        if (!wasm->is_fn_call) {
+        if (!result.is_fn_call) {
           Ber retain_operand[1] = {let_result};
           // Retain value when not result of fn call (a literal)
           let_result = BinaryenCall(module, "retain", retain_operand, 1,

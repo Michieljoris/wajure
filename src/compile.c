@@ -66,11 +66,11 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
   Cell* list = lval_list->head;
   if (list) {
     do {
-      wasm->is_fn_call = 0;
-      Ber ber = lval_compile(wasm, list->car).ber;
+      CResult result = lval_compile(wasm, list->car);
+      Ber ber = result.ber;
       if (do_list_index + 1 < do_list_count) {
         // Not last value, so we drop it
-        if (wasm->is_fn_call) {
+        if (result.is_fn_call) {
           // And release it if it's a fn call
           int local_index = li_track(wasm, li, li_new(wasm));
           ber = BinaryenLocalSet(module, local_index, ber);
@@ -81,7 +81,7 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
       } else {
         // ber is the last value in the body of let
         do_result = ber;
-        if (!wasm->is_fn_call) {
+        if (!result.is_fn_call) {
           Ber retain_operand[1] = {do_result};
           // Retain value when not result of fn call (a literal)
           do_result = BinaryenCall(module, "retain", retain_operand, 1,
@@ -177,7 +177,7 @@ CResult wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
                                            make_lval_num(fn_table_index));
   }
 
-  /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
+  /*
   /* Ber lispy_param_count = make_int32(module, 1);  // rest arg */
   /* Ber rest_arg_index = make_int32(module, 1); */
   /* Ber wasm_closure_pointer = make_int32(module, 0); */
@@ -223,23 +223,32 @@ CResult wasmify_root_lambda_fn(Wasm* wasm, Lval* lval_sym, Lval* lval_fun) {
   if (lval_fun->offset == -1) {
     add_wasm_function(wasm, lval_sym, lval_fun);
   }
-  int fn_table_index = lval_fun->offset;
-  Ber wasm_fn_table_index = make_int32(module, fn_table_index);
 
   // TODO: bit sloppy adding this info to lval_fun. Should make and use compiler
   // lookup map
-  Ber lispy_param_count = make_int32(module, lval_fun->param_count);
-  Ber rest_arg_index = make_int32(module, lval_fun->rest_arg_index);
+  int fn_table_index = lval_fun->offset;
+  /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
 
-  Ber wasm_closure_pointer = make_int32(module, 0);
-  Ber partials = make_int32(module, 0);
-  Ber partial_count = make_int32(module, 0);
+  int* data_lval = (int*)make_lval_wasm_lambda(fn_table_index, 1, 1, 0, 0, 0);
+  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval).wasm_ptr;
+  /* printf("lval_ptr: %d", lval_ptr); */
+  return cresult(make_int32(module, lval_ptr));
 
-  Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
-                     wasm_closure_pointer, partials,          partial_count};
-  Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
-  return cresult(make_lval_wasm_lambda_call);
+  /* Ber lispy_param_count = make_int32(module, lval_fun->param_count); */
+  /* Ber rest_arg_index = make_int32(module, lval_fun->rest_arg_index); */
+
+  /* Ber wasm_closure_pointer = make_int32(module, 0); */
+  /* Ber partials = make_int32(module, 0); */
+  /* Ber partial_count = make_int32(module, 0); */
+
+  /* Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
+   */
+  /*                    wasm_closure_pointer, partials,          partial_count};
+   */
+  /* Ber make_lval_wasm_lambda_call = BinaryenCall( */
+  /*     wasm->module, "make_lval_wasm_lambda", operands, 6,
+   * make_type_int32(1)); */
+  /* return cresult(make_lval_wasm_lambda_call); */
 }
 
 CResult wasmify_collection(Wasm* wasm, Lval* lval) {
@@ -785,10 +794,10 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     // not a Ber but a struct with data on the compile. We can include in there
     // whether we just compiled a fn call or not, together with the resultant
     // Ber.
-    wasm->is_fn_call = 0;
-    Ber compiled_arg = lval_compile(wasm, args->car).ber;
+    CResult result = lval_compile(wasm, args->car);
+    Ber compiled_arg = result.ber;
     Ber push_arg = NULL;
-    if (wasm->is_fn_call) {
+    if (result.is_fn_call) {
       int local_index = li_track(wasm, li, li_new(wasm));
       compiled_arg = BinaryenLocalTee(module, local_index, compiled_arg,
                                       BinaryenTypeInt32());
@@ -997,9 +1006,10 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
   } else {
     // Not a function or wasm ref, perhaps it's something else we can use as a
     // fn
+    // TODO: make sure is_fn_call is set properly when we use a map as a fn!!!
     fn_call = compile_as_fn_call(wasm, lval_first, args);
   }
-  wasm->is_fn_call = 1;
+  fn_call.is_fn_call = 1;
   return fn_call;
 }
 

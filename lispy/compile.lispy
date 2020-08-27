@@ -24,13 +24,17 @@
 ;; (defn bar [x] (print x) ;; (+ 1 1)
 ;;   )
 
-(def a (list 'a (fn [x] x))
-  ;;[1 2] ;; (list (fn [x] x))
-  )
+;; (def a (list 'a (fn [x] x))
+;;   ;;[1 2] ;; (list (fn [x] x))
+;;   )
+
+(defn foo [x] (print x))
 
 (defn test [x y]
-  (let [f +]
-    (print (f 1 2)))
+  (let [f foo
+        f2 +]
+    ;; (f 123)
+    )
   ;; (let [v (list (fn [x] x))]
   ;;   (print a v)
   ;;   ;; (f 1 )

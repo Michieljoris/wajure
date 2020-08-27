@@ -8,7 +8,7 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4280) "Too few args passed to \00Too many args passed to test\00\18\ff\00\00\01\00\01\00\00\00\c0T\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00!\11\00\00\02\08\00\00\01\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00E\11\00\00\02\08\00\00\02\00\00\00\b8\10\00\00\00\00\00\00\ff\ff\ff\ff")
+ (data (i32.const 4280) "Too few args passed to \00Too many args passed to test\00Too few args passed to \00Too many args passed to foo\00\18\ff\00\00\01\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\18\ff\01\00\01\00\01\00\00\00\93\8d\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00y\11\00\00\02\05\00\00\00\00\00\00\b8\10\00\00\00\00\00\00\00\00\00\00")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -60,11 +60,66 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 4 4 funcref)
- (elem (i32.const 0) $sys_+ $test $log_int $printf_)
+ (table $0 5 5 funcref)
+ (elem (i32.const 0) $foo $sys_+ $test $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
+ (func $foo (param $0 i32) (param $1 i32) (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (block $do_3 (result i32)
+   (if
+    (i32.eq
+     (call $check_args_count
+      (i32.const 1)
+      (local.get $1)
+      (i32.const 0)
+     )
+     (i32.const 0)
+    )
+    (call $runtime_error
+     (i32.const 4357)
+    )
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 1)
+       (local.get $1)
+       (i32.const 0)
+      )
+      (i32.const 1)
+     )
+     (call $runtime_error
+      (i32.const 4333)
+     )
+     (nop)
+    )
+   )
+   (block $store_args_in_locals_2
+    (local.set $2
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.const 4)
+     )
+    )
+    (local.set $3
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (call $print_fn
+    (i32.const 0)
+    (call $new_lval_list
+     (call $list_cons
+      (local.get $3)
+      (i32.const 0)
+     )
+    )
+   )
+  )
+ )
  (func $sys_+ (param $0 i32) (param $1 i32) (result i32)
   (block $body (result i32)
    (call $init_rest_args
@@ -97,7 +152,7 @@
   (local $4 i32)
   (local $5 i32)
   (local $6 i32)
-  (block $do_4 (result i32)
+  (block $do_5 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -143,51 +198,15 @@
      )
     )
    )
-   (block $let_3 (result i32)
+   (block $let_4 (result i32)
     (local.set $5
-     (i32.const 4349)
+     (i32.const 4401)
     )
-    (call $print_fn
-     (i32.const 0)
-     (call $new_lval_list
-      (call $list_cons
-       (block $lambda_call_2 (result i32)
-        (i32.store offset=4
-         (global.get $stack_pointer)
-         (i32.const 4385)
-        )
-        (i32.store
-         (global.get $stack_pointer)
-         (i32.const 4421)
-        )
-        (global.set $stack_pointer
-         (i32.add
-          (global.get $stack_pointer)
-          (i32.const 8)
-         )
-        )
-        (local.set $6
-         (call_indirect (type $i32_i32_=>_i32)
-          (i32.load offset=12
-           (local.get $5)
-          )
-          (i32.const 2)
-          (i32.load16_u offset=2
-           (local.get $5)
-          )
-         )
-        )
-        (global.set $stack_pointer
-         (i32.sub
-          (global.get $stack_pointer)
-          (i32.const 8)
-         )
-        )
-        (local.get $6)
-       )
-       (i32.const 0)
-      )
-     )
+    (local.set $6
+     (i32.const 4437)
+    )
+    (call $retain
+     (i32.const 4473)
     )
    )
   )
