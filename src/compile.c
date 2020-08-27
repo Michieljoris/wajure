@@ -33,9 +33,9 @@ CResult compile_fn_rest_args(Wasm* wasm, Cell* head) {
   if (!head) {
     return cresult(make_int32(module, 0));
   }
-  printf("compile fn rest args:\n");
-  lval_println(head->car);
-  printf("compile fn rest args:\n");
+  /* printf("compile fn rest args:\n"); */
+  /* lval_println(head->car); */
+  /* printf("compile fn rest args:\n"); */
   Ber literal = lval_compile(wasm, head->car).ber;
   Ber operands[] = {literal,
                     // recursive call:
@@ -48,8 +48,8 @@ CResult compile_fn_rest_args(Wasm* wasm, Cell* head) {
 
 CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
                         Lval* lval_list) {
-  /* printf("COMPILE_DO_LIST!!!!\n"); */
-  /* lval_println(list); */
+  printf("COMPILE_DO_LIST!!!!\n");
+  /* lval_println(lval_list); */
   BinaryenModuleRef module = wasm->module;
   int do_list_count = list_count(lval_list->head) + 2;  // room for extra bers
 
@@ -62,7 +62,6 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
 
   if (init_rest_arg) do_body[do_list_index++] = init_rest_arg;
   if (args_into_locals) do_body[do_list_index++] = args_into_locals;
-  /* if (args_into_locals) do_body[do_list_index++] = make_int32(module, 1); */
 
   Ber do_result = NULL;
 
@@ -70,15 +69,17 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
   if (list) {
     do {
       CResult result = lval_compile(wasm, list->car);
+
       Ber ber = result.ber;
-      if (do_list_index + 1 < do_list_count) {
+      if (list->cdr) {
         // Not last value, so we drop it
         if (result.is_fn_call) {
           // And release it if it's a fn call
           int local_index = li_track(wasm, li, li_new(wasm));
           ber = BinaryenLocalSet(module, local_index, ber);
-        } else
+        } else {
           ber = BinaryenDrop(module, ber);
+        }
 
         do_body[do_list_index++] = ber;
       } else {
@@ -119,6 +120,7 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
                           do_list_index, BinaryenTypeInt32());
   li_close(li);
   free(do_body);
+
   return cresult(ret);
 }
 
@@ -267,7 +269,7 @@ CResult compile_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
 
 CResult wasmify_collection(Wasm* wasm, Lval* lval) {
   printf("wasmify_collection\n");
-  lval_println(lval);
+  /* lval_println(lval); */
   // List, map, set, vector;
   switch (lval->subtype) {
     case LIST:
@@ -284,7 +286,7 @@ CResult wasmify_collection(Wasm* wasm, Lval* lval) {
 CResult wasmify_literal(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
     case NUMBER:;
-      lval_println(lval);
+      /* lval_println(lval); */
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
         CResult cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];

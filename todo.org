@@ -1,30 +1,29 @@
 * TODO compiler
-** wasmify_lval, finish compile_quote
 ** compile the beginning of a test suite
-** partial
+** namespaces
+** fix if
+throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
+
 ** ----------------
 ** add release and retain to wasm code
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-*** deciding whether a compiled macro was a fn call!!
+*** DONE deciding whether a compiled macro was a fn call!!
 *** releasing args to sys fn!!!
 
+** partial
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
 Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
 ** multi arity fns!!!
 ** loop/recur
-** namespaces
 ** multimethods
 ** try/throw/catch
 ** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
-** too few args to ... gets added every time to data!!!!
-So break string into two, and inter strings only once, and do two prints
-** DONE Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
-- so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
-- we might be able to do optimisations, such as mutually cancelling retain and release calls
 ** ----------------------------
+** "too few args to ..." etc gets added every time to data!!!!
+So break string into two, and inter strings only once, and do two prints
 ** dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer
 to them statically. Alternatively we could store them in a namespace env and
@@ -46,8 +45,6 @@ You could be a bit smarter about it at compile time.
    (let [f (fn [x] x)] (f 123)) but also in:
     (let [f (fn [x y] ..) g (partial f 1)] (g 2)) but not in:
     (fn [g] (g 123))
-** (let [a 1] (def f [] a)), so use in non root form
-This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** pass floats, strings, maps, vectors, sets etc from js to wajure fn
 Currently only ints work
 ** named fns for recursion of locally defined lambdas
@@ -98,6 +95,12 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+** DONE (let [a 1] (def f [] a)), so use in non root form
+This shouldn't be too hard. We just need to pass a closure to the f lambda
+** DONE wasmify_lval, finish compile_quote
+** DONE Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
+- so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
+- we might be able to do optimisations, such as mutually cancelling retain and release calls
 ** DONE make sure that every fn added has unique wasm name
 So wasmified sys fns are called eg sys_print
 

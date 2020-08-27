@@ -352,10 +352,10 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
   int count = list_count(head);
   int* data_cells[count];
   int i = 0;
-  printf("inter list\n");
+  /* printf("inter list\n"); */
   while (head) {
     int v_ptr = wasmify_lval(wasm, head->car).wasm_ptr;
-    lval_println(head->car);
+    /* lval_println(head->car); */
     int* data_cell = make_data_cell(wasm, head);
     data_cell[car_offset] = v_ptr;
     data_cells[i++] = data_cell;

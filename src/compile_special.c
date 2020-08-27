@@ -57,8 +57,8 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
     Ber wasm_value = result.ber;
     Ber local_var = BinaryenLocalSet(
         module, context->function_context->local_count, wasm_value);
-    printf("let lval: is_fn? %d", result.is_fn_call);
-    lval_println(lval);
+    /* printf("let lval: is_fn? %d", result.is_fn_call); */
+    /* lval_println(lval); */
     if (result.is_fn_call) li_track(wasm, li, li_get(wasm));
 
     // LENV_PUT

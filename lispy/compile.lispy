@@ -3,7 +3,8 @@
 ;; (def plus +)
 ;; (def mylet (if true let))
 ;; (defmacro my-macro2 [x] `(plus 1 ~x))
-;; (defmacro my-macro [x] `(plus 1 ~x (my-macro2 1)))
+;; (defmacro my-macro [x] `(plus 1 ~x (my-macro2 1)
+;;                               ))
 
 ;; (defn foo [x & rest] (print "from foo" x rest))
 ;; (defn foo [x] 1)
@@ -33,22 +34,49 @@
 ;;    (list (fn [] b)))
 ;;   )
 
-(let [b 777]
-  (def a (list (fn [] '(1 2 3 5))))
-  )
+;; (let [b 777]
+;;   (def a (list (fn [] '(1 2 3 5))))
+;;   )
 
 ;; (defn foo [x y & z] x)
 ;; (def plus +)
 ;; (defn foo [x y & z] (print x))
 
+;; (defmacro t2 [expr expected & str]
+;;   `(let [evalled ~expr]
+;;      (print evalled)
+;;      (print (quote ~expected))
+;;      (when (not= evalled  ~expected)
+;;       (do
+;;         (pr "FAIL" ~@str)
+;;         (pr (quote ~expr) )
+;;         (pr "Expected:" ~expected)
+;;         (pr "Got:" ~expr)
+;;        )
+;;      )))
+(defn foo [] (fn []))
+
 (defn test [x y]
+  (let [a (foo)]
+    1 a)
+  ;; (do 1 123)
+  ;; (t2 (+ 1 1) (- 3 1) "should be equal")
+  ;; (let [evalled (+ 1 1)]
+  ;;   (print evalled)
+  ;;    (if (= 2  3)
+  ;;      (print "equal")
+  ;;      (print "not equal")
+
+  ;;    ))
+  ;; (print (my-macro 1))
+  ;; (t (list 1 2 3) (1 2 3))
   ;; (let [f foo]
 
   ;; (print '(1 (fn [x] x) 3))
   ;;   (print f)
   ;;   ;; (print (list (fn [x] x) ))
   ;;   )
-  (print   ((first a)) )
+  ;; (print   ((first a)) )
   ;; (let [f foo
   ;;       f2 +]
   ;;   ;; (f 123)
@@ -80,7 +108,6 @@
   ;;   (if x nil ))
   ;; (print (if true 1 2))
   ;; (print "Testing!!!")
-  ;; (t (list 1  3) (1 2 3))
   ;; (print "from test")
 
 
