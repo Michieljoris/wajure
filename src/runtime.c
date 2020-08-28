@@ -65,4 +65,8 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
+/* int is_falsy(Lval* lval) { */
+/*   return lval->subtype == LFALSE || lval->subtype == LNIL; */
+/* } */
+
 /* Lval** get_wval_closure(WvalFun* wval) { return wval->closure; } */

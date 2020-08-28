@@ -8,7 +8,7 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4308) "Too few args passed to test\00Too many args passed to test\00\01\00\00\00\00\00\00\00\00\00\00\00\1d\11\00\00\02\08\00\00\01\00\00\00\d4\10\00\00\00\00\00\00\ff\ff\ff\ffToo few args passed to foo\00Too many args passed to foo\00Too few args passed to foo#2\00Too many args passed to foo#2\00\01\00\00\00\00\00\00\00\00\00\00\00\b3\11\00\00\02\05\00\00\00\00\00\00\d4\10\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 4308) "Too few args passed to test\00Too many args passed to test\00\01\00\00\00\00\00\00\00\00\00\00\00\1d\11\00\00\02\05\00\00\00\00\00\00\d4\10\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00A\11\00\00\02\08\00\00\01\00\00\00\d4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00e\11\00\00\02\08\00\00\00\00\00\00\d4\10\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -60,8 +60,8 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (table $0 5 5 funcref)
- (elem (i32.const 0) $test $foo#2 $foo $log_int $printf_)
+ (table $0 3 3 funcref)
+ (elem (i32.const 0) $test $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
@@ -69,10 +69,7 @@
   (local $2 i32)
   (local $3 i32)
   (local $4 i32)
-  (local $5 i32)
-  (local $6 i32)
-  (local $7 i32)
-  (block $do_6 (result i32)
+  (block $do_2 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -118,144 +115,36 @@
      )
     )
    )
-   (block $let_5 (result i32)
-    (local.set $6
-     (block $lambda_call_2 (result i32)
-      (global.set $stack_pointer
-       (i32.add
-        (global.get $stack_pointer)
-        (i32.const 0)
-       )
-      )
-      (local.set $5
-       (call $foo
-        (i32.const 0)
-        (i32.const 0)
-       )
-      )
-      (global.set $stack_pointer
-       (i32.sub
-        (global.get $stack_pointer)
-        (i32.const 0)
-       )
-      )
-      (local.get $5)
-     )
-    )
-    (drop
-     (i32.const 4381)
-    )
-    (block $let_body_result_4 (result i32)
-     (local.set $7
-      (call $retain
-       (local.get $6)
-      )
-     )
-     (block $release_locals_for_let_3
-      (call $release
-       (local.get $6)
-      )
-     )
-     (local.get $7)
-    )
-   )
-  )
- )
- (func $foo#2 (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (block $do_9 (result i32)
-   (if
-    (i32.eq
-     (call $check_args_count
-      (i32.const 0)
-      (local.get $1)
-      (i32.const 0)
-     )
-     (i32.const 0)
-    )
-    (call $runtime_error
-     (i32.const 4485)
-    )
-    (if
+   (if (result i32)
+    (i32.xor
      (i32.eq
-      (call $check_args_count
-       (i32.const 0)
-       (local.get $1)
-       (i32.const 0)
+      (i32.and
+       (i32.load8_u offset=1
+        (i32.const 4381)
+       )
+       (i32.const 253)
       )
-      (i32.const 1)
+      (i32.const 5)
      )
-     (call $runtime_error
-      (i32.const 4456)
-     )
-     (nop)
-    )
-   )
-   (block $store_args_in_locals_8
-    (local.set $2
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 0)
-     )
-    )
-   )
-   (call $retain
-    (i32.const 4531)
-   )
-  )
- )
- (func $foo (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (local $3 i32)
-  (block $do_10 (result i32)
-   (if
-    (i32.eq
-     (call $check_args_count
-      (i32.const 0)
-      (local.get $1)
-      (i32.const 0)
-     )
-     (i32.const 0)
-    )
-    (call $runtime_error
-     (i32.const 4428)
-    )
-    (if
-     (i32.eq
-      (call $check_args_count
-       (i32.const 0)
-       (local.get $1)
-       (i32.const 0)
-      )
-      (i32.const 1)
-     )
-     (call $runtime_error
-      (i32.const 4401)
-     )
-     (nop)
-    )
-   )
-   (block $store_args_in_locals_7
-    (local.set $2
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 0)
-     )
-    )
-   )
-   (block $foo#2 (result i32)
-    (local.set $3
-     (call $lalloc_size
-      (i32.const 0)
-     )
-    )
-    (call $make_lval_wasm_lambda
      (i32.const 1)
+    )
+    (call $print_fn
      (i32.const 0)
+     (call $new_lval_list
+      (call $list_cons
+       (i32.const 4417)
+       (i32.const 0)
+      )
+     )
+    )
+    (call $print_fn
      (i32.const 0)
-     (local.get $3)
-     (i32.const 0)
-     (i32.const 0)
+     (call $new_lval_list
+      (call $list_cons
+       (i32.const 4453)
+       (i32.const 0)
+      )
+     )
     )
    )
   )

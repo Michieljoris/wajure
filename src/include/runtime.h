@@ -13,4 +13,6 @@ void wval_print(WvalFun* wval);
 
 int check_args_count(int param_count, int args_count, int has_rest_arg);
 
+int is_falsy(Lval* lval);
+
 #endif  // __RUNTIME_H_

@@ -131,6 +131,36 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
   return cresult(ret);
 }
 
+CResult is_falsy(Wasm* wasm, Ber wval) {
+  int v1 = LNIL;
+  int v2 = LFALSE;
+  int lower = v1, higher = v2;
+  if (v1 > v2) {
+    lower = v2;
+    higher = v1;
+  }
+  if ((higher | lower) != higher) {
+    printf("LVAL_NIL and LVAL_FALSE should be bit subsets!! %d\n",
+           higher & lower);
+    abort();
+  }
+  int magic_value = (higher ^ lower) ^ 255;
+  BinaryenModuleRef module = wasm->module;
+  Ber subtype = BinaryenLoad(module, 1, 0, 1, 0, BinaryenTypeInt32(), wval);
+  Ber and = BinaryenBinary(module, BinaryenAndInt32(), subtype,
+                           make_int32(module, magic_value));
+  Ber eq =
+      BinaryenBinary(module, BinaryenEqInt32(), and, make_int32(module, lower));
+  return cresult(eq);
+}
+
+CResult is_truthy(Wasm* wasm, Ber wval) {
+  BinaryenModuleRef module = wasm->module;
+  return cresult(BinaryenBinary(module, BinaryenXorInt32(),
+                                is_falsy(wasm, wval).ber,
+                                make_int32(module, 1)));
+}
+
 CResult compile_if(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
   printf("Compiling if!!!!\n");
@@ -143,10 +173,12 @@ CResult compile_if(Wasm* wasm, Cell* args) {
   Lval* if_false = NULL;
   if (args) if_false = args->car;
   if (args && args->cdr) quit(wasm, "Too many arguments to if");
-  Ber if_wasm = BinaryenIf(
-      module, lval_compile(wasm, cond).ber, lval_compile(wasm, if_true).ber,
-      if_false ? lval_compile(wasm, if_false).ber
-               : wasmify_literal(wasm, make_lval_nil()).ber);
+  Ber wasm_cond = lval_compile(wasm, cond).ber;
+  wasm_cond = is_truthy(wasm, wasm_cond).ber;
+  Ber if_wasm =
+      BinaryenIf(module, wasm_cond, lval_compile(wasm, if_true).ber,
+                 if_false ? lval_compile(wasm, if_false).ber
+                          : wasmify_literal(wasm, make_lval_nil()).ber);
   return cresult(if_wasm);
 }
 

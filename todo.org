@@ -5,6 +5,7 @@
 throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
 
 ** ----------------
+** record offset of compiler values that have been interred, so we can reuse them and export them
 ** add release and retain to wasm code
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
