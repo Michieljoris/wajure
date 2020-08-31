@@ -151,19 +151,19 @@
 
 
 ;; ;; ;; Testing recursive sumdown function
-(def sumdown (fn [N] (if (> N 0) (+ N (sumdown  (- N 1))) 0)))
-(t (sumdown 1) 1)
-(t (sumdown 2) 3)
-(t (sumdown 6) 21)
+;; (def sumdown (fn [N] (if (> N 0) (+ N (sumdown  (- N 1))) 0)))
+;; (t (sumdown 1) 1)
+;; (t (sumdown 2) 3)
+;; (t (sumdown 6) 21)
 
 ;; ;; Testing recursive fibonacci function
-(def fib (fn [N] (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))
-(t (fib 1)
-   1)
-(t (fib 2)
-   2)
-(t (fib 4)
-   5)
+;; (def fib (fn [N] (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))
+;; (t (fib 1)
+;;    1)
+;; (t (fib 2)
+;;    2)
+;; (t (fib 4)
+;;    5)
 
 
 

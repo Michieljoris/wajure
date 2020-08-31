@@ -30,6 +30,9 @@ int lval_hash(Lval* lval) {
         case STRING:
           /* hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  // */
           break;
+        case KEYWORD:
+          /* hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed); */
+          break;
         case NUMBER:
           /* hash = murmur3_int(long_hash_munge(lval->num), seed); */
           break;
@@ -43,8 +46,9 @@ int lval_hash(Lval* lval) {
           hash = 2;
           break;
         default:
-          printf("OOPS, can't calculate hash of uknown collection subtype %d\n",
-                 lval->subtype);
+          printf(
+              "OOPS, can't calculate hash of unknown collection subtype %d\n",
+              lval->subtype);
       }
       break;
 
@@ -58,12 +62,15 @@ int lval_hash(Lval* lval) {
           hash = 4;
           break;
         default:
-          printf("OOPS, can't calculate hash of uknown collection subtype %d\n",
-                 lval->subtype);
+          printf(
+              "OOPS, can't calculate hash of unknown collection subtype %d\n",
+              lval->subtype);
       }
       break;
+    case LVAL_NAMESPACE:
+      break;
     default:
-      printf("OOPS, can't calculate hash of uknown type %d\n", lval->type);
+      printf("OOPS, can't calculate hash of unknown type %d\n", lval->type);
   }
   return hash;
 }
@@ -71,6 +78,20 @@ int lval_hash(Lval* lval) {
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .str = retain(s)};
+  lval->hash = lval_hash(lval);
+  return lval;
+}
+
+Lval* make_lval_keyword(char* s) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = KEYWORD, .str = retain(s)};
+  lval->hash = lval_hash(lval);
+  return lval;
+}
+
+Lval* make_lval_namespace(char* s) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .str = retain(s)};
   lval->hash = lval_hash(lval);
   return lval;
 }

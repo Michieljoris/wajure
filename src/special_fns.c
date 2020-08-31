@@ -416,7 +416,7 @@ Lval* eval_throw(Lenv* env, Lval* arg_list) {
 }
 
 /* https://clojure.org/reference/special_forms */
-LispyFn special_builtins[11] = {
+LispyFn special_builtins[] = {
 
     {"quote", eval_quote},
     {"quasiquote", eval_quasiquote},

@@ -5,6 +5,13 @@
 throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
 
 ** ----------------
+
+** fix recursive calls
+    Since we point the closure of a fn to what it's in the env up to that point
+    when the fn is defined the fn itself is not in the env yet. So (defn foo []
+    (foo)) will not work since foo is not yet defined when we add the foo fn to
+    the env.
+** fix freeing of fn_name ("anon")
 ** record offset of compiler values that have been interred, so we can reuse them and export them
 ** add release and retain to wasm code
 *** releasing a lval_wasm_lambda!!!
@@ -25,7 +32,7 @@ Then call wasm implementation of apply* that receives a list and puts them on wa
 ** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
 ** benchmark whether internal module calls are faster than calling imported fns or calling imported table fns
 ** ----------------------------
-** "too few args to ..." etc gets added every time to data!!!!
+** DONE "too few args to ..." etc gets added every time to data!!!!
 So break string into two, and inter strings only once, and do two prints
 ** dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer

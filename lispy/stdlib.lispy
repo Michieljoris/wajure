@@ -20,7 +20,7 @@
 
 (defmacro t [expr expected & str]
   `(let [evalled ~expr]
-     (when (not= evalled ~expected)
+     (when (not= evalled (quote ~expected))
       (do
         (pr "FAIL" ~@str)
         (pr (quote ~expr) )

@@ -120,6 +120,7 @@ int lval_eq(Lval* x, Lval* y) {
       switch (x->subtype) {
         case NUMBER:
           return (x->num == y->num);
+        case KEYWORD:
         case STRING:
           return (_strcmp(x->str, y->str) == 0);
         case LNIL:

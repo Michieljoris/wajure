@@ -122,6 +122,9 @@ void lval_print(Lval* lval) {
     case LVAL_SYMBOL:
       printf("%s", lval->str);
       break;
+    case LVAL_NAMESPACE:
+      printf("%s", lval->str);
+      break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
@@ -145,6 +148,9 @@ void lval_print(Lval* lval) {
           break;
         case STRING:
           lval_print_str(lval);
+          break;
+        case KEYWORD:
+          printf(":%s", lval->str);
           break;
         case LNIL:
           printf("nil");

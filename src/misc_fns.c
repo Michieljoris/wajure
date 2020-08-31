@@ -123,12 +123,12 @@ Lval* read_string_fn(Lenv* env, Lval* arg_list) {
   return read_string(env, arg->str);
 }
 
-Lval* slurp(Lenv* env, char* file_name) {
+Lval* load(Lenv* env, char* file_name) {
 #ifndef WASM
   char* str = read_file(file_name);
   if (!str) return make_lval_err("Could not load file %s", str);
   Lval* result = read_string(env, str);
-  printf("Slurped: %s \n", file_name);
+  printf("Loaded: %s \n", file_name);
   free(str);
   return result;
 #else
@@ -136,11 +136,11 @@ Lval* slurp(Lenv* env, char* file_name) {
 #endif
 }
 
-Lval* slurp_fn(Lenv* env, Lval* arg_list) {
-  ddebug("\nslurp_fn: ");
-  ITER_NEW_N("slurp", 1)
+Lval* load_fn(Lenv* env, Lval* arg_list) {
+  ddebug("\nload_fn: ");
+  ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-  return slurp(env, arg->str);
+  return load(env, arg->str);
 }
 
 Lval* compile_fn(Lenv* env, Lval* arg_list) {
@@ -151,15 +151,97 @@ Lval* compile_fn(Lenv* env, Lval* arg_list) {
   return make_lval_list();
 }
 
+Lval* in_ns_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("in-ns", 1);
+  ITER_NEXT_TYPE(LVAL_SYMBOL, -1)
+  Lval* lval_symbol = arg;
+  ITER_END
+  char* str = lalloc_size(5);
+  _strcpy(str, "*ns*");
+  Lval* lval_ns = make_lval_sym(str);
+  release(str);
+  lenv_put(env, lval_ns, make_lval_namespace(lval_symbol->str));
+  return make_lval_nil();
+}
+
+Lval* parse_as(Lval* as_kw, Lval* as) {
+  if (_strcmp(as_kw->str, "as") != 0) return NULL;
+  return as;
+}
+
+// A more limited and restricted version of clojure's require.
+Lval* require_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("require", 1);
+  ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR)
+  Lval* vector = arg;
+  ITER_END
+  lval_println(vector);
+  Cell* head = vector->head;
+  char* namespace = NULL;
+  char* as = NULL;
+  Lval* refer = NULL;
+  if (list_count(vector->head) > 5)
+    return make_lval_err("Too many args passed to require (>5)");
+
+  if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) {
+    namespace = ((Lval*)head->car)->str;
+  } else {
+    return make_lval_err(
+        "Expecting namespace symbol as first element of quoted vector passed "
+        "to require.");
+  }
+  printf("NAMESPACE: %s\n", namespace);
+
+  head = head->cdr;
+  while (head) {
+    if (((Lval*)head->car)->subtype != KEYWORD)
+      return make_lval_err(
+          "Expecting a keyword such as :as or :refer in quoted vector passed "
+          "to require");
+    Lval* kw = head->car;
+    head = head->cdr;
+    if (!head)
+      return make_lval_err("Expecting arg after keyword :%s in require",
+                           kw->str);
+    if (_strcmp(kw->str, "as") == 0) {
+      if (as)
+        return make_lval_err(
+            "Expecting only one :as keyword in require vector");
+      as = ((Lval*)head->car)->str;
+    } else if (_strcmp(kw->str, "refer") == 0) {
+      if (refer)
+        return make_lval_err(
+            "Expecting only one :refer keyword in require vector");
+      refer = head->car;
+    } else
+      return make_lval_err(
+          "Expecting only :as and :refer keywords in require vector, "
+          "not :%s",
+          kw->str);
+    head = head->cdr;
+  }
+  if (refer) {
+    if (refer->subtype != VECTOR)
+      return make_lval_err(
+          "Expecting arg to refer to be a vector in require vector");
+  }
+  printf("as: %s\n", as);
+  printf("refer: ");
+  lval_println(refer);
+  return make_lval_nil();
+}
+
 LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"print-env", print_env_fn},
                            {"exit", exit_fn},
-                           {"slurp", slurp_fn},
+                           {"load", load_fn},
                            /* {"mpc_load", mpc_load_fn}, */
                            {"read-string", read_string_fn},
                            {"macroexpand", macroexpand_fn},
                            {"macroexpand-1", macroexpand_1_fn},
                            {"compile", compile_fn},
+                           {"in-ns", in_ns_fn},
+                           {"require", require_fn},
                            {NIL}
 
 };

@@ -5,6 +5,7 @@
 Lval* make_lval_num(long x);
 Lval* make_lval_quote(void);
 Lval* make_lval_sym(char* s);
+Lval* make_lval_keyword(char* s);
 Lval* make_lval_str(char* s);
 Lval* make_lval_list(void);
 Lval* make_lval_map(void);
@@ -19,7 +20,7 @@ Lval* make_lval_true(void);
 Lval* make_lval_false(void);
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
-
+Lval* make_lval_namespace(char* s);
 Lval* new_lval_list(void* head);
 
 #endif  // __LVAL_H_

@@ -71,11 +71,11 @@ char* lval_str_escape(char x) {
 char* valid_symbol_chars =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789_+-*\\/!?=<>&|%$#'`";
+    "0123456789_+-*\\/!?=<>&|%$#'.";
 
 // but they are also reader tags if a 'symbol' starts with them, so they're
 // included here
-char* invalid_symbol_first_chars = "'`#";
+char* invalid_symbol_first_chars = "'#.";
 
 Lval* lval_read_sym(char* s, int* i) {
   /* Allocate Empty String */
@@ -127,6 +127,60 @@ Lval* lval_read_sym(char* s, int* i) {
   /* Return lval */
   return x;
 }
+
+Lval* lval_read_keyword(char* s, int* i) {
+  /* Allocate Empty String */
+  char* part = lalloc_size(1);
+
+  /* While valid identifier characters */
+  while (_strchr(valid_symbol_chars, s[*i]) && s[*i] != '\0') {
+    /* Append character to end of string */
+    part = lrealloc(part, _strlen(part) + 2);
+    part[_strlen(part) + 1] = '\0';
+    part[_strlen(part) + 0] = s[*i];
+    (*i)++;
+  }
+  Lval* x = make_lval_keyword(part);
+
+  /* /\* Check if Identifier looks like number *\/ */
+  /* int is_num = _strchr("-0123456789", part[0]) != NULL; */
+  /* for (int j = 1; j < _strlen(part); j++) { */
+  /*   if (_strchr("0123456789", part[j]) == NULL) { */
+  /*     is_num = 0; */
+  /*     break; */
+  /*   } */
+  /* } */
+  /* if (_strlen(part) == 1 && part[0] == '-') { */
+  /*   is_num = 0; */
+  /* } */
+
+  /* Add Symbol or Number as lval */
+  /* Lval* x = NULL; */
+  /* if (is_num) { */
+  /*   long v = _strtol(part, NULL, 10); */
+  /*   x = (*merrno != ERANGE) */
+  /*           ? make_lval_num(v) */
+  /*           : make_lval_err("Invalid Number, too large or too small %s",
+   * part); */
+  /* } else if (_strcmp(part, "true") == 0) { */
+  /*   x = make_lval_true(); */
+
+  /* } else if (_strcmp(part, "false") == 0) { */
+  /*   x = make_lval_false(); */
+
+  /* } else if (_strcmp(part, "nil") == 0) { */
+  /*   x = make_lval_nil(); */
+  /* } else { */
+  /*   x = make_lval_sym(part); */
+  /* } */
+
+  /* Free temp string */
+  release(part);
+
+  /* Return lval */
+  return x;
+}
+
 Lval* lval_read_str(char* s, int* i) {
   /* Allocate empty string */
   char* part = lalloc_size(1);
@@ -353,6 +407,10 @@ Lval* lval_read(char* s, int* i) {
         break;
       case '~':
         x = lval_read_tilde(s, i);
+        break;
+      case ':':
+        (*i)++;
+        x = lval_read_keyword(s, i);
         break;
       /* case '#': */
       /*   x = lval_read_tag(s, i); */

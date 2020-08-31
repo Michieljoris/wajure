@@ -93,8 +93,8 @@ void destroy_lval(void* data) {
       switch (lval->subtype) {
         case NUMBER:
           break;
+        case KEYWORD:
         case STRING:
-          /* free(lval->str); */
           release(lval->str);
           break;
         case LNIL:
@@ -129,6 +129,10 @@ void destroy_lval(void* data) {
       break;
 
     case LVAL_COMPILER:
+      break;
+    case LVAL_NAMESPACE:
+      release(lval->str);
+      /* TODO: Destroy namespace */
       break;
     case LVAL_ERR:
       /* free(lval->str); */

@@ -120,6 +120,7 @@ enum {
   LVAL_LITERAL,
   LVAL_FUNCTION,
   LVAL_ERR,
+  LVAL_NAMESPACE,
   /* subtypes */
   // literal subtypes
   LNIL,

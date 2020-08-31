@@ -62,6 +62,7 @@
 ;; (def a (list (fn [] 123)))
 ;; (def bar (fn [] 555))
 
+(in-ns 'my.namespace)
 (defn test [x y]
   (print 'abc 'abc)
   ;; (print "abc" "abc")
