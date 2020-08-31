@@ -6,9 +6,21 @@
 #include "lispy_mempool.h"
 #include "list.h"
 #include "ltypes.h"
+#include "lval.h"
 #include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
+
+//'wasmifying' means interring a literal lvalue. A lisp value that is not
+// dependent on any variable but can be hardcoded into the program. This is done
+// for strings, numbers, , nil, false, true, functions that don't close over any
+// other values (other than other literal values), and lists and vectors (and
+// maps and sets eventually) combining all of these. The data of these values
+// (lvals) are hard coded in the wasm data section and we can just insert the
+// pointer to them into the code. Wajure is immutable so these values may become
+// part of any runtime created lvalues but the data itself is immutable.
+// Strings, nil, false, true, numbers from -100 till 100 and function objects
+// are deduped.
 
 CResult wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
   printf("WASMIFY SYS FN!!!!!\n");
@@ -19,50 +31,51 @@ CResult wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
   _strcat(fn_name, lval_sym->str);
 
   int fn_table_index;
-  Lval* lval_num = alist_get(wasm->fn_to_offset_map, is_eq_str, fn_name);
-  if (lval_num) {
-    fn_table_index = lval_num->num;
-  } else {
-    int wasm_params_count = 2;  // the function's closure and args count
-    int results_count = 1;
-    BinaryenType params_type = make_type_int32(wasm_params_count);
-    BinaryenType results_type = make_type_int32(results_count);
-    int locals_count = 0;
-    char* c_fn_name =
-        alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_sym->str);
+  /* Lval* lval_num = alist_get(wasm->fn_to_offset_map, is_eq_str, fn_name); */
+  /* if (lval_num) { */
+  /*   fn_table_index = lval_num->num; */
+  /* } else { */
+  int wasm_params_count = 2;  // the function's closure and args count
+  int results_count = 1;
+  BinaryenType params_type = make_type_int32(wasm_params_count);
+  BinaryenType results_type = make_type_int32(results_count);
+  int locals_count = 0;
+  char* c_fn_name =
+      alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_sym->str);
 
-    if (!c_fn_name)
-      quit(wasm, "System fn not found in runtime: %s", lval_sym->str);
-    /* Ber rest_arg = NULL; */
+  if (!c_fn_name)
+    quit(wasm, "System fn not found in runtime: %s", lval_sym->str);
+  /* Ber rest_arg = NULL; */
 
-    Ber stack_pointer =
-        BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
-    int sp_adjustment = 1 * 4;
-    stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
-                                   make_int32(module, sp_adjustment));
-    int _signed = 0;
-    int _aligned = 0;
-    int offset = 0;
-    Ber rest_arg = BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
-                                BinaryenTypeInt32(), stack_pointer);
-    Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
+  Ber stack_pointer =
+      BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
+  int sp_adjustment = 1 * 4;
+  stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
+                                 make_int32(module, sp_adjustment));
+  int _signed = 0;
+  int _aligned = 0;
+  int offset = 0;
+  Ber rest_arg = BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
+                              BinaryenTypeInt32(), stack_pointer);
+  Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
 
-    // We pretend this fn has 1 param, namely a rest param, so any args past
-    // into this fn will be wrapped in a list, ready to be passed to our sys fn.
-    Ber process_args = wasm_process_args(wasm, 1, 1).ber;
-    // Actually call this sys fn with the rest args
-    Ber call_sys_fn =
-        BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
-    Ber block_children[] = {process_args, call_sys_fn};
-    Ber body =
-        BinaryenBlock(module, "body", block_children, 2, BinaryenTypeInt32());
-    BinaryenAddFunction(module, fn_name, params_type, results_type, NULL,
-                        locals_count, body);
+  // We pretend this fn has 1 param, namely a rest param, so any args past
+  // into this fn will be wrapped in a list, ready to be passed to our sys fn.
+  Ber process_args = wasm_process_args(wasm, 1, 1).ber;
+  // Actually call this sys fn with the rest args
+  Ber call_sys_fn =
+      BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
+  Ber block_children[] = {process_args, call_sys_fn};
+  Ber body =
+      BinaryenBlock(module, "body", block_children, 2, BinaryenTypeInt32());
+  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL,
+                      locals_count, body);
 
-    fn_table_index = add_fn_to_table(wasm, fn_name);
-    wasm->fn_to_offset_map = alist_prepend(wasm->fn_to_offset_map, fn_name,
-                                           make_lval_num(fn_table_index));
-  }
+  fn_table_index = add_fn_to_table(wasm, fn_name);
+  /* wasm->fn_to_offset_map = alist_prepend(wasm->fn_to_offset_map, fn_name,
+   */
+  /*                                        make_lval_num(fn_table_index)); */
+  /* } */
 
   /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
   /* Ber lispy_param_count = make_int32(module, 1);  // rest arg */
@@ -103,7 +116,7 @@ CResult wasmify_sys_fn(Wasm* wasm, Lval* lval_sym) {
   /* printf("data_lval 5 %d\n", foo[3]); */
 }
 
-CResult compile_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
+CResult wasmify_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   /* BinaryenModuleRef module = wasm->module; */
   fn_name = fn_name         ? fn_name
             : lval_fun->str ? lval_fun->str
@@ -111,18 +124,19 @@ CResult compile_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   /* printf("->>>>>>wasmify global lambda fn %s %d!!!\n", fn_name, */
   /* lval_fun->offset); */
 
-  if (lval_fun->offset == -1) {
-    FunctionData function_data =
-        add_wasm_function(wasm, lval_fun->closure, fn_name, lval_fun);
-    // TODO: bit sloppy adding this info to lval_fun. Should make and use
-    // compiler lookup map
-    lval_fun->offset = function_data.fn_table_index;
-    lval_fun->param_count = function_data.param_count;
-    lval_fun->rest_arg_index = function_data.has_rest_arg;
-  }
+  /* if (lval_fun->offset == -1) { */
+  FunctionData function_data =
+      add_wasm_function(wasm, lval_fun->closure, fn_name, lval_fun);
+  // TODO: bit sloppy adding this info to lval_fun. Should make and use
+  // compiler lookup map
+  lval_fun->offset = function_data.fn_table_index;
+  /*   lval_fun->param_count = function_data.param_count; */
+  /*   lval_fun->rest_arg_index = function_data.has_rest_arg; */
+  /* } */
 
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, lval_fun->offset, lval_fun->param_count, lval_fun->rest_arg_index);
+      wasm, function_data.fn_table_index, function_data.param_count,
+      function_data.has_rest_arg);
   return inter_data_lval_wasm_lambda(wasm, data_lval);
 
   /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
@@ -160,6 +174,10 @@ CResult wasmify_collection(Wasm* wasm, Lval* lval) {
 }
 
 CResult wasmify_literal(Wasm* wasm, Lval* lval) {
+  printf("------------------wasmify_literal %s\n", lval_type_to_name(lval));
+  lval_println(lval);
+  if (lval->type == LVAL_SYMBOL)
+    return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
   switch (lval->subtype) {
     case NUMBER:;
       /* lval_println(lval); */
@@ -186,22 +204,23 @@ CResult wasmify_literal(Wasm* wasm, Lval* lval) {
       if (!wasm->lval_nil_offset.ber)
         wasm->lval_nil_offset = inter_lval(wasm, lval);
       return wasm->lval_nil_offset;
-      /* case STRING:; */
-      /* case KEYWORD:; */
-      /* case SYMBOL:; */
+    case STRING:
+      return inter_lval_str_type(wasm, &wasm->lval_str_pool, lval);
+    case KEYWORD:
+      return inter_lval_str_type(wasm, &wasm->lval_keyword_pool, lval);
     default:
       return inter_lval(wasm, lval);
   }
 }
 
 CResult wasmify_lval(Wasm* wasm, Lval* lval) {
-  printf("=======================\n");
-  printf("wasmfiy_lval: %d\n", lval->wval_ptr);
-  lval_println(lval);
-  printf("lval %p\n", lval);
+  /* printf("=======================\n"); */
+  /* printf("wasmfiy_lval: %d\n", lval->wval_ptr); */
+  /* lval_println(lval); */
+  /* printf("lval %p\n", lval); */
 
   if (lval->wval_ptr > 0) {
-    printf("YIPPPEEEEEEE %d\n", lval->wval_ptr);
+    /* printf("YIPPPEEEEEEE %d\n", lval->wval_ptr); */
     return cresult(make_int32(wasm->module, lval->wval_ptr));
   }
 
@@ -212,10 +231,9 @@ CResult wasmify_lval(Wasm* wasm, Lval* lval) {
     switch (lval->subtype) {
       case SYS:
         ret = wasmify_sys_fn(wasm, lval);
-        printf("ret!\n");
         break;
       case LAMBDA:  // functions in compiler env
-        ret = compile_global_lambda(wasm, lval->str, lval);
+        ret = wasmify_global_lambda(wasm, lval->str, lval);
         break;
       case SPECIAL:
         return quit(wasm,
@@ -232,7 +250,7 @@ CResult wasmify_lval(Wasm* wasm, Lval* lval) {
     ret = wasmify_literal(wasm, lval);
 
   lval->wval_ptr = ret.wasm_ptr;
-  printf("lval->wval_ptr: %d!!\n", lval->wval_ptr);
-  printf("------------------------- \n");
+  /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
+  /* printf("------------------------- \n"); */
   return ret;
 }

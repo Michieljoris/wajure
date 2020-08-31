@@ -1,6 +1,7 @@
 #include "inter.h"
 
 #include "compile.h"
+#include "lib.h"
 #include "list.h"
 #include "ltypes.h"
 #include "wasm.h"
@@ -158,4 +159,14 @@ CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
   CResult ret = {.ber = make_int32(wasm->module, wval_ptr),
                  .wasm_ptr = wval_ptr};
   return ret;
+}
+
+CResult inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
+  CResult* ret = (CResult*)alist_get(*pool, is_eq_str, lval->str);
+  if (!ret) {
+    ret = malloc(sizeof(CResult));
+    *ret = inter_lval(wasm, lval);
+    *pool = alist_prepend(*pool, lval->str, ret);
+  }
+  return *ret;
 }

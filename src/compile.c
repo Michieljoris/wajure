@@ -121,8 +121,6 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
   return cresult(ret);
 }
 
-CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index);
-
 // A lval_compiler is a value that we don't know at compile time, but that we
 // can retrieve at runtime. So we insert this code in place of the symbol.
 CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
@@ -194,6 +192,8 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
   }
 }
 
+enum { RT_TOO_FEW_ARGS, RT_TOO_MANY_ARGS };
+
 CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
@@ -219,12 +219,10 @@ CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
     Ber all_ok = BinaryenNop(module);
     Ber if_too_few = BinaryenIf(
         module, is_too_few_args,
-        wasm_runtime_error(wasm, "Too few args passed to %s", fn_name).ber,
-        all_ok);
+        wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, fn_name).ber, all_ok);
     Ber if_too_many = BinaryenIf(
         module, is_too_many_args,
-        wasm_runtime_error(wasm, "Too many args passed to %s", fn_name).ber,
-        if_too_few);
+        wasm_runtime_error(wasm, RT_TOO_MANY_ARGS, fn_name).ber, if_too_few);
 
     check_args_count = if_too_many;
   }

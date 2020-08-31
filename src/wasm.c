@@ -18,9 +18,9 @@ Wasm* init_wasm() {
                  .data_offset = 0,
                  .fn_names = malloc(1),
                  .fns_count = 0,
-                 .lval_true_offset = cnull(),
-                 .lval_false_offset = cnull(),
-                 .lval_nil_offset = cnull(),
+                 /* .lval_true_offset = cnull(), */
+                 /* .lval_false_offset = cnull(), */
+                 /* .lval_nil_offset = cnull(), */
                  .lval_empty_list_offset = cnull(),
                  .__data_end = (int)_strtol(data_end_str, NULL, 10),
                  .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
@@ -47,6 +47,7 @@ void free_wasm(Wasm* wasm) {
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
   free(wasm->context);  // TODO
+  // TODO: free string_pool
   free(wasm);
 }
 
@@ -105,7 +106,7 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "log_int", 1, 0},
     {NULL, NULL, "log_string", 1, 0},
     {NULL, NULL, "log_string_n", 2, 0},
-    {NULL, NULL, "runtime_error", 1, 0},
+    {NULL, NULL, "runtime_error", 2, 0},
     // print
     {NULL, NULL, "lval_print", 1, 0},
     {NULL, NULL, "lval_println", 1, 0},

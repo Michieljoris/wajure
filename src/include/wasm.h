@@ -29,7 +29,11 @@ typedef struct {
   int lval_num_end;
   CResult* lval_num_offset;
   Cell* lispy_to_c_fn_map;
-  Cell* fn_to_offset_map;
+  Cell* string_pool;
+  Cell* lval_str_pool;
+  Cell* lval_symbol_pool;
+  Cell* lval_keyword_pool;
+  /* Cell* fn_to_offset_map; */
   Cell* context;
   // whether to check at runtime if correct number of args is passed into
   // function

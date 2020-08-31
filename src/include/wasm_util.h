@@ -79,7 +79,7 @@ void leave_env(Wasm* wasm);
 
 Lval* make_lval_compiler(Context* context, int subtype, int offset);
 
-CResult wasm_runtime_error(Wasm* wasm, char* fmt, ...);
+CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg);
 
 char* uniquify_name(Wasm* wasm, char* name);
 

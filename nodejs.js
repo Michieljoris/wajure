@@ -45,13 +45,24 @@ function makeLogString(memory, offset) {
     }
 }
 
+const runtime_error_codes = {
+    TOO_FEW_ARGS: 0,
+    TOO_MANY_ARGS: 1
+}
+
 function make_runtime_error_fn(memory, offset) {
-    return function(offset) {
+    return function(err_no, offset) {
         var bytes = new Uint8Array(memory.buffer, offset);
         var length = 0;
         while (bytes[length] != 0) length++;
         var bytes = new Uint8Array(memory.buffer, offset, length);
         var string = new TextDecoder('utf8').decode(bytes);
+        switch (err_no) {
+            case runtime_error_codes.TOO_FEW_ARGS:
+                string = "Too few args passed to " + string; break;
+            case runtime_error_codes.TOO_MANY_ARGS:
+                string = "Too many args passed to " + string; break;
+        }
         throw string;
     }
 }

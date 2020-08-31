@@ -43,8 +43,7 @@
 
 ;; (defn foo [x y & z] x)
 ;; (def plus +)
-(defn foo [x y & z] (print x))
-
+(defn foo [x y ] (print x))
 ;; (defmacro t2 [expr expected & str]
 ;;   `(let [evalled ~expr]
 ;;      (print evalled)
@@ -64,8 +63,11 @@
 ;; (def bar (fn [] 555))
 
 (defn test [x y]
-+ +
-  a a
+  (print 'abc 'abc)
+  ;; (print "abc" "abc")
+  ;; (foo 1 2 3)
+;; + +
+;;   a a
   ;; bar bar
   ;; a a
   ;; bar
