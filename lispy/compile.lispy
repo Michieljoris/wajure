@@ -25,14 +25,17 @@
 ;; (defn bar [x] (print x) ;; (+ 1 1)
 ;;   )
 ;; (def z 123)
-;; (def a
-;;   ;; (let [b 1]
-;;   ;;   (fn [] 1)
-;;   ;;   ;; (list 'a (fn [] a))
-;;   ;;   )
-;;  (let [b 456]
-;;    (list (fn [] b)))
-;;   )
+
+;; (def b 123)
+
+(def c 567)
+(def a 123
+  ;; (let [b 1]
+  ;;   (fn [] 1)
+  ;;   ;; (list 'a (fn [] a))
+  ;;   )
+  ;; (list (fn [] c))
+  )
 
 ;; (let [b 777]
 ;;   (def a (list (fn [] '(1 2 3 5))))
@@ -40,7 +43,7 @@
 
 ;; (defn foo [x y & z] x)
 ;; (def plus +)
-;; (defn foo [x y & z] (print x))
+(defn foo [x y & z] (print x))
 
 ;; (defmacro t2 [expr expected & str]
 ;;   `(let [evalled ~expr]
@@ -56,8 +59,25 @@
 ;;      )))
 ;; (defn foo [] (fn []))
 
+;; (def bar (list (fn [] 123)))
+;; (def a (list (fn [] 123)))
+;; (def bar (fn [] 555))
+
 (defn test [x y]
-  (if nil (print 1) (print 0))
++ +
+  a a
+  ;; bar bar
+  ;; a a
+  ;; bar
+  ;; (print ((first bar)))
+  ;; (let [f (f)]
+  ;;   (print (f))
+  ;;   ;; a
+  ;;   ;; 123
+  ;;   ;; (print a a)
+  ;;   )
+  ;; (print a)
+  ;; (if nil (print 1) (print 0))
   ;; (let [a (foo)]
   ;;   1 a)
   ;; (do 1 123)
@@ -112,19 +132,19 @@
   ;; (print "from test")
 
 
- 
+
   ;; (mylet [x plus
   ;;         y plus]
   ;;        (print x y))
   ;; (when true (print "when macro!!!"))
   ;; (let [p print]
   ;;   (p (my-macro 1)))
- ;;  (let [f foo]
- ;;    (f 123 1 2 3)
- ;;    ;; (print "from test")
- ;;    ;; (f)
+  ;;  (let [f foo]
+  ;;    (f 123 1 2 3)
+  ;;    ;; (print "from test")
+  ;;    ;; (f)
 
- ;; )
+  ;; )
   )
 
 ;; (def foo 123)

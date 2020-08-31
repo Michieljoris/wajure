@@ -345,3 +345,5 @@ long logical_rshift(long x, int n) {
   long mask = (1 << (sizeof(long) * 8 - n)) - 1;
   return x >> n & mask;
 }
+
+int is_eq_str(void *k1, void *k2) { return _strcmp(k1, k2) == 0; }

@@ -3,9 +3,11 @@
 
 #include "wasm.h"
 int compile(char* file_name);
-CResult wasmify_literal(Wasm* wasm, Lval* lval);
-CResult wasmify_collection(Wasm* wasm, Lval* lval);
 
 CResult lval_compile(Wasm* wasm, Lval* lval);
-CResult wasmify_lval(Wasm* wasm, Lval* lval);
+
+FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
+                               Lval* lval_fun);
+
+CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index);
 #endif  // __COMPILE_H_

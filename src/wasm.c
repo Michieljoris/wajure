@@ -42,7 +42,6 @@ Wasm* init_wasm() {
 
 void free_wasm(Wasm* wasm) {
   BinaryenModuleDispose(wasm->module);
-  release_env(wasm->env);
   free(wasm->data);
   free(wasm->lval_num_offset);
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);

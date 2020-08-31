@@ -10,6 +10,7 @@
 #include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
+#include "wasmify.h"
 
 CResult compile_let(Wasm* wasm, Cell* arg_list) {
   BinaryenModuleRef module = wasm->module;

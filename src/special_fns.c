@@ -91,7 +91,9 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_body = make_lval_list();
   lval_body->head = list_rest(arg_list->head);
   Lenv* closure_env = lenv_new();
-  closure_env->parent_env = retain(env);
+  /* closure_env->parent_env = retain(env); */
+  closure_env->parent_env = retain(env->parent_env);
+  closure_env->kv = retain(env->kv);
   ddebug("lambda has retained env: %d ", is_user_env(env));
   lenv_print(env);
   ddebug("refcount: %d\n", get_ref_count(env));

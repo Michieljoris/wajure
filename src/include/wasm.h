@@ -36,6 +36,14 @@ typedef struct {
   int runtime_check_args_count;
 } Wasm;
 
+typedef struct {
+  int fn_table_index;
+  Lenv* closure;
+  int closure_count;
+  int param_count;
+  int has_rest_arg;
+} FunctionData;
+
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 

@@ -52,4 +52,6 @@ char *itostr(char str[], long int num);
 
 long logical_rshift(long x, int n);
 
+int is_eq_str(void *k1, void *k2);
+
 #endif  // __LIB_H_

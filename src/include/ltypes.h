@@ -67,6 +67,7 @@ struct lval {
   Lval* body;
 
   // compiler to wasm data
+  int wval_ptr;
   Context* context;
   int offset;
   int param_count;

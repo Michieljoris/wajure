@@ -28,6 +28,8 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
 Lenv* interprete_file(char* file_name);
 
+Lenv* require_file(Lenv* env, char* file_name);
+
 void release_env(Lenv* env);
 
 BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset);
@@ -37,15 +39,6 @@ BinaryenType* make_type_int32_array(int count);
 BinaryenType make_type_int32(int count);
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
-
-CResult inter_lval(Wasm* wasm, Lval* lval);
-CResult inter_cell(Wasm* wasm, Cell* cell);
-
-CResult inter_list(Wasm* wasm, Lval* lval);
-
-int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
-                                int has_rest_arg);
-CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval);
 
 Wasm* enter_context(Wasm* wasm);
 
@@ -108,5 +101,9 @@ void li_close(LocalIndices* li);
 
 CResult cresult(Ber ber);
 CResult cnull();
+
+CResult wasm_lalloc_type(Wasm* wasm, int type);
+
+CResult wasm_lalloc_size(Wasm* wasm, int size);
 
 #endif  // __WASM_UTIL_H_
