@@ -189,9 +189,9 @@ Lenv* load_stdlib() {
   Lenv* stdlib_env = lenv_new();
   stdlib_env->parent_env = retain(root_env);
 
-  stdlib_env->is_user_env = 1;
+  stdlib_env->is_ns_env = 1;
   load(stdlib_env, "lispy/stdlib.lispy");
-  stdlib_env->is_user_env = 0;
+  stdlib_env->is_ns_env = 0;
   return stdlib_env;
 }
 
@@ -199,23 +199,12 @@ Lenv* interprete_file(char* file_name) {
   Lenv* stdlib_env = load_stdlib();
   Lenv* user_env = lenv_new();
   user_env->parent_env = retain(stdlib_env);
-  stdlib_env->is_user_env = 0;
-  user_env->is_user_env = 1;
+  stdlib_env->is_ns_env = 0;
+  user_env->is_ns_env = 1;
 
   Lval* result = load(user_env, file_name);
   if (result->type == LVAL_ERR) exit(1);
   release(result);
-  return user_env;
-}
-
-Lenv* require_file(Lenv* env, char* file_name) {
-  Lenv* user_env = lenv_new();
-  user_env->parent_env = env;
-  user_env->is_user_env = 1;
-  Lval* result = load(user_env, file_name);
-  if (result->type == LVAL_ERR) exit(1);
-  release(result);
-  user_env->parent_env = NULL;
   return user_env;
 }
 

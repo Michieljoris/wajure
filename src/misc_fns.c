@@ -11,6 +11,7 @@
 #include "platform.h"
 #include "print.h"
 #include "read.h"
+#include "state.h"
 
 int is_lval_type(Lval* lval, int type, int subtype) {
   return lval->type == type && lval->subtype == subtype;
@@ -126,7 +127,7 @@ Lval* read_string_fn(Lenv* env, Lval* arg_list) {
 Lval* load(Lenv* env, char* file_name) {
 #ifndef WASM
   char* str = read_file(file_name);
-  if (!str) return make_lval_err("Could not load file %s", str);
+  if (!str) return make_lval_err("Could not load file %s", file_name);
   Lval* result = read_string(env, str);
   printf("Loaded: %s \n", file_name);
   free(str);
@@ -156,17 +157,39 @@ Lval* in_ns_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1)
   Lval* lval_symbol = arg;
   ITER_END
-  char* str = lalloc_size(5);
+  scoped char* str = lalloc_size(5);
   _strcpy(str, "*ns*");
   Lval* lval_ns = make_lval_sym(str);
-  release(str);
   lenv_put(env, lval_ns, make_lval_namespace(lval_symbol->str));
   return make_lval_nil();
 }
 
-Lval* parse_as(Lval* as_kw, Lval* as) {
-  if (_strcmp(as_kw->str, "as") != 0) return NULL;
-  return as;
+Lenv* require_file(Lenv* env, char* file_name) {
+  Lenv* refer_env = lenv_new();
+  refer_env->parent_env = retain(env);
+  Lenv* ns_env = lenv_new();
+  ns_env->parent_env = refer_env;
+  ns_env->is_ns_env = 1;
+  scoped Lval* result = load(ns_env, file_name);
+  if (result->type == LVAL_ERR) {
+    lval_println(result);
+    exit(1);
+  }
+  ns_env->parent_env = NULL;
+  /* printf("Required %s\n", file_name); */
+  return ns_env;
+}
+
+Lval* get_lval_ns(Lenv* env) {
+  char* str = lalloc_size(5);
+  _strcpy(str, "*ns*");
+  scoped Lval* lval_current_ns_sym = make_lval_sym(str);
+  Lval* lval_current_ns = lenv_get(env, lval_current_ns_sym);
+  if (lval_current_ns->type == LVAL_ERR)
+    return make_lval_err(
+        "Expecting *ns* to be defined (call in-ns) before require is called");
+  release(str);
+  return lval_current_ns;
 }
 
 // A more limited and restricted version of clojure's require.
@@ -175,22 +198,26 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR)
   Lval* vector = arg;
   ITER_END
-  lval_println(vector);
   Cell* head = vector->head;
-  char* namespace = NULL;
+  Lval* required_namespace_sym = NULL;
   char* as = NULL;
   Lval* refer = NULL;
+  scoped Lval* lval_current_ns = get_lval_ns(env);
+  Namespace* current_namespace = (Namespace*)lval_current_ns->head;
+  printf("current_namespace: %s\n", current_namespace->namespace);
+  if (list_count(env->kv) > 1)
+    return make_lval_err(
+        "Require calls can only to be made before any def calls");
   if (list_count(vector->head) > 5)
     return make_lval_err("Too many args passed to require (>5)");
 
   if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) {
-    namespace = ((Lval*)head->car)->str;
+    required_namespace_sym = ((Lval*)head->car);
   } else {
     return make_lval_err(
         "Expecting namespace symbol as first element of quoted vector passed "
         "to require.");
   }
-  printf("NAMESPACE: %s\n", namespace);
 
   head = head->cdr;
   while (head) {
@@ -225,9 +252,63 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
       return make_lval_err(
           "Expecting arg to refer to be a vector in require vector");
   }
-  printf("as: %s\n", as);
-  printf("refer: ");
-  lval_println(refer);
+  /* printf("NAMESPACE: \n"); */
+  /* lval_println(required_namespace_sym); */
+  int src_len = _strlen(config->src) + 1;
+  char* file_name =
+      lalloc_size(src_len + _strlen(required_namespace_sym->str) + 4);
+  file_name = _strcpy(file_name, config->src);
+  file_name = _strcat(file_name, "/");
+  file_name = _strcat(file_name, required_namespace_sym->str);
+  file_name = strsubst(file_name, '.', '/');
+  file_name = _strcat(file_name, ".clj");
+  /* printf("file_name=%s\n", file_name); */
+
+  Lenv* required_env = (Lenv*)alist_get(state->namespaces, is_eq_str,
+                                        required_namespace_sym->str);
+  if (!required_env) {
+    required_env = require_file(get_root_env(env), file_name);
+    state->namespaces =
+        alist_prepend(state->namespaces, retain(required_namespace_sym->str),
+                      retain(required_env));
+  }
+  current_namespace->required =
+      alist_prepend(current_namespace->required,
+                    retain(required_namespace_sym->str), retain(required_env));
+
+  /* printf("current_namespace->required len: %d\n", */
+  /*        list_count(current_namespace->required)); */
+  if (as) {
+    /* printf("AS: %s\n", as); */
+    current_namespace->required = alist_prepend(
+        current_namespace->required, retain(as), retain(required_env));
+  }
+  /* printf("current_namespace->required len: %d\n", */
+  /*        list_count(current_namespace->required)); */
+  /* Cell* first = current_namespace->required->car; */
+  /* char* name1 = first->car; */
+  /* Lenv* env1 = (Lenv*)first->cdr; */
+  /* printf("%s\n", name1); */
+  /* env_print(env1); */
+  if (refer) {
+    Lenv* current_env = get_ns_env(env);
+    Lenv* refer_env = current_env->parent_env;
+    Cell* head = refer->head;
+    while (head) {
+      Lval* lval_sym = head->car;
+      Lval* lval = lenv_get(required_env, lval_sym);
+      if (lval->type == LVAL_ERR) {
+        return lval;
+      }
+      lenv_put(refer_env, retain(lval_sym), retain(lval));
+      head = head->cdr;
+    }
+  }
+
+  /* env_print(required_env); */
+  /* printf("as: %s\n", as); */
+  /* printf("refer: "); */
+  /* lval_println(refer); */
   return make_lval_nil();
 }
 

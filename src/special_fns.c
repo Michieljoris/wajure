@@ -31,7 +31,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
 
-  if (lenv_is_bound(get_user_env(env), lval_sym)) {
+  if (lenv_is_bound(get_ns_env(env), lval_sym)) {
     /* warn( */
     /*     "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
      */
@@ -46,7 +46,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     }
     retain(lval_sym);
   }
-  lenv_put(get_user_env(env), lval_sym, lval);
+  lenv_put(get_ns_env(env), lval_sym, lval);
   return make_lval_nil();
 }
 
@@ -94,7 +94,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   /* closure_env->parent_env = retain(env); */
   closure_env->parent_env = retain(env->parent_env);
   closure_env->kv = retain(env->kv);
-  ddebug("lambda has retained env: %d ", is_user_env(env));
+  ddebug("lambda has retained env: %d ", is_ns_env(env));
   lenv_print(env);
   ddebug("refcount: %d\n", get_ref_count(env));
   Lval* fn =

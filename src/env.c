@@ -46,9 +46,9 @@ Lenv* get_root_env(Lenv* env) {
   return env;
 }
 
-Lenv* get_user_env(Lenv* env) {
+Lenv* get_ns_env(Lenv* env) {
   while (env->parent_env) {
-    if (env->is_user_env) return env;
+    if (env->is_ns_env) return env;
     env = env->parent_env;
   }
   printf("Error: you can't get user_env from root env!!. Aborting");
@@ -58,8 +58,9 @@ Lenv* get_user_env(Lenv* env) {
   return NULL;
 }
 
-int is_user_env(Lenv* env) {
-  return env->parent_env && !env->parent_env->parent_env;
+int is_ns_env(Lenv* env) {
+  return env->is_ns_env;
+  /* return env->parent_env && !env->parent_env->parent_env; */
 }
 
 int lenv_is_bound(Lenv* env, Lval* lval_sym) {

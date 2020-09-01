@@ -12,6 +12,7 @@
 #include "misc_fns.h"
 #include "print.h"
 #include "read.h"
+#include "state.h"
 
 Lval* lval_eval(Lenv* e, Lval* v);
 
@@ -145,8 +146,50 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
+char* get_namespace(Lval* lval_sym) {
+  char* str = lval_sym->str;
+  char* pos = _strchr(str, '/');
+
+  if (pos) {
+    int namespace_len = pos - str;
+    char* namespace = lalloc_size(namespace_len + 1);
+    _strncpy(namespace, str, namespace_len);
+    namespace[namespace_len] = '\0';
+    return namespace;
+  }
+  return NULL;
+}
+
+char* get_name(Lval* lval_sym) {
+  char* str = lval_sym->str;
+  char* pos = _strchr(str, '/');
+  if (pos) {
+    pos++;
+    int name_len = _strlen(str) - (pos - str);
+    char* name = lalloc_size(name_len + 1);
+    _strcpy(name, pos);
+    return name;
+  }
+  return retain(lval_sym->str);
+}
+
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
-  Lval* lval_resolved_sym = lenv_get(env, lval_symbol);
+  Lval* lval_resolved_sym;
+  scoped char* namespace = get_namespace(lval_symbol);
+  if (namespace) {
+    scoped Lval* lval_current_ns = get_lval_ns(env);
+    Namespace* current_namespace = (Namespace*)lval_current_ns->head;
+    scoped char* name = get_name(lval_symbol);
+    env = alist_get(current_namespace->required, is_eq_str, namespace);
+    if (!env)
+      return make_lval_err("Can't find namespace in symbol %s",
+                           lval_symbol->str);
+    scoped Lval* lval_name = make_lval_sym(name);
+    lval_resolved_sym = lenv_get(env, lval_name);
+  } else {
+    lval_resolved_sym = lenv_get(env, lval_symbol);
+  }
+
   return lval_resolved_sym;
 }
 

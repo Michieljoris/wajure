@@ -38,7 +38,7 @@ char *(_strchr)(const char *s, int c) {
      s will either point to the end of the string or the
      character we were looking for.  */
   while (*s != '\0' && *s != ch) s++;
-  return (*s == ch) ? (char *)s : NIL;
+  return (*s == ch) ? (char *)s : NULL;
 }
 
 /* strcmp */
@@ -133,13 +133,13 @@ char *(_strncpy)(char *restrict s1, const char *restrict s2, zize_t n) {
 }
 /* strrchr */
 char *(_strrchr)(const char *s, int c) {
-  const char *last = NIL;
+  const char *last = NULL;
   /* If the character we're looking for is the terminating null,
      we just need to look for that character as there's only one
      of them in the string.  */
   if (c == '\0') return _strchr(s, c);
   /* Loop through, finding the last match before hitting NULL.  */
-  while ((s = _strchr(s, c)) != NIL) {
+  while ((s = _strchr(s, c)) != NULL) {
     last = s;
     s++;
   }
@@ -163,9 +163,18 @@ char *(_strstr)(const char *haystack, const char *needle) {
   /* Check for the null needle case.  */
   if (*needle == '\0') return (char *)haystack;
   needlelen = _strlen(needle);
-  for (; (haystack = _strchr(haystack, *needle)) != NIL; haystack++)
+  for (; (haystack = _strchr(haystack, *needle)) != NULL; haystack++)
     if (memcmp(haystack, needle, needlelen) == 0) return (char *)haystack;
-  return NIL;
+  return NULL;
+}
+
+char *strsubst(char *s, char c1, char c2) {
+  char *s0 = s;
+  while (*s != '\0') {
+    if (*s == c1) *s = c2;
+    s++;
+  }
+  return s0;
 }
 
 /* memmove */

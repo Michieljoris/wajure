@@ -54,4 +54,6 @@ long logical_rshift(long x, int n);
 
 int is_eq_str(void *k1, void *k2);
 
+char *strsubst(char *s, char c1, char c2);
+
 #endif  // __LIB_H_

@@ -28,8 +28,6 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
 Lenv* interprete_file(char* file_name);
 
-Lenv* require_file(Lenv* env, char* file_name);
-
 void release_env(Lenv* env);
 
 BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset);

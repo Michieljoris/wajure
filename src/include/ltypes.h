@@ -1,6 +1,11 @@
 #ifndef __LTYPES_H_
 #define __LTYPES_H_
 
+typedef struct {
+  char* src;
+
+} Config;
+
 typedef struct cell Cell;
 
 struct cell {
@@ -8,6 +13,12 @@ struct cell {
   void* car;
   Cell* cdr;
 };
+
+#define Map Cell*
+
+typedef struct {
+  Cell* namespaces;
+} State;
 
 struct lenv;
 struct lval;
@@ -89,7 +100,7 @@ struct wval_fun {
 };
 
 struct lenv {
-  int is_user_env;
+  int is_ns_env;
   Lenv* parent_env;
   Cell* kv;
 };
@@ -112,6 +123,13 @@ struct context {
   int line;
   int pos;
 };
+
+typedef struct {
+  char* namespace;
+  Map required;  //{foo.core: env
+                 // foo: env}
+  /* Lenv* env; */
+} Namespace;
 
 /* lval types */
 enum {

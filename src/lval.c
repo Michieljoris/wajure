@@ -91,7 +91,10 @@ Lval* make_lval_keyword(char* s) {
 
 Lval* make_lval_namespace(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .str = retain(s)};
+  Namespace* namespace = lalloc_size(sizeof(Namespace));
+  namespace->namespace = retain(s);
+  *lval =
+      (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Map) namespace};
   lval->hash = lval_hash(lval);
   return lval;
 }

@@ -10,9 +10,14 @@
 #include "misc_fns.h"
 #include "print.h"
 #include "repl.h"
+#include "state.h"
 
 /* void run(int argc, char** argv) { */
 void run(char* file_name) {
+  state = malloc(sizeof(State));
+  config = malloc(sizeof(Config));
+  config->src = "lispy";
+
   set_log_level(LOG_LEVEL_INFO);
 
   // Add builtins to root  env
@@ -21,9 +26,12 @@ void run(char* file_name) {
 
   /* SlotCount after_builtins = get_slot_count(); */
 
-  Lenv* user_env = lenv_new();
-  user_env->parent_env = retain(root_env);
-  user_env->is_user_env = 1;
+  Lenv* refer_env = lenv_new();
+  refer_env->parent_env = retain(root_env);
+
+  Lenv* ns_env = lenv_new();
+  ns_env->parent_env = retain(refer_env);
+  ns_env->is_ns_env = 1;
 
   /* set_log_level(LOG_LEVEL_DEEP_DEBUG); */
   // DEBUG
@@ -35,7 +43,7 @@ void run(char* file_name) {
   set_log_level(LOG_LEVEL_INFO);
   // For now we only understand args to be a list of file names to be read in
   info("Loading %s\n", file_name);
-  Lval* result = load(user_env, file_name);
+  Lval* result = load(ns_env, file_name);
 
   printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   printf("Result of loading %s: ", file_name);
@@ -65,9 +73,13 @@ void run(char* file_name) {
   /* print_mempool_counts(); */
   /* printf("after slurping\n"); */
   /* printf("\n-------------- Now going to release user_env!!!!\n"); */
-  release(user_env->kv);
-  user_env->kv = NIL;
-  release(user_env);
+  release(ns_env->kv);
+  ns_env->kv = NIL;
+  release(ns_env);
+
+  release(refer_env->kv);
+  refer_env->kv = NIL;
+  release(refer_env);
   /* print_mempool_counts(); */
   /* printf(" after releasing user_env\n"); */
   /* SlotCount after_user_env = get_slot_count(); */
@@ -82,4 +94,7 @@ void run(char* file_name) {
   release(root_env);
   print_mempool_counts();
   printf(" after releasing root_env\n");
+  release(state->namespaces);
+  free(state);
+  free(config);
 }
