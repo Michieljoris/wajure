@@ -272,16 +272,16 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
         alist_prepend(state->namespaces, retain(required_namespace_sym->str),
                       retain(required_env));
   }
-  current_namespace->required =
-      alist_prepend(current_namespace->required,
+  current_namespace->deps =
+      alist_prepend(current_namespace->deps,
                     retain(required_namespace_sym->str), retain(required_env));
 
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */
   if (as) {
     /* printf("AS: %s\n", as); */
-    current_namespace->required = alist_prepend(
-        current_namespace->required, retain(as), retain(required_env));
+    current_namespace->deps = alist_prepend(current_namespace->deps, retain(as),
+                                            retain(required_env));
   }
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */

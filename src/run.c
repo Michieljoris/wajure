@@ -13,10 +13,11 @@
 #include "state.h"
 
 /* void run(int argc, char** argv) { */
-void run(char* file_name) {
+void run(char* config_file_name) {
   state = malloc(sizeof(State));
   config = malloc(sizeof(Config));
-  config->src = "lispy";
+  config->src = "clj";
+  config->main = "run";
 
   set_log_level(LOG_LEVEL_INFO);
 
@@ -40,6 +41,12 @@ void run(char* file_name) {
 
   // Read in list of (string) arguments from commandline
 
+  char* file_name = lalloc_size(_strlen(config->src) + _strlen(config->main) +
+                                _strlen("/.clj") + 1);
+  file_name = _strcpy(file_name, config->src);
+  file_name = _strcat(file_name, "/");
+  file_name = _strcat(file_name, config->main);
+  file_name = _strcat(file_name, ".clj");
   set_log_level(LOG_LEVEL_INFO);
   // For now we only understand args to be a list of file names to be read in
   info("Loading %s\n", file_name);
@@ -91,10 +98,11 @@ void run(char* file_name) {
   /*     after_user_env.cell - after_builtins.cell, */
   /*     after_user_env.iter - after_builtins.iter); */
   /* set_log_level(LOG_LEVEL_INFO); */
+  // TODO:
+  release(state->namespaces);
+  free(state);
   release(root_env);
   print_mempool_counts();
   printf(" after releasing root_env\n");
-  release(state->namespaces);
-  free(state);
   free(config);
 }

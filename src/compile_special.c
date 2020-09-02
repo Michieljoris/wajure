@@ -4,13 +4,13 @@
 
 #include "assert.h"
 #include "compile.h"
+#include "datafy.h"
 #include "iter.h"
 #include "lispy_mempool.h"
 #include "list.h"
 #include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
-#include "wasmify.h"
 
 CResult compile_let(Wasm* wasm, Cell* arg_list) {
   BinaryenModuleRef module = wasm->module;
@@ -111,7 +111,7 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
     } while (arg_list->cdr);
   } else {
     // Empty body
-    let_result = wasmify_literal(wasm, make_lval_nil()).ber;
+    let_result = datafy_nil(wasm).ber;
     Ber retain_operand[1] = {let_result};
     let_result =
         BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
@@ -176,10 +176,9 @@ CResult compile_if(Wasm* wasm, Cell* args) {
   if (args && args->cdr) quit(wasm, "Too many arguments to if");
   Ber wasm_cond = lval_compile(wasm, cond).ber;
   wasm_cond = is_truthy(wasm, wasm_cond).ber;
-  Ber if_wasm =
-      BinaryenIf(module, wasm_cond, lval_compile(wasm, if_true).ber,
-                 if_false ? lval_compile(wasm, if_false).ber
-                          : wasmify_literal(wasm, make_lval_nil()).ber);
+  Ber if_wasm = BinaryenIf(
+      module, wasm_cond, lval_compile(wasm, if_true).ber,
+      if_false ? lval_compile(wasm, if_false).ber : datafy_nil(wasm).ber);
   return cresult(if_wasm);
 }
 
@@ -199,7 +198,7 @@ CResult compile_quote(Wasm* wasm, Cell* args) {
          list_count(args));
   }
   Lval* arg = args->car;
-  return wasmify_lval(wasm, arg);
+  return datafy_lval(wasm, arg);
 }
 
 CResult compile_quasiquote(Wasm* wasm, Cell* args) {

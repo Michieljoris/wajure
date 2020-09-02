@@ -190,7 +190,12 @@ Lenv* load_stdlib() {
   stdlib_env->parent_env = retain(root_env);
 
   stdlib_env->is_ns_env = 1;
-  load(stdlib_env, "lispy/stdlib.lispy");
+  Lval* result = load(stdlib_env, "clj/stdlib.lispy");
+  if (result->type == LVAL_ERR) {
+    lval_println(result);
+    exit(1);
+  }
+
   stdlib_env->is_ns_env = 0;
   return stdlib_env;
 }
@@ -201,9 +206,13 @@ Lenv* interprete_file(char* file_name) {
   user_env->parent_env = retain(stdlib_env);
   stdlib_env->is_ns_env = 0;
   user_env->is_ns_env = 1;
-
+  printf("load user env\n");
   Lval* result = load(user_env, file_name);
-  if (result->type == LVAL_ERR) exit(1);
+  printf("load user env2\n");
+  if (result->type == LVAL_ERR) {
+    lval_println(result);
+    exit(1);
+  }
   release(result);
   return user_env;
 }
@@ -460,3 +469,5 @@ CResult wasm_lalloc_size(Wasm* wasm, int size) {
   return cresult(BinaryenCall(wasm->module, "lalloc_size", operands, 1,
                               make_type_int32(1)));
 }
+
+void register_value(Wasm* wasm, CResult value) {}

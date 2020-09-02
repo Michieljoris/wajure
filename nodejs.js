@@ -103,12 +103,7 @@ async function run_lispy_fn(fn_name, ...args) {
 
 }
 
-async function load_lispy(runtime, stack_size, lispy_wasm_file_name) {
-
-    let stack_pointer = runtime._malloc(stack_size); //8MB stack
-    runtime.init_lispy_mempools(800, 800, 800);
-
-    const stack_pointer_global = new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer)
+async function load_lispy(runtime, stack_pointer_global, lispy_wasm_file_name) {
 
     let buf = fs.readFileSync(lispy_wasm_file_name);
     let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
@@ -119,8 +114,26 @@ async function load_lispy(runtime, stack_size, lispy_wasm_file_name) {
                                                 },
                                                 runtime)};
 
+    var module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
+    var nameSections = WebAssembly.Module.customSections(module, "foo");
+
+    if (nameSections.length != 0) {
+        console.log("Module contains a name section");
+        // console.log(nameSections[0]);
+
+        var string = new TextDecoder('utf8').decode(nameSections[0]);
+        console.log(string);
+    };
+
+    var nameSections = WebAssembly.Module.customSections(module, "foo");
     let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
-        then(res => res.instance.exports);
+        then(res => {
+            // var nameSections = WebAssembly.Module.customSections(res.module, "foo");
+            // if (nameSections.length != 0) {
+            //     console.log("Module contains a name section");
+            //     console.log(nameSections[0]);
+            // };
+            return res.instance.exports});
     return lispy;
 }
 
@@ -134,6 +147,7 @@ async function load_runtime(runtime_wasm_file_name) {
                      if (err) return console.log(err);
                  })
 
+    console.log("data_end =", runtime.__data_end.value);
     runtime.init_malloc();
     return runtime;
 }
@@ -143,10 +157,16 @@ async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_s
     console.log("Loading lispy runtime ------------------------------------");
     const runtime = await load_runtime('./out_wasm/runtime.wasm');
 
-    console.log("Loading lispy.wat ----------------------------------------");
-    const user = await load_lispy(runtime, stack_size, './compiled/lispy.wasm');
+    let stack_pointer = runtime._malloc(stack_size); //8MB stack
+    console.log("stack_pointer:", stack_pointer);
+    runtime.init_lispy_mempools(800, 800, 800);
 
-    const run = run_lispy_fn
+    const stack_pointer_global = new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer)
+
+    console.log("Loading lispy.wat ----------------------------------------");
+    const user = await load_lispy(runtime, stack_pointer_global, './compiled/lispy.wasm');
+
+    const run = run_lispy_fn;
     return {runtime_wasm_file_name, lispy_wasm_file_name, stack_size, user, runtime, run};
 }
 

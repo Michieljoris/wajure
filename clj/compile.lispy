@@ -1,40 +1,162 @@
-;; (load "lispy/stdlib.lispy")
+;; (compile "lispy/test_compile.lispy")
 
-;; (print (and 1 nil 0 true))
-;; (print (macroexpand (apply print (list "hello"))))
-;; (apply print (list "hello" "foo"))
+;; (def plus +)
+;; (def mylet (if true let))
+;; (defmacro my-macro2 [x] `(plus 1 ~x))
+;; (defmacro my-macro [x] `(plus 1 ~x (my-macro2 1)
+;;                               ))
 
-;; (load "lispy/test/test_2_eval.lispy")
-;; (load "lispy/test/test_3_env.lispy")
-;; (load "lispy/test/test_4_if_fn_do.lispy")
-;; (load "lispy/test/test_5_tco.lispy")
-;; (load "lispy/test/test_6_file.lispy")
-;; (load "lispy/test/test_7_quote.lispy")
-;; (load "lispy/test/test_8_macros.lispy")
-;; (load "lispy/test/test_9_try.lispy")
-;; (print "----------------------")
-(in-ns 'run.foo)
-;; (print "Namespace:" *ns*)
+;; (defn foo [x & rest] (print "from foo" x rest))
+;; (defn foo [x] 1)
+;; (def v [ 1 2 3 ])
 
-(require '[foo.core :as foo :refer [foo]])
-;; (require '[foo.core :as foo :refer [a b]])
-;; (print-env)
-;; (def bar 555)
-;; (print foo bar)
-;; (print "foo.core/foo = " foo.core/foo)
-(print "foo/foo = " foo/foo)
-(print "foo.core/foo = " foo.core/foo)
-(print "foo" foo)
+;; (defn test2 [x]
+;;   (let [a (f "abc" Rl(+ 1 1) 1 Rl(+ 1 x) x)
+;;         a1 (f a 1)
+;;         f2 ([y] y)
+;;         c "abc"
+;;         d v]
+;;     "abc" c Rl(+ 1 1)
+;;    rt b
+
+;;     )
+;;   )
+;; (defn foo [foo-x y] foo-x)
+;; (defn bar [x] (print x) ;; (+ 1 1)
+;;   )
+;; (def z 123)
+
+;; (def b 123)
+
+(def c 567)
+(def a 123
+  ;; (let [b 1]
+  ;;   (fn [] 1)
+  ;;   ;; (list 'a (fn [] a))
+  ;;   )
+  ;; (list (fn [] c))
+  )
+
+;; (let [b 777]
+;;   (def a (list (fn [] '(1 2 3 5))))
+;;   )
+
+;; (defn foo [x y & z] x)
+;; (def plus +)
+;; (defn foo [x y ] 'from-foo)
+;; (defmacro t2 [expr expected & str]
+;;   `(let [evalled ~expr]
+;;      (print evalled)
+;;      (print (quote ~expected))
+;;      (when (not= evalled  ~expected)
+;;       (do
+;;         (pr "FAIL" ~@str)
+;;         (pr (quote ~expr) )
+;;         (pr "Expected:" ~expected)
+;;         (pr "Got:" ~expr)
+;;        )
+;;      )))
+(defn foo [] 123)
+(defn bar[] 123)
+
+;; (def bar (list (fn [] 123)))
+;; (def a (list (fn [] 123)))
+;; (def bar (fn [] 555))
+
+;; (in-ns 'my.namespace)
+(defn test [x y]
+  ;; (print 'abc 'abc)
+  ;; (print "hello" 456 (foo))
+  (let [f (fn [x] 123)
+        g foo
+        h bar]
+    ;; (print "hello!!!")
+    ;; (print 'abc 'abc)
+    (h) (g) (h))
+  ;; (print "abc" "abc")
+  ;; (foo 1 2 3)
+;; + +
+;;   a a
+  ;; bar bar
+  ;; a a
+  ;; bar
+  ;; (print ((first bar)))
+  ;; (let [f (f)]
+  ;;   (print (f))
+  ;;   ;; a
+  ;;   ;; 123
+  ;;   ;; (print a a)
+  ;;   )
+  ;; (print a)
+  ;; (if nil (print 1) (print 0))
+  ;; (let [a (foo)]
+  ;;   1 a)
+  ;; (do 1 123)
+  ;; (t2 (+ 1 1) (- 3 1) "should be equal")
+  ;; (let [evalled (+ 1 1)]
+  ;;   (print evalled)
+  ;;    (if (= 2  3)
+  ;;      (print "equal")
+  ;;      (print "not equal")
+
+  ;;    ))
+  ;; (print (my-macro 1))
+  ;; (t (list 1 2 3) (1 2 3))
+  ;; (let [f foo]
+
+  ;; (print '(1 (fn [x] x) 3))
+  ;;   (print f)
+  ;;   ;; (print (list (fn [x] x) ))
+  ;;   )
+  ;; (print   ((first a)) )
+  ;; (let [f foo
+  ;;       f2 +]
+  ;;   ;; (f 123)
+  ;;   )
+  ;; (let [v (list (fn [x] x))]
+  ;;   (print  v)
+  ;;   ;; (f 1 )
+  ;;   )
+  ;; (print a)
+  ;; (print a)
+  ;; x y
+  ;; (let [a 1 ] (bar 1))
+  ;; (let [f? (fn [x] x)] (f? 1))
+  ;; (let [a (foo 12 3) d (+ 1 2) b (bar 1) e 1] b e)
+  ;; (foo (bar 1) (bar 1))
+  ;; (let [x 1] x)
+  ;; (let [x 1] x)
+  ;; (do 1 (bar 1) 2)
+  ;; (let [a (bar 1) a (+ a 1)] (print a))
+  ;; (foo (bar 1) (bar 1))
+  ;; (bar (foo "hello"))
+  ;; (let [f foo
+  ;;       g (fn [x] x)]
+  ;;   (print (+ 1 1) (f 123) (f 234)))
+  ;; (print (quote (1 2)))
+  ;; (do 1 1)
+  ;; 1
+  ;; (let [x 1]
+  ;;   (if x nil ))
+  ;; (print (if true 1 2))
+  ;; (print "Testing!!!")
+  ;; (print "from test")
 
 
-;; (defmacro unless2 [pred a b] (list 'if (list 'not pred) a b))
-;; (print (defmacro unless2 [pred a b] `(list )))
 
-;; (t (macroexpand '(unless2 2 3 4))
-;;    (if (not 2) 3 4))
-;; (print (macroexpand '(unless2 2 3 4)))
-;; (print (macroexpand  '(t2 (+ 1 2) 3 "Should be equal")))
-;; (t (+ 1 2) 4 "Testing addition")
+  ;; (mylet [x plus
+  ;;         y plus]
+  ;;        (print x y))
+  ;; (when true (print "when macro!!!"))
+  ;; (let [p print]
+  ;;   (p (my-macro 1)))
+  ;;  (let [f foo]
+  ;;    (f 123 1 2 3)
+  ;;    ;; (print "from test")
+  ;;    ;; (f)
+
+  ;; )
+  )
 
 ;; (def foo 123)
 ;; (defn test [a a1]
@@ -44,12 +166,20 @@
 ;;     1))
 ;; (def a 1)
 ;; (defn f [x]
+;;   ;; (print "In f!!!!!" x)
 ;;   (let [q (fn [y] (print "HELLO" x y) )]
-;;     q)
+;;     ;; (q 777)
+;;     q
+;;     )
 ;;   )
 
 ;; (defn test [x y]
-;;   (print  123 x y)
+;;   ;; (print  123 x y)
+;;   (let [g (f 123)]
+;;     (print "G: " g)
+;;     (g 456)
+;;     ;; 123
+;;     )
 ;;   ;; (let [ g (fn [x] (print "G" x))
 ;;   ;;        f (fn [x y] (g (+ x y)))
 ;;   ;;       ;; some-fn (f 1)
@@ -116,7 +246,16 @@
 ;; (defn foz [x] (let [a (+ x 1)
 ;;                     a (+ a 1)
 ;;                     b 123]
-;;                 (fn [x y] (+ a b x y bar))))
+;;                 (fn [x y] (list a b x y ))))
+;; (defn adder [x]
+;;   (fn [y] (+ x y)))
+;; (defn foo [a]
+;;   ;; (print "a b: " a b)
+;;   ;; (print "rest: " rest)
+;;  ;; 1
+;;   (print  a)
+;;   )
+
 
 ;; (fn [x y a b] (+ a b x y bar))
 

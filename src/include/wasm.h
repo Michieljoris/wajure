@@ -38,6 +38,7 @@ typedef struct {
   // whether to check at runtime if correct number of args is passed into
   // function
   int runtime_check_args_count;
+
 } Wasm;
 
 typedef struct {

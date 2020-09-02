@@ -5,7 +5,9 @@
 throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
 
 ** ----------------
-
+** Release *ns*
+ This is a lval_namespace. lval_namespace->head points to a Namespace struct. We
+ need to add a mempool type NAMESPACE and a destroy method for it, so we can release namespace->namespace and namespace->required.
 ** fix recursive calls
     Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
@@ -71,7 +73,9 @@ Similar to clojure.core. Probably needs namespaces implemented first
 * TODO interpreter
 ** reader has bug where last parens gets ignored
 ** add rest of tests from mal
-** implement: str, loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering, namespaces, meta data
+** WIP namespaces
+Still need to release *ns*
+** implement: str, loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering,  meta data
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
@@ -107,7 +111,7 @@ assert comment doc
 * done compiler
 ** DONE (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
-** DONE wasmify_lval, finish compile_quote
+** DONE datafy, finish compile_quote
 ** DONE Refactor: return not just Ber, but a struct with info on the compile just done *plus* ber
 - so we can more easily see if we just compiled a fn call. iso relying on is_fn_call flag
 - we might be able to do optimisations, such as mutually cancelling retain and release calls

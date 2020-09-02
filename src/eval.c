@@ -180,7 +180,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
     scoped Lval* lval_current_ns = get_lval_ns(env);
     Namespace* current_namespace = (Namespace*)lval_current_ns->head;
     scoped char* name = get_name(lval_symbol);
-    env = alist_get(current_namespace->required, is_eq_str, namespace);
+    env = alist_get(current_namespace->deps, is_eq_str, namespace);
     if (!env)
       return make_lval_err("Can't find namespace in symbol %s",
                            lval_symbol->str);

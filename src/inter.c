@@ -1,12 +1,12 @@
 #include "inter.h"
 
 #include "compile.h"
+#include "datafy.h"
 #include "lib.h"
 #include "list.h"
 #include "ltypes.h"
 #include "wasm.h"
 #include "wasm_util.h"
-#include "wasmify.h"
 
 #define slot_type_size 4 * 4
 #define cell_type_size 3 * 4
@@ -96,7 +96,7 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
   int i = 0;
   /* printf("inter list\n"); */
   while (head) {
-    int v_ptr = wasmify_lval(wasm, head->car).wasm_ptr;
+    int v_ptr = datafy_lval(wasm, head->car).wasm_ptr;
     /* lval_println(head->car); */
     int* data_cell = make_data_cell(wasm, head);
     data_cell[car_offset] = v_ptr;

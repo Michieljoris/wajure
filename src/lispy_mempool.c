@@ -131,7 +131,7 @@ void destroy_lval(void* data) {
     case LVAL_COMPILER:
       break;
     case LVAL_NAMESPACE:
-      release(lval->str);
+      release(lval->head);
       /* TODO: Destroy namespace */
       break;
     case LVAL_ERR:

@@ -87,6 +87,8 @@ void add_function_table(Wasm* wasm) {
   /* BinaryenAddTableImport(module, "table", "env", "table"); */
   int initial = wasm->fns_count;
   int maximum = wasm->fns_count;
+  initial = 1000;
+  maximum = 1000100;
 
   const char** funcNames = (const char**)wasm->fn_names;
   int numFuncNames = wasm->fns_count;

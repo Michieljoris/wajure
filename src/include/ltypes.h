@@ -2,8 +2,9 @@
 #define __LTYPES_H_
 
 typedef struct {
-  char* src;
-
+  char* src;   // root dir of src files
+  char* main;  // filename of file containing main fn
+  char* out;   // dir of compiled wasm files
 } Config;
 
 typedef struct cell Cell;
@@ -15,10 +16,6 @@ struct cell {
 };
 
 #define Map Cell*
-
-typedef struct {
-  Cell* namespaces;
-} State;
 
 struct lenv;
 struct lval;
@@ -126,10 +123,15 @@ struct context {
 
 typedef struct {
   char* namespace;
-  Map required;  //{foo.core: env
-                 // foo: env}
-  /* Lenv* env; */
+  Map deps;  //{foo.core: env
+             // foo: env}
 } Namespace;
+
+typedef struct {
+  /* {"namespace.name": (Lenv*){*ns*: (Namespace){(Map){foo.core: env, bar.core:
+   * env}}}} */
+  Map namespaces;
+} State;
 
 /* lval types */
 enum {

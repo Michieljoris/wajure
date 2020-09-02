@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "compile_special.h"
+#include "datafy.h"
 #include "env.h"
 #include "eval.h"
 #include "fns.h"
@@ -21,7 +22,6 @@
 #include "special_fns.h"
 #include "wasm.h"
 #include "wasm_util.h"
-#include "wasmify.h"
 
 CResult lval_compile(Wasm* wasm, Lval* lval);
 
@@ -100,7 +100,7 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
       list = list->cdr;
     } while (list);
   } else {
-    do_result = wasmify_literal(wasm, make_lval_nil()).ber;
+    do_result = datafy_nil(wasm).ber;
     Ber retain_operand[1] = {do_result};
     do_result =
         BinaryenCall(module, "retain", retain_operand, 1, BinaryenTypeInt32());
@@ -346,6 +346,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   int locals_count = context->function_context->local_count - wasm_params_count;
 
   int fn_table_index = add_fn_to_table(wasm, fn_name);
+  lval_fun->offset = fn_table_index;
 
   BinaryenModuleRef module = wasm->module;
 
@@ -796,7 +797,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
         case LVAL_FUNCTION:  // as evalled in our compiler env
           switch (lval_resolved_sym->subtype) {
             /* case SYS: */
-            /*   /\* return wasmify_sys_fn(wasm, lval_resolved_sym); *\/ */
+            /*   /\* return datafy_sys_fn(wasm, lval_resolved_sym); *\/ */
             /*   break; */
             case MACRO:
             case LAMBDA:  // functions in compiler env
@@ -821,14 +822,14 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           }
         default:
           lval = lval_resolved_sym;
-          /* return wasmify_lval(wasm, lval_resolved_sym); */
+          /* return datafy_lval(wasm, lval_resolved_sym); */
       }
       break;
     case LVAL_COLLECTION:
       if (lval->subtype == LIST) return compile_list(wasm, lval);  // fn call
     default:;
   }
-  return wasmify_lval(wasm, lval);
+  return datafy_lval(wasm, lval);
 }
 
 void print_pair(Lval* lval_sym, Lval* lval) {
@@ -866,6 +867,7 @@ int compile(char* file_name) {
     if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA &&
         lval->offset == -1) {
       add_wasm_function(wasm, lval->closure, lval_sym->str, lval);
+      printf("lval_fun offset %d\n", lval->offset);
     }
 
     cell = cell->cdr;
@@ -883,6 +885,9 @@ int compile(char* file_name) {
 
   /* add_string_to_data(wasm, "foo3"); */
   add_memory_section(wasm);
+
+  char* contents = "hello there!!!";
+  BinaryenAddCustomSection(wasm->module, "foo", contents, _strlen(contents));
 
   int validate_result = BinaryenModuleValidate(wasm->module);
   if (!validate_result)
@@ -1139,7 +1144,7 @@ int compile(char* file_name) {
 //
 // call root fn
 // check whether wasm ref is a a lambda/set/map/vector, print error msg if not
-// wasmify sys and root fns
+// datafy sys and root fns
 
 /* Ber wval_operands[] = {lval_wasm_ref}; */
 /* Ber wval_print = BinaryenCall(module, "wval_print", wval_operands, 1, */
@@ -1209,7 +1214,7 @@ int compile(char* file_name) {
 /*     case LVAL_FUNCTION:  // as evalled in our compiler env */
 /*       switch (lval_resolved_sym->subtype) { */
 /*         case SYS: */
-/*           return wasmify_sys_fn(wasm, lval_resolved_sym); */
+/*           return datafy_sys_fn(wasm, lval_resolved_sym); */
 /*         case LAMBDA:  // functions in compiler env */
 /*           return compile_global_lambda(wasm, lval_sym->str,
  * lval_resolved_sym); */
@@ -1229,12 +1234,12 @@ int compile(char* file_name) {
 /*       } */
 /*       break; */
 /*     default:  // as evalled in our compiler env */
-/*       return wasmify_lval(wasm, lval_resolved_sym); */
+/*       return datafy_lval(wasm, lval_resolved_sym); */
 /*       /\* case LVAL_COLLECTION: *\/ */
-/*       /\*   return wasmify_collection(wasm, lval_resolved_sym); *\/ */
+/*       /\*   return datafy_collection(wasm, lval_resolved_sym); *\/ */
 /*       /\* case LVAL_SYMBOL: *\/ */
 /*       /\* case LVAL_LITERAL: *\/ */
-/*       /\*   return wasmify_literal(wasm, lval_resolved_sym); *\/ */
+/*       /\*   return datafy_literal(wasm, lval_resolved_sym); *\/ */
 /*   } */
 
 /*   /\* printf("resolved sym: \n"); *\/ */
