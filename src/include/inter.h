@@ -5,7 +5,7 @@
 #include "wasm.h"
 
 CResult inter_lval(Wasm* wasm, Lval* lval);
-CResult inter_cell(Wasm* wasm, Cell* cell);
+/* CResult inter_cell(Wasm* wasm, Cell* cell); */
 
 CResult inter_list(Wasm* wasm, Lval* lval);
 

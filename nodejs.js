@@ -103,42 +103,43 @@ async function run_lispy_fn(fn_name, ...args) {
 
 }
 
-async function load_lispy(runtime, stack_pointer_global, lispy_wasm_file_name) {
+async function load_lispy(runtime, globals, lispy_wasm_file_name) {
 
     let buf = fs.readFileSync(lispy_wasm_file_name);
-    let lispyImportObject = {env: Object.assign({log_string: makeLogString(runtime.memory),
+    let lispyImportObject = {env: Object.assign(globals,
+                                                {log_string: makeLogString(runtime.memory),
                                                  log_int: arg => console.log(arg),
                                                  log_string_n: makeLogStringN(runtime.memory),
-                                                 stack_pointer: stack_pointer_global,
-                                                 runtime_error: make_runtime_error_fn(runtime.memory)
-                                                },
+                                                 runtime_error: make_runtime_error_fn(runtime.memory)},
                                                 runtime)};
 
     var module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
-    var nameSections = WebAssembly.Module.customSections(module, "foo");
+    var nameSections = WebAssembly.Module.customSections(module, "symbol_table");
 
     if (nameSections.length != 0) {
-        console.log("Module contains a name section");
-        // console.log(nameSections[0]);
-
+        console.log("Module contains a custom section: symbol_table");
         var string = new TextDecoder('utf8').decode(nameSections[0]);
         console.log(string);
     };
 
-    var nameSections = WebAssembly.Module.customSections(module, "foo");
+    var nameSections = WebAssembly.Module.customSections(module, "data_size");
+
+    if (nameSections.length != 0) {
+        console.log("Module contains a custom section: data_size");
+        var string = new TextDecoder('utf8').decode(nameSections[0]);
+        console.log(string);
+    };
+
     let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
-        then(res => {
-            // var nameSections = WebAssembly.Module.customSections(res.module, "foo");
-            // if (nameSections.length != 0) {
-            //     console.log("Module contains a name section");
-            //     console.log(nameSections[0]);
-            // };
-            return res.instance.exports});
+        then(res => { return res.instance.exports });
     return lispy;
 }
 
 async function load_runtime(runtime_wasm_file_name) {
     let buf = fs.readFileSync(runtime_wasm_file_name);
+    runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
+        then(res => res.instance.exports);
+
     runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
         then(res => res.instance.exports);
 
@@ -161,10 +162,14 @@ async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_s
     console.log("stack_pointer:", stack_pointer);
     runtime.init_lispy_mempools(800, 800, 800);
 
-    const stack_pointer_global = new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer)
+    const globals = {
+        stack_pointer: new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer),
+        data_offset: new WebAssembly.Global({value:'i32', mutable:true}, 0),
+        fn_table_offset: new WebAssembly.Global({value:'i32', mutable:true}, 0)
+    }
 
     console.log("Loading lispy.wat ----------------------------------------");
-    const user = await load_lispy(runtime, stack_pointer_global, './compiled/lispy.wasm');
+    const user = await load_lispy(runtime, globals, './compiled/lispy.wasm');
 
     const run = run_lispy_fn;
     return {runtime_wasm_file_name, lispy_wasm_file_name, stack_size, user, runtime, run};

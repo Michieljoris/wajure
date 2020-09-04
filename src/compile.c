@@ -8,7 +8,6 @@
 #include "env.h"
 #include "eval.h"
 #include "fns.h"
-#include "inter.h"
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
@@ -347,6 +346,8 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
 
   int fn_table_index = add_fn_to_table(wasm, fn_name);
   lval_fun->offset = fn_table_index;
+  lval_fun->param_count = lispy_param_count;
+  lval_fun->rest_arg_index = rest_arg_index;
 
   BinaryenModuleRef module = wasm->module;
 
@@ -358,7 +359,6 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Add fn to wasm
   BinaryenAddFunction(module, fn_name, params_type, results_type, local_types,
                       locals_count, body);
-
   FunctionData function_data = {fn_table_index,
                                 retain(context->function_context->closure),
                                 context->function_context->closure_count,
@@ -676,11 +676,7 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
   lval_println(lval_list);
 
   // Empty list
-  if (lval_list->head == NIL) {
-    if (!wasm->lval_empty_list_offset.ber)
-      wasm->lval_empty_list_offset = inter_lval(wasm, lval_list);
-    return wasm->lval_empty_list_offset;  // pointer to empty lval list
-  }
+  if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
 
   Lval* lval_first = lval_list->head->car;
 
@@ -856,23 +852,22 @@ int compile(char* file_name) {
 
   printf("Processing env ==============================\n");
   Cell* cell = user_env->kv;
-  // NOTE: we're choosing to compile all fns here, but alternatively we could
-  // just compile one, which would then compile other fns as needed.
   while (cell) {
     Cell* pair = cell->car;
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
 
-    /* print_pair(lval_sym, lval); */
-    if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA &&
-        lval->offset == -1) {
-      add_wasm_function(wasm, lval->closure, lval_sym->str, lval);
-      printf("lval_fun offset %d\n", lval->offset);
-    }
+    CResult result;
 
+    if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA) {
+      /* add_wasm_function(wasm, lval->closure, lval_sym->str, lval); */
+      lval->str = retain(lval_sym->str);
+      result = lval_compile(wasm, lval);
+    } else {
+      result = datafy_lval(wasm, lval);
+    }
+    add_to_symbol_table(wasm, lval_sym->str, lval);
     cell = cell->cdr;
-    /* if (cell) printf("%s", "\n"); */
-    /* printf("\n"); */
   }
 
   BinaryenAddFunctionExport(wasm->module, "test", "test");
@@ -886,8 +881,34 @@ int compile(char* file_name) {
   /* add_string_to_data(wasm, "foo3"); */
   add_memory_section(wasm);
 
-  char* contents = "hello there!!!";
-  BinaryenAddCustomSection(wasm->module, "foo", contents, _strlen(contents));
+  /* char* contents = "hello there!!!"; */
+
+  BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
+                           wasm->symbol_table_count);
+
+  int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
+                                           wasm->lval_offsets_count * 4);
+  printf("lval_offset_ptr %d\n", lval_offsets_ptr);
+
+  int cell_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->cell_offsets,
+                                           wasm->cell_offsets_count * 4);
+  printf("cell_offset_ptr %d\n", cell_offsets_ptr);
+
+  int wval_fn_offsets_ptr = add_bytes_to_data(
+      wasm, (char*)wasm->wval_fn_offsets, wasm->wval_fn_offsets_count * 4);
+  printf("wval_ptr_offset_ptr %d\n", wval_fn_offsets_ptr);
+  /* BinaryenAddCustomSection(wasm->module, "value_offsets",
+   * wasm->symbol_table,
+   */
+  /*                          wasm->symbol_table_count); */
+  /* BinaryenAddCustomSection(wasm->module, "deps", wasm->symbol_table, */
+  /*                          wasm->symbol_table_count); */
+
+  char* data_size_str = malloc(100);
+  sprintf(data_size_str, "%d", wasm->data_offset);
+  BinaryenAddCustomSection(wasm->module, "data_size", data_size_str,
+                           _strlen(data_size_str));
+  free(data_size_str);
 
   int validate_result = BinaryenModuleValidate(wasm->module);
   if (!validate_result)

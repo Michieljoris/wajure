@@ -58,6 +58,8 @@
 ;;      )))
 (defn foo [] 123)
 (defn bar[] 123)
+(def bax (list 1 2 3 4))
+(defn baq [x y & z] (list 1 2 3))
 
 ;; (def bar (list (fn [] 123)))
 ;; (def a (list (fn [] 123)))
@@ -72,7 +74,7 @@
         h bar]
     ;; (print "hello!!!")
     ;; (print 'abc 'abc)
-    (h) (g) (h))
+    (h) (g) (h) (print bax))
   ;; (print "abc" "abc")
   ;; (foo 1 2 3)
 ;; + +

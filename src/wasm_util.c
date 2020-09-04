@@ -228,8 +228,8 @@ void release_env(Lenv* env) {
 void add_test_fn(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
 
-  add_string_to_data(wasm, "foo3");
-  add_string_to_data(wasm, "bar");
+  /* add_bytes_to_data(wasm, "foo3"); */
+  /* add_bytes_to_data(wasm, "bar"); */
   /* printf("strings_data: %s\n", wasm->strings); */
   /* printf("strings_data: %s\n", wasm->strings + _strlen("foo3") + 1); */
 

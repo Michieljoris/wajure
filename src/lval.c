@@ -265,11 +265,11 @@ char* lval_type_to_name(Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return "List (coll)";
+          return "List";
         case VECTOR:
-          return "Vector (coll)";
+          return "Vector";
         case MAP:
-          return "Map (coll)";
+          return "Map";
         default:
           return "unknown collection subtype";
       }
@@ -289,9 +289,9 @@ char* lval_type_to_name(Lval* lval) {
     case LVAL_FUNCTION:
       switch (lval->subtype) {
         case SYS:
-          return "System Function";
+          return "Function (sys)";
         case LAMBDA:
-          return "User Function";
+          return "Function";
         case SPECIAL:
           return "Special form";
         case MACRO:

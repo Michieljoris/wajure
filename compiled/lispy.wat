@@ -8,9 +8,11 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (i32.const 4324) "test\00test#1\00\01\00\00\00\00\00\00\00\00\00\00\00\00\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\fffoo\00\01\00\00\00\00\00\00\00\00\00\00\00(\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00L\11\00\00\19\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00bar\00\01\00\00\00\00\00\00\00\00\00\00\00t\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\98\11\00\00\19\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 4324) "test\00test#1\00\01\00\00\00\00\00\00\00\00\00\00\00\00\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\fffoo\00\01\00\00\00\00\00\00\00\00\00\00\00(\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00L\11\00\00\19\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00bar\00\01\00\00\00\00\00\00\00\00\00\00\00t\11\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\98\11\00\00\19\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\bc\11\00\00\02\t\00\00\01\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\e0\11\00\00\02\t\00\00\02\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\04\12\00\00\02\t\00\00\03\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00(\12\00\00\02\t\00\00\04\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00L\12\00\00\00\00\00\00(\12\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00(\12\00\00\00\00\00\00\04\12\00\00L\12\00\00\01\00\00\00\00\00\00\00\00\00\00\00\04\12\00\00\00\00\00\00\e0\11\00\00h\12\00\00\01\00\00\00\00\00\00\00\00\00\00\00\e0\11\00\00\00\00\00\00\bc\11\00\00\84\12\00\00\01\00\00\00\00\00\00\00\00\00\00\00\bc\12\00\00\01\11\00\00\00\00\00\00\e4\10\00\00\a0\12\00\00\03\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\e0\12\00\00\19\ff\03\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00baq\00\01\00\00\00\00\00\00\00\00\00\00\00\08\13\00\00\19\ff\04\00\03\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00,\13\00\00\02\t\00\00{\00\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00P\13\00\00\02\t\00\007\02\00\00\e4\10\00\00\00\00\00\00\ff\ff\ff\ff")
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
+ (import "env" "data_offset" (global $data_offset (mut i32)))
+ (import "env" "fn_table_offset" (global $fn_table_offset (mut i32)))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -61,7 +63,7 @@
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
  (table $0 1000 1000100 funcref)
- (elem (i32.const 0) $test#1 $foo $bar $test $log_int $printf_)
+ (elem (i32.const 0) $test#1 $foo $bar $test $baq $log_int $printf_)
  (export "test" (func $test))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
@@ -220,6 +222,7 @@
   (local $12 i32)
   (local $13 i32)
   (local $14 i32)
+  (local $15 i32)
   (block $do_14 (result i32)
    (if
     (i32.eq
@@ -348,33 +351,44 @@
       (local.get $11)
      )
     )
+    (local.set $14
+     (block $lambda_call_10 (result i32)
+      (global.set $stack_pointer
+       (i32.add
+        (global.get $stack_pointer)
+        (i32.const 0)
+       )
+      )
+      (local.set $13
+       (call_indirect (type $i32_i32_=>_i32)
+        (i32.load offset=12
+         (local.get $8)
+        )
+        (i32.const 0)
+        (i32.load16_u offset=2
+         (local.get $8)
+        )
+       )
+      )
+      (global.set $stack_pointer
+       (i32.sub
+        (global.get $stack_pointer)
+        (i32.const 0)
+       )
+      )
+      (local.get $13)
+     )
+    )
     (block $let_body_result_12 (result i32)
-     (local.set $14
-      (block $lambda_call_10 (result i32)
-       (global.set $stack_pointer
-        (i32.add
-         (global.get $stack_pointer)
+     (local.set $15
+      (call $print_fn
+       (i32.const 0)
+       (call $new_lval_list
+        (call $list_cons
+         (i32.const 4796)
          (i32.const 0)
         )
        )
-       (local.set $13
-        (call_indirect (type $i32_i32_=>_i32)
-         (i32.load offset=12
-          (local.get $8)
-         )
-         (i32.const 0)
-         (i32.load16_u offset=2
-          (local.get $8)
-         )
-        )
-       )
-       (global.set $stack_pointer
-        (i32.sub
-         (global.get $stack_pointer)
-         (i32.const 0)
-        )
-       )
-       (local.get $13)
       )
      )
      (block $release_locals_for_let_11
@@ -387,11 +401,105 @@
       (call $release
        (local.get $12)
       )
+      (call $release
+       (local.get $14)
+      )
      )
-     (local.get $14)
+     (local.get $15)
     )
    )
   )
  )
- ;; custom section "foo", size 14, contents: "hello there!!!"
+ (func $baq (param $0 i32) (param $1 i32) (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (local $4 i32)
+  (local $5 i32)
+  (block $do_16 (result i32)
+   (block $process_args
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 3)
+       (local.get $1)
+       (i32.const 3)
+      )
+      (i32.const 0)
+     )
+     (call $runtime_error
+      (i32.const 1)
+      (i32.const 4852)
+     )
+     (if
+      (i32.eq
+       (call $check_args_count
+        (i32.const 3)
+        (local.get $1)
+        (i32.const 3)
+       )
+       (i32.const 1)
+      )
+      (call $runtime_error
+       (i32.const 0)
+       (i32.const 4852)
+      )
+      (nop)
+     )
+    )
+    (call $init_rest_args
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.mul
+       (i32.const 4)
+       (local.get $1)
+      )
+     )
+     (i32.sub
+      (local.get $1)
+      (i32.const 2)
+     )
+    )
+   )
+   (block $store_args_in_locals_15
+    (local.set $2
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.const 12)
+     )
+    )
+    (local.set $3
+     (i32.load offset=8
+      (local.get $2)
+     )
+    )
+    (local.set $4
+     (i32.load offset=4
+      (local.get $2)
+     )
+    )
+    (local.set $5
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (call $list_fn
+    (i32.const 0)
+    (call $new_lval_list
+     (call $list_cons
+      (i32.const 4540)
+      (call $list_cons
+       (i32.const 4576)
+       (call $list_cons
+        (i32.const 4612)
+        (i32.const 0)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+ ;; custom section "symbol_table", size 127
+ ;; custom section "data_size", size 3, contents: "712"
 )

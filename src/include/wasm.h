@@ -33,10 +33,21 @@ typedef struct {
   Cell* lval_str_pool;
   Cell* lval_symbol_pool;
   Cell* lval_keyword_pool;
-  /* Cell* fn_to_offset_map; */
+  char* symbol_table;
+  int symbol_table_count;
   Cell* context;
   // whether to check at runtime if correct number of args is passed into
   // function
+  int* lval_offsets;
+  int lval_offsets_count;
+  int lval_offsets_allocated;
+  int* cell_offsets;
+  int cell_offsets_count;
+  int cell_offsets_allocated;
+  int* wval_fn_offsets;
+  int wval_fn_offsets_count;
+  int wval_fn_offsets_allocated;
+
   int runtime_check_args_count;
 
 } Wasm;
@@ -57,5 +68,6 @@ void add_memory_section(Wasm* wasm);
 void add_function_table(Wasm* wasm);
 
 CResult quit(Wasm* wasm, char* fmt, ...);
+void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
 
 #endif  // __WASM_INIT_H_

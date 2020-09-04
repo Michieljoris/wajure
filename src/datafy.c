@@ -174,7 +174,8 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
 }
 
 CResult datafy_literal(Wasm* wasm, Lval* lval) {
-  printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
+  /* printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
+   */
   lval_println(lval);
   if (lval->type == LVAL_SYMBOL)
     return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
@@ -255,4 +256,15 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   return ret;
 }
 
-CResult datafy_nil(Wasm* wasm) { return datafy_literal(wasm, make_lval_nil()); }
+CResult datafy_nil(Wasm* wasm) {
+  Lval* lval_nil = make_lval_nil();
+  CResult ret = datafy_literal(wasm, lval_nil);
+  release(lval_nil);
+  return ret;
+}
+
+CResult datafy_empty_list(Wasm* wasm, Lval* lval_list) {
+  if (!wasm->lval_empty_list_offset.ber)
+    wasm->lval_empty_list_offset = inter_lval(wasm, lval_list);
+  return wasm->lval_empty_list_offset;  // pointer to empty lval list
+}

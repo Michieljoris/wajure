@@ -7,30 +7,44 @@
 #include "list.h"
 #include "misc_fns.h"
 #include "platform.h"
+#include "printf.h"
 #include "wasm_util.h"
 
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
   char* data_end_str = read_file("__data_end");
   char* heap_base_str = read_file("__heap_base");
-  *wasm = (Wasm){.module = BinaryenModuleCreate(),
-                 .data = malloc(1),
-                 .data_offset = 0,
-                 .fn_names = malloc(1),
-                 .fns_count = 0,
-                 /* .lval_true_offset = cnull(), */
-                 /* .lval_false_offset = cnull(), */
-                 /* .lval_nil_offset = cnull(), */
-                 .lval_empty_list_offset = cnull(),
-                 .__data_end = (int)_strtol(data_end_str, NULL, 10),
-                 .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
-                 // no need to intern lval literal numbers for these common
-                 // numbers (-100 till 100):
-                 .lval_num_start = -100,
-                 .lval_num_end = 100,
-                 .lval_num_offset = calloc(sizeof(CResult), 201),
-                 .context = malloc(sizeof(Cell)),
-                 .runtime_check_args_count = 1};
+  *wasm = (Wasm){
+      .module = BinaryenModuleCreate(),
+      .data = malloc(1),
+      .data_offset = 0,
+      .fn_names = malloc(1),
+      .fns_count = 0,
+      /* .lval_true_offset = cnull(), */
+      /* .lval_false_offset = cnull(), */
+      /* .lval_nil_offset = cnull(), */
+      .lval_empty_list_offset = cnull(),
+      .__data_end = (int)_strtol(data_end_str, NULL, 10),
+      .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
+      // no need to intern lval literal numbers for these common
+      // numbers (-100 till 100):
+      .lval_num_start = -100,
+      .lval_num_end = 100,
+      .lval_num_offset = calloc(sizeof(CResult), 201),
+      .context = malloc(sizeof(Cell)),
+      .runtime_check_args_count = 1,
+      .symbol_table = malloc(1),
+      .symbol_table_count = 0,
+      .lval_offsets = malloc(100),
+      .lval_offsets_count = 0,
+      .lval_offsets_allocated = 100,
+      .wval_fn_offsets = malloc(100),
+      .wval_fn_offsets_count = 0,
+      .wval_fn_offsets_allocated = 100,
+      .cell_offsets = malloc(100),
+      .cell_offsets_count = 0,
+      .cell_offsets_allocated = 100,
+  };
   for (int i = 0; i < 201; i++) wasm->lval_num_offset[i] = cnull();
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
@@ -57,6 +71,10 @@ void add_memory_section(Wasm* wasm) {
                           BinaryenTypeInt32(), 0);
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
   BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer",
+                          BinaryenTypeInt32(), 1);
+  BinaryenAddGlobalImport(module, "data_offset", "env", "data_offset",
+                          BinaryenTypeInt32(), 1);
+  BinaryenAddGlobalImport(module, "fn_table_offset", "env", "fn_table_offset",
                           BinaryenTypeInt32(), 1);
 
   /* BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1, */
@@ -189,4 +207,32 @@ CResult quit(Wasm* wasm, char* fmt, ...) {
   free(wasm);
   exit(1);
   return cnull();
+}
+
+void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
+  /* printf("-- ADD TO SYMBOL TABLE\n"); */
+  char* type_str = lval_type_to_name(lval);
+  int ptr_len = 10;
+  int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
+  char* line = malloc(max_len);
+  int data_end = wasm->__data_end;
+  int offset = lval->wval_ptr - data_end;
+  /* printf("OFFSET: %d\n", offset); */
+  if (lval->type == LVAL_FUNCTION)
+    snprintf(line, max_len, "%s,%d,%s,%d,%d\n", sym, offset, type_str,
+             lval->param_count, lval->rest_arg_index);
+  else
+    // TODO:bug Without the space between %s and \n system gives malloc
+    // error????? Maybe a bug in printf??.
+    snprintf(line, max_len, "%s,%d,%s \n", sym, offset, type_str);
+  int line_count = _strlen(line);
+
+  /* printf("line: %d %d %d %d %s", lval->wval_ptr, data_end, */
+  /*        wasm->symbol_table_count, line_count, line); */
+  wasm->symbol_table =
+      realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
+  _strcpy(wasm->symbol_table + wasm->symbol_table_count, line);
+  free(line);
+  wasm->symbol_table_count += line_count;
+  /* printf("%.*s", wasm->symbol_table_count, wasm->symbol_table); */
 }
