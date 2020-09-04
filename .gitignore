@@ -3,3 +3,4 @@ out_wasm/
 .ccls-cache/
 .clangd/
 make-output
+compiled/
