@@ -22,6 +22,16 @@
 // Strings, nil, false, true, numbers from -100 till 100 and function objects
 // are deduped.
 
+Ber make_ptr(Wasm* wasm, int ptr) {
+  Ber ber_ptr = make_int32(wasm->module, ptr);
+  if (wasm->__data_end) {
+    return ber_ptr;
+  }
+  Ber data_offset =
+      BinaryenGlobalGet(wasm->module, "data_offset", BinaryenTypeInt32());
+  return BinaryenBinary(wasm->module, BinaryenAddInt32(), data_offset, ber_ptr);
+}
+
 CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sym) {
   printf("DATAFY SYS FN!!!!!\n");
   BinaryenModuleRef module = wasm->module;
@@ -100,9 +110,10 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sym) {
   /* printf("------------\n"); */
   /* int* data_lval = (int*)wval_fun; */
   int* data_lval = make_data_lval_wasm_lambda(wasm, fn_table_index, 1, 1);
-  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval).wasm_ptr;
+  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
-  CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr),
+                 /* make_int32(wasm->module, lval_ptr), */
                  .wasm_ptr = lval_ptr};
   return ret;
 
@@ -137,8 +148,9 @@ CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, function_data.fn_table_index, function_data.param_count,
       function_data.has_rest_arg);
-  return inter_data_lval_wasm_lambda(wasm, data_lval);
-
+  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+  return ret;
   /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
   /* Ber lispy_param_count = make_int32(module, lval_fun->param_count); */
   /* Ber rest_arg_index = make_int32(module, lval_fun->rest_arg_index); */
@@ -164,7 +176,9 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
     case LIST:
     case VECTOR:;
-      return inter_list(wasm, lval);
+      int lval_ptr = inter_list(wasm, lval);
+      CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+      return ret;
     case MAP:;
     case SET:;
     default:
@@ -173,7 +187,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
   }
 }
 
-CResult datafy_literal(Wasm* wasm, Lval* lval) {
+int inter_literal(Wasm* wasm, Lval* lval) {
   /* printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
    */
   lval_println(lval);
@@ -184,8 +198,8 @@ CResult datafy_literal(Wasm* wasm, Lval* lval) {
       /* lval_println(lval); */
       if (lval->num >= wasm->lval_num_start &&
           lval->num <= wasm->lval_num_end) {
-        CResult cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];
-        if (!cache.ber) {
+        int cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];
+        if (!cache) {
           cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
               inter_lval(wasm, lval);
         }
@@ -194,15 +208,15 @@ CResult datafy_literal(Wasm* wasm, Lval* lval) {
 
       return inter_lval(wasm, lval);
     case LTRUE:
-      if (!wasm->lval_true_offset.ber)
+      if (!wasm->lval_true_offset)
         wasm->lval_true_offset = inter_lval(wasm, lval);
       return wasm->lval_true_offset;
     case LFALSE:
-      if (!wasm->lval_false_offset.ber)
+      if (!wasm->lval_false_offset)
         wasm->lval_false_offset = inter_lval(wasm, lval);
       return wasm->lval_false_offset;
     case LNIL:
-      if (!wasm->lval_nil_offset.ber)
+      if (!wasm->lval_nil_offset)
         wasm->lval_nil_offset = inter_lval(wasm, lval);
       return wasm->lval_nil_offset;
     case STRING:
@@ -220,12 +234,15 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   /* lval_println(lval); */
   /* printf("lval %p\n", lval); */
 
+  CResult ret;
   if (lval->wval_ptr > 0) {
     /* printf("YIPPPEEEEEEE %d\n", lval->wval_ptr); */
-    return cresult(make_int32(wasm->module, lval->wval_ptr));
+    /* return cresult(make_int32(wasm->module, lval->wval_ptr)); */
+    int lval_ptr = lval->wval_ptr;
+    CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+    return _ret;
   }
 
-  CResult ret;
   if (lval->type == LVAL_COLLECTION) {
     ret = datafy_collection(wasm, lval);
   } else if (lval->type == LVAL_FUNCTION) {
@@ -247,8 +264,11 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
                     lval->subtype);
     }
-  } else
-    ret = datafy_literal(wasm, lval);
+  } else {
+    int lval_ptr = inter_literal(wasm, lval);
+    CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+    ret = _ret;
+  }
 
   lval->wval_ptr = ret.wasm_ptr;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
@@ -258,13 +278,16 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
 
 CResult datafy_nil(Wasm* wasm) {
   Lval* lval_nil = make_lval_nil();
-  CResult ret = datafy_literal(wasm, lval_nil);
+  /* CResult ret = datafy_literal(wasm, lval_nil); */
+  Ber ret = make_ptr(wasm, inter_literal(wasm, lval_nil));
   release(lval_nil);
-  return ret;
+  /* return ret; */
+  return cresult(ret);
 }
 
 CResult datafy_empty_list(Wasm* wasm, Lval* lval_list) {
-  if (!wasm->lval_empty_list_offset.ber)
+  if (!wasm->lval_empty_list_offset)
     wasm->lval_empty_list_offset = inter_lval(wasm, lval_list);
-  return wasm->lval_empty_list_offset;  // pointer to empty lval list
+  return cresult(make_ptr(
+      wasm, wasm->lval_empty_list_offset));  // pointer to empty lval list
 }

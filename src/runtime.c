@@ -7,6 +7,7 @@
 #include "list.h"
 #include "ltypes.h"
 #include "lval.h"
+#include "print.h"
 
 WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
@@ -72,20 +73,52 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   int* info_section =
       (int*)((long)data_offset + (data_size - info_section_size_in_bytes - 4));
 
-  int info_section_size = info_section_size_in_bytes / 4;
-  for (int i = 0; i < info_section_size; i += 3) {
-    int** offsets_ptr = (int**)(long)info_section[i + 0];
-    int add_method = info_section[i + 1];
-    int offsets_count = info_section[i + 2];
-    int offset = add_method == 0 ? data_offset : fn_table_offset;
-    for (int j = 0; j < offsets_count; j++) {
-      *offsets_ptr[j] += offset;
-    }
+  /* int info_section_size = info_section_size_in_bytes / 4; */
 
-    printf("section[%d]: %li\n", i, (long)offsets_ptr);
-    printf("section[%d]: %d\n", i + 1, add_method);
-    printf("section[%d]: %d\n", i + 2, offsets_count);
+  char* lval_offsets_ptr = (char*)(long)info_section[0];
+  lval_offsets_ptr += data_offset;
+  int lval_offsets_count = info_section[1];
+  for (int i = 0; i < lval_offsets_count; i++) {
+    char* slot_ptr = (char*)(((int*)lval_offsets_ptr)[0] + data_offset);
+    *(int*)(slot_ptr + 6 * 4) += data_offset;
+    // TODO: continue!!!!
+    /* Lval* lval = (Lval*)(((int*)lval_offsets_ptr)[0] + data_offset + 16); */
+    /* lval_println(lval); */
+    printf("lval 0: %li %d %d\n", (long)lval_offsets_ptr, lval_offsets_count,
+           ((int*)lval_offsets_ptr)[0] + data_offset);
   }
+  char* cell_offsets_ptr = (char*)(long)info_section[2];
+  /* int cell_offsets_count = info_section[3]; */
+  printf("cell 0: %li %d\n", (long)cell_offsets_ptr, cell_offsets_ptr[0]);
+
+  char* wval_fn_offsets_ptr = (char*)(long)info_section[4];
+  int wval_fn_offsets_count = info_section[5];
+  printf("wval_fn 0: %li %d %d\n", (long)wval_fn_offsets_ptr,
+         wval_fn_offsets_count, wval_fn_offsets_ptr[0]);
+
+  /* for (int i = 0; i < info_section_size; i += 3) { */
+  /*   char* offsets_char_ptr = (char*)(long)info_section[i + 0]; */
+  /*   printf("offsets_ptr %li, ", (long)offsets_char_ptr); */
+  /*   offsets_char_ptr += data_offset; */
+  /*   int** offsets_ptr = (int**)offsets_char_ptr; */
+  /*   printf("offsets_ptr %li, ", (long)offsets_ptr); */
+  /*   int add_method = info_section[i + 1]; */
+  /*   int offsets_count = info_section[i + 2]; */
+
+  /*   printf("add_method: %d, ", add_method); */
+  /*   printf("count: %d\n", offsets_count); */
+  /*   if (add_method == 0) */
+  /*     for (int j = 0; j < offsets_count; j++) { */
+  /*       printf("Rewriting %d at %d to %d\n", *offsets_ptr[j], offsets_ptr[j],
+   */
+  /*              *offsets_ptr[j] + data_offset); */
+  /*       if (*offsets_ptr[j]) *offsets_ptr[j] += data_offset;  // when not
+   * NULL */
+  /*     } */
+  /*   else */
+  /*     for (int j = 0; j < offsets_count; j++) */
+  /*       *offsets_ptr[j] += fn_table_offset; */
+  /* } */
 }
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */

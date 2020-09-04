@@ -167,8 +167,8 @@ async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_s
 
     const globals = {
         stack_pointer: new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer),
-        data_offset: new WebAssembly.Global({value:'i32', mutable:true}, 0),
-        fn_table_offset: new WebAssembly.Global({value:'i32', mutable:true}, 0)
+        data_offset: new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end.value),
+        fn_table_offset: new WebAssembly.Global({value:'i32', mutable:false}, 0)
     }
 
     console.log("Loading lispy.wat ----------------------------------------");
@@ -187,10 +187,10 @@ async function start() {
 
         const lispy = await init_lispy(lispy_config);
         console.log("Running lispy.test ------------------------------");
-        lispy.run("test", 888, 777);
         const data_start = lispy.runtime.__data_end.value;
+        lispy.runtime.rewrite_pointers(data_start, data_size, 0);
+        lispy.run("test", 888, 777);
         console.log("data_end: ", data_start, " data_size: ", data_size, " data_end: ", data_start+ data_size);
-        lispy.runtime.rewrite_pointers(lispy.runtime.__data_end.value, data_size, 0);
 
         console.log("End ------------------------------");
     } catch(e) {

@@ -3,8 +3,6 @@
 #include "ltypes.h"
 #include "wasm.h"
 
-CResult datafy_literal(Wasm* wasm, Lval* lval);
-CResult datafy_collection(Wasm* wasm, Lval* lval);
 CResult datafy_lval(Wasm* wasm, Lval* lval);
 CResult datafy_nil(Wasm* wasm);
 CResult datafy_empty_list(Wasm* wasm, Lval* lval_list);

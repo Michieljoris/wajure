@@ -13,19 +13,20 @@
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
   char* data_end_str = read_file("__data_end");
-  char* heap_base_str = read_file("__heap_base");
+  /* char* heap_base_str = read_file("__heap_base"); */
   *wasm = (Wasm){
       .module = BinaryenModuleCreate(),
-      .data = malloc(1),
-      .data_offset = 0,
+      .data = malloc(4),
+      .data_offset = 4,  // we don't want any data at 0 (NULL pointer)
       .fn_names = malloc(1),
       .fns_count = 0,
-      /* .lval_true_offset = cnull(), */
-      /* .lval_false_offset = cnull(), */
-      /* .lval_nil_offset = cnull(), */
-      .lval_empty_list_offset = cnull(),
-      .__data_end = (int)_strtol(data_end_str, NULL, 10),
-      .__heap_base = (int)_strtol(heap_base_str, NULL, 10),
+      .lval_true_offset = 0,
+      .lval_false_offset = 0,
+      .lval_nil_offset = 0,
+      .lval_empty_list_offset = 0,
+      /* .__data_end = (int)_strtol(data_end_str, NULL, 10), */
+      .__data_end = 0,
+      /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
       // no need to intern lval literal numbers for these common
       // numbers (-100 till 100):
       .lval_num_start = -100,
@@ -45,7 +46,11 @@ Wasm* init_wasm() {
       .cell_offsets_count = 0,
       .cell_offsets_allocated = 100,
   };
-  for (int i = 0; i < 201; i++) wasm->lval_num_offset[i] = cnull();
+  wasm->data[0] = 15;
+  wasm->data[1] = 15;
+  wasm->data[2] = 15;
+  wasm->data[3] = 15;
+  for (int i = 0; i < 201; i++) wasm->lval_num_offset[i] = 0;
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
 
@@ -73,9 +78,9 @@ void add_memory_section(Wasm* wasm) {
   BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer",
                           BinaryenTypeInt32(), 1);
   BinaryenAddGlobalImport(module, "data_offset", "env", "data_offset",
-                          BinaryenTypeInt32(), 1);
+                          BinaryenTypeInt32(), 0);
   BinaryenAddGlobalImport(module, "fn_table_offset", "env", "fn_table_offset",
-                          BinaryenTypeInt32(), 1);
+                          BinaryenTypeInt32(), 0);
 
   /* BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1, */
   /*                   make_int32(module, wasm->__heap_base)); */
@@ -88,7 +93,8 @@ void add_memory_section(Wasm* wasm) {
   /*     BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
   /* BinaryenExpressionRef segmentOffsets[1] = {__data_end}; */
   BinaryenExpressionRef segmentOffsets[1] = {
-      make_int32(module, wasm->__data_end)};
+      BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32())
+      /* make_int32(module, wasm->__data_end) */};
   int8_t segmentPassive[] = {0};
 
   int initial_mem_size = 2;
@@ -216,8 +222,9 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int ptr_len = 10;
   int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
   char* line = malloc(max_len);
-  int data_end = wasm->__data_end;
-  int offset = lval->wval_ptr - data_end;
+  /* int data_end = wasm->__data_end; */
+  /* int offset = lval->wval_ptr - data_end; */
+  int offset = lval->wval_ptr;
   /* printf("OFFSET: %d\n", offset); */
   if (lval->type == LVAL_FUNCTION)
     snprintf(line, max_len, "%s,%d,%s,%d,%d\n", sym, offset, type_str,

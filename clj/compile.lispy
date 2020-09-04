@@ -1,8 +1,11 @@
 ;; (def a 123)
 ;; (def b 123)
 ;; (defn foo [] 1234)
+;; (def bar (list 1 2 3))
 
 (defn test [x y]
+  (print "foobar")
+  ;; (print 123 456 999 "foo")
   ;; (print 12345 a (foo))
   )
 ;; (compile "lispy/test_compile.lispy")
