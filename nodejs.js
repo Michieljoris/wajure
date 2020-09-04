@@ -103,6 +103,8 @@ async function run_lispy_fn(fn_name, ...args) {
 
 }
 
+var data_size;
+
 async function load_lispy(runtime, globals, lispy_wasm_file_name) {
 
     let buf = fs.readFileSync(lispy_wasm_file_name);
@@ -127,7 +129,8 @@ async function load_lispy(runtime, globals, lispy_wasm_file_name) {
     if (nameSections.length != 0) {
         console.log("Module contains a custom section: data_size");
         var string = new TextDecoder('utf8').decode(nameSections[0]);
-        console.log(string);
+        console.log(parseInt(string));
+        data_size = parseInt(string);
     };
 
     let lispy = await WebAssembly.instantiate(new Uint8Array(buf), lispyImportObject).
@@ -185,6 +188,9 @@ async function start() {
         const lispy = await init_lispy(lispy_config);
         console.log("Running lispy.test ------------------------------");
         lispy.run("test", 888, 777);
+        const data_start = lispy.runtime.__data_end.value;
+        console.log("data_end: ", data_start, " data_size: ", data_size, " data_end: ", data_start+ data_size);
+        lispy.runtime.rewrite_pointers(lispy.runtime.__data_end.value, data_size, 0);
 
         console.log("End ------------------------------");
     } catch(e) {

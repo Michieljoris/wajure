@@ -65,6 +65,28 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
+void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
+  /* printf("data_start: %il\n", data_start); */
+  /* printf("data_size: %d\n", data_size); */
+  int info_section_size_in_bytes = *(int*)((long)data_offset + data_size - 4);
+  int* info_section =
+      (int*)((long)data_offset + (data_size - info_section_size_in_bytes - 4));
+
+  int info_section_size = info_section_size_in_bytes / 4;
+  for (int i = 0; i < info_section_size; i += 3) {
+    int** offsets_ptr = (int**)(long)info_section[i + 0];
+    int add_method = info_section[i + 1];
+    int offsets_count = info_section[i + 2];
+    int offset = add_method == 0 ? data_offset : fn_table_offset;
+    for (int j = 0; j < offsets_count; j++) {
+      *offsets_ptr[j] += offset;
+    }
+
+    printf("section[%d]: %li\n", i, (long)offsets_ptr);
+    printf("section[%d]: %d\n", i + 1, add_method);
+    printf("section[%d]: %d\n", i + 2, offsets_count);
+  }
+}
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */
 /* } */

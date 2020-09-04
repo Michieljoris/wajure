@@ -8,6 +8,7 @@
 #include "env.h"
 #include "eval.h"
 #include "fns.h"
+#include "inter.h"
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
@@ -44,7 +45,7 @@ CResult compile_fn_rest_args(Wasm* wasm, Cell* head) {
 
 CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
                         Lval* lval_list) {
-  printf("COMPILE_DO_LIST!!!!\n");
+  /* printf("COMPILE_DO_LIST!!!!\n"); */
   /* lval_println(lval_list); */
   BinaryenModuleRef module = wasm->module;
   int do_list_count = list_count(lval_list->head) + 2;  // room for extra bers
@@ -673,7 +674,7 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
 CResult compile_list(Wasm* wasm, Lval* lval_list) {
   /* BinaryenModuleRef module = wasm->module; */
   CONTEXT_LVAL("compile_list", lval_list);
-  lval_println(lval_list);
+  /* lval_println(lval_list); */
 
   // Empty list
   if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
@@ -859,8 +860,11 @@ int compile(char* file_name) {
 
     CResult result;
 
+    printf("Processing: ");
+    lval_print(lval_sym);
+    printf(": ");
+    lval_println(lval);
     if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA) {
-      /* add_wasm_function(wasm, lval->closure, lval_sym->str, lval); */
       lval->str = retain(lval_sym->str);
       result = lval_compile(wasm, lval);
     } else {
@@ -878,29 +882,11 @@ int compile(char* file_name) {
   /* add_global_section(module); */
   add_function_table(wasm);
 
-  /* add_string_to_data(wasm, "foo3"); */
+  inter_rewrite_info(wasm);
   add_memory_section(wasm);
-
-  /* char* contents = "hello there!!!"; */
 
   BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
                            wasm->symbol_table_count);
-
-  int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
-                                           wasm->lval_offsets_count * 4);
-  printf("lval_offset_ptr %d\n", lval_offsets_ptr);
-
-  int cell_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->cell_offsets,
-                                           wasm->cell_offsets_count * 4);
-  printf("cell_offset_ptr %d\n", cell_offsets_ptr);
-
-  int wval_fn_offsets_ptr = add_bytes_to_data(
-      wasm, (char*)wasm->wval_fn_offsets, wasm->wval_fn_offsets_count * 4);
-  printf("wval_ptr_offset_ptr %d\n", wval_fn_offsets_ptr);
-  /* BinaryenAddCustomSection(wasm->module, "value_offsets",
-   * wasm->symbol_table,
-   */
-  /*                          wasm->symbol_table_count); */
   /* BinaryenAddCustomSection(wasm->module, "deps", wasm->symbol_table, */
   /*                          wasm->symbol_table_count); */
 

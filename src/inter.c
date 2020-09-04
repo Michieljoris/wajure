@@ -136,15 +136,15 @@ CResult inter_list(Wasm* wasm, Lval* lval) {
 #define wval_fun_size slot_type_size + wval_fun_type_size
 
 //  offsets
-#define wval_type_offset 0
-#define subtype_offset 1
+#define wval_type_offset slot_type_size + 0
+#define subtype_offset slot_type_size + 1
 
-#define fn_table_index_offset 2
-#define param_count_offset 4
-#define has_rest_arg_offset 6
-#define partial_count_offset 8
-#define closure_offset 12
-#define partials_offset 16
+#define fn_table_index_offset slot_type_size + 2
+#define param_count_offset slot_type_size + 4
+#define has_rest_arg_offset slot_type_size + 6
+#define partial_count_offset slot_type_size + 8
+#define closure_offset slot_type_size + 12
+#define partials_offset slot_type_size + 16
 /* #define str_offset 4  // 20 */
 
 int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
@@ -157,7 +157,6 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   *(int*)(p + ref_count_offset * 4) = 1;
   *(int*)(p + data_p_offset) =
       wasm->__data_end + wasm->data_offset + slot_type_size;
-  p += slot_type_size;
 
   *(char*)(p + wval_type_offset) = LVAL_WASM_LAMBDA;
   *(char*)(p + subtype_offset) = -1;
@@ -190,4 +189,56 @@ CResult inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
     *pool = alist_prepend(*pool, lval->str, ret);
   }
   return *ret;
+}
+
+enum { ADD_DATA_OFFSET, ADD_FN_TABLE_OFFSET };
+
+void inter_rewrite_info(Wasm* wasm) {
+  int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
+                                           wasm->lval_offsets_count * 4);
+  printf("lval_offset_ptr %d\n", lval_offsets_ptr);
+
+  int cell_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->cell_offsets,
+                                           wasm->cell_offsets_count * 4);
+  printf("cell_offset_ptr %d\n", cell_offsets_ptr);
+
+  int wval_fn_offsets_ptr = add_bytes_to_data(
+      wasm, (char*)wasm->wval_fn_offsets, wasm->wval_fn_offsets_count * 4);
+
+  printf("wval_fn_offset_ptr %d\n", wval_fn_offsets_ptr);
+  int info_section[] = {
+      lval_offsets_ptr + data_p_offset,
+      ADD_DATA_OFFSET,
+      wasm->lval_offsets_count,
+
+      lval_offsets_ptr + str_offset,
+      ADD_DATA_OFFSET,
+      wasm->lval_offsets_count,
+
+      lval_offsets_ptr + head_offset,
+      ADD_DATA_OFFSET,
+      wasm->lval_offsets_count,
+
+      cell_offsets_ptr + data_p_offset,
+      ADD_DATA_OFFSET,
+      wasm->cell_offsets_count,
+      cell_offsets_ptr + car_offset,
+      ADD_DATA_OFFSET,
+      wasm->cell_offsets_count,
+      cell_offsets_ptr + cdr_offset,
+      ADD_DATA_OFFSET,
+      wasm->cell_offsets_count,
+
+      wval_fn_offsets_ptr + data_p_offset,
+      ADD_DATA_OFFSET,
+      wasm->wval_fn_offsets_count,
+      wval_fn_offsets_ptr + fn_table_index_offset,
+      ADD_FN_TABLE_OFFSET,
+      wasm->wval_fn_offsets_count,
+  };
+
+  printf("sizeof info_section %li\n", sizeof(info_section));
+  add_bytes_to_data(wasm, (char*)info_section, sizeof(info_section));
+  int info_section_size = sizeof(info_section);
+  add_bytes_to_data(wasm, (char*)&info_section_size, sizeof(int));
 }

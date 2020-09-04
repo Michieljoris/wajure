@@ -15,4 +15,6 @@ CResult inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval);
 
 CResult inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval);
 
+void inter_rewrite_info(Wasm* wasm);
+
 #endif  // __INTER_H_

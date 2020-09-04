@@ -158,6 +158,7 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "make_lval_wasm_lambda", 6, 1},
     {NULL, NULL, "init_rest_args", 2, 0},
     {NULL, NULL, "check_args_count", 3, 1},
+    {NULL, NULL, "rewrite_pointers", 3, 0},
     {NULL}};
 
 extern LispyFn list_builtin_fns[];
@@ -222,16 +223,13 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
     snprintf(line, max_len, "%s,%d,%s,%d,%d\n", sym, offset, type_str,
              lval->param_count, lval->rest_arg_index);
   else
-    // TODO:bug Without the space between %s and \n system gives malloc
-    // error????? Maybe a bug in printf??.
-    snprintf(line, max_len, "%s,%d,%s \n", sym, offset, type_str);
+    snprintf(line, max_len, "%s,%d,%s\n", sym, offset, type_str);
   int line_count = _strlen(line);
-
   /* printf("line: %d %d %d %d %s", lval->wval_ptr, data_end, */
   /*        wasm->symbol_table_count, line_count, line); */
   wasm->symbol_table =
       realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
-  _strcpy(wasm->symbol_table + wasm->symbol_table_count, line);
+  _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
   free(line);
   wasm->symbol_table_count += line_count;
   /* printf("%.*s", wasm->symbol_table_count, wasm->symbol_table); */
