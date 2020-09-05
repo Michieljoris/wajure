@@ -19,7 +19,9 @@ typedef struct {
   char** fn_names;
   int fns_count;
   Lenv* env;
+  int pic;
   int __data_end;
+  int __fn_table_end;
   /* int __heap_base; */
   int lval_true_offset;
   int lval_false_offset;

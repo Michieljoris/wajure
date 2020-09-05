@@ -75,50 +75,55 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
 
   /* int info_section_size = info_section_size_in_bytes / 4; */
 
-  char* lval_offsets_ptr = (char*)(long)info_section[0];
-  lval_offsets_ptr += data_offset;
+  char* lval_offsets_ptr = (char*)(long)info_section[0] + data_offset;
   int lval_offsets_count = info_section[1];
   for (int i = 0; i < lval_offsets_count; i++) {
-    char* slot_ptr = (char*)(((int*)lval_offsets_ptr)[0] + data_offset);
-    *(int*)(slot_ptr + 6 * 4) += data_offset;
-    // TODO: continue!!!!
-    /* Lval* lval = (Lval*)(((int*)lval_offsets_ptr)[0] + data_offset + 16); */
-    /* lval_println(lval); */
-    printf("lval 0: %li %d %d\n", (long)lval_offsets_ptr, lval_offsets_count,
-           ((int*)lval_offsets_ptr)[0] + data_offset);
+    Slot* slot_ptr = (Slot*)(long)(((int*)lval_offsets_ptr)[i] + data_offset);
+    Lval* lval_ptr =
+        (Lval*)(long)(((int*)lval_offsets_ptr)[i] + data_offset + sizeof(Slot));
+    slot_ptr->data_p = slot_ptr->data_p + data_offset;
+
+    if (lval_ptr->str) lval_ptr->str += data_offset;
+    if (lval_ptr->head)
+      lval_ptr->head = (Cell*)((char*)lval_ptr->head + data_offset);
   }
-  char* cell_offsets_ptr = (char*)(long)info_section[2];
-  /* int cell_offsets_count = info_section[3]; */
-  printf("cell 0: %li %d\n", (long)cell_offsets_ptr, cell_offsets_ptr[0]);
+
+  char* cell_offsets_ptr = (char*)(long)info_section[2] + data_offset;
+  int cell_offsets_count = info_section[3];
+  /* printf("cell 0: %li %d %li\n", (long)cell_offsets_ptr, cell_offsets_count,
+   */
+  /*        (long)((int*)cell_offsets_ptr)[0]); */
+
+  for (int i = 0; i < cell_offsets_count; i++) {
+    Slot* slot_ptr = (Slot*)(long)(((int*)cell_offsets_ptr)[i] + data_offset);
+    Cell* cell_ptr =
+        (Cell*)(long)(((int*)cell_offsets_ptr)[i] + data_offset + sizeof(Slot));
+    slot_ptr->data_p = slot_ptr->data_p + data_offset;
+    if (cell_ptr->car) cell_ptr->car += data_offset;
+    if (cell_ptr->cdr)
+      cell_ptr->cdr = (Cell*)((char*)cell_ptr->cdr + data_offset);
+  }
 
   char* wval_fn_offsets_ptr = (char*)(long)info_section[4];
+
+  /* printf("wval_fn_offsets_ptr:  %li\n", (long)wval_fn_offsets_ptr); */
+  wval_fn_offsets_ptr += data_offset;
   int wval_fn_offsets_count = info_section[5];
-  printf("wval_fn 0: %li %d %d\n", (long)wval_fn_offsets_ptr,
-         wval_fn_offsets_count, wval_fn_offsets_ptr[0]);
 
-  /* for (int i = 0; i < info_section_size; i += 3) { */
-  /*   char* offsets_char_ptr = (char*)(long)info_section[i + 0]; */
-  /*   printf("offsets_ptr %li, ", (long)offsets_char_ptr); */
-  /*   offsets_char_ptr += data_offset; */
-  /*   int** offsets_ptr = (int**)offsets_char_ptr; */
-  /*   printf("offsets_ptr %li, ", (long)offsets_ptr); */
-  /*   int add_method = info_section[i + 1]; */
-  /*   int offsets_count = info_section[i + 2]; */
+  /* printf("rewriting wval_fn:\nwval_fn_offsets_ptr: %li\ncount: %d %d\n", */
+  /*        (long)wval_fn_offsets_ptr, wval_fn_offsets_count, */
+  /*        wval_fn_offsets_ptr[0]); */
 
-  /*   printf("add_method: %d, ", add_method); */
-  /*   printf("count: %d\n", offsets_count); */
-  /*   if (add_method == 0) */
-  /*     for (int j = 0; j < offsets_count; j++) { */
-  /*       printf("Rewriting %d at %d to %d\n", *offsets_ptr[j], offsets_ptr[j],
-   */
-  /*              *offsets_ptr[j] + data_offset); */
-  /*       if (*offsets_ptr[j]) *offsets_ptr[j] += data_offset;  // when not
-   * NULL */
-  /*     } */
-  /*   else */
-  /*     for (int j = 0; j < offsets_count; j++) */
-  /*       *offsets_ptr[j] += fn_table_offset; */
-  /* } */
+  for (int i = 0; i < wval_fn_offsets_count; i++) {
+    Slot* slot_ptr =
+        (Slot*)(long)(((int*)wval_fn_offsets_ptr)[i] + data_offset);
+    WvalFun* wval_fn_ptr = (WvalFun*)(long)(((int*)wval_fn_offsets_ptr)[i] +
+                                            data_offset + sizeof(Slot));
+    slot_ptr->data_p = slot_ptr->data_p + data_offset;
+    wval_fn_ptr->fn_table_index += fn_table_offset;
+    /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);
+     */
+  }
 }
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */

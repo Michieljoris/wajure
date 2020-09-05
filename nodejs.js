@@ -156,7 +156,7 @@ async function load_runtime(runtime_wasm_file_name) {
     return runtime;
 }
 
-async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_size}) {
+async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_size, data_offset, fn_table_offset}) {
 
     console.log("Loading lispy runtime ------------------------------------");
     const runtime = await load_runtime('./out_wasm/runtime.wasm');
@@ -165,14 +165,20 @@ async function init_lispy({runtime_wasm_file_name, lispy_wasm_file_name, stack_s
     console.log("stack_pointer:", stack_pointer);
     runtime.init_lispy_mempools(800, 800, 800);
 
+    data_offset += runtime.__data_end.value;
     const globals = {
         stack_pointer: new WebAssembly.Global({value:'i32', mutable:true}, stack_pointer),
-        data_offset: new WebAssembly.Global({value:'i32', mutable:false}, runtime.__data_end.value),
-        fn_table_offset: new WebAssembly.Global({value:'i32', mutable:false}, 0)
+        data_offset: new WebAssembly.Global({value:'i32', mutable:false}, data_offset),
+        fn_table_offset: new WebAssembly.Global({value:'i32', mutable:false}, fn_table_offset)
     }
 
     console.log("Loading lispy.wat ----------------------------------------");
     const user = await load_lispy(runtime, globals, './compiled/lispy.wasm');
+
+    //TODO: don't have data_size as a global!!!
+    runtime.rewrite_pointers(data_offset, data_size, fn_table_offset);
+    console.log("From nodejs.js: data_offset: ", data_offset, " data_size: ",
+                data_size, " data_end: ", data_offset + data_size, " fn_table_offset: ", fn_table_offset);
 
     const run = run_lispy_fn;
     return {runtime_wasm_file_name, lispy_wasm_file_name, stack_size, user, runtime, run};
@@ -182,15 +188,14 @@ async function start() {
     try {
         const lispy_config = { runtime_wasm_file_name:  './out_wasm/runtime.wasm',
                                lispy_wasm_file_name: './compiled/lispy.wasm',
-                               stack_size: 8 * 1024
+                               stack_size: 8 * 1024,
+                               data_offset: 1000,
+                               fn_table_offset: 10
                              }
 
         const lispy = await init_lispy(lispy_config);
         console.log("Running lispy.test ------------------------------");
-        const data_start = lispy.runtime.__data_end.value;
-        lispy.runtime.rewrite_pointers(data_start, data_size, 0);
         lispy.run("test", 888, 777);
-        console.log("data_end: ", data_start, " data_size: ", data_size, " data_end: ", data_start+ data_size);
 
         console.log("End ------------------------------");
     } catch(e) {

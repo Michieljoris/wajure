@@ -20,6 +20,32 @@
 #define car_offset 5 * 4
 #define cdr_offset 6 * 4
 
+#define lval_type_size 5 * 4  // type and subtype are in 4 bytes
+#define wval_size slot_type_size + lval_type_size
+
+// Lval offsets
+#define type_offset 4 * 4
+
+#define num_offset 5 * 4
+#define str_offset 6 * 4
+#define head_offset 7 * 4
+#define hash_offset 8 * 4
+
+#define wval_fun_type_size 5 * 4
+#define wval_fun_size slot_type_size + wval_fun_type_size
+
+//  Wval offsets
+#define wval_type_offset slot_type_size + 0
+#define subtype_offset slot_type_size + 1
+
+#define fn_table_index_offset slot_type_size + 2
+#define param_count_offset slot_type_size + 4
+#define has_rest_arg_offset slot_type_size + 6
+#define partial_count_offset slot_type_size + 8
+#define closure_offset slot_type_size + 12
+#define partials_offset slot_type_size + 16
+/* #define str_offset 4  // 20 */
+
 void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
   if (*count >= *allocated) {
     *allocated += 100;
@@ -64,17 +90,6 @@ CResult inter_data_cell(Wasm* wasm, int* data_cell) {
 /*   int* data_cell = make_data_cell(wasm, cell); */
 /*   return inter_data_cell(wasm, data_cell); */
 /* } */
-
-#define lval_type_size 5 * 4  // type and subtype are in 4 bytes
-#define wval_size slot_type_size + lval_type_size
-
-// Lval offsets
-#define type_offset 4 * 4
-
-#define num_offset 5 * 4
-#define str_offset 6 * 4
-#define head_offset 7 * 4
-#define hash_offset 8 * 4
 
 int* make_data_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
@@ -140,21 +155,6 @@ int inter_list(Wasm* wasm, Lval* lval) {
   return inter_data_lval(wasm, data_list);
 }
 
-#define wval_fun_type_size 5 * 4
-#define wval_fun_size slot_type_size + wval_fun_type_size
-
-//  offsets
-#define wval_type_offset slot_type_size + 0
-#define subtype_offset slot_type_size + 1
-
-#define fn_table_index_offset slot_type_size + 2
-#define param_count_offset slot_type_size + 4
-#define has_rest_arg_offset slot_type_size + 6
-#define partial_count_offset slot_type_size + 8
-#define closure_offset slot_type_size + 12
-#define partials_offset slot_type_size + 16
-/* #define str_offset 4  // 20 */
-
 int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
                                 int has_rest_arg) {
   int* data_lval = calloc(1, wval_fun_size);
@@ -202,55 +202,26 @@ int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
   return *ret;
 }
 
-enum { ADD_DATA_OFFSET, ADD_FN_TABLE_OFFSET };
-
 void inter_rewrite_info(Wasm* wasm) {
+  printf("inter_rewrite_info\n");
   int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
                                            wasm->lval_offsets_count * 4);
-  printf("lval_offset_ptr %d\n", lval_offsets_ptr);
-  printf("lval_offsets[0]%d\n", wasm->lval_offsets[0]);
+  /* printf("lval_offset_ptr %d\n", lval_offsets_ptr); */
+  /* printf("lval_offsets[0]%d\n", wasm->lval_offsets[0]); */
 
   int cell_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->cell_offsets,
                                            wasm->cell_offsets_count * 4);
-  printf("cell_offset_ptr %d\n", cell_offsets_ptr);
+  /* printf("cell_offset_ptr %d\n", cell_offsets_ptr); */
 
   int wval_fn_offsets_ptr = add_bytes_to_data(
       wasm, (char*)wasm->wval_fn_offsets, wasm->wval_fn_offsets_count * 4);
 
-  printf("wval_fn_offset_ptr %d\n", wval_fn_offsets_ptr);
+  /* printf("wval_fn_offset_ptr %d, count: %d\n", wval_fn_offsets_ptr, */
+  /*        wasm->wval_fn_offsets_count); */
   int info_section[] = {
-      lval_offsets_ptr, wasm->lval_offsets_count,
-      /* lval_offsets_ptr + data_p_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->lval_offsets_count, */
-
-      /* lval_offsets_ptr + str_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->lval_offsets_count, */
-
-      /* lval_offsets_ptr + head_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->lval_offsets_count, */
-      cell_offsets_ptr, wasm->cell_offsets_count,
-
-      /* cell_offsets_ptr + data_p_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->cell_offsets_count, */
-      /* cell_offsets_ptr + car_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->cell_offsets_count, */
-      /* cell_offsets_ptr + cdr_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->cell_offsets_count, */
-
+      lval_offsets_ptr,    wasm->lval_offsets_count,
+      cell_offsets_ptr,    wasm->cell_offsets_count,
       wval_fn_offsets_ptr, wasm->wval_fn_offsets_count,
-
-      /* wval_fn_offsets_ptr + data_p_offset, */
-      /* ADD_DATA_OFFSET, */
-      /* wasm->wval_fn_offsets_count, */
-      /* wval_fn_offsets_ptr + fn_table_index_offset, */
-      /* ADD_FN_TABLE_OFFSET, */
-      /* wasm->wval_fn_offsets_count, */
   };
 
   printf("sizeof info_section %li\n", sizeof(info_section));

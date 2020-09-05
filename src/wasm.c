@@ -10,10 +10,14 @@
 #include "printf.h"
 #include "wasm_util.h"
 
+/* char* heap_base_str = read_file("__heap_base"); */
+
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
   char* data_end_str = read_file("__data_end");
-  /* char* heap_base_str = read_file("__heap_base"); */
+  int pic = 1;  // position independant code
+  int data_end = (int)_strtol(data_end_str, NULL, 10);
+  int fn_table_end = 0;
   *wasm = (Wasm){
       .module = BinaryenModuleCreate(),
       .data = malloc(4),
@@ -24,8 +28,9 @@ Wasm* init_wasm() {
       .lval_false_offset = 0,
       .lval_nil_offset = 0,
       .lval_empty_list_offset = 0,
-      /* .__data_end = (int)_strtol(data_end_str, NULL, 10), */
-      .__data_end = 0,
+      .pic = pic,
+      .__data_end = pic ? 0 : data_end,
+      .__fn_table_end = pic ? 0 : fn_table_end,
       /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
       // no need to intern lval literal numbers for these common
       // numbers (-100 till 100):
@@ -91,10 +96,10 @@ void add_memory_section(Wasm* wasm) {
 
   /* BinaryenExpressionRef __data_end = */
   /*     BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
-  /* BinaryenExpressionRef segmentOffsets[1] = {__data_end}; */
-  BinaryenExpressionRef segmentOffsets[1] = {
-      BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32())
-      /* make_int32(module, wasm->__data_end) */};
+  Ber data_offset =
+      wasm->pic ? BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32())
+                : make_int32(module, wasm->__data_end);
+  BinaryenExpressionRef segmentOffsets[1] = {data_offset};
   int8_t segmentPassive[] = {0};
 
   int initial_mem_size = 2;
@@ -116,9 +121,12 @@ void add_function_table(Wasm* wasm) {
 
   const char** funcNames = (const char**)wasm->fn_names;
   int numFuncNames = wasm->fns_count;
-  BinaryenExpressionRef offset = make_int32(module, 0);
+
+  Ber fn_table_offset = wasm->pic ? BinaryenGlobalGet(module, "fn_table_offset",
+                                                      BinaryenTypeInt32())
+                                  : make_int32(module, wasm->__fn_table_end);
   BinaryenSetFunctionTable(module, initial, maximum, funcNames, numFuncNames,
-                           offset);
+                           fn_table_offset);
 }
 
 typedef struct {

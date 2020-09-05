@@ -24,9 +24,7 @@
 
 Ber make_ptr(Wasm* wasm, int ptr) {
   Ber ber_ptr = make_int32(wasm->module, ptr);
-  if (wasm->__data_end) {
-    return ber_ptr;
-  }
+  if (!wasm->pic) return ber_ptr;
   Ber data_offset =
       BinaryenGlobalGet(wasm->module, "data_offset", BinaryenTypeInt32());
   return BinaryenBinary(wasm->module, BinaryenAddInt32(), data_offset, ber_ptr);
@@ -109,7 +107,8 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sym) {
   /* lval_println((Lval*)wval_fun); */
   /* printf("------------\n"); */
   /* int* data_lval = (int*)wval_fun; */
-  int* data_lval = make_data_lval_wasm_lambda(wasm, fn_table_index, 1, 1);
+  int* data_lval = make_data_lval_wasm_lambda(
+      wasm, wasm->__fn_table_end + fn_table_index, 1, 1);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr),
@@ -146,8 +145,8 @@ CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   /* } */
 
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, function_data.fn_table_index, function_data.param_count,
-      function_data.has_rest_arg);
+      wasm, wasm->__fn_table_end + function_data.fn_table_index,
+      function_data.param_count, function_data.has_rest_arg);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;
@@ -278,10 +277,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
 
 CResult datafy_nil(Wasm* wasm) {
   Lval* lval_nil = make_lval_nil();
-  /* CResult ret = datafy_literal(wasm, lval_nil); */
   Ber ret = make_ptr(wasm, inter_literal(wasm, lval_nil));
   release(lval_nil);
-  /* return ret; */
   return cresult(ret);
 }
 

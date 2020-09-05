@@ -400,8 +400,14 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   /*        function_data.closure_count); */
 
   release(lval_fun);
-
-  Ber fn_table_index = make_int32(module, function_data.fn_table_index);
+  Ber fn_table_index =
+      make_int32(module, wasm->__fn_table_end + function_data.fn_table_index);
+  if (wasm->pic) {
+    Ber fn_table_offset =
+        BinaryenGlobalGet(wasm->module, "fn_table_offset", BinaryenTypeInt32());
+    fn_table_index = BinaryenBinary(wasm->module, BinaryenAddInt32(),
+                                    fn_table_offset, fn_table_index);
+  }
   Ber partial_count = make_int32(module, 0);
   Ber partials = make_int32(module, 0);  // NULL
   Ber lispy_param_count = make_int32(module, function_data.param_count);
