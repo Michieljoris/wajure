@@ -1,4 +1,12 @@
-;; (load "lispy/stdlib.lispy")
+(in-ns 'run)
+(require '[foo.core :as foo :refer [foo]])
+
+(print "foo.core/foo = " foo.core/foo)
+(print "foo/foo = " foo/foo)
+(print "foo" foo)
+;; (defn foo [] 123)
+;; (print (foo))
+;; (print 123)
 
 ;; (print (and 1 nil 0 true))
 ;; (print (macroexpand (apply print (list "hello"))))
@@ -13,18 +21,12 @@
 ;; (load "lispy/test/test_8_macros.lispy")
 ;; (load "lispy/test/test_9_try.lispy")
 ;; (print "----------------------")
-(in-ns 'core)
 ;; (print "Namespace:" *ns*)
 
-(require '[foo.core :as foo :refer [foo]])
 ;; (require '[foo.core :as foo :refer [a b]])
 ;; (print-env)
 ;; (def bar 555)
 ;; (print foo bar)
-;; (print "foo.core/foo = " foo.core/foo)
-(print "foo/foo = " foo/foo)
-(print "foo.core/foo = " foo.core/foo)
-(print "foo" foo)
 
 
 ;; (defmacro unless2 [pred a b] (list 'if (list 'not pred) a b))

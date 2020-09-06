@@ -25,13 +25,23 @@ void run(char* config_file_name) {
   Lenv* root_env = lenv_new();
   lenv_add_builtin_fns(root_env);
 
+  Lenv* stdlib_env = require_file(root_env, "clj/wajure/core.clj");
+  /* Lenv* stdlib_env = lenv_new(); */
+  stdlib_env->parent_env = retain(root_env);
+  /* stdlib_env->is_ns_env = 1; */
+  /* Lval* ret = load(stdlib_env, "clj/wajure/core.clj"); */
+  /* stdlib_env->is_ns_env = 0; */
+  /* lval_println(ret); */
+  /* release(ret); */
+
   /* SlotCount after_builtins = get_slot_count(); */
 
-  Lenv* refer_env = lenv_new();
-  refer_env->parent_env = retain(root_env);
+  /* Lenv* refer_env = lenv_new(); */
+  /* refer_env->parent_env = retain(stdlib_env); */
+  /* refer_env->parent_env = retain(root_env); */
 
   Lenv* ns_env = lenv_new();
-  ns_env->parent_env = retain(refer_env);
+  ns_env->parent_env = retain(stdlib_env);
   ns_env->is_ns_env = 1;
 
   /* set_log_level(LOG_LEVEL_DEEP_DEBUG); */
@@ -51,6 +61,7 @@ void run(char* config_file_name) {
   // For now we only understand args to be a list of file names to be read in
   info("Loading %s\n", file_name);
   Lval* result = load(ns_env, file_name);
+  release(file_name);
 
   printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   printf("Result of loading %s: ", file_name);
@@ -84,9 +95,13 @@ void run(char* config_file_name) {
   ns_env->kv = NIL;
   release(ns_env);
 
-  release(refer_env->kv);
-  refer_env->kv = NIL;
-  release(refer_env);
+  /* release(refer_env->kv); */
+  /* refer_env->kv = NIL; */
+  /* release(refer_env); */
+
+  release(stdlib_env->kv);
+  stdlib_env->kv = NIL;
+  release(stdlib_env);
   /* print_mempool_counts(); */
   /* printf(" after releasing user_env\n"); */
   /* SlotCount after_user_env = get_slot_count(); */

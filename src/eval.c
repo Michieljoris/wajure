@@ -177,17 +177,25 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace = get_namespace(lval_symbol);
   if (namespace) {
-    scoped Lval* lval_current_ns = get_lval_ns(env);
+    scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
     Namespace* current_namespace = (Namespace*)lval_current_ns->head;
     scoped char* name = get_name(lval_symbol);
-    env = alist_get(current_namespace->deps, is_eq_str, namespace);
-    if (!env)
+    Lenv* some_env = alist_get(current_namespace->deps, is_eq_str, namespace);
+    if (!some_env)
       return make_lval_err("Can't find namespace in symbol %s",
                            lval_symbol->str);
     scoped Lval* lval_name = make_lval_sym(name);
-    lval_resolved_sym = lenv_get(env, lval_name);
+    lval_resolved_sym = lenv_get(some_env, lval_name);
   } else {
     lval_resolved_sym = lenv_get(env, lval_symbol);
+    if (lval_resolved_sym->type == LVAL_ERR) {
+      Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
+      if (lval_current_ns->type == LVAL_ERR) {
+        return lval_current_ns;
+      }
+      Namespace* current_namespace = (Namespace*)lval_current_ns->head;
+      lval_resolved_sym = lenv_get(current_namespace->refs, lval_symbol);
+    }
   }
 
   return lval_resolved_sym;

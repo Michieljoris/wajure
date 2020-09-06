@@ -1,9 +1,12 @@
+(in-ns 'compile)
+(require '[foo.core :as foo])
 ;; (def a 123)
 ;; (def b 123)
 (defn foo [] 1234)
 ;; (def bar (list 1 2 3))
 
 (defn test [x y]
+   
   (let [f foo
         p print]
     (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))

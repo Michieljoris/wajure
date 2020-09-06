@@ -80,6 +80,7 @@ struct lval {
   int offset;
   int param_count;
   int rest_arg_index;
+  char* namespace;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
@@ -123,6 +124,7 @@ struct context {
 
 typedef struct {
   char* namespace;
+  Lenv* refs;
   Map deps;  //{foo.core: env
              // foo: env}
 } Namespace;

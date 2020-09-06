@@ -873,10 +873,11 @@ int compile(char* file_name) {
     if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA) {
       lval->str = retain(lval_sym->str);
       result = lval_compile(wasm, lval);
-    } else {
+      add_to_symbol_table(wasm, lval_sym->str, lval);
+    } else if (lval->type != LVAL_NAMESPACE) {
       result = datafy_lval(wasm, lval);
+      add_to_symbol_table(wasm, lval_sym->str, lval);
     }
-    add_to_symbol_table(wasm, lval_sym->str, lval);
     cell = cell->cdr;
   }
 

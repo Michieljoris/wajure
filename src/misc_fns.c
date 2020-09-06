@@ -165,30 +165,38 @@ Lval* in_ns_fn(Lenv* env, Lval* arg_list) {
 }
 
 Lenv* require_file(Lenv* env, char* file_name) {
-  Lenv* refer_env = lenv_new();
-  refer_env->parent_env = retain(env);
+  /* Lenv* refer_env = lenv_new(); */
+  /* refer_env->parent_env = retain(env); */
+
   Lenv* ns_env = lenv_new();
-  ns_env->parent_env = refer_env;
+  ns_env->parent_env = retain(env);
+
   ns_env->is_ns_env = 1;
   scoped Lval* result = load(ns_env, file_name);
   if (result->type == LVAL_ERR) {
     lval_println(result);
     exit(1);
   }
-  ns_env->parent_env = NULL;
+  /* release(refer_env->kv); */
+  /* refer_env->kv = NULL; */
+  /* release(refer_env); */
+
+  /* ns_env->parent_env = NULL; */
+
+  /* release(env); */
   /* printf("Required %s\n", file_name); */
   return ns_env;
 }
 
 Lval* get_lval_ns(Lenv* env) {
-  char* str = lalloc_size(5);
+  scoped char* str = lalloc_size(5);
   _strcpy(str, "*ns*");
   scoped Lval* lval_current_ns_sym = make_lval_sym(str);
   Lval* lval_current_ns = lenv_get(env, lval_current_ns_sym);
   if (lval_current_ns->type == LVAL_ERR)
     return make_lval_err(
-        "Expecting *ns* to be defined (call in-ns) before require is called");
-  release(str);
+        "Expecting *ns* to be defined (call in-ns) before require or def is "
+        "called");
   return lval_current_ns;
 }
 
@@ -204,7 +212,8 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   Lval* refer = NULL;
   scoped Lval* lval_current_ns = get_lval_ns(env);
   Namespace* current_namespace = (Namespace*)lval_current_ns->head;
-  printf("current_namespace: %s\n", current_namespace->namespace);
+
+  printf("require in current_namespace: %s\n", current_namespace->namespace);
   if (list_count(env->kv) > 1)
     return make_lval_err(
         "Require calls can only to be made before any def calls");
@@ -219,6 +228,7 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
         "to require.");
   }
 
+  // Loop through require vector and assign values to 'as' and 'refer' if found.
   head = head->cdr;
   while (head) {
     if (((Lval*)head->car)->subtype != KEYWORD)
@@ -252,8 +262,11 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
       return make_lval_err(
           "Expecting arg to refer to be a vector in require vector");
   }
+
   /* printf("NAMESPACE: \n"); */
   /* lval_println(required_namespace_sym); */
+
+  // Create filename of required namespace
   int src_len = _strlen(config->src) + 1;
   char* file_name =
       lalloc_size(src_len + _strlen(required_namespace_sym->str) + 4);
@@ -264,20 +277,26 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   file_name = _strcat(file_name, ".clj");
   /* printf("file_name=%s\n", file_name); */
 
+  // If we haven't requireed the env yet we require it now, otherwise we use a
+  // cached one.
   Lenv* required_env = (Lenv*)alist_get(state->namespaces, is_eq_str,
                                         required_namespace_sym->str);
   if (!required_env) {
     required_env = require_file(get_root_env(env), file_name);
-    state->namespaces =
-        alist_prepend(state->namespaces, retain(required_namespace_sym->str),
-                      retain(required_env));
+    state->namespaces = alist_prepend(
+        state->namespaces, retain(required_namespace_sym->str), required_env);
   }
+
+  // Add the required namespace to deps as a ns str mapped to its env.
   current_namespace->deps =
       alist_prepend(current_namespace->deps,
                     retain(required_namespace_sym->str), retain(required_env));
 
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */
+
+  // Add the required namespace to deps as a alternative ns str mapped to the
+  // same env.
   if (as) {
     /* printf("AS: %s\n", as); */
     current_namespace->deps = alist_prepend(current_namespace->deps, retain(as),
@@ -290,9 +309,12 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   /* Lenv* env1 = (Lenv*)first->cdr; */
   /* printf("%s\n", name1); */
   /* env_print(env1); */
+
+  // Add the referred symbols to the refer env of the current namespace
+  // Env stack should look like this:
+  // builtins <- stdlib <- referals <- current namespace (<- lexical envs)
   if (refer) {
-    Lenv* current_env = get_ns_env(env);
-    Lenv* refer_env = current_env->parent_env;
+    Lenv* refer_env = current_namespace->refs;
     Cell* head = refer->head;
     while (head) {
       Lval* lval_sym = head->car;

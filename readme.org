@@ -171,10 +171,10 @@ For binaryen clone the repo, edit CMakeLists.txt (see note below) and do
 
 Then:
 
-** Build executable and run interpreter on lispy/run.lispy
+** Build executable and run interpreter on clj/run.clj
 make clean
 make run
-** Build executable and compile lispy/compile.lispy
+** Build executable and compile clj/compile.clj
 make clean
 make compile
 ** Build wasm runtime (compiles lispy interpreter to wasm):
@@ -183,11 +183,11 @@ PLATFORM=wasm make runtime
 
 Alternatively:
 
-    out/lispy -r lispy/run.lispy
+    out/lispy -r clj/run.clj
 
 or
 
-    out/lispy -c lispy/compile.lispy
+    out/lispy -c clj/compile.clj
 
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 

@@ -1,3 +1,5 @@
+(in-ns 'wajure.core)
+
 (def defmacro (macro [sym params & body]
                      `(def ~sym (macro ~params ~@body))))
 

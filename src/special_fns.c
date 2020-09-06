@@ -9,6 +9,7 @@
 #include "lispy_mempool.h"
 #include "list.h"
 #include "lval.h"
+#include "misc_fns.h"
 #include "print.h"
 
 Lval* eval_quote(Lenv* env, Lval* arg_list) {
@@ -21,10 +22,11 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
-  debug("\n++++++++++++in eval_def\n");
   ITER_NEW_N("def", 2);
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
   Lval* lval_sym = arg;
+  /* printf("\n++++++++++++in eval_def\n"); */
+  lval_println(lval_sym);
   ITER_NEXT;
   Lval* lval = arg;
   ITER_END;
@@ -46,6 +48,17 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     }
     retain(lval_sym);
   }
+
+  scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
+  // TODO: deal with lval_err
+  Namespace* current_namespace = (Namespace*)lval_current_ns->head;
+  if (current_namespace) {
+    /* printf("current_namespace: %s\n", current_namespace->namespace); */
+    /* printf("adding it to: "); */
+    /* lval_println(lval); */
+    lval->namespace = retain(current_namespace->namespace);
+  }
+
   lenv_put(get_ns_env(env), lval_sym, lval);
   return make_lval_nil();
 }

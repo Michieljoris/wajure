@@ -81,6 +81,7 @@ void destroy_lval(void* data) {
   /*   ddebug("destroying lval:%li (%s):", (long int)lval, */
   /*          lval_type_to_name(lval)); */
   /* if (debug) lval_debugln(lval); */
+  release(lval->namespace);
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->str);
@@ -131,6 +132,7 @@ void destroy_lval(void* data) {
     case LVAL_COMPILER:
       break;
     case LVAL_NAMESPACE:
+      printf("releasing NAMESPACE\n");
       release(lval->head);
       /* TODO: Destroy namespace */
       break;

@@ -225,7 +225,7 @@ CResult quit(Wasm* wasm, char* fmt, ...) {
 }
 
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
-  /* printf("-- ADD TO SYMBOL TABLE\n"); */
+  printf("-- ADD TO SYMBOL TABLE\n");
   char* type_str = lval_type_to_name(lval);
   int ptr_len = 10;
   int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;

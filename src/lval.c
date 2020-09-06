@@ -5,6 +5,7 @@
 #include "cell.h"
 
 /* #include "hash.h" */
+#include "env.h"
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
@@ -91,8 +92,12 @@ Lval* make_lval_keyword(char* s) {
 
 Lval* make_lval_namespace(char* s) {
   Lval* lval = lalloc_type(LVAL);
+  // TODO: replace with NAMESPACE mempool type
   Namespace* namespace = lalloc_size(sizeof(Namespace));
-  namespace->namespace = retain(s);
+  namespace->namespace =
+      retain(s);  // TODO: not released, neither is the namespace Map below
+  // Need to make mempool type for namespace so we can release recursively
+  namespace->refs = lenv_new();
   *lval =
       (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Map) namespace};
   lval->hash = lval_hash(lval);
@@ -297,6 +302,8 @@ char* lval_type_to_name(Lval* lval) {
         case MACRO:
           return "Macro";
       }
+    case LVAL_NAMESPACE:
+      return "Namespace";
     case LVAL_ERR:
       return "Error";
     default:
