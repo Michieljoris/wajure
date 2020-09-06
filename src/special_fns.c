@@ -34,7 +34,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   if (lval->type == LVAL_ERR) return lval;
 
   if (lenv_is_bound(get_ns_env(env), lval_sym)) {
-    char* namespace = get_current_namespace_str(env);
+    char* namespace = get_namespace_str_for_env(env);
     warn(
         "WARNING: %s already refers to: #'%s/%s in namespace: user, "
         "being replaced by: #'%s/%s\n",
@@ -44,7 +44,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
       warn(
           "WARNING: %s already refers to: #'root-env/%s in namespace: root, "
           "being replaced by: #'%s/%s\n",
-          lval_sym->str, lval_sym->str, get_current_namespace_str(env),
+          lval_sym->str, lval_sym->str, get_namespace_str_for_env(env),
           lval_sym->str);
     }
     retain(lval_sym);

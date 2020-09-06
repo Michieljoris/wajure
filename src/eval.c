@@ -146,64 +146,6 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
-char* get_namespace_part(Lval* lval_sym) {
-  char* str = lval_sym->str;
-  char* pos = _strchr(str, '/');
-
-  if (pos) {
-    int namespace_len = pos - str;
-    char* namespace = lalloc_size(namespace_len + 1);
-    _strncpy(namespace, str, namespace_len);
-    namespace[namespace_len] = '\0';
-    return namespace;
-  }
-  return NULL;
-}
-
-char* get_name(Lval* lval_sym) {
-  char* str = lval_sym->str;
-  char* pos = _strchr(str, '/');
-  if (pos) {
-    pos++;
-    int name_len = _strlen(str) - (pos - str);
-    char* name = lalloc_size(name_len + 1);
-    _strcpy(name, pos);
-    return name;
-  }
-  return retain(lval_sym->str);
-}
-
-Lenv* get_env_for_namespaced_symbol(Lenv* env, Lval* lval_symbol,
-                                    char* namespace_or_alias) {
-  Namespace* current_namespace = get_current_namespace(env);
-  if (!current_namespace) {
-    printf(
-        "Expecting *ns* to be defined (call in-ns) before using any "
-        "namespaced symbols");
-    return NULL;
-  }
-  char* namespace_str =
-      alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
-  Lenv* some_env = alist_get(state->namespaces, is_eq_str, namespace_str);
-  if (!some_env) {
-    printf("Can't find namespace for symbol %s", lval_symbol->str);
-    return NULL;
-  }
-  return some_env;
-}
-
-Lenv* get_env_for_referred_symbol(Lenv* env, Lval* lval_symbol) {
-  // Do we have *ns* defined?
-  Namespace* current_namespace = get_current_namespace(env);
-  if (!current_namespace) return NULL;
-  // Is symbol referred in another namespace?
-  char* namespace_str =
-      alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
-
-  if (!namespace_str) return NULL;
-  return alist_get(state->namespaces, is_eq_str, namespace_str);
-}
-
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
@@ -213,7 +155,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
     if (!some_env)
       return make_lval_err("Can't find env to resolve %s", lval_symbol->str);
 
-    scoped char* name = get_name(lval_symbol);
+    scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
     lval_resolved_sym = lenv_get(some_env, lval_name);
   } else {

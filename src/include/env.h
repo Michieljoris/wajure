@@ -21,6 +21,11 @@ Lenv* get_root_env(Lenv* env);
 Lenv* get_ns_env(Lenv* env);
 
 int is_ns_env(Lenv* env);
-Namespace* get_current_namespace(Lenv* env);
-char* get_current_namespace_str(Lenv* env);
+Namespace* get_namespace_for_env(Lenv* env);
+char* get_namespace_str_for_env(Lenv* env);
+
+Lenv* get_env_for_namespaced_symbol(Lenv* env, Lval* lval_symbol,
+                                    char* namespace_or_alias);
+
+Lenv* get_env_for_referred_symbol(Lenv* env, Lval* lval_symbol);
 #endif  // __ENV_H_

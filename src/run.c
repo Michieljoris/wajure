@@ -12,20 +12,25 @@
 #include "repl.h"
 #include "state.h"
 
-/* void run(int argc, char** argv) { */
-void run(char* config_file_name) {
-  state = malloc(sizeof(State));
-  config = malloc(sizeof(Config));
-  config->src = "clj";
-  config->main = "run";
+char* ns_to_file_name(char* ns_str) {
+  char* file_name = lalloc_size(_strlen(config->src) + _strlen(ns_str) +
+                                _strlen("/.clj") + 1);
+  file_name = _strcpy(file_name, config->src);
+  file_name = _strcat(file_name, "/");
+  file_name = _strcat(file_name, config->main);
+  file_name = _strcat(file_name, ".clj");
+  return file_name;
+}
 
+/* void run(int argc, char** argv) { */
+void run() {
   set_log_level(LOG_LEVEL_INFO);
 
   // Add builtins to root  env
   Lenv* root_env = lenv_new();
   lenv_add_builtin_fns(root_env);
 
-  Lenv* stdlib_env = require_file(root_env, "clj/wajure/core.clj");
+  Lenv* stdlib_env = require_file(root_env, config->stdlib);
   /* Lenv* stdlib_env = lenv_new(); */
   stdlib_env->parent_env = retain(root_env);
   /* stdlib_env->is_ns_env = 1; */
@@ -51,14 +56,9 @@ void run(char* config_file_name) {
 
   // Read in list of (string) arguments from commandline
 
-  char* file_name = lalloc_size(_strlen(config->src) + _strlen(config->main) +
-                                _strlen("/.clj") + 1);
-  file_name = _strcpy(file_name, config->src);
-  file_name = _strcat(file_name, "/");
-  file_name = _strcat(file_name, config->main);
-  file_name = _strcat(file_name, ".clj");
   set_log_level(LOG_LEVEL_INFO);
   // For now we only understand args to be a list of file names to be read in
+  char* file_name = ns_to_file_name(config->main);
   info("Loading %s\n", file_name);
   Lval* result = load(ns_env, file_name);
   release(file_name);
@@ -115,9 +115,7 @@ void run(char* config_file_name) {
   /* set_log_level(LOG_LEVEL_INFO); */
   // TODO:
   release(state->namespaces);
-  free(state);
   release(root_env);
   print_mempool_counts();
   printf(" after releasing root_env\n");
-  free(config);
 }

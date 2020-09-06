@@ -14,6 +14,7 @@
 #include "nargs.h"
 #include "printf.h"
 #include "run.h"
+#include "state.h"
 #include "test.h"
 
 /* 31 ^ (n + 1) + 31 ^ n* a_n + 31 ^ (n - 1) * a_n - 1 + … + 31 * a1 + a0 */
@@ -23,70 +24,86 @@
 /* return result; */
 /* } */
 
-int main(int argc, char **argv) {
+void make_config(int argc, char** argv) {
+  config->src = "clj";
+  config->main = "run";
+  config->stdlib = "clj/wajure/core.clj";
+  config->do_compile = 0;
+  if (_strcmp(argv[1], "-c") == 0) {
+    config->do_compile = 1;
+    config->main = "compile";
+  }
+}
+
+int main(int argc, char** argv) {
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(800, 800, 800);
-  int do_compile = 0;
-  if (_strcmp(argv[1], "-c") == 0) {
-    do_compile = 1;
-  }
+  config = malloc(sizeof(Config));
+  make_config(argc, argv);
+  state = malloc(sizeof(State));
+
   for (int i = 2; i < argc; ++i) {
-    if (do_compile) {
+    if (config->do_compile) {
       printf("COMPILING!!!\n");
-      compile(argv[i]);
+      char* file_name = ns_to_file_name(config->main);
+      compile(file_name);
+      release(file_name);
     } else {
       printf("INTERPRETING!!!\n");
-      run(argv[i]);
+      run();
     }
   }
   /* make_bmodule(); */
   printf("Back in main\n");
+  free(state);
+  free(config);
   free_lispy_mempools();
   free_malloc();
   printf("Exiting program\n");
 
-  /* test_types(); */
-  /* test_features(); */
-  /* test_core(); */
-  /* test_unreachable(); */
-  /* test_relooper(); */
-  /* test_binaries(); */
-  /* test_interpret(); */
-  /* test_nonvalid(); */
-  /* test_color_status(); */
-  /* test_for_each(); */
-
-  /* printf("%d\n", sizeof(int)); */
-  /* printf("%d\n", vhash(1, 2)); */
-  /* printf("%d\n", vhash(2, 1)); */
-  /* printf("%d\n", vhash(2, 2)); */
-  /* printf("%b\n", murmur3_int(1, 123)); */
-  /* printf("%b\n", murmur3_int(2, 123)); */
-  /* printf("%b\n", murmur3_int(3, 123)); */
-  /* printf("M: %u\n", murmur3_str("foo", 3, 123)); */
-  /* printf("pow: %x\n", power(3, 31)); */
-  /* printf("ipow: %x\n", ipow(3, 31)); */
-  /* printf("%u\n", 0xFFFFFFFF); */
-  /* printf("%u\n", 3 * my_pow(2, 31)); */
-  /* printf("%u\n", 1 * my_pow(2, 31)); */
-  /* printf("%d, %u\n", 1, long_hash_munge(1)); */
-  /* printf("%d, %d\n", 31457295, long_hash_munge(-1)); */
-  /* printf("%b\n", long_hash_munge(-2)); */
-  /* printf("%b\n", long_hash_munge(-3)); */
-  /* long a = -3; */
-  /* /\* unsigned long b = (unsigned long)a; *\/ */
-  /* long c = -3; */
-  /* printf("1: %lx\n   %lx\n", a, (unsigned long)a >> 7); */
-  /* printf("2: %lx\n   %lx\n", a, a >> 7 & 0x1FFFFFFFFFFFFFF); */
-  /* /\* printf("%lx\n %lx\n", a, logical_rshift(a, 7)); *\/ */
-  /* printf("%b, %d\n", 4 / 4, sizeof(long)); */
-  /* free_malloc(); */
-  /* signed int x1 = 5; */
-  /* printf("%d = %d\n", (x1 >> 1), 2); */
-  /* signed int x2 = -5; */
-  /* printf("%d = %d\n", (x2 >> 1), -3); */
-  /* unsigned int x3 = (unsigned int)-5; */
-  /* printf("%x = %x\n", (x3 >> 1), 0x7FFFFFFD); */
-  /* assert((x3 >> 1) == ); */
   return 0;
 }
+
+/* test_types(); */
+/* test_features(); */
+/* test_core(); */
+/* test_unreachable(); */
+/* test_relooper(); */
+/* test_binaries(); */
+/* test_interpret(); */
+/* test_nonvalid(); */
+/* test_color_status(); */
+/* test_for_each(); */
+
+/* printf("%d\n", sizeof(int)); */
+/* printf("%d\n", vhash(1, 2)); */
+/* printf("%d\n", vhash(2, 1)); */
+/* printf("%d\n", vhash(2, 2)); */
+/* printf("%b\n", murmur3_int(1, 123)); */
+/* printf("%b\n", murmur3_int(2, 123)); */
+/* printf("%b\n", murmur3_int(3, 123)); */
+/* printf("M: %u\n", murmur3_str("foo", 3, 123)); */
+/* printf("pow: %x\n", power(3, 31)); */
+/* printf("ipow: %x\n", ipow(3, 31)); */
+/* printf("%u\n", 0xFFFFFFFF); */
+/* printf("%u\n", 3 * my_pow(2, 31)); */
+/* printf("%u\n", 1 * my_pow(2, 31)); */
+/* printf("%d, %u\n", 1, long_hash_munge(1)); */
+/* printf("%d, %d\n", 31457295, long_hash_munge(-1)); */
+/* printf("%b\n", long_hash_munge(-2)); */
+/* printf("%b\n", long_hash_munge(-3)); */
+/* long a = -3; */
+/* /\* unsigned long b = (unsigned long)a; *\/ */
+/* long c = -3; */
+/* printf("1: %lx\n   %lx\n", a, (unsigned long)a >> 7); */
+/* printf("2: %lx\n   %lx\n", a, a >> 7 & 0x1FFFFFFFFFFFFFF); */
+/* /\* printf("%lx\n %lx\n", a, logical_rshift(a, 7)); *\/ */
+/* printf("%b, %d\n", 4 / 4, sizeof(long)); */
+/* free_malloc(); */
+/* signed int x1 = 5; */
+/* printf("%d = %d\n", (x1 >> 1), 2); */
+/* signed int x2 = -5; */
+/* printf("%d = %d\n", (x2 >> 1), -3); */
+/* unsigned int x3 = (unsigned int)-5; */
+/* printf("%x = %x\n", (x3 >> 1), 0x7FFFFFFD); */
+/* assert((x3 >> 1) == ); */

@@ -1,20 +1,31 @@
 * TODO compiler
 ** compile the beginning of a test suite
 ** namespaces
+** add repl and watch options to config
+in repl you can (re)compile namespaces. Also, it can watch directory and if any
+clj source file gets modified, recompile. Because it's a live env we can expand
+macros at compile time if needed, not sure how yet. But we do need a live env
+for that be possible when macros use referred values and fns from required
+namespaces when expanded. 
+
+You should also be able to switch namespace.
+** review closures in the context of namespaces
+especially:
+Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
 ** DONE fix if
 throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
 
 ** ----------------
-** Release *ns*
+** DONE Release *ns*
  This is a lval_namespace. lval_namespace->head points to a Namespace struct. We
- need to add a mempool type NAMESPACE and a destroy method for it, so we can release namespace->namespace and namespace->required.
+ need to add a mempool type NAMESPACE and a destroy method for it, so we can release namespace->namespace and namespace->as/refer
 ** fix recursive calls
     Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
     (foo)) will not work since foo is not yet defined when we add the foo fn to
     the env.
 ** fix freeing of fn_name ("anon")
-** record offset of compiler values that have been interred, so we can reuse them and export them
+** DONE record offset of compiler values that have been interred, so we can reuse them and export them
 ** add release and retain to wasm code
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
@@ -36,7 +47,7 @@ Then call wasm implementation of apply* that receives a list and puts them on wa
 ** ----------------------------
 ** DONE "too few args to ..." etc gets added every time to data!!!!
 So break string into two, and inter strings only once, and do two prints
-** dynamic namespaces, or rather a repl into compiled code.
+** ? dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer
 to them statically. Alternatively we could store them in a namespace env and
 refer to them dynamically. This way we could have a 'image' that we can modify
@@ -206,7 +217,7 @@ where sp points at the |'s and we extract the args from the stack frame just
 before the sp.
 
 This is so that we can easily add partial args on top (as found in a lval_wasm_lambda)
-** rename wajure to wajure ??
+** rename lispy to wajure ??
 ** To create/update compile_commmands.json:
 
     make clean

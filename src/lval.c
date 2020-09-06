@@ -222,6 +222,17 @@ Lval* make_lval_exception(char* msg) {
   return lval;
 }
 
+// Compiler type
+Lval* make_lval_external(char* namespace, char* name) {
+  Lval* lval = lalloc_type(LVAL);
+  char* fqn = lalloc_size(sizeof(namespace) + sizeof(name) + 2);
+  fqn = _strcpy(fqn, namespace);
+  fqn = _strcat(fqn, "/");
+  fqn = _strcat(fqn, name);
+  *lval = (Lval){.type = LVAL_EXTERNAL, .subtype = -1, .str = fqn};
+  return lval;
+}
+
 char* lval_type_constant_to_name(int t) {
   switch (t) {
     case LVAL_LITERAL:
@@ -306,4 +317,31 @@ char* lval_type_to_name(Lval* lval) {
     default:
       return "Unknown";
   }
+}
+
+char* get_namespace_part(Lval* lval_sym) {
+  char* str = lval_sym->str;
+  char* pos = _strchr(str, '/');
+
+  if (pos) {
+    int namespace_len = pos - str;
+    char* namespace = lalloc_size(namespace_len + 1);
+    _strncpy(namespace, str, namespace_len);
+    namespace[namespace_len] = '\0';
+    return namespace;
+  }
+  return NULL;
+}
+
+char* get_name_part(Lval* lval_sym) {
+  char* str = lval_sym->str;
+  char* pos = _strchr(str, '/');
+  if (pos) {
+    pos++;
+    int name_len = _strlen(str) - (pos - str);
+    char* name = lalloc_size(name_len + 1);
+    _strcpy(name, pos);
+    return name;
+  }
+  return retain(lval_sym->str);
 }

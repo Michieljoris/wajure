@@ -122,7 +122,8 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
 }
 
 // A lval_compiler is a value that we don't know at compile time, but that we
-// can retrieve at runtime. So we insert this code in place of the symbol.
+// can retrieve at runtime. So we insert the code to do this in place of the
+// symbol.
 CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
                               Lval* lval_compiler) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
@@ -672,11 +673,53 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
   return cnull();
 }
 
+void add_deps(Wasm* wasm, char* namespace_str, char* name) {}
+
+Lval* resolve_symbol(Wasm* wasm, Lval* lval_symbol) {
+  Lval* lval_resolved_sym;
+  scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
+  if (namespace_or_alias) {
+    Lenv* some_env = get_env_for_namespaced_symbol(wasm->env, lval_symbol,
+                                                   namespace_or_alias);
+    if (!some_env) quit(wasm, "Can't find env to resolve %s", lval_symbol->str);
+    char* namespace_str = get_namespace_str_for_env(some_env);
+    scoped char* name = get_name_part(lval_symbol);
+
+    lval_resolved_sym = make_lval_external(namespace_str, name);
+    add_deps(wasm, retain(namespace_str), retain(name));
+
+    //????
+    /* scoped Lval* lval_name = make_lval_sym(name); */
+    /* lval_resolved_sym = lenv_get(some_env, lval_name); */
+  } else {
+    lval_resolved_sym = lenv_get(wasm->env, lval_symbol);
+    // Symbol might be a refer
+    if (lval_resolved_sym->type == LVAL_ERR) {
+      Lenv* some_env = get_env_for_referred_symbol(wasm->env, lval_symbol);
+      if (!some_env) return lval_resolved_sym;
+
+      char* namespace_str = get_namespace_str_for_env(some_env);
+      scoped char* name = get_name_part(lval_symbol);
+
+      /* scoped Lval* lval_name = make_lval_sym(name); */
+      /* lval_resolved_sym = lenv_get(some_env, lval_name); */
+      lval_resolved_sym = make_lval_external(namespace_str, name);
+      add_deps(wasm, retain(namespace_str), retain(name));
+
+      //????
+      // Can the symbol be resolved in that other namespace?
+      /* lval_resolved_sym = lenv_get(some_env, lval_symbol); */
+    }
+  }
+
+  return lval_resolved_sym;
+}
+
 CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
                               Lval* lval_compiler);
 
-// A non empty list is taken to be a fn call. We do our best to resolve the expr
-// in the list as a fn call, and pass the rest of the list as args.
+// A non empty list is taken to be a fn call. We do our best to resolve the
+// expr in the list as a fn call, and pass the rest of the list as args.
 CResult compile_list(Wasm* wasm, Lval* lval_list) {
   /* BinaryenModuleRef module = wasm->module; */
   CONTEXT_LVAL("compile_list", lval_list);
@@ -695,7 +738,7 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
     /* printf("resolving symbol %s\n", lval_first->str); */
     // Let's see if the symbol refers to something we know how to compile
     // already
-    Lval* resolved_symbol = lenv_get(wasm->env, lval_first);
+    Lval* resolved_symbol = resolve_symbol(wasm, lval_first);
     // If it's a symbol it has to be known in our compiler env!!!
     if (resolved_symbol->type == LVAL_ERR) {
       lval_println(lval_list);
@@ -786,9 +829,9 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
     case LVAL_SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
       // no notion of environments or symbols that resolve to other lvalues.
-      // Symbols at runtime are just that, a literal similar to strings, numbers
-      // etc.
-      Lval* lval_resolved_sym = lenv_get(wasm->env, lval);
+      // Symbols at runtime are just that, a literal similar to strings,
+      // numbers etc.
+      Lval* lval_resolved_sym = resolve_symbol(wasm, lval);
       /* lval_println(lval_resolved_sym); */
       switch (lval_resolved_sym->type) {
         case LVAL_ERR:
@@ -810,12 +853,12 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
                * lval_resolved_sym); */
               /* case SPECIAL: */
               /*   return quit( */
-              /*       wasm, "ERROR: Can't take value of a special form such as
-               * %s", */
+              /*       wasm, "ERROR: Can't take value of a special form such
+               * as %s", */
               /*       lval_resolved_sym->str); */
               /* case MACRO: */
-              /*   return quit(wasm, "ERROR: Can't take value of a macro such as
-               * %s", */
+              /*   return quit(wasm, "ERROR: Can't take value of a macro such
+               * as %s", */
               /*               lval_resolved_sym->str); */
               /* default:; */
               /*   return quit(wasm, */
@@ -937,10 +980,9 @@ int compile(char* file_name) {
 
 /* void add_global_section(BinaryenModuleRef module) { */
 /*   BinaryenAddGlobalImport(module, "data_end", "env", "data_end", */
-/*                           BinaryenTypeInt32(), 0); */ /*   BinaryenAddGlobal(module,
-                             "a-global",
-                             BinaryenTypeInt32(),
-                             0, */
+/*                           BinaryenTypeInt32(), 0); */ /*   BinaryenAddGlobal(module,"a-global",
+                               BinaryenTypeInt32(),
+                               0, */
 /*                     make_int32(module, 7)); */
 
 /*   BinaryenAddGlobal(module, "a-mutable-global", BinaryenTypeFloat32(), 1,
@@ -1221,7 +1263,8 @@ int compile(char* file_name) {
 /*   switch (lval_resolved_sym->type) { */
 /*     case LVAL_ERR: */
 /*       return quit(wasm, lval_resolved_sym->str); */
-/*     case LVAL_COMPILER:  // symbol has been added to env while compiling, so
+/*     case LVAL_COMPILER:  // symbol has been added to env while compiling,
+ * so
  */
 /*       // it's a closure var, param or local (let) var */
 /*       return compile_lval_compiler(wasm, lval_sym, lval_resolved_sym); */
@@ -1234,11 +1277,13 @@ int compile(char* file_name) {
  * lval_resolved_sym); */
 /*         case SPECIAL: */
 /*           return quit(wasm, */
-/*                       "ERROR: Can't take value of a special form such as %s",
+/*                       "ERROR: Can't take value of a special form such as
+ * %s",
  */
 /*                       lval_resolved_sym->str); */
 /*         case MACRO: */
-/*           return quit(wasm, "ERROR: Can't take value of a macro such as %s",
+/*           return quit(wasm, "ERROR: Can't take value of a macro such as
+ * %s",
  */
 /*                       lval_resolved_sym->str); */
 /*         default:; */

@@ -198,7 +198,7 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   Lval* required_namespace_sym = NULL;
   char* as = NULL;
   Lval* refer = NULL;
-  Namespace* current_namespace = get_current_namespace(env);
+  Namespace* current_namespace = get_namespace_for_env(env);
   if (!current_namespace)
     return make_lval_err(
         "Expecting *ns* to be defined (call in-ns) before require is "

@@ -2,9 +2,11 @@
 #define __LTYPES_H_
 
 typedef struct {
-  char* src;   // root dir of src files
-  char* main;  // filename of file containing main fn
-  char* out;   // dir of compiled wasm files
+  char* src;     // root dir of src files
+  char* main;    // filename of file containing main fn
+  char* out;     // dir of compiled wasm files
+  char* stdlib;  // location of stdlib
+  int do_compile;
 } Config;
 
 typedef struct cell Cell;
@@ -170,12 +172,12 @@ enum {
 
   // compiler types
   LVAL_COMPILER,
+  LVAL_EXTERNAL,  // a required symbol
   // local ref subtypes
   PARAM,
   LOCAL,
 
   // lispy runtime lval fn type
-  // TODO: we can just use the LAMBDA constant
   LVAL_WASM_LAMBDA
 };
 

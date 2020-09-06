@@ -7,6 +7,7 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
+#include "state.h"
 
 Lenv* lenv_new(void) {
   Lenv* env = lalloc_type(LENV);
@@ -94,15 +95,46 @@ Lval* get_lval_ns(Lenv* env) {
   return lval_current_ns;
 }
 
-Namespace* get_current_namespace(Lenv* env) {
+Namespace* get_namespace_for_env(Lenv* env) {
   scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
   if (lval_current_ns->type == LVAL_ERR) return NULL;
   return (Namespace*)lval_current_ns->head;
 }
 
-char* get_current_namespace_str(Lenv* env) {
-  Namespace* ns = get_current_namespace(env);
+char* get_namespace_str_for_env(Lenv* env) {
+  Namespace* ns = get_namespace_for_env(env);
   return ns ? ns->namespace : "anon";
+}
+
+Lenv* get_env_for_namespaced_symbol(Lenv* env, Lval* lval_symbol,
+                                    char* namespace_or_alias) {
+  Namespace* current_namespace = get_namespace_for_env(env);
+  if (!current_namespace) {
+    printf(
+        "Expecting *ns* to be defined (call in-ns) before using any "
+        "namespaced symbols");
+    return NULL;
+  }
+  char* namespace_str =
+      alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
+  Lenv* some_env = alist_get(state->namespaces, is_eq_str, namespace_str);
+  if (!some_env) {
+    printf("Can't find namespace for symbol %s", lval_symbol->str);
+    return NULL;
+  }
+  return some_env;
+}
+
+Lenv* get_env_for_referred_symbol(Lenv* env, Lval* lval_symbol) {
+  // Do we have *ns* defined?
+  Namespace* current_namespace = get_namespace_for_env(env);
+  if (!current_namespace) return NULL;
+  // Is symbol referred in another namespace?
+  char* namespace_str =
+      alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
+
+  if (!namespace_str) return NULL;
+  return alist_get(state->namespaces, is_eq_str, namespace_str);
 }
 
 #endif  // WASM
