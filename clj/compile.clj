@@ -14,9 +14,10 @@
   ;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
   ;; (print 123 456 999 "foo")
   ;; (print 12345 a (foo))
-  )
+  )  
 ;; (compile "lispy/test_compile.lispy")
 
+(
 ;; (def plus +)
 ;; (def mylet (if true let))
 ;; (defmacro my-macro2 [x] `(plus 1 ~x))

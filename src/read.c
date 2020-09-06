@@ -229,7 +229,7 @@ Lval* lval_read(char* s, int* i);
 
 void skip_ignored_chars(char* s, int* i) {
   /* Skip all trailing whitespace and comments */
-  while (_strchr(" \t\v\r\n;", s[*i]) && s[*i] != '\0') {
+  while (_strchr(" \t\v\r\n;,", s[*i]) && s[*i] != '\0') {
     if (s[*i] == ';') {
       while (s[*i] != '\n' && s[*i] != '\0') {
         (*i)++;
@@ -239,11 +239,14 @@ void skip_ignored_chars(char* s, int* i) {
   }
 }
 
-Lval* get_next_expr(char* s, int* i, char end) {
+Lval* read_expr(char* s, int* i, char end) {
   Lval* next_expr = NULL;
   if (s[*i] != end) {
     skip_ignored_chars(s, i);
-    if (s[*i] == '\0') return NULL;
+    if (s[*i] == '\0') {
+      if (end != '\0') return make_lval_err("Unexpected end of input");
+      return NULL;
+    }
     next_expr = lval_read(s, i);
     skip_ignored_chars(s, i);
   }
@@ -254,7 +257,7 @@ Lval* lval_err = NULL;
 
 Cell* read_cell(char* s, int* i, char end) {
   Cell* cons = NULL;
-  Lval* expr = get_next_expr(s, i, end);
+  Lval* expr = read_expr(s, i, end);
   if (!expr) return NULL;
   /* If an error then return this and stop */
   if (expr->type == LVAL_ERR) {
@@ -340,7 +343,7 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   };
   char* lsym = lalloc_size(_strlen(lispy_fn));
   _strcpy(lsym, lispy_fn);
-  Lval* next_expression = lval_read(s, i);
+  Lval* next_expression = read_expr(s, i, '\0');
   if (!next_expression)
     return make_lval_err("The reader macro \"%s\" has nothing to (un)quote.",
                          reader_token);
@@ -378,8 +381,8 @@ Lval* lval_read(char* s, int* i) {
     x = lval_read_sym(s, i);
   } else
     switch (next_char) {
-      case '\0':
-        return make_lval_err("Unexpected end of input");
+      /* case '\0': */
+      /*   return make_lval_err("Unexpected end of input"); */
       case '(':
         (*i)++;
         x = lval_read_list(s, i, ')');

@@ -109,26 +109,47 @@ char* read_file(char* file_name) { return NULL; }
 
 #endif
 
-Lval* read_string(Lenv* env, char* str) {
-  int pos = 0;
-  scoped Lval* lval_list = lval_read_list(str, &pos, '\0');
-  if (lval_list->type == LVAL_ERR) return retain(lval_list);
-  return do_list(env, lval_list, RETURN_ON_ERROR);
-}
+/* Lval* read_string(Lenv* env, char* str) { */
+/*   int pos = 0; */
+/*   scoped Lval* lval_list = lval_read_list(str, &pos, '\0'); */
+/*   if (lval_list->type == LVAL_ERR) return retain(lval_list); */
+/*   return do_list(env, lval_list, RETURN_ON_ERROR); */
+/* } */
 
 Lval* read_string_fn(Lenv* env, Lval* arg_list) {
-  // TODO: The clojure read-string reads only the first expression, and doesn't
-  // eval it
   ITER_NEW_N("read-string", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-  return read_string(env, arg->str);
+  int pos = 0;
+  return read_expr(arg->str, &pos, '\0');
+  /* return read_string(env, arg->str, &pos); */
 }
 
 Lval* load(Lenv* env, char* file_name) {
 #ifndef WASM
   char* str = read_file(file_name);
   if (!str) return make_lval_err("Could not load file %s", file_name);
-  Lval* result = read_string(env, str);
+  int pos = 0;
+  Lval* lval = NULL;
+  Lval* result = NULL;
+  printf("loading %s\n", file_name);
+  do {
+    lval = read_expr(str, &pos, '\0');
+    if (!lval) break;
+    release(result);
+    if (lval->type == LVAL_ERR) {
+      lval_println(lval);
+      result = retain(lval);
+    } else {
+      result = lval_eval(env, lval);
+      if (result->type == LVAL_ERR) {
+        printf("Encountered error while evalling expression: \n");
+        lval_println(lval);
+        lval_println(result);
+      }
+    }
+    release(lval);
+  } while (1);
+
   printf("Loaded: %s \n", file_name);
   free(str);
   return result;
@@ -157,6 +178,9 @@ Lval* in_ns_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1)
   Lval* lval_symbol = arg;
   ITER_END
+  /* Lenv* some_env = alist_get(state->namespaces, is_eq_str, lval_symbol->str);
+   */
+
   scoped char* str = lalloc_size(5);
   _strcpy(str, "*ns*");
   Lval* lval_ns = make_lval_sym(str);
