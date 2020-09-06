@@ -10,6 +10,7 @@ enum {
   LENV,
   CELL,
   ITER,
+  NAMESPACE,
   INTERNAL,
   CHAR8,
   CHAR16,

@@ -93,13 +93,10 @@ Lval* make_lval_keyword(char* s) {
 Lval* make_lval_namespace(char* s) {
   Lval* lval = lalloc_type(LVAL);
   // TODO: replace with NAMESPACE mempool type
-  Namespace* namespace = lalloc_size(sizeof(Namespace));
-  namespace->namespace =
-      retain(s);  // TODO: not released, neither is the namespace Map below
-  // Need to make mempool type for namespace so we can release recursively
-  namespace->refs = lenv_new();
+  Namespace* namespace = lalloc_type(NAMESPACE);
+  namespace->namespace = retain(s);
   *lval =
-      (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Map) namespace};
+      (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)namespace};
   lval->hash = lval_hash(lval);
   return lval;
 }

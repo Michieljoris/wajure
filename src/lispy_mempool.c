@@ -29,6 +29,7 @@ MEMPOOL_LOG(lval, LVAL);
 MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
 MEMPOOL_LOG(iter, ITER);
+MEMPOOL_LOG(namespace, NAMESPACE);
 MEMPOOL_LOG(internal, INTERNAL);
 MEMPOOL_LOG(char512, CHAR512);
 MEMPOOL_LOG(char256, CHAR256);
@@ -44,6 +45,7 @@ MEMPOOL_LOG(char8, CHAR8);
                      MEMPOOL_AUTO_RESIZE, type##_mempool_log);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
+  int namespace_count = 10;
   int internal_count = 1;  // just for the mempool log
   int char512_count = 10;
   int char256_count = 10;
@@ -64,6 +66,8 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   MEMPOOL(LENV, sizeof(Lenv), lenv)
   MEMPOOL(CELL, sizeof(Cell), cell)
   MEMPOOL(ITER, sizeof(Cell), cell)
+  // TODO wasm: we don't need Namespace either
+  MEMPOOL(NAMESPACE, sizeof(Namespace), namespace)
   MEMPOOL(INTERNAL, 512, internal)
   MEMPOOL(CHAR512, 512, char512)
   MEMPOOL(CHAR256, 256, char256)
@@ -159,11 +163,17 @@ void destroy_iter(void* cell) {
   release(((Cell*)cell)->cdr);
 }
 
+void destroy_namespace(void* namespace) {
+  release(((Namespace*)namespace)->namespace);
+  release(((Namespace*)namespace)->as);
+  release(((Namespace*)namespace)->refer);
+}
+
 // The order and number of these types needs to match with the enum in
 // lispy_mempool.h!
-char* slot_type_str[] = {"LVAL", "LENV", "CELL", "ITER"};
-Destructor destructors[SLOT_TYPE_COUNT] = {destroy_lval, destroy_lenv,
-                                           destroy_cell, destroy_iter};
+char* slot_type_str[] = {"LVAL", "LENV", "CELL", "ITER", "NAMESPACE"};
+Destructor destructors[SLOT_TYPE_COUNT] = {
+    destroy_lval, destroy_lenv, destroy_cell, destroy_iter, destroy_namespace};
 
 void lispy_mempool_log(int type, char* msg) {
   if (type >= CHAR8) {
@@ -180,12 +190,13 @@ void free_lispy_mempools() {
   free_mempool(mempools[LENV]);
   free_mempool(mempools[CELL]);
   free_mempool(mempools[ITER]);
+  free_mempool(mempools[NAMESPACE]);
   _free(mempools);
 }
 
-char* type_names[] = {"LVAL",     "LENV",    "CELL",    "ITER",
-                      "INTERNAL", "CHAR8",   "CHAR16",  "CHAR32",
-                      "CHAR64",   "CHAR128", "CHAR256", "CHAR512"};
+char* type_names[] = {"LVAL",     "LENV",    "CELL",   "ITER",   "NAMESPACE",
+                      "INTERNAL", "CHAR8",   "CHAR16", "CHAR32", "CHAR64",
+                      "CHAR128",  "CHAR256", "CHAR512"};
 
 char* type_to_name(int type) { return type_names[type]; }
 
@@ -257,6 +268,7 @@ void print_mempool_counts() {
   print_mempool_free(LVAL);
   print_mempool_free(CELL);
   print_mempool_free(ITER);
+  print_mempool_free(NAMESPACE);
   print_mempool_free(INTERNAL);
   print_mempool_free(CHAR512);
   print_mempool_free(CHAR256);

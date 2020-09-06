@@ -124,14 +124,17 @@ struct context {
 
 typedef struct {
   char* namespace;
-  Lenv* refs;
-  Map deps;  //{foo.core: env
-             // foo: env}
+
+  Map as;  // alias -> namespace
+  //{"foo": "foo.core", "foo.core": "foo.core"}
+  Map refer;  // symbol -> namespace
+  //{"bar": "foo.core", "bax": "foo.core"}
 } Namespace;
 
 typedef struct {
   /* {"namespace.name": (Lenv*){*ns*: (Namespace){(Map){foo.core: env, bar.core:
    * env}}}} */
+  // Cache:
   Map namespaces;
 } State;
 

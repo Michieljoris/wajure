@@ -188,18 +188,6 @@ Lenv* require_file(Lenv* env, char* file_name) {
   return ns_env;
 }
 
-Lval* get_lval_ns(Lenv* env) {
-  scoped char* str = lalloc_size(5);
-  _strcpy(str, "*ns*");
-  scoped Lval* lval_current_ns_sym = make_lval_sym(str);
-  Lval* lval_current_ns = lenv_get(env, lval_current_ns_sym);
-  if (lval_current_ns->type == LVAL_ERR)
-    return make_lval_err(
-        "Expecting *ns* to be defined (call in-ns) before require or def is "
-        "called");
-  return lval_current_ns;
-}
-
 // A more limited and restricted version of clojure's require.
 Lval* require_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("require", 1);
@@ -210,10 +198,12 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   Lval* required_namespace_sym = NULL;
   char* as = NULL;
   Lval* refer = NULL;
-  scoped Lval* lval_current_ns = get_lval_ns(env);
-  Namespace* current_namespace = (Namespace*)lval_current_ns->head;
+  Namespace* current_namespace = get_current_namespace(env);
+  if (!current_namespace)
+    return make_lval_err(
+        "Expecting *ns* to be defined (call in-ns) before require is "
+        "called");
 
-  printf("require in current_namespace: %s\n", current_namespace->namespace);
   if (list_count(env->kv) > 1)
     return make_lval_err(
         "Require calls can only to be made before any def calls");
@@ -288,9 +278,14 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   }
 
   // Add the required namespace to deps as a ns str mapped to its env.
-  current_namespace->deps =
-      alist_prepend(current_namespace->deps,
-                    retain(required_namespace_sym->str), retain(required_env));
+  /* current_namespace->deps = */
+  /*     alist_prepend(current_namespace->deps, */
+  /*                   retain(required_namespace_sym->str),
+   * retain(required_env)); */
+
+  current_namespace->as =
+      alist_prepend(current_namespace->as, retain(required_namespace_sym->str),
+                    retain(required_namespace_sym->str));
 
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */
@@ -299,8 +294,8 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
   // same env.
   if (as) {
     /* printf("AS: %s\n", as); */
-    current_namespace->deps = alist_prepend(current_namespace->deps, retain(as),
-                                            retain(required_env));
+    current_namespace->as = alist_prepend(current_namespace->as, retain(as),
+                                          retain(required_namespace_sym->str));
   }
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */
@@ -312,9 +307,8 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
 
   // Add the referred symbols to the refer env of the current namespace
   // Env stack should look like this:
-  // builtins <- stdlib <- referals <- current namespace (<- lexical envs)
+  // builtins <- stdlib <- current namespace (<- lexical envs)
   if (refer) {
-    Lenv* refer_env = current_namespace->refs;
     Cell* head = refer->head;
     while (head) {
       Lval* lval_sym = head->car;
@@ -322,7 +316,11 @@ Lval* require_fn(Lenv* env, Lval* arg_list) {
       if (lval->type == LVAL_ERR) {
         return lval;
       }
-      lenv_put(refer_env, retain(lval_sym), retain(lval));
+      /* printf("REQUIRE: adding %s to current_namespace->refer as %s\n", */
+      /*        lval_sym->str, required_namespace_sym->str); */
+      current_namespace->refer =
+          alist_prepend(current_namespace->refer, retain(lval_sym->str),
+                        retain(required_namespace_sym->str));
       head = head->cdr;
     }
   }

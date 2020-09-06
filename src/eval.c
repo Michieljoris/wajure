@@ -146,7 +146,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
-char* get_namespace(Lval* lval_sym) {
+char* get_namespace_part(Lval* lval_sym) {
   char* str = lval_sym->str;
   char* pos = _strchr(str, '/');
 
@@ -173,28 +173,58 @@ char* get_name(Lval* lval_sym) {
   return retain(lval_sym->str);
 }
 
+Lenv* get_env_for_namespaced_symbol(Lenv* env, Lval* lval_symbol,
+                                    char* namespace_or_alias) {
+  Namespace* current_namespace = get_current_namespace(env);
+  if (!current_namespace) {
+    printf(
+        "Expecting *ns* to be defined (call in-ns) before using any "
+        "namespaced symbols");
+    return NULL;
+  }
+  char* namespace_str =
+      alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
+  Lenv* some_env = alist_get(state->namespaces, is_eq_str, namespace_str);
+  if (!some_env) {
+    printf("Can't find namespace for symbol %s", lval_symbol->str);
+    return NULL;
+  }
+  return some_env;
+}
+
+Lenv* get_env_for_referred_symbol(Lenv* env, Lval* lval_symbol) {
+  // Do we have *ns* defined?
+  Namespace* current_namespace = get_current_namespace(env);
+  if (!current_namespace) return NULL;
+  // Is symbol referred in another namespace?
+  char* namespace_str =
+      alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
+
+  if (!namespace_str) return NULL;
+  return alist_get(state->namespaces, is_eq_str, namespace_str);
+}
+
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
-  scoped char* namespace = get_namespace(lval_symbol);
-  if (namespace) {
-    scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
-    Namespace* current_namespace = (Namespace*)lval_current_ns->head;
-    scoped char* name = get_name(lval_symbol);
-    Lenv* some_env = alist_get(current_namespace->deps, is_eq_str, namespace);
+  scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
+  if (namespace_or_alias) {
+    Lenv* some_env =
+        get_env_for_namespaced_symbol(env, lval_symbol, namespace_or_alias);
     if (!some_env)
-      return make_lval_err("Can't find namespace in symbol %s",
-                           lval_symbol->str);
+      return make_lval_err("Can't find env to resolve %s", lval_symbol->str);
+
+    scoped char* name = get_name(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
     lval_resolved_sym = lenv_get(some_env, lval_name);
   } else {
     lval_resolved_sym = lenv_get(env, lval_symbol);
+    // Symbol might be a refer
     if (lval_resolved_sym->type == LVAL_ERR) {
-      Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
-      if (lval_current_ns->type == LVAL_ERR) {
-        return lval_current_ns;
-      }
-      Namespace* current_namespace = (Namespace*)lval_current_ns->head;
-      lval_resolved_sym = lenv_get(current_namespace->refs, lval_symbol);
+      Lenv* some_env = get_env_for_referred_symbol(env, lval_symbol);
+      if (!some_env) return lval_resolved_sym;
+
+      // Can the symbol be resolved in that other namespace?
+      lval_resolved_sym = lenv_get(some_env, lval_symbol);
     }
   }
 

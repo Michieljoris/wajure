@@ -2,14 +2,16 @@
 (require '[foo.core :as foo])
 ;; (def a 123)
 ;; (def b 123)
-(defn foo [] 1234)
+;; (defn foo [] 1234)
 ;; (def bar (list 1 2 3))
 
 (defn test [x y]
-   
-  (let [f foo
-        p print]
-    (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
+  (print "foo.core/foo = " foo.core/foo)
+  (print "foo/foo = " foo/foo)
+  (print "foo" foo)
+  ;; (let [f foo
+  ;;       p print]
+  ;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
   ;; (print 123 456 999 "foo")
   ;; (print 12345 a (foo))
   )

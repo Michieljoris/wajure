@@ -82,4 +82,27 @@ Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   return next_env;
 }
 
+Lval* get_lval_ns(Lenv* env) {
+  scoped char* str = lalloc_size(5);
+  _strcpy(str, "*ns*");
+  scoped Lval* lval_current_ns_sym = make_lval_sym(str);
+  Lval* lval_current_ns = lenv_get(env, lval_current_ns_sym);
+  if (lval_current_ns->type == LVAL_ERR)
+    return make_lval_err(
+        "Expecting *ns* to be defined (call in-ns) before require or def is "
+        "called");
+  return lval_current_ns;
+}
+
+Namespace* get_current_namespace(Lenv* env) {
+  scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
+  if (lval_current_ns->type == LVAL_ERR) return NULL;
+  return (Namespace*)lval_current_ns->head;
+}
+
+char* get_current_namespace_str(Lenv* env) {
+  Namespace* ns = get_current_namespace(env);
+  return ns ? ns->namespace : "anon";
+}
+
 #endif  // WASM

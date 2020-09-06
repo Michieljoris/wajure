@@ -26,7 +26,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
   Lval* lval_sym = arg;
   /* printf("\n++++++++++++in eval_def\n"); */
-  lval_println(lval_sym);
+  /* lval_println(lval_sym); */
   ITER_NEXT;
   Lval* lval = arg;
   ITER_END;
@@ -34,29 +34,20 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   if (lval->type == LVAL_ERR) return lval;
 
   if (lenv_is_bound(get_ns_env(env), lval_sym)) {
-    /* warn( */
-    /*     "WARNING: %s already refers to: #'user-env/%s in namespace: user, "
-     */
-    /*     "being replaced by: #'user/%s\n", */
-    /*     lval_sym->str, lval_sym->str, lval_sym->str) */;
+    char* namespace = get_current_namespace_str(env);
+    warn(
+        "WARNING: %s already refers to: #'%s/%s in namespace: user, "
+        "being replaced by: #'%s/%s\n",
+        lval_sym->str, namespace, lval_sym->str, namespace, lval_sym->str);
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {
       warn(
           "WARNING: %s already refers to: #'root-env/%s in namespace: root, "
-          "being replaced by: #'user/%s\n",
-          lval_sym->str, lval_sym->str, lval_sym->str);
+          "being replaced by: #'%s/%s\n",
+          lval_sym->str, lval_sym->str, get_current_namespace_str(env),
+          lval_sym->str);
     }
     retain(lval_sym);
-  }
-
-  scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
-  // TODO: deal with lval_err
-  Namespace* current_namespace = (Namespace*)lval_current_ns->head;
-  if (current_namespace) {
-    /* printf("current_namespace: %s\n", current_namespace->namespace); */
-    /* printf("adding it to: "); */
-    /* lval_println(lval); */
-    lval->namespace = retain(current_namespace->namespace);
   }
 
   lenv_put(get_ns_env(env), lval_sym, lval);
