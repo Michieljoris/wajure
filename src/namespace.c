@@ -28,6 +28,7 @@ char* ns_to_file_name(char* ns_str) {
   file_name = _strcat(file_name, "/");
   file_name = _strcat(file_name, ns_str);
   file_name = strsubst(file_name, '.', '/');
+  file_name = strsubst(file_name, '-', '_');
   file_name = _strcat(file_name, ".clj");
   return file_name;
 }
@@ -112,6 +113,7 @@ Namespace* install_stdlib() {
           config->stdlib, config->stdlib);
       /* abort(); */
     }
+    state->stdlib_ns = stdlib_ns;
   }
   return stdlib_ns;
 }

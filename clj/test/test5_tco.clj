@@ -1,3 +1,4 @@
+(in-ns 'test.test5-tco)
 ;; Testing recursive tail-call function
 
 ;; (def sum2 (fn [n acc] (if (= n 0) acc (sum2 (- n 1) (+ n acc)))))

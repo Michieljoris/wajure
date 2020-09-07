@@ -1,3 +1,4 @@
+(in-ns 'test.test8-macros)
 ;; Testing trivial macros
 (defmacro one [] 1)
 (t (one)
@@ -38,8 +39,8 @@
 (t (not (= 1 1))
    false)
 ;;; This should fail if it is a macro
-;; (t (not (= 1 2))
-;;    true)
+(t (not (= 1 2))
+   true)
 (t (not (= 1 2))
    true)
 
@@ -49,8 +50,8 @@
    1)
 (t (nth (list 1 2) 1)
    2)
-;; (t (nth (list 1 2 nil) 2)
-;;    nil)
+(t (nth (list 1 2 nil) 2)
+   nil)
 (def x "x")
 ;; (def x (nth (list 1 2) 2))
 (t x
@@ -111,8 +112,8 @@
 
 (t (first [])
    nil)
-;; (t (first nil)
-;;    nil)
+(t (first nil)
+   nil)
 
 (t (first [10])
    10)
@@ -134,10 +135,10 @@
 (t (let [x (cond false "no" true "yes")] x)
    "yes")
 
-(def x 2)
-(defmacro a [] x)
+(def x2 2)
+(defmacro a [] x2)
 (t (a)
    2)
 
-(t (let [x 3] (a))
+(t (let [x2 3] (a))
    2)

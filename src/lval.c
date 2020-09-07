@@ -239,6 +239,8 @@ char* lval_type_constant_to_name(int t) {
       return "Symbol";
     case LVAL_COLLECTION:
       return "Collection";
+    case LVAL_NAMESPACE:
+      return "Namespace";
     case LVAL_ERR:
       return "Error";
     case LVAL_FUNCTION:
@@ -251,6 +253,9 @@ char* lval_type_constant_to_name(int t) {
       return "Vector";
     case MAP:
       return "Map";
+
+    case KEYWORD:
+      return "Keyword";
 
     case LTRUE:
       return "true";
@@ -294,6 +299,8 @@ char* lval_type_to_name(Lval* lval) {
           return "false";
         case LNIL:
           return "nil";
+        case KEYWORD:
+          return "Keyword";
       }
     case LVAL_FUNCTION:
       switch (lval->subtype) {
@@ -318,8 +325,7 @@ char* lval_type_to_name(Lval* lval) {
 char* get_namespace_part(Lval* lval_sym) {
   char* str = lval_sym->str;
   char* pos = _strchr(str, '/');
-
-  if (pos) {
+  if (pos > str && pos < str + _strlen(str) - 1) {
     int namespace_len = pos - str;
     char* namespace = lalloc_size(namespace_len + 1);
     _strncpy(namespace, str, namespace_len);
@@ -332,7 +338,7 @@ char* get_namespace_part(Lval* lval_sym) {
 char* get_name_part(Lval* lval_sym) {
   char* str = lval_sym->str;
   char* pos = _strchr(str, '/');
-  if (pos) {
+  if (pos > str && pos < str + _strlen(str) - 1) {
     pos++;
     int name_len = _strlen(str) - (pos - str);
     char* name = lalloc_size(name_len + 1);

@@ -1,3 +1,5 @@
+(in-ns 'test.test7-quote)
+
 ;; Testing cons function
 (t (cons 1 (list))
    (1))
@@ -28,11 +30,11 @@
 (t (concat (list) (list))
    ())
 
-(def a (list 1 2))
+(def a2 (list 1 2))
 (def b (list 3 4))
 ;; (t (concat a b (list 5 6))
 ;;    (1 2 3 4 5 6))
-(t a
+(t a2
    (1 2))
 (t b
    (3 4))
@@ -58,21 +60,21 @@
 ;; Testing unquote
 (t (quasiquote (unquote 7))
    7)
-(def a 8)
+(def a3 8)
 ;=>8
-(t (quasiquote a)
-   a)
-(t (quasiquote (unquote a))
+(t (quasiquote a3)
+   a3)
+(t (quasiquote (unquote a3))
    8)
-(t (quasiquote (1 a 3))
-   (1 a 3))
-(t (quasiquote (1 (unquote a) 3))
+(t (quasiquote (1 a3 3))
+   (1 a3 3))
+(t (quasiquote (1 (unquote a3) 3))
    (1 8 3))
-(def b (quote (1 "b" "d")))
+(def b2 (quote (1 "b" "d")))
 ;=>(1 "b" "d")
-(t (quasiquote (1 b 3))
-   (1 b 3))
-(t (quasiquote (1 (unquote b) 3))
+(t (quasiquote (1 b2 3))
+   (1 b2 3))
+(t (quasiquote (1 (unquote b2) 3))
    (1 (1 "b" "d") 3))
 (t (quasiquote ((unquote 1) (unquote 2)))
    (1 2))
@@ -148,37 +150,35 @@
 ;; Testing ~ (unquote) reader macro
 (t `~7 7)
 ;=>7
-(def a 8)
+(def a4 8)
 ;=>8
-(t `(1 ~a 3)
+(t `(1 ~a4 3)
    (1 8 3))
-(def b '(1 "b" "d"))
+(def b3 '(1 "b" "d"))
 ;=>(1 "b" "d")
-(t `(1 b 3)
-   (1 b 3))
-(t `(1 ~b 3)
+(t `(1 b3 3)
+   (1 b3 3))
+(t `(1 ~b3 3)
    (1 (1 "b" "d") 3))
 
 ;; Testing ~@ (splice-unquote) reader macro
-(def c '(1 "b" "d"))
+(def c2 '(1 "b" "d"))
 ;=>(1 "b" "d")
-(t `(1 c 3)
-   (1 c 3))
-(t `(1 ~@c 3)
+(t `(1 c2 3)
+   (1 c2 3))
+(t `(1 ~@c2 3)
    (1 1 "b" "d" 3))
 
 ;; Testing unquote with vectors
-(def a 8)
+(def a5 8)
 ;=>8
-(t `[1 a 3]
-   (1 a 3))
+(t `[1 a5 3]
+   (1 a5 3))
 ;;; TODO: fix this
 ;;;;=>[1 a 3]
 
 ;; Testing splice-unquote with vectors
-(def c '(1 "b" "d"))
+(def c3 '(1 "b" "d"))
 ;=>(1 "b" "d")
-(t `[1 ~@c 3]
-   (1 1 "b" "d" 3))
-;;; TODO: fix this
-;;;;=>[1 1 "b" "d" 3]
+(t `[1 ~@c3 3]
+   [1 1 "b" "d" 3])

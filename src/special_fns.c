@@ -36,7 +36,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   if (lval->type == LVAL_ERR) return lval;
   Namespace* ns = get_current_ns();
   if (lenv_is_bound(ns->env, lval_sym)) {
-    warn("WARNING: %s already refers to: #'%s/%s in namespace: %s",
+    warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
          lval_sym->str, ns->namespace, lval_sym->str, ns->namespace);
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {

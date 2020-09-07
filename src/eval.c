@@ -150,7 +150,6 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
-
   if (namespace_or_alias) {
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
@@ -174,9 +173,11 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
                              lval_symbol);  // resolved as a referring symbol
 
   ns = state->stdlib_ns;
-  if (ns)
-    return lenv_get_or_error(ns->env,
-                             lval_symbol);  // resolved in stdlib env
+  if (ns) {
+    lval_resolved_sym = lenv_get(ns->env, lval_symbol);
+    if (lval_resolved_sym) return lval_resolved_sym;  // resolved in stdlib env
+  }
+
   Lenv* builtins_env = state->builtins_env;
   return lenv_get_or_error(builtins_env,
                            lval_symbol);  // resolved in builtins env

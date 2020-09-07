@@ -1,24 +1,27 @@
-(t 1 1 "Just testing the testing")
+(in-ns 'test.test3-env)
 
-;; Testing REPL_ENV
-(t (/ (- (+ 5 (* 2 3)) 3) 4)
-   2)
+(defn test []
+  (t 1 1 "Just testing the testing")
+
+  ;; Testing REPL_ENV
+  (t (/ (- (+ 5 (* 2 3)) 3) 4)
+     2)
 
 
-;; Testing def!
-(t (def x 3) nil)
-(t x 3)
-(def y 4)
-(t y 4)
-(def z (+ 1 7))
-(t z 8)
-;=>8
+  ;; Testing def!
+  (t (def x 3) nil)
+  (t x 3)
+  (def y 4)
+  (t y 4)
+  (def z (+ 1 7))
+  (t z 8)
+                                        ;=>8
 
-;; Verifying symbols are case-sensitive
-(def mynum 111)
-(def MYNUM 222)
-(t mynum 111)
-(t MYNUM 222)
+  ;; Verifying symbols are case-sensitive
+  (def mynum 111)
+  (def MYNUM 222)
+  (t mynum 111)
+  (t MYNUM 222))
 
 
 ;;TODO TEST
@@ -54,3 +57,4 @@
 ;; ;; Testing vector evaluation
 (t (let [a 5 b 6] [3 4 a [b 7] 8])
    [3 4 5 [6 7] 8])
+

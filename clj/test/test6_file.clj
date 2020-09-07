@@ -1,3 +1,4 @@
+(in-ns 'test.test6-file)
 ;;; TODO: really a step5 test
 ;;
 ;; Testing that (do (do)) not broken by TCO
@@ -6,23 +7,23 @@
 
 ;;
 ;; Testing read-string, eval and slurp
-;; (t (read-string "(1 2 (3 4) nil)")
-;;    (1 2 (3 4) nil))
+(t (read-string "(1 2 (3 4) nil)")
+   (1 2 (3 4) nil))
 
-;; (t (= nil (read-string "nil"))
-;;    true)
+(t (= nil (read-string "nil"))
+   true)
 
-;; (t (read-string "(+ 2 3)")
-;;    (+ 2 3))
+(t (read-string "(+ 2 3)")
+   (+ 2 3))
 
-;; (t (read-string "\"\n\"")
-;;    "\n")
+(t (read-string "\"\n\"")
+   "\n")
 
-;; (t (read-string "7 ;; comment")
-;;    7)
+(t (read-string "7 ;; comment")
+   7)
 
 ;;; Differing output, but make sure no fatal error
-;; (t (read-string ";; comment")
+;; (read-string ";; comment") ;;TODO: failing
 
 
 ;;    (eval (read-string "(+ 2 3)")))
@@ -167,26 +168,26 @@
 ;;    1)
 
 ;; Non alphanumeric characters in comments in read-string
-;; (t (read-string "1;!")
-;;    1)
-;; (t (read-string "1;\"")
-;;    1)
-;; (t (read-string "1;#")
-;;    1)
-;; (t (read-string "1;$")
-;;    1)
-;; (t (read-string "1;%")
-;;    1)
-;; (t (read-string "1;'")
-;;    1)
-;; (t (read-string "1;\\")
-;;    1)
-;; (t (read-string "1;\\\\")
-;;    1)
-;; (t (read-string "1;\\\\\\")
-;;    1)
-;; (t (read-string "1;`")
-;;    1)
+(t (read-string "1;!")
+   1)
+(t (read-string "1;\"")
+   1)
+(t (read-string "1;#")
+   1)
+(t (read-string "1;$")
+   1)
+(t (read-string "1;%")
+   1)
+(t (read-string "1;'")
+   1)
+(t (read-string "1;\\")
+   1)
+(t (read-string "1;\\\\")
+   1)
+(t (read-string "1;\\\\\\")
+   1)
+(t (read-string "1;`")
+   1)
 ;; ;;; Hopefully less problematic characters can be checked together
-;; (t (read-string "1; &()*+,-./:;<=>?@[]^_{|}~")
-;;    1)
+(t (read-string "1; &()*+,-./:;<=>?@[]^_{|}~")
+   1)

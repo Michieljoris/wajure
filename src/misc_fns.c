@@ -296,75 +296,14 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR)
   Lval* vector = arg;
   ITER_END
-  /* Cell* head = vector->head; */
-  /* Lval* required_namespace_sym = NULL; */
-  /* char* as = NULL; */
-  /* Lval* refer = NULL; */
+
   Namespace* current_namespace = get_current_ns();
   /* printf("in require_fn: %s\n", current_namespace->namespace); */
-  /* if (!current_namespace) */
-  /*   return make_lval_err( */
-  /*       "Expecting *ns* to be defined (call in-ns) before require is " */
-  /*       "called"); */
-
-  /* if (list_count(env->kv) > 1) */
-  /*   return make_lval_err( */
-  /*       "Require calls can only to be made before any def calls"); */
-
-  /* if (list_count(vector->head) > 5) */
-  /*   return make_lval_err("Too many args passed to require (>5)"); */
-
-  /* if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) { */
-  /*   required_namespace_sym = ((Lval*)head->car); */
-  /* } else { */
-  /*   return make_lval_err( */
-  /*       "Expecting namespace symbol as first element of quoted vector passed
-   * " */
-  /*       "to require."); */
-  /* } */
-
-  /* // Loop through require vector and assign values to 'as' and 'refer' if
-   * found. */
-  /* head = head->cdr; */
-  /* while (head) { */
-  /*   if (((Lval*)head->car)->subtype != KEYWORD) */
-  /*     return make_lval_err( */
-  /*         "Expecting a keyword such as :as or :refer in quoted vector passed
-   * " */
-  /*         "to require"); */
-  /*   Lval* kw = head->car; */
-  /*   head = head->cdr; */
-  /*   if (!head) */
-  /*     return make_lval_err("Expecting arg after keyword :%s in require", */
-  /*                          kw->str); */
-  /*   if (_strcmp(kw->str, "as") == 0) { */
-  /*     if (as) */
-  /*       return make_lval_err( */
-  /*           "Expecting only one :as keyword in require vector"); */
-  /*     as = ((Lval*)head->car)->str; */
-  /*   } else if (_strcmp(kw->str, "refer") == 0) { */
-  /*     if (refer) */
-  /*       return make_lval_err( */
-  /*           "Expecting only one :refer keyword in require vector"); */
-  /*     refer = head->car; */
-  /*   } else */
-  /*     return make_lval_err( */
-  /*         "Expecting only :as and :refer keywords in require vector, " */
-  /*         "not :%s", */
-  /*         kw->str); */
-  /*   head = head->cdr; */
-  /* } */
-  /* if (refer) { */
-  /*   if (refer->subtype != VECTOR) */
-  /*     return make_lval_err( */
-  /*         "Expecting arg to refer to be a vector in require vector"); */
-  /* } */
 
   // If we haven't required the ns yet we require it now, otherwise we use a
   // cached one.
   struct require_info info = parse_require_vector(vector);
   Namespace* required_ns = get_namespace(info.namespace_str);
-  /* (Namespace*)alist_get(state->namespaces, is_eq_str, info.namespace_str); */
   if (!required_ns) {
     Lval* ret = require_ns(NULL, info.namespace_str);
     if (ret->type == LVAL_ERR) return ret;
@@ -387,20 +326,13 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
   // Add the required namespace to deps as a alternative ns str mapped to the
   // same env.
   if (info.as) {
+    char* ns_str = alist_get(current_namespace->as, is_eq_str, info.as);
+    if (ns_str) warn("%s is already an alias for %s\n", info.as, ns_str);
     current_namespace->as = alist_prepend(
         current_namespace->as, retain(info.as), retain(info.namespace_str));
   }
-  /* printf("current_namespace->required len: %d\n", */
-  /*        list_count(current_namespace->required)); */
-  /* Cell* first = current_namespace->required->car; */
-  /* char* name1 = first->car; */
-  /* Lenv* env1 = (Lenv*)first->cdr; */
-  /* printf("%s\n", name1); */
-  /* env_print(env1); */
 
   // Add the referred symbols to the refer env of the current namespace
-  // Env stack should look like this:
-  // builtins <- stdlib <- current namespace (<- lexical envs)
   if (info.refer) {
     Cell* head = info.refer->head;
     while (head) {
@@ -416,6 +348,12 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
             "namespace",
             lval_sym->str, required_ns->namespace, lval_sym->str);
       }
+      char* ns_str =
+          alist_get(current_namespace->refer, is_eq_str, lval_sym->str);
+      if (ns_str) {
+        warn("Symbol %s is referring already to a value in %s\n", lval_sym->str,
+             ns_str);
+      }
       release(lval);
 
       /* printf("REQUIRE: adding %s to current_namespace->refer as %s\n", */
@@ -426,12 +364,6 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
       head = head->cdr;
     }
   }
-
-  /* env_print(required_env); */
-  /* printf("as: %s\n", as); */
-  /* printf("refer: "); */
-  /* lval_println(refer); */
-  /* printf("Done with require_fn\n"); */
   return make_lval_nil();
 }
 

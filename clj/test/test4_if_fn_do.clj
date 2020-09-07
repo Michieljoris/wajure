@@ -1,3 +1,4 @@
+(in-ns 'test.test4-if-fn-do)
 ;; ;; Testing list functions
 (t (list) ())
 ;;TODO TEST

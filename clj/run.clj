@@ -1,9 +1,20 @@
 (in-ns 'run)
-(require '[foo.core :as foo :refer [foo]])
+;; (require '[test.tests])
+(print 123)
+(let [x 1] x)
+(defn f [x] (print x))
+(defn g [x] (print x))
+(defn f2 [x] (print x))
+(defn f3 [x] (print x))
 
-(print "foo.core/foo = " foo.core/foo)
-(print "foo/foo = " foo/foo)
-(print "hello from run.clj" foo)
+;; (test2/test)
+
+;; (require '[foo.core :as foo :refer [foo]])
+;; (print "foo.core/foo = " foo.core/foo)
+;; (print "foo/foo = " foo/foo)
+;; (print "foo" foo)
+
+
 ;; (print "foo2" foo2)
 ;; (print "foo3" foo3)
 ;; (def foo 123)

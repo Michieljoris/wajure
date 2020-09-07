@@ -25,7 +25,10 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
 
 Lval* first_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("first", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
+  /* ITER_NEXT_TYPE(LVAL_COLLECTION, -1) */
+  ITER_NEXT
+  if (arg->subtype == LNIL) return retain(arg);
+  LASSERT_TYPE("first", arg_list, 1, LVAL_COLLECTION, -1, arg)
   Lval* lval_list = arg;
   ITER_END
   Lval* lval = list_first(lval_list->head);

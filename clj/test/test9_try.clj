@@ -1,3 +1,4 @@
+(in-ns 'test.test9-try)
 ;;
 ;; Testing throw
 

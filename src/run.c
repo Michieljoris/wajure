@@ -31,7 +31,7 @@ void run() {
   release(state->builtins_env);
   release(state->namespaces);
   print_mempool_counts();
-  return;
+  printf("\n");
 }
 
 /* print_mempool_counts(); */
