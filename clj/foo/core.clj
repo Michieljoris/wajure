@@ -1,3 +1,6 @@
 (in-ns 'foo.core)
 
-(def foo 123)
+(require '[bar.core :as foo :refer [bar]])
+
+(def foo :foo)
+(print "from foo.core:", foo bar)

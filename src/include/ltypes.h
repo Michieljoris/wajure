@@ -3,9 +3,10 @@
 
 typedef struct {
   char* src;     // root dir of src files
-  char* main;    // filename of file containing main fn
+  char* main;    // namespace containing main fn
+  char* stdlib;  // stdlib namespace
+  char* user;    // user ns, dummy namespace
   char* out;     // dir of compiled wasm files
-  char* stdlib;  // location of stdlib
   int do_compile;
 } Config;
 
@@ -126,7 +127,7 @@ struct context {
 
 typedef struct {
   char* namespace;
-
+  Lenv* env;
   Map as;  // alias -> namespace
   //{"foo": "foo.core", "foo.core": "foo.core"}
   Map refer;  // symbol -> namespace
@@ -134,10 +135,12 @@ typedef struct {
 } Namespace;
 
 typedef struct {
-  /* {"namespace.name": (Lenv*){*ns*: (Namespace){(Map){foo.core: env, bar.core:
-   * env}}}} */
+  Lenv* builtins_env;
+  Namespace* current_ns;
+  Namespace* stdlib_ns;
   // Cache:
   Map namespaces;
+  /* {"namespace.name": Namespace* ns} */
 } State;
 
 /* lval types */

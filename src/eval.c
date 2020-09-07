@@ -10,6 +10,7 @@
 #include "list.h"
 #include "lval.h"
 #include "misc_fns.h"
+#include "namespace.h"
 #include "print.h"
 #include "read.h"
 #include "state.h"
@@ -149,28 +150,36 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
 Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
+
   if (namespace_or_alias) {
-    Lenv* some_env =
-        get_env_for_namespaced_symbol(env, lval_symbol, namespace_or_alias);
-    if (!some_env)
-      return make_lval_err("Can't find env to resolve %s", lval_symbol->str);
+    Namespace* ns =
+        get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
+    if (!ns)
+      return make_lval_err("Can't find namespace to resolve %s",
+                           lval_symbol->str);
 
     scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
-    lval_resolved_sym = lenv_get(some_env, lval_name);
-  } else {
-    lval_resolved_sym = lenv_get(env, lval_symbol);
-    // Symbol might be a refer
-    if (lval_resolved_sym->type == LVAL_ERR) {
-      Lenv* some_env = get_env_for_referred_symbol(env, lval_symbol);
-      if (!some_env) return lval_resolved_sym;
-
-      // Can the symbol be resolved in that other namespace?
-      lval_resolved_sym = lenv_get(some_env, lval_symbol);
-    }
+    return lenv_get_or_error(ns->env,
+                             lval_name);  // resolved in the symbol's namespace
   }
 
-  return lval_resolved_sym;
+  lval_resolved_sym = lenv_get(env, lval_symbol);
+  if (lval_resolved_sym)
+    return lval_resolved_sym;  // resolved in symbols own env
+
+  Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
+  if (ns)
+    return lenv_get_or_error(ns->env,
+                             lval_symbol);  // resolved as a referring symbol
+
+  ns = state->stdlib_ns;
+  if (ns)
+    return lenv_get_or_error(ns->env,
+                             lval_symbol);  // resolved in stdlib env
+  Lenv* builtins_env = state->builtins_env;
+  return lenv_get_or_error(builtins_env,
+                           lval_symbol);  // resolved in builtins env
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {

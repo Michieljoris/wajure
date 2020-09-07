@@ -1,4 +1,5 @@
 (in-ns 'wajure.core)
+(print "hello from wajure.core")
 
 (def defmacro (macro [sym params & body]
                      `(def ~sym (macro ~params ~@body))))
@@ -36,4 +37,3 @@
              (cons (macroexpand-all (first form)) (macroexpand-all (rest form)))
              form)
            form)))
-

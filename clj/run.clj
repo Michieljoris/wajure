@@ -3,11 +3,10 @@
 
 (print "foo.core/foo = " foo.core/foo)
 (print "foo/foo = " foo/foo)
-(print "foo" foo)
-(print "foo2" foo2)
-(print "foo3" foo3)
-
-(def foo 123)
+(print "hello from run.clj" foo)
+;; (print "foo2" foo2)
+;; (print "foo3" foo3)
+;; (def foo 123)
 ;; (defn foo [] 123)
 ;; (print (foo))
 ;; (print 123)

@@ -10,7 +10,9 @@
 #include "list.h"
 #include "lval.h"
 #include "misc_fns.h"
+#include "namespace.h"
 #include "print.h"
+#include "state.h"
 
 Lval* eval_quote(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("quote", 1);
@@ -32,25 +34,22 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_END;
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
-
-  if (lenv_is_bound(get_ns_env(env), lval_sym)) {
-    char* namespace = get_namespace_str_for_env(env);
-    warn(
-        "WARNING: %s already refers to: #'%s/%s in namespace: user, "
-        "being replaced by: #'%s/%s\n",
-        lval_sym->str, namespace, lval_sym->str, namespace, lval_sym->str);
+  Namespace* ns = get_current_ns();
+  if (lenv_is_bound(ns->env, lval_sym)) {
+    warn("WARNING: %s already refers to: #'%s/%s in namespace: %s",
+         lval_sym->str, ns->namespace, lval_sym->str, ns->namespace);
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {
       warn(
-          "WARNING: %s already refers to: #'root-env/%s in namespace: root, "
+          "WARNING: %s already refers to: #'%s/%s in namespace: %s, "
           "being replaced by: #'%s/%s\n",
-          lval_sym->str, lval_sym->str, get_namespace_str_for_env(env),
-          lval_sym->str);
+          lval_sym->str, config->stdlib, lval_sym->str, config->stdlib,
+          ns->namespace, lval_sym->str);
     }
-    retain(lval_sym);
   }
 
-  lenv_put(get_ns_env(env), lval_sym, lval);
+  lenv_put(ns->env, lval_sym, lval);
+  release(lval);
   return make_lval_nil();
 }
 
@@ -281,7 +280,8 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = retain(env);
             lenv_put(catch_env, lval_sym, lval_str);
-
+            release(lval_sym);
+            release(lval_str);
             Lval* catch_body = make_lval_list();  // 86
             catch_body->head = retain(node->head->cdr->cdr->cdr);
 
@@ -395,7 +395,8 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
       release(let_env);
       return lval;
     }
-    Lenv* new_let_env = lenv_prepend(let_env, retain(lval_sym), lval);
+    Lenv* new_let_env = lenv_prepend(let_env, lval_sym, lval);
+    release(lval);
     new_let_env->parent_env = let_env;
 
     let_env = new_let_env;

@@ -15,6 +15,7 @@
 #include "list.h"
 #include "lval.h"
 #include "misc_fns.h"
+#include "namespace.h"
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
@@ -169,14 +170,13 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
     }
   } else {  // ref to closure val
     Lval* closure_lval =
-        lenv_get(context->function_context->closure, lval_symbol);
+        lenv_get_or_error(context->function_context->closure, lval_symbol);
     int closure_offset;
     if (closure_lval->type == LVAL_ERR) {
       Lval* lval_closure_sym = make_lval_sym(lval_symbol->str);
       closure_offset = lval_closure_sym->offset =
           context->function_context->closure_count++;
-      lenv_put(context->function_context->closure, retain(lval_symbol),
-               retain(lval_compiler));
+      lenv_put(context->function_context->closure, lval_symbol, lval_compiler);
     } else {
       closure_offset = closure_lval->offset;
     }
@@ -282,8 +282,9 @@ CResult store_args_in_locals(Wasm* wasm, Lenv* params_env, Lval** lispy_params,
         BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
                      BinaryenTypeInt32(), get_stack_pointer_from_local);
     int local_index = li_new(wasm);
-    lenv_put(params_env, retain(lispy_params[i]),
-             make_lval_compiler(context, LOCAL, local_index));
+    Lval* lval_compiler = make_lval_compiler(context, LOCAL, local_index);
+    lenv_put(params_env, lispy_params[i], lval_compiler);
+    release(lval_compiler);
     Ber store_in_local = BinaryenLocalSet(module, local_index, load_arg_lval);
     children[children_count++] = store_in_local;
   }
@@ -679,10 +680,14 @@ Lval* resolve_symbol(Wasm* wasm, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   if (namespace_or_alias) {
-    Lenv* some_env = get_env_for_namespaced_symbol(wasm->env, lval_symbol,
-                                                   namespace_or_alias);
-    if (!some_env) quit(wasm, "Can't find env to resolve %s", lval_symbol->str);
-    char* namespace_str = get_namespace_str_for_env(some_env);
+    Namespace* ns =
+        get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
+    if (!ns) quit(wasm, "Can't find ns to resolve %s", lval_symbol->str);
+
+    Namespace* current_namespace = get_current_ns();
+    char* namespace_str =
+        alist_get(current_namespace->as, is_eq_str, lval_symbol->str);
+
     scoped char* name = get_name_part(lval_symbol);
 
     lval_resolved_sym = make_lval_external(namespace_str, name);
@@ -692,13 +697,16 @@ Lval* resolve_symbol(Wasm* wasm, Lval* lval_symbol) {
     /* scoped Lval* lval_name = make_lval_sym(name); */
     /* lval_resolved_sym = lenv_get(some_env, lval_name); */
   } else {
-    lval_resolved_sym = lenv_get(wasm->env, lval_symbol);
+    lval_resolved_sym = lenv_get_or_error(wasm->env, lval_symbol);
     // Symbol might be a refer
     if (lval_resolved_sym->type == LVAL_ERR) {
-      Lenv* some_env = get_env_for_referred_symbol(wasm->env, lval_symbol);
-      if (!some_env) return lval_resolved_sym;
+      Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
+      if (!ns) return lval_resolved_sym;
 
-      char* namespace_str = get_namespace_str_for_env(some_env);
+      Namespace* current_namespace = get_current_ns();
+      char* namespace_str =
+          alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
+
       scoped char* name = get_name_part(lval_symbol);
 
       /* scoped Lval* lval_name = make_lval_sym(name); */

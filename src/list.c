@@ -151,18 +151,18 @@ Cell* alist_prepend(Cell* alist, void* key, void* value) {
 }
 
 // Mutates passed in alist. Replaces value if key is found, otherwise prepends
-// alist with new association pair. Returns (possibly new) head. Does not retain
-// key or value, but does release old value if updated.
+// alist with new association pair. Returns (possibly new) head. Retains
+// key and value, and releases old value if updated.
 Cell* alist_put(Cell* alist, int cmp_key(void*, void*), void* key,
                 void* value) {
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     Cell* pair = ((Cell*)node->car);
     release(pair->cdr);
-    pair->cdr = value;
+    pair->cdr = retain(value);
     return alist;
   } else {
-    return alist_prepend(alist, key, value);
+    return alist_prepend(alist, retain(key), retain(value));
   }
 }
 

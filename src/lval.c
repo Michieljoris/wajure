@@ -90,13 +90,9 @@ Lval* make_lval_keyword(char* s) {
   return lval;
 }
 
-Lval* make_lval_namespace(char* s) {
+Lval* make_lval_namespace(Namespace* ns) {
   Lval* lval = lalloc_type(LVAL);
-  // TODO: replace with NAMESPACE mempool type
-  Namespace* namespace = lalloc_type(NAMESPACE);
-  namespace->namespace = retain(s);
-  *lval =
-      (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)namespace};
+  *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)ns};
   lval->hash = lval_hash(lval);
   return lval;
 }

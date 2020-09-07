@@ -32,10 +32,14 @@ Lval* lenv_get(Lenv* env, Lval* lval_sym) {
   if (!ret && env->parent_env) {
     return lenv_get(env->parent_env, lval_sym);
   }
-  /* printf("In env:\n"); */
-  /* lenv_print(env); */
-  /* printf("Resolved:"); */
-  /* lval_println(ret); */
+  return ret ? retain(ret) : NULL;
+}
+
+Lval* lenv_get_or_error(Lenv* env, Lval* lval_sym) {
+  Lval* ret = alist_get(env->kv, is_eq_lval_sym, lval_sym);
+  if (!ret && env->parent_env) {
+    return lenv_get_or_error(env->parent_env, lval_sym);
+  }
   return ret ? retain(ret)
              : make_lval_err("unbound symbol '%s'", lval_sym->str);
 }
@@ -79,62 +83,8 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
 // of old kv list
 Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
-  next_env->kv = alist_prepend(retain(env->kv), lval_sym, lval);
+  next_env->kv = alist_prepend(retain(env->kv), retain(lval_sym), retain(lval));
   return next_env;
-}
-
-Lval* get_lval_ns(Lenv* env) {
-  scoped char* str = lalloc_size(5);
-  _strcpy(str, "*ns*");
-  scoped Lval* lval_current_ns_sym = make_lval_sym(str);
-  Lval* lval_current_ns = lenv_get(env, lval_current_ns_sym);
-  if (lval_current_ns->type == LVAL_ERR)
-    return make_lval_err(
-        "Expecting *ns* to be defined (call in-ns) before require or def is "
-        "called");
-  return lval_current_ns;
-}
-
-Namespace* get_namespace_for_env(Lenv* env) {
-  scoped Lval* lval_current_ns = get_lval_ns(get_ns_env(env));
-  if (lval_current_ns->type == LVAL_ERR) return NULL;
-  return (Namespace*)lval_current_ns->head;
-}
-
-char* get_namespace_str_for_env(Lenv* env) {
-  Namespace* ns = get_namespace_for_env(env);
-  return ns ? ns->namespace : "anon";
-}
-
-Lenv* get_env_for_namespaced_symbol(Lenv* env, Lval* lval_symbol,
-                                    char* namespace_or_alias) {
-  Namespace* current_namespace = get_namespace_for_env(env);
-  if (!current_namespace) {
-    printf(
-        "Expecting *ns* to be defined (call in-ns) before using any "
-        "namespaced symbols");
-    return NULL;
-  }
-  char* namespace_str =
-      alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
-  Lenv* some_env = alist_get(state->namespaces, is_eq_str, namespace_str);
-  if (!some_env) {
-    printf("Can't find namespace for symbol %s", lval_symbol->str);
-    return NULL;
-  }
-  return some_env;
-}
-
-Lenv* get_env_for_referred_symbol(Lenv* env, Lval* lval_symbol) {
-  // Do we have *ns* defined?
-  Namespace* current_namespace = get_namespace_for_env(env);
-  if (!current_namespace) return NULL;
-  // Is symbol referred in another namespace?
-  char* namespace_str =
-      alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
-
-  if (!namespace_str) return NULL;
-  return alist_get(state->namespaces, is_eq_str, namespace_str);
 }
 
 #endif  // WASM

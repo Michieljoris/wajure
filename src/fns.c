@@ -17,6 +17,8 @@ void lenv_add_builtin(Lenv* env, char* name, Lbuiltin func, int type) {
   Lval* lval_fun = make_lval_fun(func, lname, type);
   release(lname);
   lenv_put(env, lval_sym, lval_fun);
+  release(lval_sym);
+  release(lval_fun);
 }
 
 void lenv_add_builtins(Lenv* env, LispyFn builtins[], int type) {

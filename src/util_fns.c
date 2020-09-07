@@ -17,7 +17,7 @@ Lval* print_fn(Lenv* env, Lval* arg_list) {
     arg = iter_next(i);
   }
   putchar('\n');
-  return make_lval_list();
+  return make_lval_nil();
 }
 
 Lval* pr_fn(Lenv* env, Lval* arg_list) {

@@ -27,7 +27,8 @@
 void make_config(int argc, char** argv) {
   config->src = "clj";
   config->main = "run";
-  config->stdlib = "clj/wajure/core.clj";
+  config->stdlib = "wajure.core";
+  config->user = "user";
   config->do_compile = 0;
   if (_strcmp(argv[1], "-c") == 0) {
     config->do_compile = 1;

@@ -165,9 +165,9 @@ int add_string_to_data(Wasm* wasm, char* str) {
     _strncpy(wasm->data + offset, str, len);
 
     wasm->data_offset += len;
-    ret = malloc(sizeof(int));
+    ret = lalloc_size(sizeof(int));
     *ret = offset;
-    wasm->string_pool = alist_prepend(wasm->string_pool, str, ret);
+    wasm->string_pool = alist_prepend(wasm->string_pool, retain(str), ret);
   }
   return *ret;
 }

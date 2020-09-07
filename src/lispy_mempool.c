@@ -164,9 +164,11 @@ void destroy_iter(void* cell) {
 }
 
 void destroy_namespace(void* namespace) {
-  release(((Namespace*)namespace)->namespace);
-  release(((Namespace*)namespace)->as);
-  release(((Namespace*)namespace)->refer);
+  Namespace* ns = (Namespace*)namespace;
+  release(ns->namespace);
+  release(ns->env);
+  release(ns->as);
+  release(ns->refer);
 }
 
 // The order and number of these types needs to match with the enum in
