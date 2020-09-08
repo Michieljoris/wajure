@@ -20,9 +20,9 @@ Lval* make_lval_true(void);
 Lval* make_lval_false(void);
 char* lval_type_constant_to_name(int t);
 char* lval_type_to_name(Lval* lval);
-Lval* make_lval_namespace(Namespace* ns);
+/* Lval* make_lval_namespace(Namespace* ns); */
 Lval* new_lval_list(void* head);
-Lval* make_lval_external(char* namespace, char* name);
+Lval* make_lval_external(struct resolved_symbol s);
 char* get_namespace_part(Lval* lval_sym);
 char* get_name_part(Lval* lval_sym);
 

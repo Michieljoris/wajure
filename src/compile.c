@@ -19,8 +19,10 @@
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
+#include "run.h"
 #include "runtime.h"
 #include "special_fns.h"
+#include "state.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
@@ -526,7 +528,7 @@ CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 }
 
 CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
-                             Cell* args) {
+                             char* fn_table_index_global, Cell* args) {
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
   /* printf("compile local ref call!!!!!!!!!!!!!!!\n"); */
@@ -546,10 +548,6 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
 
   printf("compile_wasm_fn_call %s\n", fn_name);
   while (args) {
-    // NOTE: setting flags like is bad coding. Ideally we would like to return
-    // not a Ber but a struct with data on the compile. We can include in
-    // there whether we just compiled a fn call or not, together with the
-    // resultant Ber.
     CResult result = lval_compile(wasm, args->car);
     Ber compiled_arg = result.ber;
     Ber push_arg = NULL;
@@ -575,6 +573,8 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   wasm_args[wasm_args_count++] =
       BinaryenGlobalSet(module, "stack_pointer", sp_plus_offset);
 
+  BinaryenType params_type = make_type_int32(2);
+  Ber ber_args_count = make_int32(module, args_count);
   // Call fn
   Ber result = NULL;
   if (lval_wasm_ref) {
@@ -594,20 +594,25 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
                      BinaryenTypeInt32(), lval_wasm_ref);
 
     // Pass closure pointer and args count to wasm fn
-    Ber operands[] = {wasm_closure_pointer, make_int32(module, args_count)};
-    BinaryenType params_type = make_type_int32(2);
+    Ber operands[] = {wasm_closure_pointer, ber_args_count};
 
     result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
                                   params_type, BinaryenTypeInt32());
-  }
-
-  else if (fn_name) {
-    printf("BinaryenCall\n");
-    Ber operands[] = {make_int32(module, 0), make_int32(module, args_count)};
+  } else if (fn_name) {
+    Ber operands[] = {make_int32(module, 0), ber_args_count};
     result = BinaryenCall(module, fn_name, operands, 2, BinaryenTypeInt32());
+  } else if (fn_table_index_global) {
+    printf("in compile_wasm_fn_call: %s\n", fn_table_index_global);
+    Ber wasm_fn_index = BinaryenGlobalGet(wasm->module, fn_table_index_global,
+                                          BinaryenTypeInt32());
+    Ber operands[] = {make_int32(module, 0), ber_args_count};
+    result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
+                                  params_type, BinaryenTypeInt32());
+
   } else
     quit(wasm,
-         "Pass either a fn_name or a lval_wasm_ref to compile_wasm_fn_call ");
+         "Pass either a fn_name lval_wasm_ref or a fn_table_index to "
+         "compile_wasm_fn_call ");
 
   // Store result in local wasm var
   int result_index = context->function_context->local_count++;
@@ -639,10 +644,6 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   return cresult(call_block);
 }
 
-/* Ber compile_root_fn_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) { */
-/*   return compile_wasm_fn_call(wasm, NULL, lval_fn_sym->str, args); */
-/* } */
-
 CResult compile_list(Wasm* wasm, Lval* lval_list);
 
 CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
@@ -651,7 +652,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
       switch (lval->subtype) {
         case LIST:;
           Ber compiled_list = compile_list(wasm, lval).ber;
-          return compile_wasm_fn_call(wasm, compiled_list, NULL, args);
+          return compile_wasm_fn_call(wasm, compiled_list, NULL, NULL, args);
         case VECTOR:
         case MAP:
         case SET:
@@ -674,53 +675,21 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
   return cnull();
 }
 
-void add_deps(Wasm* wasm, char* namespace_str, char* name) {}
+void add_deps(Wasm* wasm, char* namespace_str, char* name) {
+  printf("ADD DEPS %s\n", name);
+  wasm->deps = alist_put(wasm->deps, is_eq_str, name, NULL);
+}
 
 Lval* resolve_symbol(Wasm* wasm, Lval* lval_symbol) {
-  Lval* lval_resolved_sym;
-  scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
-  if (namespace_or_alias) {
-    Namespace* ns =
-        get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
-    if (!ns) quit(wasm, "Can't find ns to resolve %s", lval_symbol->str);
-
-    Namespace* current_namespace = get_current_ns();
-    char* namespace_str =
-        alist_get(current_namespace->as, is_eq_str, lval_symbol->str);
-
-    scoped char* name = get_name_part(lval_symbol);
-
-    lval_resolved_sym = make_lval_external(namespace_str, name);
-    add_deps(wasm, retain(namespace_str), retain(name));
-
-    //????
-    /* scoped Lval* lval_name = make_lval_sym(name); */
-    /* lval_resolved_sym = lenv_get(some_env, lval_name); */
-  } else {
-    lval_resolved_sym = lenv_get_or_error(wasm->env, lval_symbol);
-    // Symbol might be a refer
-    if (lval_resolved_sym->type == LVAL_ERR) {
-      Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
-      if (!ns) return lval_resolved_sym;
-
-      Namespace* current_namespace = get_current_ns();
-      char* namespace_str =
-          alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
-
-      scoped char* name = get_name_part(lval_symbol);
-
-      /* scoped Lval* lval_name = make_lval_sym(name); */
-      /* lval_resolved_sym = lenv_get(some_env, lval_name); */
-      lval_resolved_sym = make_lval_external(namespace_str, name);
-      add_deps(wasm, retain(namespace_str), retain(name));
-
-      //????
-      // Can the symbol be resolved in that other namespace?
-      /* lval_resolved_sym = lenv_get(some_env, lval_symbol); */
-    }
+  printf("Resolving %s\n", lval_symbol->str);
+  struct resolved_symbol result = eval_symbol(wasm->env, lval_symbol);
+  if (result.lval->type == LVAL_ERR) return result.lval;
+  if (result.ns) {
+    printf("ns for symbol: %s\n", result.ns->namespace);
+    add_deps(wasm, result.ns->namespace, result.fqn);
+    result.lval->global_symbol_str = result.fqn;
   }
-
-  return lval_resolved_sym;
+  return result.lval;
 }
 
 CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
@@ -768,9 +737,13 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
             break;
           case LAMBDA:  // root functions in compiler env
             printf("Calling lambda!! %s\n", lval_first->str);
-            fn_call = compile_wasm_fn_call(wasm, NULL, lval_first->str, args);
+            if (resolved_symbol->global_symbol_str)
+              fn_call = compile_wasm_fn_call(
+                  wasm, NULL, NULL, resolved_symbol->global_symbol_str, args);
+            else
+              fn_call =
+                  compile_wasm_fn_call(wasm, NULL, lval_first->str, NULL, args);
             break;
-            /* return compile_root_fn_call(wasm, lval_first, args); */
           case MACRO:;
             Lval* arg_list = make_lval_list();
             arg_list->head = retain(args);
@@ -796,9 +769,7 @@ CResult compile_list(Wasm* wasm, Lval* lval_list) {
 
         Ber compiled_symbol =
             compile_lval_compiler(wasm, lval_first, resolved_symbol).ber;
-        /* Ber compiled_symbol = resolve_symbol_and_compile(wasm,
-         * lval_first).ber; */
-        fn_call = compile_wasm_fn_call(wasm, compiled_symbol, NULL, args);
+        fn_call = compile_wasm_fn_call(wasm, compiled_symbol, NULL, NULL, args);
         break;
       case LVAL_SYMBOL:
         quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
@@ -833,21 +804,25 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* printf("lval_compile: "); */
   /* lval_println(lval); */
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
+
+  Lval* lval_resolved_sym = NULL;
   switch (lval->type) {
     case LVAL_SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
       // no notion of environments or symbols that resolve to other lvalues.
       // Symbols at runtime are just that, a literal similar to strings,
       // numbers etc.
-      Lval* lval_resolved_sym = resolve_symbol(wasm, lval);
+      lval_resolved_sym = resolve_symbol(wasm, lval);
       /* lval_println(lval_resolved_sym); */
       switch (lval_resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, lval_resolved_sym->str);
-        case LVAL_COMPILER:
+        case LVAL_COMPILER:;
           // symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
-          return compile_lval_compiler(wasm, lval, lval_resolved_sym);
+          CResult ret = compile_lval_compiler(wasm, lval, lval_resolved_sym);
+          release(lval_resolved_sym);
+          return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env
           switch (lval_resolved_sym->subtype) {
             /* case SYS: */
@@ -883,7 +858,9 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       if (lval->subtype == LIST) return compile_list(wasm, lval);  // fn call
     default:;
   }
-  return datafy_lval(wasm, lval);
+  CResult ret = datafy_lval(wasm, lval);
+  release(lval_resolved_sym);
+  return ret;
 }
 
 void print_pair(Lval* lval_sym, Lval* lval) {
@@ -893,23 +870,24 @@ void print_pair(Lval* lval_sym, Lval* lval) {
 }
 
 int compile(char* file_name) {
-  /* Lval* lval_array[] = {make_lval_nil(), make_lval_num(123)}; */
-  /* Lval* lval_list = make_rest_args(lval_array, 2); */
-  /* lval_println(lval_list); */
-  /* print_slot_size(); */
-
   set_log_level(LOG_LEVEL_INFO);
 
   Wasm* wasm = init_wasm();
-  /* printf("__data_end: %d\n", wasm->__data_end); */
-  /* wasm->env = interprete_file(file_name); */
-  Lenv* user_env = interprete_file(file_name);
-  env_print(user_env);
+
+  init_wajure();
+  load_main();
+  Namespace* main_ns = get_namespace(config->main);
+  set_current_ns(main_ns);
+  /* Namespace* foo_ns = get_namespace("foo.core"); */
+  /* printf("foo.core: %s", foo_ns->namespace); */
+  Lenv* main_env = main_ns->env;
+
+  env_print(main_env);
 
   import_runtime(wasm);
 
   printf("Processing env ==============================\n");
-  Cell* cell = user_env->kv;
+  Cell* cell = main_env->kv;
   while (cell) {
     Cell* pair = cell->car;
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
@@ -921,11 +899,13 @@ int compile(char* file_name) {
     lval_print(lval_sym);
     printf(": ");
     lval_println(lval);
-    if (lval->type == LVAL_FUNCTION && lval->subtype == LAMBDA) {
-      lval->str = retain(lval_sym->str);
-      result = lval_compile(wasm, lval);
-      add_to_symbol_table(wasm, lval_sym->str, lval);
-    } else if (lval->type != LVAL_NAMESPACE) {
+    if (lval->type == LVAL_FUNCTION) {
+      if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
+        lval->str = retain(lval_sym->str);
+        result = lval_compile(wasm, lval);
+        add_to_symbol_table(wasm, lval_sym->str, lval);
+      }
+    } else {
       result = datafy_lval(wasm, lval);
       add_to_symbol_table(wasm, lval_sym->str, lval);
     }
@@ -945,8 +925,28 @@ int compile(char* file_name) {
 
   BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
                            wasm->symbol_table_count);
-  /* BinaryenAddCustomSection(wasm->module, "deps", wasm->symbol_table, */
-  /*                          wasm->symbol_table_count); */
+
+  int deps_str_len = 0;
+  Cell* head = wasm->deps;
+  while (head) {
+    Cell* pair = head->car;
+    deps_str_len += _strlen((char*)(pair->car)) + 1;
+    head = head->cdr;
+    BinaryenAddGlobalImport(wasm->module, pair->car, "env", pair->car,
+                            BinaryenTypeInt32(), 0);
+  }
+
+  char* deps_str = malloc(deps_str_len);
+  deps_str[0] = '\0';
+  head = wasm->deps;
+  char* str = deps_str;
+  while (head) {
+    Cell* pair = head->car;
+    sprintf(str, "%s\n", pair->car);
+    str = str + _strlen(pair->car) + 1;
+    head = head->cdr;
+  }
+  BinaryenAddCustomSection(wasm->module, "deps", deps_str, deps_str_len);
 
   char* data_size_str = malloc(100);
   sprintf(data_size_str, "%d", wasm->data_offset);
@@ -964,7 +964,8 @@ int compile(char* file_name) {
   write_wat(wasm, "compiled/lispy.wat");
   write_wasm(wasm, "compiled/lispy.wasm");
 
-  release_env(user_env);
+  /* release_env(user_env); */
+  destroy_wajure();
   free_wasm(wasm);
 
   return 0;

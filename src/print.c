@@ -122,10 +122,10 @@ void lval_print(Lval* lval) {
     case LVAL_SYMBOL:
       printf("%s", lval->str);
       break;
-    case LVAL_NAMESPACE:;
-      Namespace* ns = (Namespace*)lval->head;
-      printf("%s", ns->namespace);
-      break;
+    /* case LVAL_NAMESPACE:; */
+    /*   Namespace* ns = (Namespace*)lval->head; */
+    /*   printf("%s", ns->namespace); */
+    /*   break; */
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:

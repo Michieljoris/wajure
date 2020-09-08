@@ -1,14 +1,19 @@
 (in-ns 'compile)
-(require '[foo.core :as foo])
+(require '[foo.core :as foo :refer [foo]])
+
 ;; (def a 123)
 ;; (def b 123)
 ;; (defn foo [] 1234)
 ;; (def bar (list 1 2 3))
 
 (defn test [x y]
-  (print "foo.core/foo = " foo.core/foo)
-  (print "foo/foo = " foo/foo)
-  (print "foo" foo)
+  foo.core/foo foo/foo foo foo.core/bar
+  ;; (foo/f)
+  ;; a foo.core/foo foo/foo foo
+
+  ;; (print "foo.core/foo = " foo.core/foo)
+  ;; (print "foo/foo = " foo/foo)
+  ;; (print "foo" foo)
   ;; (let [f foo
   ;;       p print]
   ;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
@@ -17,7 +22,7 @@
   )  
 ;; (compile "lispy/test_compile.lispy")
 
-(
+
 ;; (def plus +)
 ;; (def mylet (if true let))
 ;; (defmacro my-macro2 [x] `(plus 1 ~x))

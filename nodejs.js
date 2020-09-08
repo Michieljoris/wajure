@@ -116,6 +116,7 @@ async function load_lispy(runtime, globals, lispy_wasm_file_name) {
                                                 runtime)};
 
     var module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
+
     var nameSections = WebAssembly.Module.customSections(module, "symbol_table");
 
     if (nameSections.length != 0) {
@@ -124,7 +125,16 @@ async function load_lispy(runtime, globals, lispy_wasm_file_name) {
         console.log(string);
     };
 
-    var nameSections = WebAssembly.Module.customSections(module, "data_size");
+    nameSections = WebAssembly.Module.customSections(module, "deps");
+
+    if (nameSections.length != 0) {
+        console.log("Module contains a custom section: deps");
+        var string = new TextDecoder('utf8').decode(nameSections[0]);
+        console.log(string);
+    };
+
+
+    nameSections = WebAssembly.Module.customSections(module, "data_size");
 
     if (nameSections.length != 0) {
         console.log("Module contains a custom section: data_size");

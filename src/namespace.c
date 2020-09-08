@@ -50,16 +50,7 @@ Lval* make_lval_ns_symbol() {
 
 void set_current_ns(Namespace* ns) { state->current_ns = ns; }
 
-Namespace* get_current_ns() {
-  return state->current_ns;
-  /* Lenv* stdlib_env = get_stdlib_env(); */
-  /* if (stdlib_env) { */
-  /*   scoped Lval* lval_ns_symbol = make_lval_ns_symbol(); */
-  /*   scoped Lval* lval_ns = lenv_get(stdlib_env, lval_ns_symbol); */
-  /*   if (lval_ns) return (Namespace*)lval_ns->head; */
-  /* } */
-  /* return get_namespace("user"); */
-}
+Namespace* get_current_ns() { return state->current_ns; }
 
 Namespace* get_namespace(char* namespace_str) {
   return alist_get(state->namespaces, is_eq_str, namespace_str);
@@ -71,7 +62,7 @@ Namespace* get_ns_for_namespaced_symbol(Lval* lval_symbol,
   char* namespace_str =
       alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
 
-  return get_namespace(namespace_str);
+  return namespace_str ? get_namespace(namespace_str) : NULL;
 }
 
 Namespace* get_ns_for_referred_symbol(Lval* lval_symbol) {
@@ -80,8 +71,6 @@ Namespace* get_ns_for_referred_symbol(Lval* lval_symbol) {
   char* namespace_str =
       alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
   return namespace_str ? get_namespace(namespace_str) : NULL;
-  /* Namespace* ns = get_namespace(namespace_str); */
-  /* return ns ? ns->env : NULL; */
 }
 
 Namespace* install_ns(char* str) {

@@ -26,10 +26,6 @@ BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
 
 BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
 
-Lenv* interprete_file(char* file_name);
-
-void release_env(Lenv* env);
-
 BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset);
 
 BinaryenType* make_type_int32_array(int count);

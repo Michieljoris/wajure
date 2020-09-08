@@ -51,7 +51,7 @@ typedef struct {
   int wval_fn_offsets_allocated;
 
   int runtime_check_args_count;
-
+  Map deps;
 } Wasm;
 
 typedef struct {

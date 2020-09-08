@@ -83,7 +83,7 @@ struct lval {
   int offset;
   int param_count;
   int rest_arg_index;
-  char* namespace;
+  char* global_symbol_str;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
@@ -143,6 +143,12 @@ typedef struct {
   /* {"namespace.name": Namespace* ns} */
 } State;
 
+struct resolved_symbol {
+  Namespace* ns;
+  char* fqn;
+  Lval* lval;
+};
+
 /* lval types */
 enum {
   LVAL_SYMBOL,
@@ -150,7 +156,6 @@ enum {
   LVAL_LITERAL,
   LVAL_FUNCTION,
   LVAL_ERR,
-  LVAL_NAMESPACE,
   /* subtypes */
   // literal subtypes
   LNIL,

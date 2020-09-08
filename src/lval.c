@@ -68,8 +68,8 @@ int lval_hash(Lval* lval) {
               lval->subtype);
       }
       break;
-    case LVAL_NAMESPACE:
-      break;
+    /* case LVAL_NAMESPACE: */
+    /*   break; */
     default:
       printf("OOPS, can't calculate hash of unknown type %d\n", lval->type);
   }
@@ -90,12 +90,13 @@ Lval* make_lval_keyword(char* s) {
   return lval;
 }
 
-Lval* make_lval_namespace(Namespace* ns) {
-  Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)ns};
-  lval->hash = lval_hash(lval);
-  return lval;
-}
+/* Lval* make_lval_namespace(Namespace* ns) { */
+/*   Lval* lval = lalloc_type(LVAL); */
+/*   *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)ns};
+ */
+/*   lval->hash = lval_hash(lval); */
+/*   return lval; */
+/* } */
 
 /* COLLECTION */
 
@@ -219,13 +220,11 @@ Lval* make_lval_exception(char* msg) {
 }
 
 // Compiler type
-Lval* make_lval_external(char* namespace, char* name) {
+Lval* make_lval_external(struct resolved_symbol s) {
   Lval* lval = lalloc_type(LVAL);
-  char* fqn = lalloc_size(sizeof(namespace) + sizeof(name) + 2);
-  fqn = _strcpy(fqn, namespace);
-  fqn = _strcat(fqn, "/");
-  fqn = _strcat(fqn, name);
-  *lval = (Lval){.type = LVAL_EXTERNAL, .subtype = -1, .str = fqn};
+
+  *lval = (Lval){
+      .type = LVAL_EXTERNAL, .subtype = s.lval->subtype, .str = retain(s.fqn)};
   return lval;
 }
 
@@ -239,8 +238,8 @@ char* lval_type_constant_to_name(int t) {
       return "Symbol";
     case LVAL_COLLECTION:
       return "Collection";
-    case LVAL_NAMESPACE:
-      return "Namespace";
+    /* case LVAL_NAMESPACE: */
+    /*   return "Namespace"; */
     case LVAL_ERR:
       return "Error";
     case LVAL_FUNCTION:
@@ -313,8 +312,8 @@ char* lval_type_to_name(Lval* lval) {
         case MACRO:
           return "Macro";
       }
-    case LVAL_NAMESPACE:
-      return "Namespace";
+    /* case LVAL_NAMESPACE: */
+    /*   return "Namespace"; */
     case LVAL_ERR:
       return "Error";
     default:

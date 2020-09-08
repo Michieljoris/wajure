@@ -100,14 +100,7 @@ BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
 }
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
-  /* va_list va; */
-  /* va_start(va, fmt); */
-  /* char* err_msg = lalloc_size(512); */
-  /* vsnprintf(err_msg, 511, fmt, va); */
-  /* /\* err_msg = lrealloc(err_msg, _strlen(err_msg) + 1); *\/ */
-  /* va_end(va); */
   int msg_offset = add_string_to_data(wasm, msg);
-  /* release(err_msg); */
 
   BinaryenModuleRef module = wasm->module;
 
@@ -147,12 +140,10 @@ BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
 
 int add_bytes_to_data(Wasm* wasm, char* data, int len) {
   int offset = wasm->data_offset;
-  /* printf("%d %d\n", wasm->strings_offset, len); */
   wasm->data = realloc(wasm->data, offset + len);
   _memmove(wasm->data + offset, data, len);
 
   wasm->data_offset += len;
-  /* printf("strings_offset: %d\n", wasm->strings_offset); */
   return offset;
 }
 
@@ -182,80 +173,48 @@ int add_fn_to_table(Wasm* wasm, char* fn_name) {
   return free_fn_slot;
 }
 
-Lenv* load_stdlib() {
-  Lenv* root_env = lenv_new();
-  lenv_add_builtin_fns(root_env);
+/* Lenv* load_stdlib() { */
+/*   Lenv* root_env = lenv_new(); */
+/*   lenv_add_builtin_fns(root_env); */
 
-  Lenv* stdlib_env = lenv_new();
-  stdlib_env->parent_env = retain(root_env);
+/*   Lenv* stdlib_env = lenv_new(); */
+/*   stdlib_env->parent_env = retain(root_env); */
 
-  stdlib_env->is_ns_env = 1;
-  Lval* result = load(stdlib_env, "clj/stdlib.lispy");
-  if (result->type == LVAL_ERR) {
-    lval_println(result);
-    exit(1);
-  }
+/*   stdlib_env->is_ns_env = 1; */
+/*   Lval* result = load(stdlib_env, "clj/stdlib.lispy"); */
+/*   if (result->type == LVAL_ERR) { */
+/*     lval_println(result); */
+/*     exit(1); */
+/*   } */
 
-  stdlib_env->is_ns_env = 0;
-  return stdlib_env;
-}
+/*   stdlib_env->is_ns_env = 0; */
+/*   return stdlib_env; */
+/* } */
 
-Lenv* interprete_file(char* file_name) {
-  Lenv* stdlib_env = load_stdlib();
-  Lenv* user_env = lenv_new();
-  user_env->parent_env = retain(stdlib_env);
-  stdlib_env->is_ns_env = 0;
-  user_env->is_ns_env = 1;
-  printf("load user env\n");
-  Lval* result = load(user_env, file_name);
-  printf("load user env2\n");
-  if (result->type == LVAL_ERR) {
-    lval_println(result);
-    exit(1);
-  }
-  release(result);
-  return user_env;
-}
+/* Lenv* interprete_file(char* file_name) { */
+/*   Lenv* stdlib_env = load_stdlib(); */
+/*   Lenv* user_env = lenv_new(); */
+/*   user_env->parent_env = retain(stdlib_env); */
+/*   stdlib_env->is_ns_env = 0; */
+/*   user_env->is_ns_env = 1; */
+/*   printf("load user env\n"); */
+/*   Lval* result = load(user_env, file_name); */
+/*   printf("load user env2\n"); */
+/*   if (result->type == LVAL_ERR) { */
+/*     lval_println(result); */
+/*     exit(1); */
+/*   } */
+/*   release(result); */
+/*   return user_env; */
+/* } */
 
-void release_env(Lenv* env) {
-  release(env->kv);
-  env->kv = NIL;
-  Lenv* parent_env = env->parent_env;
-  release(env);
-  if (parent_env) release_env(parent_env);
-}
-
-void add_test_fn(Wasm* wasm) {
-  BinaryenModuleRef module = wasm->module;
-
-  /* add_bytes_to_data(wasm, "foo3"); */
-  /* add_bytes_to_data(wasm, "bar"); */
-  /* printf("strings_data: %s\n", wasm->strings); */
-  /* printf("strings_data: %s\n", wasm->strings + _strlen("foo3") + 1); */
-
-  BinaryenType localTypes[] = {};
-  /* BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()}; */
-
-  /* int offset = 5; */
-  /* BinaryenExpressionRef printf = wasm_printf(wasm, offset); */
-  /* BinaryenExpressionRef log_int = wasm_log_int(wasm, 123); */
-  /* BinaryenExpressionRef log_string = wasm_log_string(wasm, offset); */
-  /* BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2); */
-
-  /* BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string, */
-  /*                                          log_string_n}; */
-  BinaryenType TypeNone = BinaryenTypeNone();
-  BinaryenType TypeInt32x1 = make_type_int32(1);
-  BinaryenExpressionRef my_value_list[] = {};
-  BinaryenExpressionRef body =
-      BinaryenBlock(module, "my-block", my_value_list,
-                    sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
-                    BinaryenTypeAuto());
-
-  BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
-                      sizeof(localTypes) / sizeof(BinaryenType), body);
-  BinaryenAddFunctionExport(wasm->module, "test", "test");
-}
+/* void release_env(Lenv* env) { */
+/*   release(env->kv); */
+/*   env->kv = NIL; */
+/*   Lenv* parent_env = env->parent_env; */
+/*   release(env); */
+/*   if (parent_env) release_env(parent_env); */
+/* } */
 
 BinaryenType* make_type_int32_array(int count) {
   BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
@@ -284,7 +243,6 @@ Wasm* enter_context(Wasm* wasm) {
 void leave_context(Wasm* wasm) {
   Context* context = wasm->context->car;
   Cell* prev_context_cell = wasm->context->cdr;
-  /* printf("leaving context %s\n", context->msg); */
   /* if (prev_context_cell && */
   /*     context->local_count !=
    * ((Context*)(prev_context_cell->car))->local_count) */
@@ -470,4 +428,35 @@ CResult wasm_lalloc_size(Wasm* wasm, int size) {
                               make_type_int32(1)));
 }
 
-void register_value(Wasm* wasm, CResult value) {}
+// experiment
+void add_test_fn(Wasm* wasm) {
+  BinaryenModuleRef module = wasm->module;
+
+  /* add_bytes_to_data(wasm, "foo3"); */
+  /* add_bytes_to_data(wasm, "bar"); */
+  /* printf("strings_data: %s\n", wasm->strings); */
+  /* printf("strings_data: %s\n", wasm->strings + _strlen("foo3") + 1); */
+
+  BinaryenType localTypes[] = {};
+  /* BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()}; */
+
+  /* int offset = 5; */
+  /* BinaryenExpressionRef printf = wasm_printf(wasm, offset); */
+  /* BinaryenExpressionRef log_int = wasm_log_int(wasm, 123); */
+  /* BinaryenExpressionRef log_string = wasm_log_string(wasm, offset); */
+  /* BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2); */
+
+  /* BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string, */
+  /*                                          log_string_n}; */
+  BinaryenType TypeNone = BinaryenTypeNone();
+  BinaryenType TypeInt32x1 = make_type_int32(1);
+  BinaryenExpressionRef my_value_list[] = {};
+  BinaryenExpressionRef body =
+      BinaryenBlock(module, "my-block", my_value_list,
+                    sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
+                    BinaryenTypeAuto());
+
+  BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
+                      sizeof(localTypes) / sizeof(BinaryenType), body);
+  BinaryenAddFunctionExport(wasm->module, "test", "test");
+}

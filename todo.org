@@ -24,6 +24,10 @@ throw result of condition through fn that returns 0 if condition is false or nil
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
     (foo)) will not work since foo is not yet defined when we add the foo fn to
     the env.
+
+    So after we define a fn we need to add it to the closure. This will fix it
+    for the interpreter.
+
 ** fix freeing of fn_name ("anon")
 ** DONE record offset of compiler values that have been interred, so we can reuse them and export them
 ** add release and retain to wasm code
@@ -42,7 +46,7 @@ Then call wasm implementation of apply* that receives a list and puts them on wa
 ** loop/recur
 ** multimethods
 ** try/throw/catch
-** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data
+** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data, atoms
 ** benchmark whether internal module calls are faster than calling imported fns or calling imported table fns
 ** ----------------------------
 ** DONE "too few args to ..." etc gets added every time to data!!!!

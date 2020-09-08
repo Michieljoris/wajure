@@ -233,7 +233,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   /* lval_println(lval); */
   /* printf("lval %p\n", lval); */
 
-  CResult ret;
+  CResult ret = {};
   if (lval->wval_ptr > 0) {
     /* printf("YIPPPEEEEEEE %d\n", lval->wval_ptr); */
     /* return cresult(make_int32(wasm->module, lval->wval_ptr)); */
@@ -242,31 +242,49 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
     return _ret;
   }
 
-  if (lval->type == LVAL_COLLECTION) {
-    ret = datafy_collection(wasm, lval);
-  } else if (lval->type == LVAL_FUNCTION) {
-    switch (lval->subtype) {
-      case SYS:
-        ret = datafy_sys_fn(wasm, lval);
-        break;
-      case LAMBDA:  // functions in compiler env
-        ret = datafy_global_lambda(wasm, lval->str, lval);
-        break;
-      case SPECIAL:
-        return quit(wasm,
-                    "ERROR: Can't take value of a special form such as %s",
-                    lval->str);
-      case MACRO:
-        return quit(wasm, "ERROR: Can't take value of a macro such as %s",
-                    lval->str);
-      default:;
-        return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
-                    lval->subtype);
-    }
-  } else {
-    int lval_ptr = inter_literal(wasm, lval);
-    CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
-    ret = _ret;
+  switch (lval->type) {
+    case LVAL_COLLECTION:
+      if (lval->global_symbol_str)
+        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+                                    BinaryenTypeInt32());
+      else
+        ret = datafy_collection(wasm, lval);
+      break;
+    case LVAL_FUNCTION:
+      switch (lval->subtype) {
+        case SYS:
+          ret = datafy_sys_fn(wasm, lval);
+          break;
+        case LAMBDA:  // functions in compiler env
+          if (lval->global_symbol_str)
+            ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+                                        BinaryenTypeInt32());
+          else
+            ret = datafy_global_lambda(wasm, lval->str, lval);
+          break;
+        case SPECIAL:
+          return quit(wasm,
+                      "ERROR: Can't take value of a special form such as %s",
+                      lval->str);
+        case MACRO:
+          return quit(
+              wasm, "ERROR: Can't take value of a macro such as %s",
+              lval->global_symbol_str ? lval->global_symbol_str : lval->str);
+        default:;
+          return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
+                      lval->subtype);
+      }
+      break;
+
+    default:;
+      if (lval->global_symbol_str)
+        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+                                    BinaryenTypeInt32());
+      else {
+        int lval_ptr = inter_literal(wasm, lval);
+        CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+        ret = _ret;
+      }
   }
 
   lval->wval_ptr = ret.wasm_ptr;

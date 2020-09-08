@@ -13,24 +13,35 @@
 #include "repl.h"
 #include "state.h"
 
-void run() {
+void init_wajure() {
   set_log_level(LOG_LEVEL_INFO);
   install_builtins();
   Namespace* user_ns = install_ns(config->user);
   set_current_ns(user_ns);
   install_stdlib();
+}
 
+void destroy_wajure() {
+  release(state->builtins_env);
+  release(state->namespaces);
+  print_mempool_counts();
+}
+
+void load_main() {
   printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   Lval* result = require_ns(NULL, config->main);
   printf("Result of loading %s: ", config->main);
   lval_println(result);
   release(result);
   printf("++++++++++++++++++++++++++++++++++++++++++++++++++");
+}
+
+void run() {
+  init_wajure();
+  load_main();
 
   print_mempool_counts();
-  release(state->builtins_env);
-  release(state->namespaces);
-  print_mempool_counts();
+  destroy_wajure();
   printf("\n");
 }
 
