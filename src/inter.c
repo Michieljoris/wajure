@@ -51,7 +51,8 @@ void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
     *allocated += 100;
     *offsets = realloc(*offsets, *allocated);
   }
-  /* printf("offset count %d allocated %d \n", *count, *allocated); */
+  printf("offset count %d allocated %d offse; %d\n", *count, *allocated,
+         offset);
   (*offsets)[*count] = offset;
   (*count)++;
 }
@@ -117,6 +118,7 @@ int inter_data_lval(Wasm* wasm, int* data_lval) {
                      &wasm->lval_offsets_allocated, offset);
   free(data_lval);
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  printf("inter_data_lval: offset %d %d\n", offset, wval_ptr);
   /* CResult ret = { */
   /*     .ber = make_ptr(wasm, wval_ptr), /\* make_int32(wasm->module,
    * wval_ptr), *\/ */
@@ -224,8 +226,15 @@ void inter_rewrite_info(Wasm* wasm) {
       wval_fn_offsets_ptr, wasm->wval_fn_offsets_count,
   };
 
-  printf("sizeof info_section %li\n", sizeof(info_section));
+  /* printf("sizeof info_section %li\n", sizeof(info_section)); */
+  /* printf("info_section[0]: %d\n", info_section[0]); */
+  /* printf("info_section[1]: %d\n", info_section[1]); */
+  /* printf("info_section[2]: %d\n", info_section[2]); */
+  /* printf("wasm->data_offset %d\n", wasm->data_offset); */
   add_bytes_to_data(wasm, (char*)info_section, sizeof(info_section));
+  /* printf("wasm->data_offset %d\n", wasm->data_offset); */
   int info_section_size = sizeof(info_section);
+  /* printf("info_section_size %d\n", info_section_size); */
   add_bytes_to_data(wasm, (char*)&info_section_size, sizeof(int));
+  /* printf("wasm->data_offset %d\n", wasm->data_offset); */
 }

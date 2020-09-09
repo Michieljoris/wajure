@@ -148,6 +148,7 @@ int add_bytes_to_data(Wasm* wasm, char* data, int len) {
 }
 
 int add_string_to_data(Wasm* wasm, char* str) {
+  printf("adding str to data!!! %s\n", str);
   int* ret = (int*)alist_get(wasm->string_pool, is_eq_str, str);
   if (!ret) {
     int len = _strlen(str) + 1;
@@ -160,6 +161,7 @@ int add_string_to_data(Wasm* wasm, char* str) {
     *ret = offset;
     wasm->string_pool = alist_prepend(wasm->string_pool, retain(str), ret);
   }
+  printf("and offset is: %d\n", *ret);
   return *ret;
 }
 

@@ -1,13 +1,16 @@
 (in-ns 'compile)
-(require '[foo.core :as foo :refer [foo]])
+;; (require '[foo.core :as foo :refer [foo]])
 
 ;; (def a 123)
 ;; (def b 123)
 ;; (defn foo [] 1234)
 ;; (def bar (list 1 2 3))
 
+
 (defn test [x y]
-  foo.core/foo foo/foo foo foo.core/bar
+   (print "hello there")
+  ;; (print "hello", 123, 345, false, true, x y (list 1 2) "some string")
+  ;; foo.core/foo foo/foo foo foo.core/bar
   ;; (foo/f)
   ;; a foo.core/foo foo/foo foo
 

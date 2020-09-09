@@ -872,8 +872,10 @@ void print_pair(Lval* lval_sym, Lval* lval) {
 int compile(char* file_name) {
   set_log_level(LOG_LEVEL_INFO);
 
+  printf("FILE_NAME: %s\n", file_name);
   Wasm* wasm = init_wasm();
 
+  printf("FILE_NAME: %s\n", file_name);
   init_wajure();
   load_main();
   Namespace* main_ns = get_namespace(config->main);
@@ -914,8 +916,8 @@ int compile(char* file_name) {
 
   BinaryenAddFunctionExport(wasm->module, "test", "test");
 
-  add_fn_to_table(wasm, "log_int");
-  add_fn_to_table(wasm, "printf_");
+  /* add_fn_to_table(wasm, "log_int"); */
+  /* add_fn_to_table(wasm, "printf_"); */
   // We only have this data _after_ compiling
   /* add_global_section(module); */
   add_function_table(wasm);
@@ -961,8 +963,8 @@ int compile(char* file_name) {
     printf("VALIDATED OK!!\n");
   /* BinaryenModulePrint(wasm->module); */
 
-  write_wat(wasm, "compiled/lispy.wat");
-  write_wasm(wasm, "compiled/lispy.wasm");
+  write_wat(wasm, "compiled/main.wat");
+  write_wasm(wasm, "compiled/main.wasm");
 
   /* release_env(user_env); */
   destroy_wajure();

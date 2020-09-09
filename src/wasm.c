@@ -18,6 +18,7 @@ Wasm* init_wasm() {
   int pic = 1;  // position independant code
   int data_end = (int)_strtol(data_end_str, NULL, 10);
   int fn_table_end = 0;
+  printf("FILE_NAME: \n");
   *wasm = (Wasm){
       .module = BinaryenModuleCreate(),
       .data = malloc(4),
