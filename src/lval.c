@@ -220,13 +220,14 @@ Lval* make_lval_exception(char* msg) {
 }
 
 // Compiler type
-Lval* make_lval_external(struct resolved_symbol s) {
-  Lval* lval = lalloc_type(LVAL);
+/* Lval* make_lval_external(struct resolved_symbol s) { */
+/*   Lval* lval = lalloc_type(LVAL); */
 
-  *lval = (Lval){
-      .type = LVAL_EXTERNAL, .subtype = s.lval->subtype, .str = retain(s.fqn)};
-  return lval;
-}
+/*   *lval = (Lval){ */
+/*       .type = LVAL_EXTERNAL, .subtype = s.lval->subtype, .str =
+ * retain(s.fqn)}; */
+/*   return lval; */
+/* } */
 
 char* lval_type_constant_to_name(int t) {
   switch (t) {

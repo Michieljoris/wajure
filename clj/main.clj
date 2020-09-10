@@ -1,16 +1,24 @@
-(in-ns 'compile)
-;; (require '[foo.core :as foo :refer [foo]])
+(in-ns 'main)
+(require '[foo.core :as foo :refer [foo]])
+;; (require '[foo.core2 :as foo2])
 
 ;; (def a 123)
 ;; (def b 123)
-;; (defn foo [] 1234)
+;; (defn bar[x] x)
+(defn foo [x] x)
 ;; (def bar (list 1 2 3))
 
 
 (defn test [x y]
-   (print "hello there")
+  (print (foo/f 456))
+  ;; (let [f foo/f]
+  ;;   (print "hello" (f 123) (foo/f 456)
+  ;;          ))
+  ;; (print "hello" a b (foo 4444) bar)
+   ;; (print "hello there" (foo 555))
   ;; (print "hello", 123, 345, false, true, x y (list 1 2) "some string")
-  ;; foo.core/foo foo/foo foo foo.core/bar
+  ;; (print foo.core/foo foo/foo foo foo/f a b)
+  ;; (foo/f) foo2/foo2
   ;; (foo/f)
   ;; a foo.core/foo foo/foo foo
 

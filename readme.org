@@ -18,7 +18,7 @@ TODO:
 - [x] let
 - [x] if
 - [x] namespaces in interpreter
-- [ ] namespaces in compiled code
+- [x] namespaces in compiled code
 - [ ] compile test suite
 - [ ] partial
 - [ ] loop/recur

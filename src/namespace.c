@@ -21,15 +21,33 @@ Namespace* make_or_get_namespace(char* namespace_str) {
   return ns;
 }
 
-char* ns_to_file_name(char* ns_str) {
+char* ns_to_src(char* ns_str) {
   char* file_name = lalloc_size(_strlen(config->src) + 1 + _strlen(ns_str) +
                                 _strlen("/.clj") + 1);
-  file_name = _strcpy(file_name, config->src);
-  file_name = _strcat(file_name, "/");
-  file_name = _strcat(file_name, ns_str);
+  sprintf(file_name, "%s/%s", config->src, ns_str);
   file_name = strsubst(file_name, '.', '/');
   file_name = strsubst(file_name, '-', '_');
   file_name = _strcat(file_name, ".clj");
+  return file_name;
+}
+
+char* ns_to_wat(char* ns_str) {
+  char* file_name = lalloc_size(_strlen(config->src) + 1 + _strlen(ns_str) +
+                                _strlen("/.wat") + 1);
+  sprintf(file_name, "%s/%s", config->src, ns_str);
+  file_name = strsubst(file_name, '.', '/');
+  file_name = strsubst(file_name, '-', '_');
+  file_name = _strcat(file_name, ".wat");
+  return file_name;
+}
+
+char* ns_to_wasm(char* ns_str) {
+  char* file_name = lalloc_size(_strlen(config->src) + 1 + _strlen(ns_str) +
+                                _strlen("/.wasm") + 1);
+  sprintf(file_name, "%s/%s", config->src, ns_str);
+  file_name = strsubst(file_name, '.', '/');
+  file_name = strsubst(file_name, '-', '_');
+  file_name = _strcat(file_name, ".wasm");
   return file_name;
 }
 

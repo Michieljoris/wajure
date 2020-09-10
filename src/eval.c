@@ -147,14 +147,6 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
-char* make_fqn(char* namespace, char* name) {
-  char* fqn = lalloc_size(sizeof(namespace) + sizeof(name) + 2);
-  fqn = _strcpy(fqn, namespace);
-  fqn = _strcat(fqn, "/");
-  fqn = _strcat(fqn, name);
-  return fqn;
-}
-
 struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   struct resolved_symbol ret = {};
   Lval* lval_resolved_sym;
@@ -170,10 +162,13 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
     ret.ns = ns;
-    ret.fqn = make_fqn(ns->namespace, name);
+    ret.name = retain(name);
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
+
+    /* ret.fn_table_index_global = make_fqn("fn:", ns->namespace, name); */
+    /* ret.data_ptr_global = make_fqn("data:", ns->namespace, name); */
     return ret;
   }
 
@@ -186,7 +181,8 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   if (ns) {
     /* ret.env = ns->env; */
     ret.ns = ns;
-    ret.fqn = make_fqn(ns->namespace, lval_symbol->str);
+    ret.name = retain(lval_symbol->str);
+    /* ret.fqn = make_fqn(ns->namespace, lval_symbol->str); */
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
@@ -198,7 +194,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
     if (lval_resolved_sym) {
       ret.lval = lval_resolved_sym;  // resolved in stdlib env
-      ret.fqn = make_fqn(ns->namespace, lval_symbol->str);
+      /* ret.fqn = make_fqn(ns->namespace, lval_symbol->str); */
       ret.ns = ns;
       return ret;
     }

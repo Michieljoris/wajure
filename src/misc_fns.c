@@ -208,7 +208,7 @@ Lval* in_ns_fn(Lenv* _, Lval* arg_list) {
 
 Lval* require_ns(Lenv* _, char* ns) {
   Namespace* current_namespace = get_current_ns();
-  scoped char* file_name = ns_to_file_name(ns);
+  scoped char* file_name = ns_to_src(ns);
   Lval* result = load(NULL, file_name);
 
   set_current_ns(current_namespace);
@@ -312,8 +312,7 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
 
     if (!required_ns)
       return make_lval_err("Loaded %s, but haven't found namespace %s",
-                           ns_to_file_name(info.namespace_str),
-                           info.namespace_str);
+                           ns_to_src(info.namespace_str), info.namespace_str);
   }
 
   current_namespace->as =

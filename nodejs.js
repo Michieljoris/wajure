@@ -1,3 +1,4 @@
+const util = require('util');
 const fs = require('fs');
 
 var str = "";
@@ -56,18 +57,18 @@ function makeLogStringN(memory, offset, length) {
 }
 
 async function run_wajure_fn(env, module, fn_name, ...args) {
-    let stack_pointer = module.instance.exports.stack_pointer.value;
+    let stack_pointer = env.stack_pointer_global.value;
     // console.log("stack_pointer: ", stack_pointer);
 
     let args_count = args.length;
 
     var int32s = new Uint32Array(env.runtime.exports.memory.buffer, 0);
     stack_pointer /= 4;
-    for (i = 0; i < args_count; i++) {
+    for (i = args_count; i >= 0; --i) {
         let arg = env.runtime.exports.make_lval_num(args[i]);
         int32s[stack_pointer + i] = arg
     }
-    module.instance.exports.stack_pointer.value += args_count * 4;
+    env.stack_pointer_global.value += args_count * 4;
 
     let closure_pointer = 0;
     try {
@@ -86,6 +87,7 @@ function get_custom_section(module, section) {
     if (nameSections.length != 0) {
         // console.log("Module contains a custom section: ", section);
         var string = new TextDecoder('utf8').decode(nameSections[0]);
+        // console.log(string);
         return string;
     };
 
@@ -93,20 +95,42 @@ function get_custom_section(module, section) {
 
 function parse_symbol_info(a) {
     let result = { name: a[0],
-                   ptr : a[1],
-                   type: a[2],}
+                   type: a[1],
+                   ptr : a[2] }
     if (result.type == "Function") {
-        result.param_count = a[3];
-        result.rest_arg_index = a[4];
+        result.fn_table_index = a[3]
+        result.param_count = a[4];
+        result.rest_arg_index = a[5];
     }
     return result;
+}
+
+var fn_offset = { offset_type: "fn_table_index",  offset: "fn_table_offset", start: "fn_table_start" }
+var data_offset = { offset_type: "ptr",  offset: "data_offset", start: "data_start" };
+
+function parse_deps(deps) {
+    return deps.split("\n")
+               .filter(l => l.length > 0)
+               .map(l => l.split("/"))
+               .map(a => {
+                   let [prefix, namespace] = a[0].split(":");
+                   let global = a[0] + "/" + a[1];
+                   return Object.assign({},
+                       prefix == "fn" ? fn_offset : data_offset,
+                       { namespace, name: a[1],  global});
+               })
+               .reduce((acc, v) => {
+                   acc[v.namespace] = acc[v.namespace] || []
+                   acc[v.namespace].push(v);
+                   return acc;
+               }, {})
 }
 
 function parse_custom_sections(module) {
     var nameSections = WebAssembly.Module.customSections(module, "symbol_table");
 
     let symbol_table = get_custom_section(module, "symbol_table");
-    if (!symbol_table) return { error: "Missing symbol table"};
+    if (symbol_table == undefined) return { error: "Missing symbol table"};
 
     symbol_table = symbol_table
         .split("\n")
@@ -119,38 +143,17 @@ function parse_custom_sections(module) {
         }, {})
 
     let deps = get_custom_section(module, "deps");
-    // if (!deps) return { error: "Missing deps"};
-
-    deps = deps.split("\n")
-               .filter(l => l.length > 0)
-               .map(l => l.split("/"))
-               .map(a => { return { namespace: a[0], name: a[1] }})
-               .reduce((acc, v) => {
-                   acc[v.namespace] = acc[v.namespace] || [];
-                   acc[v.namespace].push(v.name);
-                   return acc;
-               }, {})
+    if (deps == undefined) return { error: "Missing deps"};
+    // console.log("DEPS:", deps);
+    deps = parse_deps(deps);
 
     let data_size = get_custom_section(module, "data_size");
-    if (!data_size) return { error: "Missing data_size"};
+    if (data_size == undefined) return { error: "Missing data_size"};
 
-    return { symbol_table, deps, data_size };
-}
+    let fn_table_size = get_custom_section(module, "fn_table_size");
+    if (fn_table_size == undefined) return { error: "Missing fn_table_size"};
 
-async function load_module(env, wasm_path) {
-    console.log("wasm_path: ", wasm_path)
-    let buf = fs.readFileSync(wasm_path);
-    var module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
-
-    let module_info = parse_custom_sections(module);
-    if (module_info.error) {
-        console.log(module_info.error + " in module loaded from " + wasm_path);
-        return;
-    }
-    // console.log("MODULE_INFO:");
-    // console.log(module_info);
-    module_info.module = module;
-    return module_info;
+    return { symbol_table, deps, data_size, fn_table_size };
 }
 
 async function instantiate_runtime(env) {
@@ -181,70 +184,176 @@ async function instantiate_runtime(env) {
     let stack_pointer = runtime.exports._malloc(config.stack_size); //8MB stack
 
     runtime.exports.init_lispy_mempools(800, 800, 800);
-    env.stack_pointer = stack_pointer;
+    env.stack_pointer_global = new WebAssembly.Global({ value: 'i32', mutable: true }, stack_pointer);
     env.runtime = runtime;
     env.data_start = env.runtime.exports.__data_end.value;
+    env.fn_table_start = 0;
 
+    env.runtime_error_fn = make_runtime_error_fn(env.runtime.exports.memory);
+    //TODO: we can't set maximum as optional with BinaryenSetFunctionTable as we
+    //can with the js call, so we just set it to 1 million, but ideally we would
+    //like to set both max and initial to the number of fns in all module and/or
+    //use table.grow.
+    env.fn_table = new WebAssembly.Table({initial:100 * 1000, maximum: 1000000, element:"anyfunc"});
     fs.writeFile("__data_end", "" + env.data_start,
         function(err) {
             if (err) return console.log(err);
         })
 }
 
-async function instantiate_module(env, { module, data_offset, data_size, fn_table_offset}) {
+async function instantiate_module(env, { compiled_module, data_offset, data_size, fn_table_offset,
+                                         namespace, globals}) {
     data_offset += env.data_start;
-    const globals = {
-        stack_pointer: new WebAssembly.Global({ value: 'i32', mutable: true }, env.stack_pointer),
-        data_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, data_offset),
-        fn_table_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, fn_table_offset)
+    fn_table_offset += env.fn_table_start;
+
+    console.log(globals);
+    const wasm_globals = {};
+    for (const [global, offset] of Object.entries(globals)) {
+        console.log(global, offset);
+        wasm_globals[global] = new WebAssembly.Global({ value: 'i32', mutable: false },  offset);
     }
+    console.log(wasm_globals);
 
     // console.log("DATA_OFFSET: ", data_offset, globals.data_offset.value);
     let module_import_object = {
-        env: Object.assign(globals,
-                           {
-                               log_string: makeLogString(env.runtime.memory),
-                               log_int: arg => console.log(arg),
-                               log_string_n: makeLogStringN(env.runtime.memory),
-                               runtime_error: make_runtime_error_fn(env.runtime.memory)
-                           },
-                           env.runtime.exports) };
+        env: Object.assign(
+            {},
+            wasm_globals,
+            {   fn_table: env.fn_table,
+                runtime_error: env.runtime_error_fn,
+                stack_pointer: env.stack_pointer_global,
+                data_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, data_offset),
+                fn_table_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, fn_table_offset),
+
+                log_string: makeLogString(env.runtime.memory),
+                log_int: arg => console.log(arg),
+                log_string_n: makeLogStringN(env.runtime.memory),
+            },
+            env.runtime.exports) };
 
 
     // console.log("From nodejs.js: data_offset: ", data_offset, " data_size: ",
     //             data_size, " data_end: ", data_offset + data_size, " fn_table_offset: ", fn_table_offset);
-
-    const instance =  await WebAssembly.instantiate(module, module_import_object).
+    console.log("instantiating " + namespace);
+    const instance =  await WebAssembly.instantiate(compiled_module, module_import_object).
         then(instance => instance);
     env.runtime.exports.rewrite_pointers(data_offset, data_size, fn_table_offset);
+    env.modules[namespace].instance = instance;
     return instance;
+}
+
+async function instantiate_modules(env, modules) {
+    for (const [namespace, module] of Object.entries(modules)) {
+        module.instance = await instantiate_module(env, module);
+    }
+}
+
+async function load_module(env, module) {
+    console.log("Loading namespace: ", module.namespace);
+    module.file_name = env.config.out + "/" + module.namespace.replace(".","/").replace("-", "_") + ".wasm";
+    let buf = fs.readFileSync(module.file_name);
+
+    module.compiled_module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
+
+    let module_info = parse_custom_sections(module.compiled_module);
+    if (module_info.error) {
+        console.log(module_info.error + " in module loaded from " + module.file_name);
+        return module;
+    }
+    module = Object.assign(module, module_info);
+    // console.log("MODULE_INFO:");
+    // console.log(module);
+    return module;
+}
+
+
+async function load_modules(env, module) {
+
+    env.trace.push(module.namespace);
+    let loaded_module = env.modules[module.namespace];
+    if (loaded_module) return loaded_module;
+
+    module = await load_module(env, module);
+
+    module.data_offset = env.data_offset;
+    module.fn_table_offset = env.fn_table_offset;
+    env.data_offset += parseInt(module.data_size);
+    env.fn_table_offset += parseInt(module.fn_table_size);
+
+    for (const [namespace, value] of Object.entries(module.deps)) {
+        if (env.trace.includes(namespace)) {
+            console.warn("WARNING: Cyclical dependency from namespace " + module.namespace +
+                         " to " + namespace);
+            break;
+        }
+        await load_modules(env, { namespace: namespace });
+    }
+
+    env.modules[module.namespace] = module;
+    env.trace.pop(module.namespace);
+
+    return module;
+}
+
+function validate_globals(env, modules) {
+    for (const [namespace, module] of Object.entries(modules)) {
+        const globals = {};
+
+        for (const [namespace_dep, symbols] of Object.entries(module.deps)) {
+            const module = env.modules[namespace_dep];
+            for (const symbol of symbols) {
+                if (!module) throw("Linking error in " + namespace + ": " + namespace_dep + " is not available");
+                const symbol_info = module.symbol_table[symbol.name];
+                if (!symbol_info) throw("Linking error in " + namespace + ": " + symbol.name +
+                                        " does not exist in " + namespace_dep);
+                const offset_type = symbol_info[symbol.offset_type];
+                if (!offset_type) throw("Linking error in " + namespace + ": " +
+                                        " Can't find offset type of " + symbol.offset_type +
+                                        " in symbol info of " + symbol.name + " in namespace " + namespace_dep);
+                globals[symbol.global] = parseInt(
+                    symbol_info[symbol.offset_type]) +
+                    module[symbol.offset] +
+                    env[symbol.start];
+            }
+        }
+        console.log("GLOBALS: ", globals);
+        module.globals = globals;
+    }
 }
 
 async function start() {
     try {
         const env = {
+            trace: [],
+            modules: {},
+            data_offset: 0,
+            fn_table_offset: 0,
             config: {runtime_wasm: './out_wasm/runtime.wasm',
                      main: "main",
-                     out: "./compiled",
+                     out: "./clj",
                      stack_size: 8 * 1024,
                     }
         }
-
-        let main_wasm = env.config.out + "/" + env.config.main + ".wasm";
 
         console.log("Instantiating runtime ------------------------------------");
         await instantiate_runtime(env);
 
         // console.log("env.stack_pointer:", env.stack_pointer);
         console.log("Loading main module ------------------------------------");
-        let main_module = await load_module(env, main_wasm);
+        let module = { namespace: env.config.main };
+        await load_modules(env, module);
 
-        console.log("Instantiating main.wat ----------------------------------------");
-        main_module.data_offset = 0;
-        main_module.fn_table_offset = 0;
-        main_module.instance = instance = await instantiate_module(env, main_module);
+        console.log("Validate and create globals  ----------------------------------------");
+        validate_globals(env, env.modules);
 
-        console.log("Running main/test(..) ------------------------------");
+        console.log("Instantiate modules  ----------------------------------------");
+        await instantiate_modules(env, env.modules);
+        console.log(util.inspect(env.modules, null, Infinity, true));
+
+        const main_module = env.modules[env.config.main];
+
+        console.log("Running main/test(arg1, arg2, ..) ------------------------------");
+       
         run_wajure_fn(env, main_module, "test", 888, 777);
 
         env.runtime.exports.free_lispy_mempools();

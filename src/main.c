@@ -32,7 +32,10 @@ void make_config(int argc, char** argv) {
   config->do_compile = 0;
   if (_strcmp(argv[1], "-c") == 0) {
     config->do_compile = 1;
-    config->main = "compile";
+    config->main = "main";
+    /* config->main = "foo.core"; */
+    /* config->main = "foo.core2"; */
+    /* config->main = "bar.core"; */
   }
 }
 
@@ -46,9 +49,7 @@ int main(int argc, char** argv) {
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
       printf("COMPILING!!!\n");
-      char* file_name = ns_to_file_name(config->main);
-      compile(file_name);
-      release(file_name);
+      compile(config->main);
     } else {
       printf("INTERPRETING!!!\n");
       run();

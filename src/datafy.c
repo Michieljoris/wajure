@@ -244,8 +244,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
 
   switch (lval->type) {
     case LVAL_COLLECTION:
-      if (lval->global_symbol_str)
-        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+      if (lval->global_name)
+        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
                                     BinaryenTypeInt32());
       else
         ret = datafy_collection(wasm, lval);
@@ -256,29 +256,31 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
           ret = datafy_sys_fn(wasm, lval);
           break;
         case LAMBDA:  // functions in compiler env
-          if (lval->global_symbol_str)
-            ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+          if (lval->global_name)
+            ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
                                         BinaryenTypeInt32());
           else
             ret = datafy_global_lambda(wasm, lval->str, lval);
           break;
         case SPECIAL:
+          release(lval->global_name);
           return quit(wasm,
                       "ERROR: Can't take value of a special form such as %s",
                       lval->str);
         case MACRO:
-          return quit(
-              wasm, "ERROR: Can't take value of a macro such as %s",
-              lval->global_symbol_str ? lval->global_symbol_str : lval->str);
+          release(lval->global_name);
+          return quit(wasm, "ERROR: Can't take value of a macro such as %s",
+                      lval->global_name ? lval->global_name : lval->str);
         default:;
+          release(lval->global_name);
           return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
                       lval->subtype);
       }
       break;
 
     default:;
-      if (lval->global_symbol_str)
-        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_symbol_str,
+      if (lval->global_name)
+        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
                                     BinaryenTypeInt32());
       else {
         int lval_ptr = inter_literal(wasm, lval);
@@ -286,7 +288,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         ret = _ret;
       }
   }
-
+  release(lval->global_name);
   lval->wval_ptr = ret.wasm_ptr;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */

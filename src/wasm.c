@@ -15,10 +15,9 @@
 Wasm* init_wasm() {
   Wasm* wasm = malloc(sizeof(Wasm));
   char* data_end_str = read_file("__data_end");
-  int pic = 1;  // position independant code
+  int pic = 1;  // position independent code
   int data_end = (int)_strtol(data_end_str, NULL, 10);
   int fn_table_end = 0;
-  printf("FILE_NAME: \n");
   *wasm = (Wasm){
       .module = BinaryenModuleCreate(),
       .data = malloc(4),
@@ -114,13 +113,17 @@ void add_memory_section(Wasm* wasm) {
 
 void add_function_table(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
-  /* BinaryenAddTableImport(module, "table", "env", "table"); */
+  BinaryenAddTableImport(module, "fn_table", "env", "fn_table");
   int initial = wasm->fns_count;
   int maximum = wasm->fns_count;
-  initial = 1000;
-  maximum = 1000100;
+  initial = 100 * 1000;
+  maximum = 1000000;
 
   const char** funcNames = (const char**)wasm->fn_names;
+
+  for (int i = 0; i < wasm->fns_count; i++) {
+    BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]);
+  };
   int numFuncNames = wasm->fns_count;
 
   Ber fn_table_offset = wasm->pic ? BinaryenGlobalGet(module, "fn_table_offset",
@@ -226,7 +229,7 @@ CResult quit(Wasm* wasm, char* fmt, ...) {
 }
 
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
-  printf("-- ADD TO SYMBOL TABLE\n");
+  /* printf("-- ADD TO SYMBOL TABLE\n"); */
   char* type_str = lval_type_to_name(lval);
   int ptr_len = 10;
   int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
@@ -236,10 +239,10 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int offset = lval->wval_ptr;
   /* printf("OFFSET: %d\n", offset); */
   if (lval->type == LVAL_FUNCTION)
-    snprintf(line, max_len, "%s,%d,%s,%d,%d\n", sym, offset, type_str,
-             lval->param_count, lval->rest_arg_index);
+    snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", sym, type_str, offset,
+             lval->offset, lval->param_count, lval->rest_arg_index);
   else
-    snprintf(line, max_len, "%s,%d,%s\n", sym, offset, type_str);
+    snprintf(line, max_len, "%s,%s,%d\n", sym, type_str, offset);
   int line_count = _strlen(line);
   /* printf("line: %d %d %d %d %s", lval->wval_ptr, data_end, */
   /*        wasm->symbol_table_count, line_count, line); */

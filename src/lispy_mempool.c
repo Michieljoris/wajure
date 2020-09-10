@@ -85,7 +85,7 @@ void destroy_lval(void* data) {
   /*   ddebug("destroying lval:%li (%s):", (long int)lval, */
   /*          lval_type_to_name(lval)); */
   /* if (debug) lval_debugln(lval); */
-  release(lval->global_symbol_str);
+  release(lval->global_name);
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->str);

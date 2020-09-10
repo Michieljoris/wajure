@@ -51,8 +51,8 @@ void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
     *allocated += 100;
     *offsets = realloc(*offsets, *allocated);
   }
-  printf("offset count %d allocated %d offse; %d\n", *count, *allocated,
-         offset);
+  /* printf("offset count %d allocated %d offset; %d\n", *count, *allocated, */
+  /* offset); */
   (*offsets)[*count] = offset;
   (*count)++;
 }
@@ -96,9 +96,9 @@ int* make_data_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
   if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
-  if (lval->str)
-    printf("Adding string to data_lval!!!!! %s, %d\n", lval->str,
-           string_offset);
+  /* if (lval->str) */
+  /*   printf("Adding string to data_lval!!!!! %s, %d\n", lval->str, */
+  /*          string_offset); */
 
   data_lval[ref_count_offset] = 1;
   data_lval[data_p_offset / 4] =
@@ -118,7 +118,7 @@ int inter_data_lval(Wasm* wasm, int* data_lval) {
                      &wasm->lval_offsets_allocated, offset);
   free(data_lval);
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
-  printf("inter_data_lval: offset %d %d\n", offset, wval_ptr);
+  /* printf("inter_data_lval: offset %d %d\n", offset, wval_ptr); */
   /* CResult ret = { */
   /*     .ber = make_ptr(wasm, wval_ptr), /\* make_int32(wasm->module,
    * wval_ptr), *\/ */
@@ -205,7 +205,6 @@ int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
 }
 
 void inter_rewrite_info(Wasm* wasm) {
-  printf("inter_rewrite_info\n");
   int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
                                            wasm->lval_offsets_count * 4);
   /* printf("lval_offset_ptr %d\n", lval_offsets_ptr); */

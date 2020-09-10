@@ -2,3 +2,4 @@
 
 (def bar :bar)
 (print "from bar.core:", bar)
+(defn bar-fn [] 123)

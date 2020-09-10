@@ -4,7 +4,10 @@
 #include "env.h"
 
 Namespace* make_or_get_namespace(char* namespace_str);
-char* ns_to_file_name(char* ns_str);
+char* ns_to_src(char* ns_str);
+
+char* ns_to_wat(char* ns_str);
+char* ns_to_wasm(char* ns_str);
 
 int is_ns_env(Lenv* env);
 
