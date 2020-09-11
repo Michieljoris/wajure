@@ -4,3 +4,5 @@ out_wasm/
 .clangd/
 make-output
 compiled/
+.wat
+.wasm

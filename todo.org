@@ -1,6 +1,10 @@
 * TODO compiler
+** release/retain cond and branches of if
+** change name of main from test to main
+** compile all outdated files, not just main!!!
+but also the deps!!
 ** compile the beginning of a test suite
-** namespaces
+** DONE namespaces
 ** add repl and watch options to config
 in repl you can (re)compile namespaces. Also, it can watch directory and if any
 clj source file gets modified, recompile. Because it's a live env we can expand
@@ -35,7 +39,6 @@ throw result of condition through fn that returns 0 if condition is false or nil
 we need to free its closure and partials!!
 *** DONE deciding whether a compiled macro was a fn call!!
 *** releasing args to sys fn!!!
-*** release/retain cond and branches of if
 
 ** partial
 ** apply

@@ -2,6 +2,8 @@
 
 #include <binaryen-c.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
 
 #include "compile_special.h"
 #include "datafy.h"
@@ -919,8 +921,28 @@ void add_deps_custom_section(Wasm* wasm, char* custom_section_name,
                            deps_str_len);
 }
 
+int is_src_newer(char* src, char* wasm) {
+  struct stat src_stat;
+  if (stat(src, &src_stat) < 0) {
+    printf("Trying to stat src %s, but an error was returned\n", src);
+    abort();
+  };
+  struct stat wasm_stat;
+  if (stat(wasm, &wasm_stat) < 0) return 0;
+  return src_stat.st_mtime > wasm_stat.st_mtime;
+}
+
 int compile(char* namespace_str) {
   scoped char* file_name = ns_to_src(namespace_str);
+
+  if (!is_src_newer(ns_to_src(namespace_str), ns_to_wasm(namespace_str))) {
+    printf(
+        "Not compiling '%s' because the source has not been modified since "
+        "last compilation of this namespace.\n",
+        namespace_str);
+    return 1;
+  }
+
   set_log_level(LOG_LEVEL_INFO);
 
   printf("FILE_NAME: %s\n", file_name);
@@ -994,8 +1016,7 @@ int compile(char* namespace_str) {
     printf("VALIDATED OK!!\n");
   /* BinaryenModulePrint(wasm->module); */
 
-  /* write_wat(wasm, "compiled/main.wat"); */
-  /* write_wasm(wasm, "compiled/main.wasm"); */
+  printf("writing wat and wasm!!!! %s", ns_to_wat(namespace_str));
   write_wat(wasm, ns_to_wat(namespace_str));
   write_wasm(wasm, ns_to_wasm(namespace_str));
 

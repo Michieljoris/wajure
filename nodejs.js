@@ -250,7 +250,12 @@ async function instantiate_modules(env, modules) {
 
 async function load_module(env, module) {
     console.log("Loading namespace: ", module.namespace);
-    module.file_name = env.config.out + "/" + module.namespace.replace(".","/").replace("-", "_") + ".wasm";
+    module.file_name =
+        env.config.out + "/" +
+        module.namespace
+              .replace(/\./g,"/")
+              .replace(/-/g, "_") +
+        ".wasm";
     let buf = fs.readFileSync(module.file_name);
 
     module.compiled_module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
@@ -348,7 +353,7 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        console.log(util.inspect(env.modules, null, Infinity, true));
+        // console.log(util.inspect(env.modules, null, Infinity, true));
 
         const main_module = env.modules[env.config.main];
 

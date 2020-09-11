@@ -19,13 +19,13 @@ TODO:
 - [x] if
 - [x] namespaces in interpreter
 - [x] namespaces in compiled code
+- [x] keywords
 - [ ] compile test suite
 - [ ] partial
 - [ ] loop/recur
 - [ ] try/throw/catch
 - [ ] apply
 - [ ] multi-arity fns
-- [ ] keywords
 - [ ] persistent maps/sets/vectors
 - [ ] multimethods
 - [ ] map/reduce

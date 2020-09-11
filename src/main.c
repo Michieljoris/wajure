@@ -33,6 +33,7 @@ void make_config(int argc, char** argv) {
   if (_strcmp(argv[1], "-c") == 0) {
     config->do_compile = 1;
     config->main = "main";
+    /* config->main = "test-compile.test2-eval"; */
     /* config->main = "foo.core"; */
     /* config->main = "foo.core2"; */
     /* config->main = "bar.core"; */
