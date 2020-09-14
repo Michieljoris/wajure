@@ -158,8 +158,9 @@ Cell* alist_put(Cell* alist, int cmp_key(void*, void*), void* key,
   Cell* node = find_cell(alist, cmp_key, key);
   if (node) {
     Cell* pair = ((Cell*)node->car);
-    release(pair->cdr);
+    void* cdr = pair->cdr;
     pair->cdr = retain(value);
+    release(cdr);
     return alist;
   } else {
     return alist_prepend(alist, retain(key), retain(value));

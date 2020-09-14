@@ -189,7 +189,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
 int inter_literal(Wasm* wasm, Lval* lval) {
   /* printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
    */
-  lval_println(lval);
+  /* lval_println(lval); */
   if (lval->type == LVAL_SYMBOL)
     return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
   switch (lval->subtype) {
@@ -227,7 +227,7 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   }
 }
 
-CResult datafy_lval(Wasm* wasm, Lval* lval) {
+CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
   /* printf("=======================\n"); */
   /* printf("wasmfiy_lval: %d\n", lval->wval_ptr); */
   /* lval_println(lval); */
@@ -244,9 +244,9 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
 
   switch (lval->type) {
     case LVAL_COLLECTION:
-      if (lval->global_name)
-        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
-                                    BinaryenTypeInt32());
+      if (global_name)
+        ret.ber =
+            BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
       else
         ret = datafy_collection(wasm, lval);
       break;
@@ -256,39 +256,35 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
           ret = datafy_sys_fn(wasm, lval);
           break;
         case LAMBDA:  // functions in compiler env
-          if (lval->global_name)
-            ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
+          if (global_name)
+            ret.ber = BinaryenGlobalGet(wasm->module, global_name,
                                         BinaryenTypeInt32());
           else
             ret = datafy_global_lambda(wasm, lval->str, lval);
           break;
         case SPECIAL:
-          release(lval->global_name);
           return quit(wasm,
                       "ERROR: Can't take value of a special form such as %s",
                       lval->str);
         case MACRO:
-          release(lval->global_name);
           return quit(wasm, "ERROR: Can't take value of a macro such as %s",
-                      lval->global_name ? lval->global_name : lval->str);
+                      global_name ? global_name : lval->str);
         default:;
-          release(lval->global_name);
           return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
                       lval->subtype);
       }
       break;
 
     default:;
-      if (lval->global_name)
-        ret.ber = BinaryenGlobalGet(wasm->module, lval->global_name,
-                                    BinaryenTypeInt32());
+      if (global_name)
+        ret.ber =
+            BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
       else {
         int lval_ptr = inter_literal(wasm, lval);
         CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
         ret = _ret;
       }
   }
-  release(lval->global_name);
   lval->wval_ptr = ret.wasm_ptr;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */

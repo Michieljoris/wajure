@@ -151,6 +151,8 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   struct resolved_symbol ret = {};
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
+  Namespace* current_ns = get_current_ns();
+  // From a required namespace
   if (namespace_or_alias) {
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
@@ -166,17 +168,19 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
-
-    /* ret.fn_table_index_global = make_fqn("fn:", ns->namespace, name); */
-    /* ret.data_ptr_global = make_fqn("data:", ns->namespace, name); */
+    ns->dependants = alist_put(ns->dependants, is_eq_str,
+                               retain(current_ns->namespace), current_ns);
     return ret;
   }
 
+  // From the current namespace
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
     ret.lval = lval_resolved_sym;  // resolved in symbols lexical env
     return ret;
   }
+
+  // From a required namespace
   Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
   if (ns) {
     /* ret.env = ns->env; */
@@ -186,9 +190,13 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
+
+    ns->dependants = alist_put(ns->dependants, is_eq_str,
+                               retain(current_ns->namespace), current_ns);
     return ret;
   }
 
+  // From stdlib
   ns = state->stdlib_ns;
   if (ns) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
@@ -200,6 +208,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     }
   }
 
+  // From builtins
   Lenv* builtins_env = state->builtins_env;
   ret.lval = lenv_get_or_error(builtins_env,
                                lval_symbol);  // resolved in builtins env

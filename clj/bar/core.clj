@@ -1,5 +1,8 @@
 (in-ns 'bar.core)
+(require '[foo.core :as foo :refer [foo]])
 
-(def bar :bar)
-(print "from bar.core:", bar)
+(defn f [] foo.core/foo)
+
+(def bar (f))
+;; (print "from bar.core:", bar)
 (defn bar-fn [] 123)

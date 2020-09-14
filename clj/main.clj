@@ -1,6 +1,7 @@
 (in-ns 'main)
-(require '[test-compile.test2-eval :as test2])
-;; (require '[foo.core :as foo :refer [foo]])
+;; (require '[test-compile.test2-eval :as test2])
+(require '[foo.core :as foo :refer [foo]])
+(require '[bar.core :as bar :refer [bar]])
 ;; (require '[foo.core2 :as foo2])
 
 ;; (def a 123)
@@ -8,13 +9,20 @@
 ;; (defn bar[x] x)
 ;; (defn foo [x] x)
 ;; (def bar (list 1 2 3))
+(def fox bar)
+
 
 
 (defn test [x y]
-  (print "main/test--------------")
-  (print "calling test2/test")
-  (test2/test)
-  (print "done---------------")
+  (print "main/test--------------"
+         bar.core/bar
+         fox)
+
+
+  ;; (print "foo: " bar bax)
+  ;; (print "calling test2/test")
+  ;; (test2/test)
+  ;; (print "done---------------")
   ;; (test2/test)
   ;; (print (foo/f 456))
   ;; (let [f foo/f]

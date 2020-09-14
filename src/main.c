@@ -50,7 +50,8 @@ int main(int argc, char** argv) {
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
       printf("COMPILING!!!\n");
-      compile(config->main);
+      /* compile(config->main); */
+      compile_main();
     } else {
       printf("INTERPRETING!!!\n");
       run();

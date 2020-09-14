@@ -119,6 +119,7 @@ Lval* read_string_fn(Lenv* env, Lval* arg_list) {
 
 Lval* load(Lenv* _, char* file_name) {
 #ifndef WASM
+  int error = 0;
   char* str = read_file(file_name);
   if (!str) return make_lval_err("Could not load file %s", file_name);
   int pos = 0;
@@ -139,6 +140,7 @@ Lval* load(Lenv* _, char* file_name) {
         printf("Encountered error while evalling expression: \n");
         lval_println(lval);
         lval_println(result);
+        error = 1;
       }
     }
     release(lval);
@@ -146,6 +148,7 @@ Lval* load(Lenv* _, char* file_name) {
 
   printf("Loaded: %s \n", file_name);
   free(str);
+  if (error) return make_lval_err("Errors encountered loading file\n");
   return result ? result : make_lval_nil();
 #else
   return NULL;
@@ -159,13 +162,13 @@ Lval* load_fn(Lenv* _, Lval* arg_list) {
   return load(NULL, arg->str);
 }
 
-Lval* compile_fn(Lenv* env, Lval* arg_list) {
-  ddebug("\ncompile_fn: ");
-  ITER_NEW_N("compile", 1)
-  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-  compile(arg->str);
-  return make_lval_nil();
-}
+/* Lval* compile_fn(Lenv* env, Lval* arg_list) { */
+/*   ddebug("\ncompile_fn: "); */
+/*   ITER_NEW_N("compile", 1) */
+/*   ITER_NEXT_TYPE(LVAL_LITERAL, STRING) */
+/*   compile(arg->str); */
+/*   return make_lval_nil(); */
+/* } */
 
 Lval* in_ns(char* namespace_str) {
   Namespace* ns = make_or_get_namespace(namespace_str);
@@ -315,9 +318,11 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
                            ns_to_src(info.namespace_str), info.namespace_str);
   }
 
-  current_namespace->as =
-      alist_prepend(current_namespace->as, retain(info.namespace_str),
-                    retain(info.namespace_str));
+  current_namespace->required =
+      alist_put(current_namespace->required, is_eq_str, required_ns->namespace,
+                required_ns);
+  current_namespace->as = alist_put(current_namespace->as, is_eq_str,
+                                    info.namespace_str, info.namespace_str);
 
   /* printf("current_namespace->required len: %d\n", */
   /*        list_count(current_namespace->required)); */
@@ -374,7 +379,7 @@ LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"read-string", read_string_fn},
                            {"macroexpand", macroexpand_fn},
                            {"macroexpand-1", macroexpand_1_fn},
-                           {"compile", compile_fn},
+                           /* {"compile", compile_fn}, */
                            {"in-ns", in_ns_fn},
                            {"require", require_fn},
                            {NIL}

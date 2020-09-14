@@ -83,7 +83,6 @@ struct lval {
   int offset;
   int param_count;
   int rest_arg_index;
-  char* global_name;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
@@ -132,6 +131,16 @@ typedef struct {
   //{"foo": "foo.core", "foo.core": "foo.core"}
   Map refer;  // symbol -> namespace
   //{"bar": "foo.core", "bax": "foo.core"}
+  Map required;
+  int compile;
+  // dependants in the sense that the interpreter (when loading this namespace)
+  // is resolving symbols from another namespace. So these do not include
+  // references to external symbols in functions that are not run during
+  // loading. This is a sign that these dependant namespaces will have to be
+  // recompiled if this namespace is recompiled, since the values that the
+  // interpreter calculates, other than fns, are hardcoded in the dependant
+  // module's data section..
+  Map dependants;
 } Namespace;
 
 typedef struct {

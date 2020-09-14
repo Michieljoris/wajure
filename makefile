@@ -40,6 +40,7 @@ else
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
 	COMPILE = out/lispy -c clj/compile.clj;  ~/bin/node nodejs.js
+	# COMPILE = out/lispy -c clj/compile.clj;
 	RUN = out/lispy -r lispy/run.lispy
 endif
 

@@ -139,7 +139,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   int i = 0;
   /* printf("inter list\n"); */
   while (head) {
-    int v_ptr = datafy_lval(wasm, head->car).wasm_ptr;
+    int v_ptr = datafy_lval(wasm, head->car, NULL).wasm_ptr;
     /* lval_println(head->car); */
     int* data_cell = make_data_cell(wasm, head);
     data_cell[car_offset / 4] = v_ptr;

@@ -127,8 +127,6 @@ function parse_deps(deps) {
 }
 
 function parse_custom_sections(module) {
-    var nameSections = WebAssembly.Module.customSections(module, "symbol_table");
-
     let symbol_table = get_custom_section(module, "symbol_table");
     if (symbol_table == undefined) return { error: "Missing symbol table"};
 

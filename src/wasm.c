@@ -13,7 +13,7 @@
 /* char* heap_base_str = read_file("__heap_base"); */
 
 Wasm* init_wasm() {
-  Wasm* wasm = malloc(sizeof(Wasm));
+  Wasm* wasm = calloc(sizeof(Wasm), 1);
   char* data_end_str = read_file("__data_end");
   int pic = 1;  // position independent code
   int data_end = (int)_strtol(data_end_str, NULL, 10);

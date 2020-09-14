@@ -1,5 +1,15 @@
 * TODO compiler
 ** release/retain cond and branches of if
+** incremental compilation
+Ideally you'd want to have to compile only the source files that have changed at
+all since last compilation. However dependencies come into play here. In our
+case, because we reduce any non function values to a single lval at compile
+time, and because we use global imports to refer to external (from another
+namespace) in functions at runtime we only have to deal with external refs in
+non fn values as in: (def a foo/b). The tradeoffs (at development) are between
+speed of code vs speed of compilation. There are 3 options:
+
+1.
 ** change name of main from test to main
 ** compile all outdated files, not just main!!!
 but also the deps!!

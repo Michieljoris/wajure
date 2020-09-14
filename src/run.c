@@ -27,13 +27,14 @@ void destroy_wajure() {
   print_mempool_counts();
 }
 
-void load_main() {
-  printf("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+int load_main() {
   Lval* result = require_ns(NULL, config->main);
-  printf("Result of loading %s: ", config->main);
-  lval_println(result);
+  if (result->type == LVAL_ERR) {
+    lval_println(result);
+    return 0;
+  }
   release(result);
-  printf("++++++++++++++++++++++++++++++++++++++++++++++++++");
+  return 1;
 }
 
 void run() {
