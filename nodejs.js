@@ -204,13 +204,13 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
     data_offset += env.data_start;
     fn_table_offset += env.fn_table_start;
 
-    console.log(globals);
+    // console.log(globals);
     const wasm_globals = {};
     for (const [global, offset] of Object.entries(globals)) {
-        console.log(global, offset);
+        // console.log(global, offset);
         wasm_globals[global] = new WebAssembly.Global({ value: 'i32', mutable: false },  offset);
     }
-    console.log(wasm_globals);
+    // console.log(wasm_globals);
 
     // console.log("DATA_OFFSET: ", data_offset, globals.data_offset.value);
     let module_import_object = {
@@ -232,7 +232,7 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
 
     // console.log("From nodejs.js: data_offset: ", data_offset, " data_size: ",
     //             data_size, " data_end: ", data_offset + data_size, " fn_table_offset: ", fn_table_offset);
-    console.log("instantiating " + namespace);
+    console.log("Instantiating " + namespace);
     const instance =  await WebAssembly.instantiate(compiled_module, module_import_object).
         then(instance => instance);
     env.runtime.exports.rewrite_pointers(data_offset, data_size, fn_table_offset);
@@ -298,7 +298,7 @@ async function load_modules(env, module) {
     return module;
 }
 
-function validate_globals(env, modules) {
+function link_modules(env, modules) {
     for (const [namespace, module] of Object.entries(modules)) {
         const globals = {};
 
@@ -319,7 +319,7 @@ function validate_globals(env, modules) {
                     env[symbol.start];
             }
         }
-        console.log("GLOBALS: ", globals);
+        // console.log("GLOBALS: ", globals);
         module.globals = globals;
     }
 }
@@ -334,20 +334,19 @@ async function start() {
             config: {runtime_wasm: './out_wasm/runtime.wasm',
                      main: "main",
                      out: "./clj",
-                     stack_size: 8 * 1024,
-                    }
+                     stack_size: 8 * 1024 }
         }
 
-        console.log("Instantiating runtime ------------------------------------");
+        console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
 
         // console.log("env.stack_pointer:", env.stack_pointer);
-        console.log("Loading main module ------------------------------------");
+        console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
 
-        console.log("Validate and create globals  ----------------------------------------");
-        validate_globals(env, env.modules);
+        console.log("Link modules  ----------------------------------------");
+        link_modules(env, env.modules);
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);

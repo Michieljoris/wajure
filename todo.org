@@ -6,10 +6,18 @@ all since last compilation. However dependencies come into play here. In our
 case, because we reduce any non function values to a single lval at compile
 time, and because we use global imports to refer to external (from another
 namespace) in functions at runtime we only have to deal with external refs in
-non fn values as in: (def a foo/b). The tradeoffs (at development) are between
-speed of code vs speed of compilation. There are 3 options:
+non fn values as in: (def a foo/b).
 
-1.
+When a namespace refers to a var in another ns from a non fn, that namespace
+will be recompiled when its required ns gets recompiled. To avoid this don't
+refer do this, better is to refer to it in a fn. Or wrap the value in a fn:
+Instead of (def a foo/bar) write (defn a[] foo/bar).
+
+If this is not desirable and too many namespaces are recompiled in development
+it's an option to add the feature of wrapping all (def ...), in a parameterless
+fn put a flag on the symbol and use a fn call to retrieve the value (by using a
+global) iso datafying the value. But this would/might slow down the program, and
+increase compilation time.
 ** change name of main from test to main
 ** compile all outdated files, not just main!!!
 but also the deps!!

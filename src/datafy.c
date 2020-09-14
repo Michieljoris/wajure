@@ -80,33 +80,6 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sym) {
                       locals_count, body);
 
   fn_table_index = add_fn_to_table(wasm, fn_name);
-  /* wasm->fn_to_offset_map = alist_prepend(wasm->fn_to_offset_map, fn_name,
-   */
-  /*                                        make_lval_num(fn_table_index)); */
-  /* } */
-
-  /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
-  /* Ber lispy_param_count = make_int32(module, 1);  // rest arg */
-  /* Ber rest_arg_index = make_int32(module, 1); */
-  /* Ber wasm_closure_pointer = make_int32(module, 0); */
-  /* Ber partials = make_int32(module, 0); */
-  /* Ber partial_count = make_int32(module, 0); */
-  /* Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
-   */
-  /*                    wasm_closure_pointer, partials,          partial_count};
-   */
-
-  /* Ber make_lval_wasm_lambda_call = BinaryenCall( */
-  /*     wasm->module, "make_lval_wasm_lambda", operands, 6,
-   * make_type_int32(1)); */
-  /* return cresult(make_lval_wasm_lambda_call); */
-
-  /* WvalFun* wval_fun = make_lval_wasm_lambda(fn_table_index, 1, 1, 0, 0, 0);
-   */
-  /* printf("------------\n"); */
-  /* lval_println((Lval*)wval_fun); */
-  /* printf("------------\n"); */
-  /* int* data_lval = (int*)wval_fun; */
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + fn_table_index, 1, 1);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
@@ -115,15 +88,6 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sym) {
                  /* make_int32(wasm->module, lval_ptr), */
                  .wasm_ptr = lval_ptr};
   return ret;
-
-  /* printf("data_lval 0 %d %d\n", data_lval[0], LVAL_WASM_LAMBDA); */
-  /* printf("data_lval 1 %d\n", data_lval[1]); */
-  /* short* foo = (short*)(data_lval + 2); */
-
-  /* printf("data_lval 2 %d\n", foo[0]); */
-  /* printf("data_lval 3 %d\n", foo[1]); */
-  /* printf("data_lval 4 %d\n", foo[2]); */
-  /* printf("data_lval 5 %d\n", foo[3]); */
 }
 
 CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
@@ -131,18 +95,8 @@ CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   fn_name = fn_name         ? fn_name
             : lval_fun->str ? lval_fun->str
                             : uniquify_name(wasm, "anon");
-  /* printf("->>>>>>datafy global lambda fn %s %d!!!\n", fn_name, */
-  /* lval_fun->offset); */
-
-  /* if (lval_fun->offset == -1) { */
   FunctionData function_data =
       add_wasm_function(wasm, lval_fun->closure, fn_name, lval_fun);
-  // TODO: bit sloppy adding this info to lval_fun. Should make and use
-  // compiler lookup map
-  /* lval_fun->offset = function_data.fn_table_index; */
-  /*   lval_fun->param_count = function_data.param_count; */
-  /*   lval_fun->rest_arg_index = function_data.has_rest_arg; */
-  /* } */
 
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + function_data.fn_table_index,
@@ -150,26 +104,10 @@ CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;
-  /* Ber wasm_fn_table_index = make_int32(module, fn_table_index); */
-  /* Ber lispy_param_count = make_int32(module, lval_fun->param_count); */
-  /* Ber rest_arg_index = make_int32(module, lval_fun->rest_arg_index); */
-
-  /* Ber wasm_closure_pointer = make_int32(module, 0); */
-  /* Ber partials = make_int32(module, 0); */
-  /* Ber partial_count = make_int32(module, 0); */
-
-  /* Ber operands[6] = {wasm_fn_table_index,  lispy_param_count, rest_arg_index,
-   */
-  /*                    wasm_closure_pointer, partials,          partial_count};
-   */
-  /* Ber make_lval_wasm_lambda_call = BinaryenCall( */
-  /*     wasm->module, "make_lval_wasm_lambda", operands, 6,
-   * make_type_int32(1)); */
-  /* return cresult(make_lval_wasm_lambda_call); */
 }
 
 CResult datafy_collection(Wasm* wasm, Lval* lval) {
-  printf("datafy_collection\n");
+  /* printf("datafy_collection\n"); */
   /* lval_println(lval); */
   // List, map, set, vector;
   switch (lval->subtype) {
@@ -228,13 +166,12 @@ int inter_literal(Wasm* wasm, Lval* lval) {
 }
 
 CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
-  /* printf("=======================\n"); */
-  /* printf("wasmfiy_lval: %d\n", lval->wval_ptr); */
+  /* printf("datafy =======================\n"); */
   /* lval_println(lval); */
-  /* printf("lval %p\n", lval); */
-
+  /* printf("wval_ptr: %d\n", lval->wval_ptr); */
+  /*  */
   CResult ret = {};
-  if (lval->wval_ptr > 0) {
+  if (!global_name && lval->wval_ptr > 0) {
     /* printf("YIPPPEEEEEEE %d\n", lval->wval_ptr); */
     /* return cresult(make_int32(wasm->module, lval->wval_ptr)); */
     int lval_ptr = lval->wval_ptr;

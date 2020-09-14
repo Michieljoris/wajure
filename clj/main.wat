@@ -9,14 +9,13 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0ftest\00main/test--------------\00\01\00\00\00\00\00\00\00\00\00\00\001\00\00\00\02\t\00\00\00\00\00\00\t\00\00\00\00\00\00\00\ff\ff\ff\fffoo\00\01\00\00\00\00\00\00\00\00\00\00\00Y\00\00\00\02\0b\00\00\00\00\00\00E\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00}\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00!\00\00\00I\00\00\00m\00\00\00\91\00\00\00\02\00\00\00\99\00\00\00\00\00\00\00\99\00\00\00\01\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0ftest\00\01\00\00\00\00\00\00\00\00\00\00\00\19\00\00\00\02\08\00\00{\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00=\00\00\00\00\00\00\00\19\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00Y\00\00\00\01\10\00\00\00\00\00\00\00\00\00\00=\00\00\00\03\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00}\00\00\00\00\00\00\00Y\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\99\00\00\00\01\10\00\00\00\00\00\00\00\00\00\00}\00\00\00\03\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\bd\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\t\00\00\00I\00\00\00\89\00\00\00-\00\00\00m\00\00\00\ad\00\00\00\d1\00\00\00\03\00\00\00\dd\00\00\00\02\00\00\00\e5\00\00\00\01\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $test)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "data:bar.core/bar" (global $data:bar.core/bar i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -128,25 +127,16 @@
      (call $list_cons
       (i32.add
        (global.get $data_offset)
-       (i32.const 49)
+       (i32.const 153)
       )
-      (call $list_cons
-       (global.get $data:bar.core/bar)
-       (call $list_cons
-        (i32.add
-         (global.get $data_offset)
-         (i32.const 89)
-        )
-        (i32.const 0)
-       )
-      )
+      (i32.const 0)
      )
     )
    )
   )
  )
- ;; custom section "symbol_table", size 39
- ;; custom section "deps", size 18
- ;; custom section "data_size", size 3, contents: "185"
+ ;; custom section "symbol_table", size 47
+ ;; custom section "deps", size 0, contents: ""
+ ;; custom section "data_size", size 3, contents: "261"
  ;; custom section "fn_table_size", size 1, contents: "1"
 )

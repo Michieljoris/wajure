@@ -9,14 +9,12 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fbar-fn\00\01\00\00\00\00\00\00\00\00\00\00\00\1b\00\00\00\02\08\00\00{\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00?\00\00\00\19\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00foo\00\01\00\00\00\00\00\00\00\00\00\00\00g\00\00\00\02\0b\00\00\00\00\00\00S\00\00\00\00\00\00\00\ff\ff\ff\fff\00\01\00\00\00\00\00\00\00\00\00\00\00\8d\00\00\00\19\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\0b\00\00\00W\00\00\00/\00\00\00}\00\00\00\a1\00\00\00\02\00\00\00\a9\00\00\00\00\00\00\00\a9\00\00\00\02\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\02\08\00\00{\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\008\00\00\00\00\00\00\00\14\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00T\00\00\00\01\10\00\00\00\00\00\00\00\00\00\008\00\00\00\03\00\00\00\04\00\00\00D\00\00\00(\00\00\00h\00\00\00\02\00\00\00p\00\00\00\01\00\00\00t\00\00\00\00\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $bar-fn $f)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "data:foo.core/foo" (global $data:foo.core/foo i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -67,108 +65,10 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
- (export "bar-fn" (func $bar-fn))
- (export "f" (func $f))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
- (func $bar-fn (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (block $do_2 (result i32)
-   (if
-    (i32.eq
-     (call $check_args_count
-      (i32.const 0)
-      (local.get $1)
-      (i32.const 0)
-     )
-     (i32.const 0)
-    )
-    (call $runtime_error
-     (i32.const 1)
-     (i32.const 4)
-    )
-    (if
-     (i32.eq
-      (call $check_args_count
-       (i32.const 0)
-       (local.get $1)
-       (i32.const 0)
-      )
-      (i32.const 1)
-     )
-     (call $runtime_error
-      (i32.const 0)
-      (i32.const 4)
-     )
-     (nop)
-    )
-   )
-   (block $store_args_in_locals_1
-    (local.set $2
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 0)
-     )
-    )
-   )
-   (call $retain
-    (i32.add
-     (global.get $data_offset)
-     (i32.const 27)
-    )
-   )
-  )
- )
- (func $f (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (block $do_4 (result i32)
-   (if
-    (i32.eq
-     (call $check_args_count
-      (i32.const 0)
-      (local.get $1)
-      (i32.const 0)
-     )
-     (i32.const 0)
-    )
-    (call $runtime_error
-     (i32.const 1)
-     (i32.const 123)
-    )
-    (if
-     (i32.eq
-      (call $check_args_count
-       (i32.const 0)
-       (local.get $1)
-       (i32.const 0)
-      )
-      (i32.const 1)
-     )
-     (call $runtime_error
-      (i32.const 0)
-      (i32.const 123)
-     )
-     (nop)
-    )
-   )
-   (block $store_args_in_locals_3
-    (local.set $2
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 0)
-     )
-    )
-   )
-   (call $retain
-    (i32.add
-     (global.get $data_offset)
-     (i32.const 103)
-    )
-   )
-  )
- )
- ;; custom section "symbol_table", size 62
- ;; custom section "deps", size 18
- ;; custom section "data_size", size 3, contents: "205"
- ;; custom section "fn_table_size", size 1, contents: "2"
+ ;; custom section "symbol_table", size 12
+ ;; custom section "deps", size 0, contents: ""
+ ;; custom section "data_size", size 3, contents: "144"
+ ;; custom section "fn_table_size", size 1, contents: "0"
 )

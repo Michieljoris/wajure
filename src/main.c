@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "compile.h"
+#include "compile_main.h"
 #include "hash.h"
 #include "io.h"
 #include "lib.h"
