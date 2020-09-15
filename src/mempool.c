@@ -22,7 +22,7 @@ uint add_data_block(Mempool* mempool, uint extra_slot_count) {
                data_block_pointers_size + sizeof(void*));
   mempool->data_pointers[mempool->data_block_count - 1] =
       mempool->uninitialised_p = _malloc(data_block_size);
-
+  /* printf("result of _malloc: %d\n", mempool->uninitialised_p); */
   mempool->total_slot_count += extra_slot_count;
   mempool->free_slot_count = extra_slot_count;
 
@@ -43,6 +43,7 @@ export_wasm Mempool* create_mempool(int type, int slot_size, uint slot_clount,
                        .initialised_count = 0,
                        .data_block_count = 0,
                        .data_pointers = NULL};
+  /* printf("type: %d ", type); */
   add_data_block(mempool, slot_clount);
   return mempool;
 }

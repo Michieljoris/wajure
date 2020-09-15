@@ -78,6 +78,29 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
   return lval_list;
 }
 
+Lval* foo_fn(Lenv* env, Lval* arg_list) {
+  printf("in foo fn arg_list: %li\n", (long)arg_list);
+  Cell* head = arg_list->head;
+  printf("head: %li\n", (long)head);
+  while (head) {
+    printf("head->car: %li\n", (long)head->car);
+    printf("head->cdr: %li\n", (long)head->cdr);
+    Lval* arg = (Lval*)head->car;
+    printf("type of arg: %s\n", lval_type_constant_to_name(arg->type));
+    head = head->cdr;
+
+    Cell* h = arg->head;
+    while (h) {
+      printf("h->car: %li\n", (long)h->car);
+      printf("h->cdr: %li\n", (long)h->cdr);
+      h = h->cdr;
+    }
+  }
+  /* lval_println((Lval*)arg_list->head->car); */
+  /* printf("in foo fn nil: %li\n", (long)make_lval_nil()); */
+  return make_lval_nil();
+}
+
 Lval* count_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("count", 1)
   ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
@@ -125,6 +148,7 @@ LispyFn list_builtin_fns[] = {
     {"count", count_fn, "count_fn", 2, 1},
     {"nth", nth_fn, "nth_fn", 2, 1},
     {"list?", is_list_fn, "is_list_fn", 2, 1},
+    {"foo", foo_fn, "foo_fn", 2, 1},
     {NIL}
 
 };

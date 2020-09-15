@@ -138,7 +138,7 @@ int compile_main() {
   main_ns->compile = 1;
   /* Namespace* bar_ns = get_namespace("bar.core"); */
   /* bar_ns->compile = 1; */
-  /* walk_namespaces(p_info); */
+  walk_namespaces(p_info);
   walk_namespaces(maybe_compile);
   printf("----------------------\n");
 

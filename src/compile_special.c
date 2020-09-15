@@ -164,22 +164,60 @@ CResult is_truthy(Wasm* wasm, Ber wval) {
 
 CResult compile_if(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
-  printf("Compiling if!!!!\n");
+  /* printf("Compiling if!!!!\n"); */
   if (!args) quit(wasm, "Too few arguments to if");
-  Lval* cond = args->car;
+  Lval* lval_cond = args->car;
   args = args->cdr;
   if (!args) quit(wasm, "Too few arguments to if");
-  Lval* if_true = args->car;
+  Lval* lval_true_branch = args->car;
   args = args->cdr;
-  Lval* if_false = NULL;
-  if (args) if_false = args->car;
+  Lval* lval_false_branch = NULL;
+  if (args) lval_false_branch = args->car;
   if (args && args->cdr) quit(wasm, "Too many arguments to if");
-  Ber wasm_cond = lval_compile(wasm, cond).ber;
-  wasm_cond = is_truthy(wasm, wasm_cond).ber;
-  Ber if_wasm = BinaryenIf(
-      module, wasm_cond, lval_compile(wasm, if_true).ber,
-      if_false ? lval_compile(wasm, if_false).ber : datafy_nil(wasm).ber);
-  return cresult(if_wasm);
+
+  CResult cond = lval_compile(wasm, lval_cond);
+  Ber ber_cond = cond.ber;
+  int cond_index;
+  if (cond.is_fn_call) {
+    cond_index = li_new(wasm);
+    ber_cond =
+        BinaryenLocalTee(module, cond_index, ber_cond, BinaryenTypeInt32());
+  }
+  ber_cond = is_truthy(wasm, ber_cond).ber;
+
+  CResult true_branch = lval_compile(wasm, lval_true_branch);
+  Ber ber_true_branch = true_branch.ber;
+  if (!true_branch.is_fn_call)
+    ber_true_branch = wasm_retain(wasm, ber_true_branch).ber;
+
+  CResult false_branch = lval_false_branch
+                             ? lval_compile(wasm, lval_false_branch)
+                             : datafy_nil(wasm);
+
+  Ber ber_false_branch = false_branch.ber;
+  if (!false_branch.is_fn_call)
+    ber_false_branch = wasm_retain(wasm, ber_false_branch).ber;
+
+  Ber ber_if = BinaryenIf(module, ber_cond, ber_true_branch, ber_false_branch);
+
+  if (cond.is_fn_call) {
+    Ber release_cond = wasm_release(wasm, BinaryenLocalGet(module, cond_index,
+                                                           BinaryenTypeInt32()))
+                           .ber;
+    int if_result_index = li_new(wasm);
+    Ber store_if_result = BinaryenLocalSet(module, if_result_index, ber_if);
+    Ber get_if_result =
+        BinaryenLocalGet(module, if_result_index, BinaryenTypeInt32());
+
+    char* block_name = uniquify_name(wasm, "if_block");
+    Ber children[] = {store_if_result, release_cond, get_if_result};
+    Ber block = BinaryenBlock(module, uniquify_name(wasm, "if_block"), children,
+                              3, BinaryenTypeInt32());
+    free(block_name);
+    return cresult(block);
+  } else {
+    return cresult(ber_if);
+  }
 }
 
 CResult compile_try(Wasm* wasm, Cell* args) {

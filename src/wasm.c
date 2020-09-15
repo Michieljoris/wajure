@@ -32,7 +32,7 @@ Wasm* init_wasm() {
       .__data_end = pic ? 0 : data_end,
       .__fn_table_end = pic ? 0 : fn_table_end,
       /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
-      // no need to intern lval literal numbers for these common
+      // reusing interred lval literal numbers for these common
       // numbers (-100 till 100):
       .lval_num_start = -100,
       .lval_num_end = 100,
@@ -41,13 +41,13 @@ Wasm* init_wasm() {
       .runtime_check_args_count = 1,
       .symbol_table = malloc(1),
       .symbol_table_count = 0,
-      .lval_offsets = malloc(100),
+      .lval_offsets = malloc(100 * sizeof(int)),
       .lval_offsets_count = 0,
       .lval_offsets_allocated = 100,
-      .wval_fn_offsets = malloc(100),
+      .wval_fn_offsets = malloc(100 * sizeof(int)),
       .wval_fn_offsets_count = 0,
       .wval_fn_offsets_allocated = 100,
-      .cell_offsets = malloc(100),
+      .cell_offsets = malloc(100 * sizeof(int)),
       .cell_offsets_count = 0,
       .cell_offsets_allocated = 100,
   };

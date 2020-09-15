@@ -1,7 +1,7 @@
 (in-ns 'main)
-;; (require '[test-compile.test2-eval :as test2])
+(require '[test-compile.test2-eval :as test2])
 ;; (require '[foo.core :as foo :refer [foo]])
-(require '[bar.core :as bar :refer [bar]])
+;; (require '[bar.core :as bar :refer [bar]])
 ;; (require '[foo.core2 :as foo2])
 
 ;; (def a 123)
@@ -9,10 +9,96 @@
 ;; (defn bar[x] x)
 ;; (defn foo [x] x)
 ;; (def fox bar)
-(def list-with-bar (list bar))
+;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
 
-(defn test [x y]
+;; (defn f [x] 1)
+(defn main [x y]
+
+  (test2/test)
+  ;; (t (+ 5 (* 2 3))
+  ;;    11)
+
+  ;; (t (- (+ 5 (* 2 3)) 3)
+  ;;    8)
+
+  ;; (t (/ (- (+ 5 (* 2 3)) 3) 4)
+  ;;    2)
+
+  ;; (t (/ (- (+ 515 (* 87 311)) 302) 27)
+  ;;    1010)
+
+  ;; (t (* -3 6)
+  ;;    -18)
+  ;; (pr "FAIL" "foo")
+  ;; (foo 1)
+
+  ;; (print (quote
+  ;;         ;; (
+
+  ;;         ;;  0 1 2 3 4 5 6 7 8 9
+  ;;         ;;  0 1 2 3 4 5 6 7 8 9
+  ;;         ;;  0 1 2 3 4 5 6 7 8 9
+
+  ;;         ;;  ;; 0 1 2 3 4 5 6 7 8 9
+  ;;         ;;  ;; 0 1 2 3 4 5 6 7 8 9
+  ;;         ;;  )
+  ;;         (list 112 113 114 115 116 117 118 119 11
+  ;;               12 13 14 15 16 17 18 19 1 2 3 4 5
+  ;;               6 7 8 9
+  ;;               112 113 114 115 116 117 118 119 11
+  ;;               12 13 14 15 16 17 18 19 1 2 3 4 5
+  ;;               6 7 8 9
+
+  ;;         )
+  ;;        )
+  ;;       )
+ )
+  ;; (t r 1010)
+
+  
+  ;; (t (+ 1 2 3 4 5 6 7 8 9)
+  ;;    1010)
+  
+  ;; (t (+ 11 12 13 14 15 16 17 18 19)
+  ;;    1010)
+  ;; (t (* -3 6)
+  ;;    -18)
+
+  ;; (if false 1 )
+  ;; (if false 1)
+  ;; "foo"
+  ;; (t (/ (- (+ 515 (* 87 311)) 302) 27)
+  ;;    1010)
+  ;; (test2/test)
+  ;; (if (+ 1 1) 1 2)
+  ;; (if true (+ 1 1))
+  ;; (if false 1)
+  ;; "foo"
+
+  ;; (let [evalled 1]
+  ;;   (when (not= evalled (quote 1))
+  ;;     (do
+  ;;       (pr "FAIL" "foo")
+  ;;       (pr (quote 1) )
+  ;;       (pr "Expected:" (quote 1))
+  ;;       (pr "Got:" 1))))
+
+  ;; (t 1 1)
+
+  ;; (let [evalled 1]
+  ;;   (when (not= evalled (quote 1))
+  ;;     (do
+  ;;       (pr "FAIL" "foo")
+  ;;       (pr (quote 1) )
+  ;;       (pr "Expected:" (quote 1))
+  ;;       (pr "Got:" 1))))
+ 
+  ;; (t 1 2)
+  ;; "foo"
+
+  ;; (if 1 false)
+  ;; (if (f 1) false)
   ;; bar.core/bar
   ;; fox
   ;; bar.core/bar
@@ -21,9 +107,10 @@
   ;; (print "fox: " bar/fox)
   ;; (print "bar: " bar)
   ;; (print "bar: " bar/bar)
- (print list-with-bar)
- ;; (print bar)
- ;; (print (list bar))
+  ;; (print list-with-bar +)
+  ;; (print +)
+  ;; (print bar)
+  ;; (print (list bar))
 
   ;; (print "bar.core/bar: " bar.core/bar)
  
@@ -39,7 +126,7 @@
   ;;   (print "hello" (f 123) (foo/f 456)
   ;;          ))
   ;; (print "hello" a b (foo 4444) bar)
-   ;; (print "hello there" (foo 555))
+  ;; (print "hello there" (foo 555))
   ;; (print "hello", 123, 345, false, true, x y (list 1 2) "some string")
   ;; (print foo.core/foo foo/foo foo foo/f a b)
   ;; (foo/f) foo2/foo2
@@ -54,7 +141,7 @@
   ;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
   ;; (print 123 456 999 "foo")
   ;; (print 12345 a (foo))
-  )  
+
 ;; (compile "lispy/test_compile.lispy")
 
 

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+out/lispy -c clj/compile.clj;
+## get status ##
+status=$?
+## take some decision ##
+[ $status -eq 0 ] && ~/bin/node nodejs.js  || echo "Compilation failed"

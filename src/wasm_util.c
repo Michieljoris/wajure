@@ -32,7 +32,7 @@ CResult wasm_release(Wasm* wasm, Ber wval) {
   BinaryenModuleRef module = wasm->module;
   Ber operands[] = {wval};
   return cresult(
-      BinaryenCall(module, "release", operands, 1, BinaryenTypeInt32()));
+      BinaryenCall(module, "release", operands, 1, BinaryenTypeNone()));
 }
 
 void write_string(char* file_name, char* str) {
@@ -270,10 +270,10 @@ void print_cell(void* cell) {
 
 void print_context(Context* c) {
   if (c) {
-    printf("msg: %s\n", c->msg);
+    printf("%s\n", c->msg);
     printf("fn_name: %s\n", c->function_context->fn_name);
-    printf("fn closure:\n");
-    env_print(c->function_context->closure);
+    /* printf("fn closure:\n"); */
+    /* env_print(c->function_context->closure); */
     if (c->lval) lval_println(c->lval);
 
     if (c->cell) {

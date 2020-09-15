@@ -132,10 +132,11 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
 CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
                               Lval* lval_compiler) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
-  printf(
-      "We've got a LVAL_COMPILER (param, local or closed over binding)!!! "
-      "%s\n",
-      lval_symbol->str);
+  /* printf( */
+  /*     "We've got a LVAL_COMPILER (param, local or closed over binding)!!! "
+   */
+  /*     "%s\n", */
+  /*     lval_symbol->str); */
   /* lval_println(lval_wasm_ref); */
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
@@ -677,11 +678,6 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
   return cnull();
 }
 
-/* void add_deps(Wasm* wasm, char* namespace_str, char* name) { */
-/*   printf("ADD DEPS %s\n", name); */
-/*   wasm->deps = alist_put(wasm->deps, is_eq_str, name, NULL); */
-/* } */
-
 void add_dep(Wasm* wasm, char* global_name) {
   /* printf("ADD DEP %s\n", global_name); */
   wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
@@ -730,8 +726,7 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
     if (resolved_symbol->type == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_first);
-      quit(wasm, "ERROR: Unknowm symbol while trying to compile a list: %s",
-           lval_first->str);
+      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s", lval_first->str);
     }
 
     switch (resolved_symbol->type) {
@@ -856,29 +851,11 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env
           switch (lval_resolved_sym->subtype) {
-            /* case SYS: */
-            /*   /\* return datafy_sys_fn(wasm, lval_resolved_sym); *\/ */
-            /*   break; */
             case MACRO:
             case LAMBDA:  // functions in compiler env
               if (lval_resolved_sym->str == NULL)
                 lval_resolved_sym->str = retain(lval->str);
-              /* return compile_global_lambda(wasm, lval->str,
-               * lval_resolved_sym); */
-              /* case SPECIAL: */
-              /*   return quit( */
-              /*       wasm, "ERROR: Can't take value of a special form such
-               * as %s", */
-              /*       lval_resolved_sym->str); */
-              /* case MACRO: */
-              /*   return quit(wasm, "ERROR: Can't take value of a macro such
-               * as %s", */
-              /*               lval_resolved_sym->str); */
-              /* default:; */
-              /*   return quit(wasm, */
-              /*               "ERROR: Can't compile function with subtype
-               * %d\n", */
-              /*               lval_resolved_sym->subtype); */
+            default:;
           }
         default:
           lval = lval_resolved_sym;
@@ -1007,6 +984,5 @@ void compile(Namespace* ns) {
   write_wat(wasm, ns_to_wat(ns->namespace));
   write_wasm(wasm, ns_to_wasm(ns->namespace));
 
-  /* release_env(user_env); */
   free_wasm(wasm);
 }

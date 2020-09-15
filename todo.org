@@ -1,6 +1,8 @@
 * TODO compiler
-** release/retain cond and branches of if
-** incremental compilation
+** DONE release/retain cond and branches of if
+** Don't run main.wasm if compilation comes back with error
+So propagate errors properly till we the last return from compile_main
+** DONE incremental compilation
 Ideally you'd want to have to compile only the source files that have changed at
 all since last compilation. However dependencies come into play here. In our
 case, because we reduce any non function values to a single lval at compile
@@ -18,8 +20,8 @@ it's an option to add the feature of wrapping all (def ...), in a parameterless
 fn put a flag on the symbol and use a fn call to retrieve the value (by using a
 global) iso datafying the value. But this would/might slow down the program, and
 increase compilation time.
-** change name of main from test to main
-** compile all outdated files, not just main!!!
+** DONE change name of main from test to main
+** DONE compile all outdated files, not just main!!!
 but also the deps!!
 ** compile the beginning of a test suite
 ** DONE namespaces

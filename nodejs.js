@@ -163,7 +163,8 @@ async function instantiate_runtime(env) {
             _putchar: arg => {
                 process.stdout.write(String.fromCharCode(arg));
             } ,
-            grow_memory: () => { //console.log("grow_memory");
+            grow_memory: () => {
+                console.log("Grow_memory from ", page_count * page_size, " to ", (page_count+1) * page_size);
                 if (++page_count > max_page_count) {
                     console.log("Error: can't allocate memory beyond max\n");
                     // throw "Error: can't allocate memory beyond max\n";
@@ -182,6 +183,7 @@ async function instantiate_runtime(env) {
     let stack_pointer = runtime.exports._malloc(config.stack_size); //8MB stack
 
     runtime.exports.init_lispy_mempools(800, 800, 800);
+    env.stack_pointer = stack_pointer;
     env.stack_pointer_global = new WebAssembly.Global({ value: 'i32', mutable: true }, stack_pointer);
     env.runtime = runtime;
     env.data_start = env.runtime.exports.__data_end.value;
@@ -340,7 +342,9 @@ async function start() {
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
 
-        // console.log("env.stack_pointer:", env.stack_pointer);
+        console.log("data_end =", env.runtime.exports.__data_end.value);
+        console.log("env.stack_pointer:", env.stack_pointer);
+        console.log("heap_base =", env.runtime.exports.__heap_base.value);
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
@@ -356,7 +360,7 @@ async function start() {
 
         console.log("Running main/test(arg1, arg2, ..) ------------------------------");
        
-        run_wajure_fn(env, main_module, "test", 888, 777);
+        run_wajure_fn(env, main_module, "main", 888, 777);
 
         env.runtime.exports.free_lispy_mempools();
         env.runtime.exports. free_malloc();

@@ -46,7 +46,7 @@ void _leave_context(void* data);
   Context* context = __wasm->context->car;            \
   context->msg = _msg;                                \
   context->cell = NULL;                               \
-  printf("Entering context: %s\n", _msg);
+  /* printf("Entering context: %s\n", _msg); */
 
 #define CONTEXT_LVAL(_msg, _lval) \
   CONTEXT(_msg)                   \
