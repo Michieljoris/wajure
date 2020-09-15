@@ -16,7 +16,7 @@
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "fn:test-compile.test2-eval/test" (global $fn:test-compile.test2-eval/test i32))
+ (import "env" "fn:test-compile.test4-if-fn-do/test4a" (global $fn:test-compile.test4-if-fn-do/test4a i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -31,6 +31,7 @@
  (import "env" "make_lval_str" (func $make_lval_str (param i32) (result i32)))
  (import "env" "make_lval_list" (func $make_lval_list (result i32)))
  (import "env" "new_lval_list" (func $new_lval_list (param i32) (result i32)))
+ (import "env" "new_lval_vector" (func $new_lval_vector (param i32) (result i32)))
  (import "env" "make_lval_sym" (func $make_lval_sym (param i32) (result i32)))
  (import "env" "lalloc_size" (func $lalloc_size (param i32) (result i32)))
  (import "env" "lalloc_type" (func $lalloc_type (param i32) (result i32)))
@@ -76,7 +77,7 @@
   (local $3 i32)
   (local $4 i32)
   (local $5 i32)
-  (block $do_73 (result i32)
+  (block $do_3 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -106,7 +107,7 @@
      (nop)
     )
    )
-   (block $store_args_in_locals_71
+   (block $store_args_in_locals_1
     (local.set $2
      (i32.sub
       (global.get $stack_pointer)
@@ -124,7 +125,7 @@
      )
     )
    )
-   (block $lambda_call_72 (result i32)
+   (block $lambda_call_2 (result i32)
     (global.set $stack_pointer
      (i32.add
       (global.get $stack_pointer)
@@ -135,7 +136,7 @@
      (call_indirect (type $i32_i32_=>_i32)
       (i32.const 0)
       (i32.const 0)
-      (global.get $fn:test-compile.test2-eval/test)
+      (global.get $fn:test-compile.test4-if-fn-do/test4a)
      )
     )
     (global.set $stack_pointer
@@ -149,7 +150,7 @@
   )
  )
  ;; custom section "symbol_table", size 23
- ;; custom section "deps", size 32
+ ;; custom section "deps", size 38
  ;; custom section "data_size", size 2, contents: "77"
  ;; custom section "fn_table_size", size 1, contents: "1"
 )

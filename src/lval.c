@@ -90,14 +90,6 @@ Lval* make_lval_keyword(char* s) {
   return lval;
 }
 
-/* Lval* make_lval_namespace(Namespace* ns) { */
-/*   Lval* lval = lalloc_type(LVAL); */
-/*   *lval = (Lval){.type = LVAL_NAMESPACE, .subtype = -1, .head = (Cell*)ns};
- */
-/*   lval->hash = lval_hash(lval); */
-/*   return lval; */
-/* } */
-
 /* COLLECTION */
 
 Lval* make_lval_list(void) {
@@ -110,6 +102,13 @@ Lval* make_lval_list(void) {
 Lval* new_lval_list(void* head) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST, .head = head};
+  lval->hash = lval_hash(lval);
+  return lval;
+}
+
+Lval* new_lval_vector(void* head) {
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, .head = head};
   lval->hash = lval_hash(lval);
   return lval;
 }

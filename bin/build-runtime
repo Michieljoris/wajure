@@ -1,0 +1,1 @@
+PLATFORM=wasm make runtime

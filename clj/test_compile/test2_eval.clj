@@ -1,9 +1,8 @@
 (in-ns 'test-compile.test2-eval)
 
-
 ;; Testing evaluation of arithmetic operations
 (defn test []
-  (print "from test2")
+  (pr "test2")
   (t (+ 5 (* 2 3))
      11)
 
@@ -32,6 +31,7 @@
   ;; ;; Testing evaluation within collection literals
   (t [1 2 (+ 1 2)]
      [1 2 3])
+ 
 
   ;; ;; Check that evaluation hasn't broken empty collections
   (t []

@@ -31,10 +31,10 @@ int load_main() {
   Lval* result = require_ns(NULL, config->main);
   if (result->type == LVAL_ERR) {
     lval_println(result);
-    return 0;
+    return 1;
   }
   release(result);
-  return 1;
+  return 0;
 }
 
 void run() {

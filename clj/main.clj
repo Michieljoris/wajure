@@ -1,5 +1,7 @@
 (in-ns 'main)
 (require '[test-compile.test2-eval :as test2])
+(require '[test-compile.test3-env :as test3])
+(require '[test-compile.test4-if-fn-do:as test4])
 ;; (require '[foo.core :as foo :refer [foo]])
 ;; (require '[bar.core :as bar :refer [bar]])
 ;; (require '[foo.core2 :as foo2])
@@ -14,8 +16,10 @@
 
 ;; (defn f [x] 1)
 (defn main [x y]
+  ;; (test2/test)
+  ;; (test3/test)
+ (test4/test4a)
 
-  (test2/test)
   ;; (t (+ 5 (* 2 3))
   ;;    11)
 
@@ -53,7 +57,7 @@
   ;;         )
   ;;        )
   ;;       )
- )
+  )
   ;; (t r 1010)
 
   

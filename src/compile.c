@@ -38,8 +38,8 @@ CResult compile_fn_rest_args(Wasm* wasm, Cell* head) {
   /* printf("compile fn rest args:\n"); */
   /* lval_println(head->car); */
   /* printf("compile fn rest args:\n"); */
-  Ber literal = lval_compile(wasm, head->car).ber;
-  Ber operands[] = {literal,
+  Ber ber = lval_compile(wasm, head->car).ber;
+  Ber operands[] = {ber,
                     // recursive call:
                     compile_fn_rest_args(wasm, head->cdr).ber};
   // TODO: don't use list_cons, list_cons version that doesn't retain cells, but
@@ -807,6 +807,17 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
   return fn_call;
 }
 
+CResult compile_vector(Wasm* wasm, Lval* lval) {
+  Ber arg_list_head = compile_fn_rest_args(wasm, lval->head).ber;
+
+  Ber lval_vector_operands[1] = {arg_list_head};
+  Ber wasm_lval_vector =
+      BinaryenCall(wasm->module, "new_lval_vector", lval_vector_operands, 1,
+                   make_type_int32(1));
+
+  return cresult(wasm_lval_vector);
+}
+
 // This will compile an unevalled lval (so which is composed of only literals,
 // symbols and collections) to wasm code that will leave a pointer to an lval
 // on the stack. This time the lval can also be a lambda. Eg a symbol might
@@ -817,7 +828,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* lval_println(lval); */
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
 
-  Lval* lval_resolved_sym = NULL;
+  Lval* resolved_sym = NULL;
   char* global_name = NULL;
   switch (lval->type) {
     case LVAL_SYMBOL:;
@@ -828,7 +839,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       struct resolved_symbol result = eval_symbol(wasm->env, lval);
 
-      lval_resolved_sym = result.lval;
+      resolved_sym = result.lval;
       /* printf("resolved:"); */
       /* lval_println(lval_resolved_sym); */
       /* printf("namespace: %s\n", result.ns->namespace); */
@@ -840,35 +851,39 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
         /* lval_println(lval_resolved_sym); */
       }
       /* lval_println(lval_resolved_sym); */
-      switch (lval_resolved_sym->type) {
+      switch (resolved_sym->type) {
         case LVAL_ERR:
-          return quit(wasm, lval_resolved_sym->str);
+          return quit(wasm, resolved_sym->str);
         case LVAL_COMPILER:;
           // symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
-          CResult ret = compile_lval_compiler(wasm, lval, lval_resolved_sym);
-          release(lval_resolved_sym);
+          CResult ret = compile_lval_compiler(wasm, lval, resolved_sym);
+          release(resolved_sym);
           return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env
-          switch (lval_resolved_sym->subtype) {
+          switch (resolved_sym->subtype) {
             case MACRO:
             case LAMBDA:  // functions in compiler env
-              if (lval_resolved_sym->str == NULL)
-                lval_resolved_sym->str = retain(lval->str);
+              if (resolved_sym->str == NULL)
+                resolved_sym->str = retain(lval->str);
             default:;
           }
         default:
-          lval = lval_resolved_sym;
-      }
-      break;
+          lval = resolved_sym;
+      };
     case LVAL_COLLECTION:
-      if (lval->subtype == LIST) return apply(wasm, lval);  // fn call
+      switch (lval->subtype) {
+        case LIST:
+          return apply(wasm, lval);  // fn call
+        case VECTOR:;
+          return compile_vector(wasm, lval);
+      }
     default:;
   }
 
   CResult ret = datafy_lval(wasm, lval, global_name);
   release(global_name);
-  release(lval_resolved_sym);
+  release(resolved_sym);
   return ret;
 }
 
@@ -974,9 +989,10 @@ void compile(Namespace* ns) {
 
   printf("Validating %s\n", ns_to_wasm(ns->namespace));
   int validate_result = BinaryenModuleValidate(wasm->module);
-  if (!validate_result)
+  if (!validate_result) {
     printf("VALIDATE ERROR!!!!!!\n");
-  else
+    exit(1);
+  } else
     printf("VALIDATED OK!!\n");
   /* BinaryenModulePrint(wasm->module); */
 

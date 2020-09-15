@@ -13,10 +13,11 @@ int is_src_newer(char* src, char* wasm) {
   struct stat src_stat;
   if (stat(src, &src_stat) < 0) {
     printf("Trying to stat src %s, but an error was returned\n", src);
-    abort();
+    exit(1);
   };
+  printf("comparing %s and %s\n", src, wasm);
   struct stat wasm_stat;
-  if (stat(wasm, &wasm_stat) < 0) return 0;
+  if (stat(wasm, &wasm_stat) < 0) return 1;
   return src_stat.st_mtime > wasm_stat.st_mtime;
 }
 
@@ -130,14 +131,14 @@ void unmark(Namespace* ns) { ns->compile = 0; }
 
 int compile_main() {
   init_wajure();
-  if (load_main() == 0) return 0;
+  if (load_main() == 1) exit(1);
 
   Namespace* main_ns = get_namespace(config->main);
   walk_namespaces(unmark);
   mark(main_ns);
   main_ns->compile = 1;
-  /* Namespace* bar_ns = get_namespace("bar.core"); */
-  /* bar_ns->compile = 1; */
+  Namespace* bar_ns = get_namespace("test-compile.test4-if-fn-do");
+  bar_ns->compile = 1;
   walk_namespaces(p_info);
   walk_namespaces(maybe_compile);
   printf("----------------------\n");
