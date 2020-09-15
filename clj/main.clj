@@ -18,7 +18,11 @@
 (defn main [x y]
   ;; (test2/test)
   ;; (test3/test)
- (test4/test4a)
+ ;; (test4/test4a)
+ (test4/test4b)
+
+  ;; (t ( (fn [a b] (+ b a)) 3 4) 7)
+  ;; (t ( (fn [] 4) ) 4)
 
   ;; (t (+ 5 (* 2 3))
   ;;    11)

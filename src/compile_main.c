@@ -15,10 +15,15 @@ int is_src_newer(char* src, char* wasm) {
     printf("Trying to stat src %s, but an error was returned\n", src);
     exit(1);
   };
-  printf("comparing %s and %s\n", src, wasm);
+  int ret;
   struct stat wasm_stat;
-  if (stat(wasm, &wasm_stat) < 0) return 1;
-  return src_stat.st_mtime > wasm_stat.st_mtime;
+  if (stat(wasm, &wasm_stat) < 0)
+    ret = 1;
+  else {
+    ret = src_stat.st_mtime > wasm_stat.st_mtime;
+  }
+  /* printf("comparing %s and %s %d\n", src, wasm, ret); */
+  return ret;
 }
 
 void print_k(void* pair) {
@@ -137,8 +142,8 @@ int compile_main() {
   walk_namespaces(unmark);
   mark(main_ns);
   main_ns->compile = 1;
-  Namespace* bar_ns = get_namespace("test-compile.test4-if-fn-do");
-  bar_ns->compile = 1;
+  /* Namespace* bar_ns = get_namespace("test-compile.test4-if-fn-do"); */
+  /* bar_ns->compile = 0; */
   walk_namespaces(p_info);
   walk_namespaces(maybe_compile);
   printf("----------------------\n");

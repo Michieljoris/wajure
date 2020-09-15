@@ -473,8 +473,9 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   lambda_list[lambda_block_count++] = make_lval_wasm_lambda_call;
 
-  Ber lambda_block = BinaryenBlock(module, lambda_name, lambda_list,
-                                   lambda_block_count, BinaryenTypeAuto());
+  Ber lambda_block =
+      BinaryenBlock(module, uniquify_name(wasm, lambda_name), lambda_list,
+                    lambda_block_count, BinaryenTypeAuto());
   free(lambda_list);
   release(lambda_name);
   return cresult(lambda_block);
@@ -655,7 +656,31 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
       switch (lval->subtype) {
         case LIST:;
           Ber compiled_list = apply(wasm, lval).ber;
-          return compile_wasm_fn_call(wasm, compiled_list, NULL, NULL, args);
+          int anon_lambda_index = li_new(wasm);
+          Ber local_set_anon_lambda =
+              BinaryenLocalSet(wasm->module, anon_lambda_index, compiled_list);
+          Ber local_get_anon_lambda = BinaryenLocalGet(
+              wasm->module, anon_lambda_index, BinaryenTypeInt32());
+          int fn_call_result_index = li_new(wasm);
+          Ber fn_call = compile_wasm_fn_call(wasm, local_get_anon_lambda, NULL,
+                                             NULL, args)
+                            .ber;
+          Ber local_set_fn_result =
+              BinaryenLocalSet(wasm->module, fn_call_result_index, fn_call);
+          Ber local_get_fn_result = BinaryenLocalGet(
+              wasm->module, fn_call_result_index, BinaryenTypeInt32());
+          Ber release_anon_lambda =
+              wasm_release(wasm, local_get_anon_lambda).ber;
+          Ber children[] = {local_set_anon_lambda, local_set_fn_result,
+                            release_anon_lambda, local_get_fn_result};
+
+          Ber block =
+              BinaryenBlock(wasm->module, uniquify_name(wasm, "anon-lambda"),
+                            children, 4, BinaryenTypeInt32());
+          return cresult(block);
+          /*   return compile_wasm_fn_call(wasm, compiled_list, NULL, NULL,
+           * args);
+           */
         case VECTOR:
         case MAP:
         case SET:
@@ -987,6 +1012,10 @@ void compile(Namespace* ns) {
                            _strlen(size_str));
   free(size_str);
 
+  printf("writing wat and wasm!!!! %s\n", ns_to_wat(ns->namespace));
+  write_wat(wasm, ns_to_wat(ns->namespace));
+  write_wasm(wasm, ns_to_wasm(ns->namespace));
+
   printf("Validating %s\n", ns_to_wasm(ns->namespace));
   int validate_result = BinaryenModuleValidate(wasm->module);
   if (!validate_result) {
@@ -995,10 +1024,6 @@ void compile(Namespace* ns) {
   } else
     printf("VALIDATED OK!!\n");
   /* BinaryenModulePrint(wasm->module); */
-
-  printf("writing wat and wasm!!!! %s\n", ns_to_wat(ns->namespace));
-  write_wat(wasm, ns_to_wat(ns->namespace));
-  write_wasm(wasm, ns_to_wasm(ns->namespace));
 
   free_wasm(wasm);
 }

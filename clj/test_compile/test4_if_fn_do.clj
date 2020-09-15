@@ -1,27 +1,26 @@
 (in-ns 'test-compile.test4-if-fn-do)
 
 (defn test4a []
+  (pr "test4a")
   ;; ;; Testing list functions
   (t (list) ())
   ;;TODO TEST
-  ;; (list? (list))
-  ;; ;=>true
-  ;; (empty? (list))
-  ;; ;=>true
-  ;; (empty? (list 1))
-  ;; ;=>false
+  (t (list? (list)) true)
+ 
+  ;; (t (empty? (list)) true)
+  ;; (t (empty? (list 1)) false)
+
   (t (list 1 2 3) (1 2 3))
   (t (count (list 1 2 3)) 3)
   (t (count (list)) 0)
-  ;;TODO TEST
-  ;; (count nil)
-  ;; ;=>0
+ 
+  ;; (t (count nil) 0)
   (t (if (> (count (list 1 2 3)) 3) 89 78) 78)
   (t (if (>= (count (list 1 2 3)) 3) 89 78) 89)
 
 
 
-  ;; ;; Testing if form
+  ;; ;; ;; Testing if form
   (t (if true 7 8) 7)
   (t (if false 7 8) 8)
   (t (if false 7 false) false)
@@ -34,14 +33,14 @@
   (t (= (list) nil) false)
 
 
-  ;; ;; Testing 1-way if form
+  ;; ;; ;; Testing 1-way if form
   (t (if false (+ 1 7)) nil)
   (t (if nil 8) nil)
   (t (if nil 8 7) 7)
   (t (if true (+ 1 7)) 8)
 
 
-  ;; ;; Testing basic conditionals
+  ;; ;; ;; Testing basic conditionals
   (t (= 2 1)
      false)
   (t (= 1 1)
@@ -85,7 +84,7 @@
   (t (<= 1 2)
      true)
 
-  ;; ;; Testing equality
+  ;; ;; ;; Testing equality
   (t (= 1 1)
      true)
   (t (= 0 0)
@@ -115,9 +114,10 @@
      false)
 
 
-  ;; ;; Testing builtin and user defined functions
-  ;; (+ 1 2)
-  ;; ;=>3
+  ;; ;; ;; Testing builtin and user defined functions
+
+ 
+  (t (+ 1 2) 3)
   (t ( (fn [a b] (+ b a)) 3 4) 7)
   (t ( (fn [] 4) ) 4)
 
@@ -125,9 +125,9 @@
 
 
   ;; ;; Testing closures
-  (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12))
-
-
+  (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
+  ;; (t 1 2)
+  )
 
 (def gen-plus5 (fn [] (fn [b] (+ 5 b))))
 (def plus5 (gen-plus5))
@@ -148,7 +148,8 @@
   (t (do (pr 101) (pr 102) (+ 1 2))
      3)
 
-  (t a 6))
+  (t a 6)
+  )
 
 ;; ;; Testing special form case-sensitivity
 ;; (def DO (fn [a] 7))
@@ -191,292 +192,292 @@
 ;; (if "" 7 8)
                                         ;=>7
 
-(defn test4c []
-  ;; Testing string equality
-
-  (t (= "" "")
-     true)
-  (t (= "abc" "abc")
-     true)
-  (t (= "abc" "")
-     false)
-  (t (= "" "abc")
-     false)
-  (t (= "abc" "def")
-     false)
-  (t (= "abc" "ABC")
-     false)
-  (t (= (list) "")
-     false)
-  (t (= "" (list))
-     false)
+;; (defn test4c []
+;;   ;; Testing string equality
+
+;;   (t (= "" "")
+;;      true)
+;;   (t (= "abc" "abc")
+;;      true)
+;;   (t (= "abc" "")
+;;      false)
+;;   (t (= "" "abc")
+;;      false)
+;;   (t (= "abc" "def")
+;;      false)
+;;   (t (= "abc" "ABC")
+;;      false)
+;;   (t (= (list) "")
+;;      false)
+;;   (t (= "" (list))
+;;      false)
 
-  ;; ;; Testing variable length arguments
-
-  (t ( (fn [& more] (count more)) 1 2 3)
-     3)
-  ;; (t ( (fn [& more] (list? more)) 1 2 3)
-  ;;    true)
-  (t ( (fn [& more] (count more)) 1)
-     1)
-  (t ( (fn [& more] (count more)) )
-     0)
-  ;; ;; (t ( (fn [& more] (list? more)) )
-  ;; ;;    true)
-  (t ( (fn [a & more] (count more)) 1 2 3)
-     2)
-  (t ( (fn [a & more] (count more)) 1)
-     0)
-  ;; (t ( (fn [a & more] (list? more)) 1)
-  ;;    true)
+;;   ;; ;; Testing variable length arguments
+
+;;   (t ( (fn [& more] (count more)) 1 2 3)
+;;      3)
+;;   ;; (t ( (fn [& more] (list? more)) 1 2 3)
+;;   ;;    true)
+;;   (t ( (fn [& more] (count more)) 1)
+;;      1)
+;;   (t ( (fn [& more] (count more)) )
+;;      0)
+;;   ;; ;; (t ( (fn [& more] (list? more)) )
+;;   ;; ;;    true)
+;;   (t ( (fn [a & more] (count more)) 1 2 3)
+;;      2)
+;;   (t ( (fn [a & more] (count more)) 1)
+;;      0)
+;;   ;; (t ( (fn [a & more] (list? more)) 1)
+;;   ;;    true)
 
 
-  ;; ;; Testing language defined not function
-  (t (not false)
-     true)
-  (t (not nil)
-     true)
-  (t (not true)
-     false)
-  (t (not "a")
-     false)
-  (t (not 0)
-     false))
+;;   ;; ;; Testing language defined not function
+;;   (t (not false)
+;;      true)
+;;   (t (not nil)
+;;      true)
+;;   (t (not true)
+;;      false)
+;;   (t (not "a")
+;;      false)
+;;   (t (not 0)
+;;      false))
 
 
-;; ;; -----------------------------------------------------
+;; ;; ;; -----------------------------------------------------
 
-(defn test4d []
-  ;; ;; Testing string quoting
+;; (defn test4d []
+;;   ;; ;; Testing string quoting
 
-  (t ""
-     "")
+;;   (t ""
+;;      "")
 
-  (t "abc"
-     "abc")
+;;   (t "abc"
+;;      "abc")
 
-  (t "abc  def"
-     "abc  def")
+;;   (t "abc  def"
+;;      "abc  def")
 
-  (t "\""
-     "\"")
+;;   (t "\""
+;;      "\"")
 
-  (t "abc\ndef\nghi"
-     "abc\ndef\nghi")
+;;   (t "abc\ndef\nghi"
+;;      "abc\ndef\nghi")
 
-  (t "abc\\def\\ghi"
-     "abc\\def\\ghi")
+;;   (t "abc\\def\\ghi"
+;;      "abc\\def\\ghi")
 
-  (t "\\n"
-     "\\n")
+;;   (t "\\n"
+;;      "\\n")
 
-  ;; ;; Testing pr-str
+;;   ;; ;; Testing pr-str
 
-  ;; ;; (t (pr-str)
-  ;; ;;    "")
+;;   ;; ;; (t (pr-str)
+;;   ;; ;;    "")
 
-  ;; ;; (t (pr-str "")
-  ;; ;;    "\"\"")
+;;   ;; ;; (t (pr-str "")
+;;   ;; ;;    "\"\"")
 
-  ;; ;; (t (pr-str "abc")
-  ;; ;;    "\"abc\"")
+;;   ;; ;; (t (pr-str "abc")
+;;   ;; ;;    "\"abc\"")
 
-  ;; ;; (t (pr-str "abc  def" "ghi jkl")
-  ;; ;;    "\"abc  def\" \"ghi jkl\"")
+;;   ;; ;; (t (pr-str "abc  def" "ghi jkl")
+;;   ;; ;;    "\"abc  def\" \"ghi jkl\"")
 
-  ;; ;; (t (pr-str "\"")
-  ;; ;;    "\"\\\"\"")
+;;   ;; ;; (t (pr-str "\"")
+;;   ;; ;;    "\"\\\"\"")
 
-  ;; ;; (t (pr-str (list 1 2 "abc" "\"") "def")
-  ;; ;;    "(1 2 \"abc\" \"\\\"\") \"def\"")
+;;   ;; ;; (t (pr-str (list 1 2 "abc" "\"") "def")
+;;   ;; ;;    "(1 2 \"abc\" \"\\\"\") \"def\"")
 
-  ;; ;; (t (pr-str "abc\ndef\nghi")
-  ;; ;;    "\"abc\\ndef\\nghi\"")
+;;   ;; ;; (t (pr-str "abc\ndef\nghi")
+;;   ;; ;;    "\"abc\\ndef\\nghi\"")
 
-  ;; ;; (t (pr-str "abc\\def\\ghi")
-  ;; ;;    "\"abc\\\\def\\\\ghi\"")
+;;   ;; ;; (t (pr-str "abc\\def\\ghi")
+;;   ;; ;;    "\"abc\\\\def\\\\ghi\"")
 
-  ;; ;; (t (pr-str (list))
-  ;; ;;    "()")
+;;   ;; ;; (t (pr-str (list))
+;;   ;; ;;    "()")
 
-  ;; ;; Testing str
+;;   ;; ;; Testing str
 
-  ;; ;; (t (str)
-  ;; ;;    "")
+;;   ;; ;; (t (str)
+;;   ;; ;;    "")
 
-  ;; ;; (t (str "")
-  ;; ;;    "")
+;;   ;; ;; (t (str "")
+;;   ;; ;;    "")
 
-  ;; ;; (t (str "abc")
-  ;; ;;    "abc")
+;;   ;; ;; (t (str "abc")
+;;   ;; ;;    "abc")
 
-  ;; ;; (t (str "\"")
-  ;; ;;    "\"")
+;;   ;; ;; (t (str "\"")
+;;   ;; ;;    "\"")
 
-  ;; ;; (t (str 1 "abc" 3)
-  ;; ;;    "1abc3")
+;;   ;; ;; (t (str 1 "abc" 3)
+;;   ;; ;;    "1abc3")
 
-  ;; ;; (t (str "abc  def" "ghi jkl")
-  ;; ;;    "abc  defghi jkl")
+;;   ;; ;; (t (str "abc  def" "ghi jkl")
+;;   ;; ;;    "abc  defghi jkl")
 
-  ;; ;; (t (str "abc\ndef\nghi")
-  ;; ;;    "abc\ndef\nghi")
+;;   ;; ;; (t (str "abc\ndef\nghi")
+;;   ;; ;;    "abc\ndef\nghi")
 
-  ;; ;; (t (str "abc\\def\\ghi")
-  ;; ;;    "abc\\def\\ghi")
+;;   ;; ;; (t (str "abc\\def\\ghi")
+;;   ;; ;;    "abc\\def\\ghi")
 
-  ;; ;; (t (str (list 1 2 "abc" "\"") "def")
-  ;; ;;    "(1 2 abc \")def")
+;;   ;; ;; (t (str (list 1 2 "abc" "\"") "def")
+;;   ;; ;;    "(1 2 abc \")def")
 
-  ;; ;; (t (str (list))
-  ;; ;;    "()")
+;;   ;; ;; (t (str (list))
+;;   ;; ;;    "()")
 
-  ;; ;; Testing prn
-  ;; ;; (t (prn)
+;;   ;; ;; Testing prn
+;;   ;; ;; (t (prn)
 
-  ;; ;;                                         ;=>nil
+;;   ;; ;;                                         ;=>nil
 
-  ;; ;;    (prn ""))
-  ;; ;/""
-  ;; ;=>nil
+;;   ;; ;;    (prn ""))
+;;   ;; ;/""
+;;   ;; ;=>nil
 
-  ;; ;; (t (prn "abc")
-  ;; ;;    "abc")
-  ;; ;=>nil
+;;   ;; ;; (t (prn "abc")
+;;   ;; ;;    "abc")
+;;   ;; ;=>nil
 
-  ;; ;; (t (prn "abc  def" "ghi jkl")
-  ;; ;;    "abc  def")
-  ;; "ghi jkl"
+;;   ;; ;; (t (prn "abc  def" "ghi jkl")
+;;   ;; ;;    "abc  def")
+;;   ;; "ghi jkl"
 
-  ;; ;; (t (t (prn "\""))
-  ;; ;;    "=>nil
-  ;; ;; /")
-  ;; ;; \\"
+;;   ;; ;; (t (t (prn "\""))
+;;   ;; ;;    "=>nil
+;;   ;; ;; /")
+;;   ;; ;; \\"
 
-  ;; ;; (t (prn "abc\ndef\nghi")
-  ;; ;;    nil)
-  ;; ;/"abc\\ndef\\nghi"
+;;   ;; ;; (t (prn "abc\ndef\nghi")
+;;   ;; ;;    nil)
+;;   ;; ;/"abc\\ndef\\nghi"
 
-  ;; ;; (t (prn "abc\\def\\ghi")
-  ;; ;;    nil)
-  ;; ;/"abc\\\\def\\\\ghi"
+;;   ;; ;; (t (prn "abc\\def\\ghi")
+;;   ;; ;;    nil)
+;;   ;; ;/"abc\\\\def\\\\ghi"
 
-  ;; ;; (t (prn (list 1 2 "abc" "\"") "def")
-  ;; ;;    nil)
-  ;; ;/\(1 2 "abc" "\\""\) "def"
+;;   ;; ;; (t (prn (list 1 2 "abc" "\"") "def")
+;;   ;; ;;    nil)
+;;   ;; ;/\(1 2 "abc" "\\""\) "def"
 
 
-  ;; ;; Testing println
-  ;; ;; (t (println)
-  ;; ;;    nil)
-  ;; ;/
+;;   ;; ;; Testing println
+;;   ;; ;; (t (println)
+;;   ;; ;;    nil)
+;;   ;; ;/
 
 
-  ;; ;; (t (println "")
-  ;; ;;    nil)
+;;   ;; ;; (t (println "")
+;;   ;; ;;    nil)
 
-  ;; ;/
+;;   ;; ;/
 
-  ;; ;; (t (println "abc")
-  ;; ;;    nil)
+;;   ;; ;; (t (println "abc")
+;;   ;; ;;    nil)
 
-  ;; ;/abc
+;;   ;; ;/abc
 
-  ;; ;; (println "abc  def" "ghi jkl")
-  ;; ;/abc  def ghi jkl
+;;   ;; ;; (println "abc  def" "ghi jkl")
+;;   ;; ;/abc  def ghi jkl
 
-  ;; ;; (t (println "\"")
-  ;; ;;    nil)
-  ;; ;/"
+;;   ;; ;; (t (println "\"")
+;;   ;; ;;    nil)
+;;   ;; ;/"
 
-  ;; ;; (println "abc\ndef\nghi")
-  ;; ;/abc
-  ;; ;/def
-  ;; ;/ghi
-  ;; ;=>nil
+;;   ;; ;; (println "abc\ndef\nghi")
+;;   ;; ;/abc
+;;   ;; ;/def
+;;   ;; ;/ghi
+;;   ;; ;=>nil
 
-  ;; ;; (println "abc\\def\\ghi")
-  ;; ;/abc\\def\\ghi
-  ;; ;=>nil
+;;   ;; ;; (println "abc\\def\\ghi")
+;;   ;; ;/abc\\def\\ghi
+;;   ;; ;=>nil
 
-  ;; ;; (println (list 1 2 "abc" "\"") "def")
-  ;; ;/\(1 2 abc "\) def
-  ;; ;=>nil
+;;   ;; ;; (println (list 1 2 "abc" "\"") "def")
+;;   ;; ;/\(1 2 abc "\) def
+;;   ;; ;=>nil
 
 
-  )
+;;   )
 
 
-(defn test4e []
-  ;; Testing keywords
-  (t (= :abc :abc)
-     true)
-  (t (= :abc :def)
-     false)
-  (t (= :abc ":abc")
-     false)
-  (t (= (list :abc) (list :abc))
-     true)
+;; (defn test4e []
+;;   ;; Testing keywords
+;;   (t (= :abc :abc)
+;;      true)
+;;   (t (= :abc :def)
+;;      false)
+;;   (t (= :abc ":abc")
+;;      false)
+;;   (t (= (list :abc) (list :abc))
+;;      true)
 
-  ;; ;; Testing vector truthiness
-  (t (if [] 7 8)
-     7)
+;;   ;; ;; Testing vector truthiness
+;;   (t (if [] 7 8)
+;;      7)
 
-  ;; ;; Testing vector printing
-  ;; ;; (pr-str [1 2 "abc" "\""] "def")
-  ;; ;=>"[1 2 \"abc\" \"\\\"\"] \"def\""
+;;   ;; ;; Testing vector printing
+;;   ;; ;; (pr-str [1 2 "abc" "\""] "def")
+;;   ;; ;=>"[1 2 \"abc\" \"\\\"\"] \"def\""
 
-  ;; ;; (pr-str [])
-  ;; ;=>"[]"
+;;   ;; ;; (pr-str [])
+;;   ;; ;=>"[]"
 
-  ;; ;; (str [1 2 "abc" "\""] "def")
-  ;; ;=>"[1 2 abc \"]def"
+;;   ;; ;; (str [1 2 "abc" "\""] "def")
+;;   ;; ;=>"[1 2 abc \"]def"
 
-  ;; ;; (t (str [])
-  ;; ;;    "[]")
+;;   ;; ;; (t (str [])
+;;   ;; ;;    "[]")
 
 
-  ;; ;; Testing vector functions
-  (t (count [1 2 3])
-     3)
-  ;; (t (empty? [1 2 3])
-  ;;    false)
-  ;; (t (empty? [])
-  ;;    true)
-  ;; (t (list? [4 5 6])
-  ;;    false)
+;;   ;; ;; Testing vector functions
+;;   (t (count [1 2 3])
+;;      3)
+;;   ;; (t (empty? [1 2 3])
+;;   ;;    false)
+;;   ;; (t (empty? [])
+;;   ;;    true)
+;;   ;; (t (list? [4 5 6])
+;;   ;;    false)
 
-  ;; ;; Testing vector equality
-  (t (= [] (list))
-     true)
-  (t (= [7 8] [7 8])
-     true)
-  ;; ;; (t (= [:abc] [:abc])
-  ;; ;;    true)
-  (t (= (list 1 2) [1 2])
-     true)
-  (t (= (list 1) [])
-     false)
-  (t (= [] [1])
-     false)
-  (t (= 0 [])
-     false)
-  (t (= [] 0)
-     false)
-  (t (= [] "")
-     false)
-  (t (= "" [])
-     false)
+;;   ;; ;; Testing vector equality
+;;   (t (= [] (list))
+;;      true)
+;;   (t (= [7 8] [7 8])
+;;      true)
+;;   ;; ;; (t (= [:abc] [:abc])
+;;   ;; ;;    true)
+;;   (t (= (list 1 2) [1 2])
+;;      true)
+;;   (t (= (list 1) [])
+;;      false)
+;;   (t (= [] [1])
+;;      false)
+;;   (t (= 0 [])
+;;      false)
+;;   (t (= [] 0)
+;;      false)
+;;   (t (= [] "")
+;;      false)
+;;   (t (= "" [])
+;;      false)
 
-  ;; ;; Testing vector parameter lists
-  (t ( (fn [] 4) )
-     4)
-  (t ( (fn [f x] (f x)) (fn [a] (+ 1 a)) 7)
-     8)
+;;   ;; ;; Testing vector parameter lists
+;;   (t ( (fn [] 4) )
+;;      4)
+;;   (t ( (fn [f x] (f x)) (fn [a] (+ 1 a)) 7)
+;;      8)
 
-  ;; ;; Nested vector/list equality
-  (t (= [(list)] (list []))
-     true)
-  (t (= [1 2 (list 3 4 [5 6])] (list 1 2 [3 4 (list 5 6)]))
-     true))
-;; "done"
+;;   ;; ;; Nested vector/list equality
+;;   (t (= [(list)] (list []))
+;;      true)
+;;   (t (= [1 2 (list 3 4 [5 6])] (list 1 2 [3 4 (list 5 6)]))
+;;      true))
+;; ;; "done"
