@@ -550,7 +550,7 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
   LocalIndices* li = li_init();
   // Put args on stack
 
-  printf("compile_wasm_fn_call %s\n", fn_name);
+  /* printf("compile_wasm_fn_call %s\n", fn_name); */
   while (args) {
     CResult result = lval_compile(wasm, args->car);
     Ber compiled_arg = result.ber;
@@ -606,7 +606,7 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
     Ber operands[] = {make_int32(module, 0), ber_args_count};
     result = BinaryenCall(module, fn_name, operands, 2, BinaryenTypeInt32());
   } else if (fn_table_index_global) {
-    printf("in compile_wasm_fn_call: %s\n", fn_table_index_global);
+    /* printf("in compile_wasm_fn_call: %s\n", fn_table_index_global); */
     Ber wasm_fn_index = BinaryenGlobalGet(wasm->module, fn_table_index_global,
                                           BinaryenTypeInt32());
     Ber operands[] = {make_int32(module, 0), ber_args_count};
@@ -644,7 +644,7 @@ CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
 
   free(wasm_args);
   li_close(li);
-  printf("Returning call block\n");
+  /* printf("Returning call block\n"); */
   return cresult(call_block);
 }
 
@@ -704,7 +704,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
 }
 
 void add_dep(Wasm* wasm, char* global_name) {
-  /* printf("ADD DEP %s\n", global_name); */
+  /* printf("ADD DEP %s %d\n", global_name, get_ref_count(global_name)); */
   wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
 }
 
@@ -712,8 +712,8 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
                               Lval* lval_compiler);
 
 char* make_global_name(char* prefix, char* namespace, char* name) {
-  int size = sizeof(prefix) + sizeof(namespace) + sizeof(name) + 2;
-  if (size > 512) {
+  int size = _strlen(prefix) + _strlen(namespace) + _strlen(name) + 2;
+  if (size > MAX_CHAR_SIZE) {
     printf("Trying to make a wasm global name that's larger than %d: %s/%s\n",
            MAX_CHAR_SIZE, namespace, name);
     abort();
@@ -766,14 +766,14 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
             fn_call = compile_special_call(wasm, resolved_symbol, args);
             break;
           case LAMBDA:  // root functions in compiler env
-            printf("Calling lambda!! %s\n", lval_first->str);
+            /* printf("Calling lambda!! %s\n", lval_first->str); */
             if (symbol_is_external) {
               char* global_name =
                   make_global_name("fn:", result.ns->namespace, result.name);
               add_dep(wasm, global_name);
               fn_call =
                   compile_wasm_fn_call(wasm, NULL, NULL, global_name, args);
-              release(global_name);
+              /* release(global_name); */
             } else
               fn_call =
                   compile_wasm_fn_call(wasm, NULL, lval_first->str, NULL, args);
@@ -908,7 +908,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   }
 
   CResult ret = datafy_lval(wasm, lval, global_name);
-  release(global_name);
+  /* release(global_name); */
   release(resolved_sym);
   return ret;
 }
@@ -927,11 +927,14 @@ void add_deps_custom_section(Wasm* wasm, char* custom_section_name,
     Cell* pair = head->car;
     deps_str_len += _strlen((char*)(pair->car)) + 1;
     head = head->cdr;
-    BinaryenAddGlobalImport(wasm->module, pair->car, "env", pair->car,
-                            BinaryenTypeInt32(), 0);
+    char* str = pair->car;
+    /* printf("GLOBAL IMPORT: %s %d\n", str, _strlen(str)); */
+
+    BinaryenAddGlobalImport(wasm->module, str, "env", str, BinaryenTypeInt32(),
+                            0);
   }
 
-  char* deps_str = malloc(deps_str_len);
+  char* deps_str = malloc(deps_str_len + 1);
   deps_str[0] = '\0';
   head = deps;
   char* str = deps_str;

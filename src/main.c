@@ -11,6 +11,7 @@
 #include "io.h"
 #include "lib.h"
 #include "lispy_mempool.h"
+#include "list.h"
 #include "malloc.h"
 #include "nargs.h"
 #include "printf.h"

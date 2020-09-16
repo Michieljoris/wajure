@@ -1,5 +1,6 @@
 * TODO compiler
 ** DONE release/retain cond and branches of if
+** something weird, a file name with - and calling 2 fns from it gives execution error
 ** release uniquify_name
 ** Don't run main.wasm if compilation comes back with error
 So propagate errors properly till we the last return from compile_main
