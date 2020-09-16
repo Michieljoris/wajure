@@ -26,7 +26,7 @@ void _putchar(char character) {
 
 // Simulating wasm
 const int page_size = 64 * 1024;
-const int max_page_count = 10;
+const int max_page_count = 1000;  // 64 MB
 int page_count = 1;
 const long int max_size = page_size * max_page_count;
 

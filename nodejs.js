@@ -166,7 +166,7 @@ async function instantiate_runtime(env) {
             grow_memory: () => {
                 console.log("Grow_memory from ", page_count * page_size, " to ", (page_count+1) * page_size);
                 if (++page_count > max_page_count) {
-                    console.log("Error: can't allocate memory beyond max\n");
+                    console.log("Error: can't allocate memory beyond max (nodejs)\n");
                     // throw "Error: can't allocate memory beyond max\n";
                     return 0;
                 }

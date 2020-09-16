@@ -896,6 +896,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
         default:
           lval = resolved_sym;
       };
+      break;
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
