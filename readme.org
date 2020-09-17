@@ -20,7 +20,8 @@ TODO:
 - [x] namespaces in interpreter
 - [x] namespaces in compiled code
 - [x] keywords
-- [ ] compile test suite
+- [x] compile test suite
+- [x] str and read-str
 - [ ] partial
 - [ ] loop/recur
 - [ ] try/throw/catch

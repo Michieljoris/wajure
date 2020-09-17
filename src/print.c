@@ -8,7 +8,10 @@
 #include "list.h"
 #include "ltypes.h"
 #include "platform.h"
+#include "printf.h"
 #include "runtime.h"
+
+struct s_info;
 
 static char* mpcf_escape_new(char* x, const char* input, const char** output) {
   int i;
@@ -57,22 +60,22 @@ static const char* mpc_escape_output_c[] = {"\\a", "\\b",  "\\f", "\\n",
 /*   return y; */
 /* } */
 
-void lval_print_str(Lval* lval) {
+int lval_print_str(void (*out)(char character, void* arg), void* arg,
+                   Lval* lval) {
   /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
   /* _strcpy(escaped, lval->str); */
   /* char* to_escape = retain(lval->str); */
   /* escaped = mpcf_escape(escaped); */
-  char* escaped =
+  scoped char* escaped =
       mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c);
-  printf("\"%s\"", escaped);
-  release(escaped);
+  return fctprintf(out, arg, "\"%s\"", escaped);
 }
 
-void lval_pr_str(Lval* lval) {
-  char* escaped =
-      mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c);
-  printf("%s", escaped);
-  release(escaped);
+int lval_pr_str(void (*out)(char character, void* arg), void* arg, Lval* lval) {
+  /* scoped char* escaped = */
+  /*     mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c); */
+  /* return fctprintf(out, arg, "%s", escaped); */
+  return fctprintf(out, arg, "%s", lval->str);
   /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
   /* _strcpy(escaped, lval->str); */
   /* escaped = mpcf_escape(escaped); */
@@ -80,151 +83,108 @@ void lval_pr_str(Lval* lval) {
   /* release(escaped); */
 }
 
-void lval_collection_print(Lval* lval, char open, char close) {
-  if (open) putchar(open);
+int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval);
+
+int lval_collection_print(void (*out)(char character, void* arg), void* arg,
+                          Lval* lval, char open, char close) {
+  int ret = 0;
+  if (open) {
+    out(open, arg);
+    ret++;
+  }
   Cell* cell = lval->head;
   while (cell) {
-    lval_print(cell->car);
+    ret += _lval_print(out, arg, cell->car);
     cell = cell->cdr;
-    if (cell) putchar(' ');
+    if (cell) {
+      out(' ', arg);
+      ret++;
+    }
   }
-  if (close) putchar(close);
+  if (close) {
+    out(close, arg);
+    ret++;
+  }
+  return ret;
 }
 
-void lval_fun_print(Lval* lval) {
+int lval_fun_print(void (*out)(char character, void* arg), void* arg,
+                   Lval* lval) {
+  int ret = 0;
   switch (lval->subtype) {
     case SYS:
-      printf("<function %s>", lval->str);
+      ret = fctprintf(out, arg, "<function %s>", lval->str);
       break;
     case LAMBDA:
     case MACRO:;
       char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
-      printf("(%s ", fn_name);
-      lval_print(lval->params);
-      putchar(' ');
-      lval_collection_print(lval->body, 0, 0);
-      putchar(')');
+      ret += fctprintf(out, arg, "(%s ", fn_name);
+      ret += _lval_print(out, arg, lval->params);
+      out(' ', arg);
+      ret++;
+      ret += lval_collection_print(out, arg, lval->body, 0, 0);
+      out(')', arg);
+      ret++;
       break;
     case SPECIAL:
-      printf("<function %s>", lval->str);
+      ret = fctprintf(out, arg, "<function %s>", lval->str);
       break;
   }
+  return ret;
 }
 
-void lval_print(Lval* lval) {
-  if (!lval) {
-    printf("<Trying to print null lval>");
-    return;
-  }
+int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
+  if (!lval) return fctprintf(out, arg, "<Trying to print null lval>");
   /* printf("in lval print %d %s\n", lval->type, */
   /*        lval_type_constant_to_name(lval->type)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      printf("%s", lval->str);
-      break;
-    /* case LVAL_NAMESPACE:; */
-    /*   Namespace* ns = (Namespace*)lval->head; */
-    /*   printf("%s", ns->namespace); */
-    /*   break; */
+      return fctprintf(out, arg, "%s", lval->str);
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          lval_collection_print(lval, '(', ')');
-          break;
+          return lval_collection_print(out, arg, lval, '(', ')');
         case MAP:
-          lval_collection_print(lval, '{', '}');
-          break;
+          return lval_collection_print(out, arg, lval, '{', '}');
         case VECTOR:
-          lval_collection_print(lval, '[', ']');
-          break;
+          return lval_collection_print(out, arg, lval, '[', ']');
         default:
-          printf("unknown lval subtype %s\n",
-                 lval_type_constant_to_name(lval->subtype));
+          return fctprintf(out, arg, "unknown lval subtype %s\n",
+                           lval_type_constant_to_name(lval->subtype));
       }
-      break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case NUMBER:
-          printf("%li", lval->num);
-          break;
+          return fctprintf(out, arg, "%li", lval->num);
         case STRING:
-          lval_print_str(lval);
-          break;
+          return lval_print_str(out, arg, lval);
         case KEYWORD:
-          printf(":%s", lval->str);
-          break;
+          return fctprintf(out, arg, ":%s", lval->str);
         case LNIL:
-          printf("nil");
-          break;
+          return fctprintf(out, arg, "nil");
         case LTRUE:
-          printf("true");
-          break;
+          return fctprintf(out, arg, "true");
         case LFALSE:
-          printf("false");
-          break;
+          return fctprintf(out, arg, "false");
       }
     case LVAL_FUNCTION:
-      lval_fun_print(lval);
-      break;
-
+      return lval_fun_print(out, arg, lval);
     case LVAL_COMPILER:
       switch (lval->subtype) {
         case PARAM:
-          printf("P%d", lval->offset);
-          break;
+          return fctprintf(out, arg, "P%d", lval->offset);
         case LOCAL:
-          printf("L%d", lval->offset);
-          break;
+          return fctprintf(out, arg, "L%d", lval->offset);
       }
-      break;
     case LVAL_WASM_LAMBDA:
       wval_print((WvalFun*)lval);
-      break;
+      return 0;
     case LVAL_ERR:
-      printf("Error: %s", lval->str);
-      break;
+      return fctprintf(out, arg, "Error: %s", lval->str);
     default:
-      printf("unknown lval type %d, %s\n", lval->type,
-             lval_type_constant_to_name(lval->type));
+      return fctprintf(out, arg, "unknown lval type %d, %s\n", lval->type,
+                       lval_type_constant_to_name(lval->type));
   }
-}
-
-void lval_info(Lval* lval) {
-  if (log_level < LOG_LEVEL_INFO) return;
-  lval_print(lval);
-}
-
-void lval_debug(Lval* lval) {
-  if (log_level < LOG_LEVEL_DEBUG) return;
-  lval_print(lval);
-}
-
-// TODO: this one prints without quotes. Make a proper pprint fn, and make
-// this the normal print (so without quotes)
-void lval_pr(Lval* lval) {
-  if (lval->subtype == STRING) {
-    lval_pr_str(lval);
-    return;
-  }
-  lval_info(lval);
-}
-
-void lval_println(Lval* v) {
-  /* printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num); */
-  lval_print(v);
-  putchar('\n');
-}
-
-void lval_debugln(Lval* v) {
-  if (log_level < LOG_LEVEL_DEBUG) return;
-  lval_print(v);
-  putchar('\n');
-}
-
-void lval_infoln(Lval* v) {
-  if (log_level < LOG_LEVEL_INFO) return;
-  lval_print(v);
-  putchar('\n');
 }
 
 void print_kv(void* pair) {
@@ -253,4 +213,91 @@ void env_print(Lenv* env) {
     /* printf("ROOT env!!! \n"); */
     list_print(env->kv, print_kv, "\n");
   }
+}
+
+void out(char character, void* arg) { putchar(character); }
+
+void lval_print(Lval* lval) {
+  void* arg = NULL;
+  _lval_print(&out, arg, lval);
+}
+
+// TODO: this one prints without quotes. Make a proper pprint fn, and make this
+// the normal print (so without quotes)
+void lval_pr(Lval* lval) {
+  void* arg = NULL;
+  if (lval->subtype == STRING) {
+    lval_pr_str(out, arg, lval);
+    return;
+  }
+  _lval_print(&out, arg, lval);
+}
+
+struct s_info {
+  char* str;
+  int maxlen;
+  int* index;
+};
+
+void s_out(char character, void* arg) {
+  struct s_info* d = ((struct s_info*)arg);
+  char* buf = d->str;
+  int maxlen = d->maxlen;
+  int* index = d->index;
+  if (*index < maxlen - 1) {
+    buf[*index] = character;
+    (*index)++;
+  } else if (*index == maxlen - 1) {
+    /* printf("WARNING: can't build a string longer than %d chars\n", maxlen -
+     * 1); */
+    buf[*index] = '\0';
+    (*index)++;
+  } else {
+    (*index)++;
+  }
+}
+
+int lval_snprint(char* str, int maxlen, Lval* lval) {
+  int* index = lalloc_size(sizeof(int*));
+  *index = 0;
+  struct s_info arg = {str, maxlen, index};
+  if (lval->subtype == STRING)
+    lval_pr_str(s_out, &arg, lval);
+  else
+    _lval_print(&s_out, &arg, lval);
+  int len = *index;
+  if (*index < maxlen - 1) {
+    str[*index] = '\0';
+  }
+  s_out('\0', &arg);
+  release(index);
+  return len;
+}
+
+void lval_info(Lval* lval) {
+  if (log_level < LOG_LEVEL_INFO) return;
+  lval_print(lval);
+}
+
+void lval_debug(Lval* lval) {
+  if (log_level < LOG_LEVEL_DEBUG) return;
+  lval_print(lval);
+}
+
+void lval_println(Lval* v) {
+  /* printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num); */
+  lval_print(v);
+  putchar('\n');
+}
+
+void lval_debugln(Lval* v) {
+  if (log_level < LOG_LEVEL_DEBUG) return;
+  lval_print(v);
+  putchar('\n');
+}
+
+void lval_infoln(Lval* v) {
+  if (log_level < LOG_LEVEL_INFO) return;
+  lval_print(v);
+  putchar('\n');
 }

@@ -6,6 +6,7 @@
 #include "lispy_mempool.h"
 #include "platform.h"
 #include "print.h"
+#include "read.h"
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
   ddebug("executing print_fn:");
@@ -60,11 +61,43 @@ Lval* hash_fn(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
-LispyFn util_builtin_fns[] = {{"print", print_fn, "print_fn", 2, 1},
-                              {"pr", pr_fn, "pr_fn", 2, 1},
-                              {"debug", debug_fn, "debug_fn", 2, 1},
-                              {"boolean", boolean_fn, "boolean_fn", 2, 1},
-                              {"hash", hash_fn, "hash_fn", 2, 1},
-                              {NIL}
+Lval* read_string_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("read-string", 1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
+  int pos = 0;
+  return read_expr(arg->str, &pos, '\0');
+}
+
+Lval* str_fn(Lenv* env, Lval* arg_list) {
+  scoped_iter Cell* i = iter_new(arg_list);
+  Lval* arg = iter_next(i);
+  int maxlen = MAX_CHAR_SIZE;
+  scoped char* str = lalloc_size(maxlen);
+  char* ptr = str;
+  while (arg) {
+    int len = lval_snprint(ptr, maxlen, arg);
+    int real_len = _strlen(ptr);
+    if (len > real_len) {
+      lval_println(arg_list);
+      return make_lval_err("String can only hold a max of %d chars",
+                           MAX_CHAR_SIZE);
+    }
+    maxlen -= len;
+    ptr += len;
+    arg = iter_next(i);
+  }
+  str = lrealloc(str, _strlen(str) + 1);
+  return make_lval_str(str);
+}
+
+LispyFn util_builtin_fns[] = {
+    {"print", print_fn, "print_fn", 2, 1},
+    {"pr", pr_fn, "pr_fn", 2, 1},
+    {"debug", debug_fn, "debug_fn", 2, 1},
+    {"boolean", boolean_fn, "boolean_fn", 2, 1},
+    {"hash", hash_fn, "hash_fn", 2, 1},
+    {"str", str_fn, "str_fn", 2, 1},
+    {"read-string", read_string_fn, "read_string_fn", 2, 1},
+    {NIL}
 
 };

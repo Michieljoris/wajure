@@ -1,32 +1,5 @@
 * TODO compiler
-** DONE release/retain cond and branches of if
-** something weird, a file name with - and calling 2 fns from it gives execution error
 ** release uniquify_name
-** Don't run main.wasm if compilation comes back with error
-So propagate errors properly till we the last return from compile_main
-** DONE incremental compilation
-Ideally you'd want to have to compile only the source files that have changed at
-all since last compilation. However dependencies come into play here. In our
-case, because we reduce any non function values to a single lval at compile
-time, and because we use global imports to refer to external (from another
-namespace) in functions at runtime we only have to deal with external refs in
-non fn values as in: (def a foo/b).
-
-When a namespace refers to a var in another ns from a non fn, that namespace
-will be recompiled when its required ns gets recompiled. To avoid this don't
-refer do this, better is to refer to it in a fn. Or wrap the value in a fn:
-Instead of (def a foo/bar) write (defn a[] foo/bar).
-
-If this is not desirable and too many namespaces are recompiled in development
-it's an option to add the feature of wrapping all (def ...), in a parameterless
-fn put a flag on the symbol and use a fn call to retrieve the value (by using a
-global) iso datafying the value. But this would/might slow down the program, and
-increase compilation time.
-** DONE change name of main from test to main
-** DONE compile all outdated files, not just main!!!
-but also the deps!!
-** compile the beginning of a test suite
-** DONE namespaces
 ** add repl and watch options to config
 in repl you can (re)compile namespaces. Also, it can watch directory and if any
 clj source file gets modified, recompile. Because it's a live env we can expand
@@ -38,13 +11,9 @@ You should also be able to switch namespace.
 ** review closures in the context of namespaces
 especially:
 Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
-** DONE fix if
-throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
-
+** DONE read-string
+** str
 ** ----------------
-** DONE Release *ns*
- This is a lval_namespace. lval_namespace->head points to a Namespace struct. We
- need to add a mempool type NAMESPACE and a destroy method for it, so we can release namespace->namespace and namespace->as/refer
 ** fix recursive calls
     Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
@@ -55,13 +24,10 @@ throw result of condition through fn that returns 0 if condition is false or nil
     for the interpreter.
 
 ** fix freeing of fn_name ("anon")
-** DONE record offset of compiler values that have been interred, so we can reuse them and export them
-** add release and retain to wasm code
-*** releasing a lval_wasm_lambda!!!
+** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-*** DONE deciding whether a compiled macro was a fn call!!
-*** releasing args to sys fn!!!
-
+** releasing args to sys fn!!!
+** rewrite sys fns to use stack iso c arg_list
 ** partial
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
@@ -74,8 +40,6 @@ Then call wasm implementation of apply* that receives a list and puts them on wa
 ** implement: str, quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data, atoms
 ** benchmark whether internal module calls are faster than calling imported fns or calling imported table fns
 ** ----------------------------
-** DONE "too few args to ..." etc gets added every time to data!!!!
-So break string into two, and inter strings only once, and do two prints
 ** ? dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer
 to them statically. Alternatively we could store them in a namespace env and
@@ -149,6 +113,44 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+** DONE deciding whether a compiled macro was a fn call!!
+** DONE release/retain cond and branches of if
+** DONE something weird, a file name with - and calling 2 fns from it gives execution error
+malloc(sizeof(str)) iso malloc(_strlen(str)) !!!!
+** DONE Don't run main.wasm if compilation comes back with error
+So propagate errors properly till we the last return from compile_main
+** DONE incremental compilation
+Ideally you'd want to have to compile only the source files that have changed at
+all since last compilation. However dependencies come into play here. In our
+case, because we reduce any non function values to a single lval at compile
+time, and because we use global imports to refer to external (from another
+namespace) in functions at runtime we only have to deal with external refs in
+non fn values as in: (def a foo/b).
+
+When a namespace refers to a var in another ns from a non fn, that namespace
+will be recompiled when its required ns gets recompiled. To avoid this don't
+refer do this, better is to refer to it in a fn. Or wrap the value in a fn:
+Instead of (def a foo/bar) write (defn a[] foo/bar).
+
+If this is not desirable and too many namespaces are recompiled in development
+it's an option to add the feature of wrapping all (def ...), in a parameterless
+fn put a flag on the symbol and use a fn call to retrieve the value (by using a
+global) iso datafying the value. But this would/might slow down the program, and
+increase compilation time.
+** DONE change name of main from test to main
+** DONE compile all outdated files, not just main!!!
+but also the deps!!
+** DONE compile the beginning of a test suite
+** DONE namespaces
+** DONE fix if
+throw result of condition through fn that returns 0 if condition is false or nil, otherwise 1
+
+** DONE Release *ns*
+ This is a lval_namespace. lval_namespace->head points to a Namespace struct. We
+ need to add a mempool type NAMESPACE and a destroy method for it, so we can release namespace->namespace and namespace->as/refer
+** DONE record offset of compiler values that have been interred, so we can reuse them and export them
+** DONE "too few args to ..." etc gets added every time to data!!!!
+So break string into two, and inter strings only once, and do two prints
 ** DONE (let [a 1] (def f [] a)), so use in non root form
 This shouldn't be too hard. We just need to pass a closure to the f lambda
 ** DONE datafy, finish compile_quote

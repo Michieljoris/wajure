@@ -9,14 +9,13 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fmain\00\01\00\00\00\00\00\00\00\00\00\00\00\19\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\t\00\00\00-\00\00\00\00\00\00\00-\00\00\00\00\00\00\00-\00\00\00\01\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0fmain\00line1\nline2: foo\nline3\00\01\00\00\00\00\00\00\00\00\00\00\000\00\00\00\02\t\00\00\00\00\00\00\t\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00T\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00x\00\00\00\02\08\00\00\02\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ffkw\00\01\00\00\00\00\00\00\00\00\00\00\00\9f\00\00\00\02\0b\00\00\00\00\00\00\8c\00\00\00\00\00\00\00\ff\ff\ff\ffsym\00\01\00\00\00\00\00\00\00\00\00\00\00\c7\00\00\00\00\ff\ff\ff\00\00\00\00\b3\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\eb\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00 \00\00\00D\00\00\00h\00\00\00\8f\00\00\00\b7\00\00\00\db\00\00\00\ff\00\00\00\05\00\00\00\13\01\00\00\00\00\00\00\13\01\00\00\01\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $main)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "fn:test.run/run-tests" (global $fn:test.run/run-tests i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -68,6 +67,8 @@
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
  (import "env" "boolean_fn" (func $boolean_fn (param i32 i32) (result i32)))
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
+ (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
+ (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "main" (func $main))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
@@ -75,8 +76,7 @@
   (local $2 i32)
   (local $3 i32)
   (local $4 i32)
-  (local $5 i32)
-  (block $do_3 (result i32)
+  (block $do_2 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -124,32 +124,68 @@
      )
     )
    )
-   (block $lambda_call_2 (result i32)
-    (global.set $stack_pointer
-     (i32.add
-      (global.get $stack_pointer)
+   (call $pr_fn
+    (i32.const 0)
+    (call $new_lval_list
+     (call $list_cons
+      (call $str_fn
+       (i32.const 0)
+       (call $new_lval_list
+        (call $list_cons
+         (i32.add
+          (global.get $data_offset)
+          (i32.const 48)
+         )
+         (call $list_cons
+          (i32.add
+           (global.get $data_offset)
+           (i32.const 84)
+          )
+          (call $list_cons
+           (call $list_fn
+            (i32.const 0)
+            (call $new_lval_list
+             (call $list_cons
+              (i32.add
+               (global.get $data_offset)
+               (i32.const 84)
+              )
+              (call $list_cons
+               (i32.add
+                (global.get $data_offset)
+                (i32.const 120)
+               )
+               (i32.const 0)
+              )
+             )
+            )
+           )
+           (call $list_cons
+            (i32.add
+             (global.get $data_offset)
+             (i32.const 159)
+            )
+            (call $list_cons
+             (i32.add
+              (global.get $data_offset)
+              (i32.const 199)
+             )
+             (i32.const 0)
+            )
+           )
+          )
+         )
+        )
+       )
+      )
       (i32.const 0)
      )
     )
-    (local.set $5
-     (call_indirect (type $i32_i32_=>_i32)
-      (i32.const 0)
-      (i32.const 0)
-      (global.get $fn:test.run/run-tests)
-     )
-    )
-    (global.set $stack_pointer
-     (i32.sub
-      (global.get $stack_pointer)
-      (i32.const 0)
-     )
-    )
-    (local.get $5)
    )
   )
  )
- ;; custom section "symbol_table", size 23
- ;; custom section "deps", size 22
- ;; custom section "data_size", size 2, contents: "77"
+ ;; custom section "symbol_table", size 24
+ ;; custom section "deps", size 0, contents: ""
+ ;; custom section "data_size", size 3, contents: "307"
  ;; custom section "fn_table_size", size 1, contents: "1"
 )

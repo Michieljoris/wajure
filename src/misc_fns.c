@@ -110,13 +110,6 @@ char* read_file(char* file_name) { return NULL; }
 
 #endif
 
-Lval* read_string_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("read-string", 1)
-  ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-  int pos = 0;
-  return read_expr(arg->str, &pos, '\0');
-}
-
 Lval* load(Lenv* _, char* file_name) {
 #ifndef WASM
   int error = 0;
@@ -376,7 +369,6 @@ LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"exit", exit_fn},
                            {"load", load_fn},
                            /* {"mpc_load", mpc_load_fn}, */
-                           {"read-string", read_string_fn},
                            {"macroexpand", macroexpand_fn},
                            {"macroexpand-1", macroexpand_1_fn},
                            /* {"compile", compile_fn}, */

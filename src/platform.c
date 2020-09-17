@@ -12,10 +12,8 @@ char* get_memory() { return heap_pointer; }
 void free_memory() { /* No implementation possible in wasm */
 }
 
-/* char* get_mem_end(); */
-
 #else  // not WASM
-
+/*  */
 // IO
 void _putchar(char character) {
   // send char to console etc.
@@ -51,10 +49,10 @@ int grow_memory() {
 }
 
 // Gets the content of what's at address p, expected to return a pointer
-void* get_pointer_at(void** p) { return *p; }
+/* void* get_pointer_at(void** p) { return *p; } */
 
 // Sets the content of address p1 to p2
-void set_pointer_at(void** p1, void* p2) { *p1 = p2; }
+/* void set_pointer_at(void** p1, void* p2) { *p1 = p2; } */
 
 // Puts value that's at from_p into address at to_p
 /* void copy_byte(const char* from_p, char* to_p) { *to_p = *from_p; } */

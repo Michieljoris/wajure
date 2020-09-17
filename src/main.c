@@ -12,8 +12,10 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
+#include "lval.h"
 #include "malloc.h"
 #include "nargs.h"
+#include "print.h"
 #include "printf.h"
 #include "run.h"
 #include "state.h"
@@ -45,6 +47,21 @@ void make_config(int argc, char** argv) {
 int main(int argc, char** argv) {
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(800, 800, 800);
+
+  /* char* s = lalloc_size(100); */
+  /* sprintf(s, "hello there!!!!"); */
+  /* Lval* lval = make_lval_str(s); */
+  /* char* str = lalloc_size(MAX_CHAR_SIZE); */
+  /* int len = lval_snprint(str, MAX_CHAR_SIZE, lval); */
+  /* str = lrealloc(str, len + 1); */
+  /* printf("str: %s:, len : %d, %d\n", str, len, _strlen(str)); */
+  /* release(str); */
+  /* s = malloc(3); */
+  /* printf("%d\n", snprintf(s, 3, "abcdef")); */
+  /* printf("%d\n", str[0]); */
+  /* printf("%d\n", str[1]); */
+  /* printf("%d\n", str[2]); */
+  /* return 1; */
   config = malloc(sizeof(Config));
   make_config(argc, argv);
   state = malloc(sizeof(State));

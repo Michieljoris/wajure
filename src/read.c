@@ -1,7 +1,7 @@
 /* #include <errno.h> */
 
 #include "cell.h"
-#include "hash.h"
+/* #include "hash.h" */
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "lval.h"
@@ -105,7 +105,11 @@ Lval* lval_read_sym(char* s, int* i) {
   /* Add Symbol or Number as lval */
   Lval* x = NULL;
   if (is_num) {
+#ifndef WASM
     long v = _strtol(part, NULL, 10);
+#else
+    long v = _strtoi(part, NULL, 10);
+#endif  // WASM
     x = (*merrno != ERANGE)
             ? make_lval_num(v)
             : make_lval_err("Invalid Number, too large or too small %s", part);
@@ -267,7 +271,7 @@ Cell* read_cell(char* s, int* i, char end) {
   cons = make_cell();
   cons->car = expr;
   cons->cdr = read_cell(s, i, end);
-  cons->hash = calc_list_hash(cons, cons->cdr);
+  /* cons->hash = calc_list_hash(cons, cons->cdr); */
   return cons;
 }
 

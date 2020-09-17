@@ -1,5 +1,5 @@
 (in-ns 'main)
-(require '[test.run :refer [run-tests]])
+;; (require '[test.run :refer [run-tests]])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -16,8 +16,16 @@
 ;; (def bar2 bar)
 
 ;; (defn f [x] 1)
-(defn main [x y] 
-  (run-tests)
+(defn main [x y]
+  ;; (print (read-string ":kw"))
+  ;; (print (first (read-string "(1 2 3)")))
+  (pr (str "line1\nline2: foo
+line3" 1 (list 1 2) :kw 'sym))
+
+ ;; (pr "line1\nline2: foo
+;; line3")
+  ;; (print (str "abcd"))
+  ;; (run-tests)
  ;; (foo/t)
  ;; (foo/foofoofoo)
  ;; (foo/baabaabaabaabaa)

@@ -12,6 +12,8 @@ void lenv_print(Lenv* e);
 void alist_print(Cell* alist);
 void env_print(Lenv* env);
 
+int lval_snprint(char* str, int maxlen, Lval* lval);
+
 void print_kv(void* pair);
 
 #endif  // __PRINT_H_

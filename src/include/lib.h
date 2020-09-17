@@ -7,6 +7,9 @@
 
 #define LONG_MAX (long int)9223372036854775807
 #define LONG_MIN (-LONG_MAX - 1L)
+
+#define INT_MAX 2147483647
+#define INT_MIN -2147483648
 #define ERANGE 34
 #define zize_t int
 
@@ -47,6 +50,8 @@ char *(_strstr)(const char *haystack, const char *needle);
 void *(_memmove)(void *s1, const void *s2, zize_t n);
 
 long _strtol(const char *nptr, char **endptr, int base);
+
+int _strtoi(const char *nptr, char **endptr, int base);
 
 char *itostr(char str[], long int num);
 

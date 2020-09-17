@@ -102,11 +102,12 @@ int vprintf_(const char* format, va_list va);
 /**
  * printf with output function
  * You may use this as dynamic alternative to printf() with its fixed _putchar()
- * output \param out An output function which takes one character and an
- * argument pointer \param arg An argument pointer for user data passed to
- * output function \param format A string that specifies the format of the
- * output \return The number of characters that are sent to the output function,
- * not counting the terminating null character
+ * output.
+ * \param out An output function which takes one character and an argument
+ * pointer. \param arg An argument pointer for user data passed to output
+ * function. \param format A string that specifies the format of the output.
+ * \return The number of characters that are sent to the output function,
+ * not counting the terminating null character.
  */
 int fctprintf(void (*out)(char character, void* arg), void* arg,
               const char* format, ...);
