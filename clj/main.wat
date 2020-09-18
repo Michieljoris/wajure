@@ -9,9 +9,9 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fmain\00\01\00\00\00\00\00\00\00\00\00\00\00\19\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00=\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\t\00\00\00-\00\00\00Q\00\00\00\01\00\00\00U\00\00\00\00\00\00\00U\00\00\00\01\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0fmain\00hello\00\01\00\00\00\00\00\00\00\00\00\00\00\1f\00\00\00\02\t\00\00\00\00\00\00\t\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00C\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00g\00\00\00\19\ff\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00f\00\01\00\00\00\00\00\00\00\00\00\00\00\8d\00\00\00\19\ff\01\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\0f\00\00\003\00\00\00W\00\00\00}\00\00\00\a1\00\00\00\02\00\00\00\a9\00\00\00\00\00\00\00\a9\00\00\00\02\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $main)
+ (elem (global.get $fn_table_offset) $main $f)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
@@ -70,6 +70,7 @@
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "main" (func $main))
+ (export "f" (func $f))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
  (func $main (param $0 i32) (param $1 i32) (result i32)
@@ -77,8 +78,7 @@
   (local $3 i32)
   (local $4 i32)
   (local $5 i32)
-  (local $6 i32)
-  (block $do_4 (result i32)
+  (block $do_3 (result i32)
    (if
     (i32.eq
      (call $check_args_count
@@ -132,51 +132,112 @@
      )
     )
    )
-   (block $let_3 (result i32)
-    (local.set $5
-     (i32.add
-      (global.get $data_offset)
-      (i32.const 25)
-     )
-    )
-    (block $lambda_call_2 (result i32)
-     (i32.store
-      (global.get $stack_pointer)
+   (call $print_fn
+    (i32.const 0)
+    (call $new_lval_list
+     (call $list_cons
       (i32.add
        (global.get $data_offset)
-       (i32.const 25)
+       (i32.const 31)
       )
-     )
-     (global.set $stack_pointer
-      (i32.add
-       (global.get $stack_pointer)
-       (i32.const 4)
-      )
-     )
-     (local.set $6
-      (call_indirect (type $i32_i32_=>_i32)
-       (i32.load offset=12
+      (call $list_cons
+       (block $lambda_call_2 (result i32)
+        (i32.store
+         (global.get $stack_pointer)
+         (i32.add
+          (global.get $data_offset)
+          (i32.const 67)
+         )
+        )
+        (global.set $stack_pointer
+         (i32.add
+          (global.get $stack_pointer)
+          (i32.const 4)
+         )
+        )
+        (local.set $5
+         (call $f
+          (i32.const 0)
+          (i32.const 1)
+         )
+        )
+        (global.set $stack_pointer
+         (i32.sub
+          (global.get $stack_pointer)
+          (i32.const 4)
+         )
+        )
         (local.get $5)
        )
-       (i32.const 1)
-       (i32.load16_u offset=2
-        (local.get $5)
-       )
+       (i32.const 0)
       )
      )
-     (global.set $stack_pointer
-      (i32.sub
-       (global.get $stack_pointer)
-       (i32.const 4)
-      )
-     )
-     (local.get $6)
     )
    )
   )
  )
- ;; custom section "symbol_table", size 23
+ (func $f (param $0 i32) (param $1 i32) (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (block $do_5 (result i32)
+   (if
+    (i32.eq
+     (call $check_args_count
+      (i32.const 1)
+      (local.get $1)
+      (i32.const 0)
+     )
+     (i32.const 0)
+    )
+    (call $runtime_error
+     (i32.const 1)
+     (i32.add
+      (global.get $data_offset)
+      (i32.const 123)
+     )
+    )
+    (if
+     (i32.eq
+      (call $check_args_count
+       (i32.const 1)
+       (local.get $1)
+       (i32.const 0)
+      )
+      (i32.const 1)
+     )
+     (call $runtime_error
+      (i32.const 0)
+      (i32.add
+       (global.get $data_offset)
+       (i32.const 123)
+      )
+     )
+     (nop)
+    )
+   )
+   (block $store_args_in_locals_4
+    (local.set $2
+     (i32.sub
+      (global.get $stack_pointer)
+      (i32.const 4)
+     )
+    )
+    (local.set $3
+     (i32.load
+      (local.get $2)
+     )
+    )
+   )
+   (call $retain
+    (i32.add
+     (global.get $data_offset)
+     (i32.const 67)
+    )
+   )
+  )
+ )
+ ;; custom section "symbol_table", size 45
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "117"
- ;; custom section "fn_table_size", size 1, contents: "1"
+ ;; custom section "data_size", size 3, contents: "205"
+ ;; custom section "fn_table_size", size 1, contents: "2"
 )

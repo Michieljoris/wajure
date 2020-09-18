@@ -15,11 +15,9 @@
 ;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
 
-;; (defn f [x] 1)
+(defn f [x] 1)
 (defn main [x y]
-  (let [f 1]
-    (f 1))
-  )
+  (print "hello" (f 1)))
 ;; (print (read-string ":kw"))
 ;; (print (first (read-string "(1 2 3)")))
 ;; (pr (str "line1\nline2: foo
