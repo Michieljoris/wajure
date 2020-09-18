@@ -3,6 +3,7 @@
 #include "ltypes.h"
 #include "wasm.h"
 
+Ber make_ptr(Wasm* wasm, int ptr);
 CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name);
 CResult datafy_nil(Wasm* wasm);
 CResult datafy_empty_list(Wasm* wasm, Lval* lval_list);

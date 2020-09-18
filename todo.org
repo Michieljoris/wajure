@@ -1,4 +1,43 @@
 * TODO compiler
+** partial
+See if we can put args on stack from low to high iso of high to low as we have
+now. If so we can do apply easier as well.
+** multi arity fns!!!
+** fix self recursive calls
+    Since we point the closure of a fn to what it's in the env up to that point
+    when the fn is defined the fn itself is not in the env yet. So (defn foo []
+    (foo)) will not work since foo is not yet defined when we add the foo fn to
+    the env.
+
+    So after we define a fn we need to add it to the closure. This will fix it
+    for the interpreter.
+
+** apply
+https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
+Use core lib fn to reduce args to a single list
+Then call wasm implementation of apply* sys fn that receives a list and puts them on wajure operand stack and calls fn
+
+But we can optimize this depending on:
+1. apply is called as apply (so no (let [a apply] (a + 1 2))), so apply is not a lval_wasm_lambda
+2. the function to apply is not a lval_wasm_lambda, I think
+3. the last arg (a list) is a list at compile time and not the result of a compilation
+
+Scenario:
+
+1. If we know we're calling apply at compile time and we know the last arg is a
+list we can make a lval_list with apply's second arg (the fn) as its first
+element and all the args as the rest and call apply(wasm, lval_list) to compile
+the apply call, it doesn't matter whether the fn to apply is a wasm_ref, sys fn,
+imported fn etc since appl(wasm, lval_list) will take care of that
+
+2. we fill the stack with the compiled args, if we know the last
+arg is a list we compile the list members and add them to the stack assume the
+last arg is a list (put a check in if it's a lval_compiler)
+
+3. When datafying the apply fn we don't know anything at compile time and we
+   need to rely on a apply fn such as in clojure.core. But we need multiarity
+   fns for that first.
+** ----------------
 ** release uniquify_name
 ** add repl and watch options to config
 in repl you can (re)compile namespaces. Also, it can watch directory and if any
@@ -11,29 +50,11 @@ You should also be able to switch namespace.
 ** review closures in the context of namespaces
 especially:
 Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
-** DONE read-string
-** str
-** ----------------
-** fix recursive calls
-    Since we point the closure of a fn to what it's in the env up to that point
-    when the fn is defined the fn itself is not in the env yet. So (defn foo []
-    (foo)) will not work since foo is not yet defined when we add the foo fn to
-    the env.
-
-    So after we define a fn we need to add it to the closure. This will fix it
-    for the interpreter.
-
 ** fix freeing of fn_name ("anon")
 ** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
 ** releasing args to sys fn!!!
 ** rewrite sys fns to use stack iso c arg_list
-** partial
-** apply
-https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
-Use core lib fn to reduce args to a single list
-Then call wasm implementation of apply* that receives a list and puts them on wajure operand stack and calls fn
-** multi arity fns!!!
 ** loop/recur
 ** multimethods
 ** try/throw/catch
@@ -75,11 +96,10 @@ Also, clojure allows it.
 ** add stdlib (defined in wajure and compiled) to runtime
 Similar to clojure.core. Probably needs namespaces implemented first
 * TODO interpreter
-** reader has bug where last parens gets ignored
+** DONE reader has bug where last parens gets ignored
 ** add rest of tests from mal
-** WIP namespaces
-Still need to release *ns*
-** implement: str, loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering,  meta data
+** DONE namespaces
+** implement: loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering,  meta data
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
@@ -113,6 +133,8 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+** DONE read-string
+** DONE str
 ** DONE deciding whether a compiled macro was a fn call!!
 ** DONE release/retain cond and branches of if
 ** DONE something weird, a file name with - and calling 2 fns from it gives execution error

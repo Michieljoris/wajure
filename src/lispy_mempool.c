@@ -132,7 +132,7 @@ void destroy_lval(void* data) {
       // TODO wasm: release partials and closure memory
       break;
 
-    case LVAL_COMPILER:
+    case LVAL_COMPILED:
       break;
     /* case LVAL_NAMESPACE: */
     /*   printf("releasing NAMESPACE\n"); */

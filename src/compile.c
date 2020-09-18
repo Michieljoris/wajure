@@ -126,14 +126,14 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
   return cresult(ret);
 }
 
-// A lval_compiler is a value that we don't know at compile time, but that we
-// can retrieve at runtime. So we insert the code to do this in place of the
-// symbol.
-CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
-                              Lval* lval_compiler) {
+// A lval_compiled is a value that we don't know at compile time, but that we
+// can retrieve at runtime, because it's either a local var, a param or a closed
+// over var. So we insert the code to do this in place of the symbol.
+CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
+                             Lval* lval_compiled) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
   /* printf( */
-  /*     "We've got a LVAL_COMPILER (param, local or closed over binding)!!! "
+  /*     "We've got a LVAL_COMPILED (param, local or closed over binding)!!! "
    */
   /*     "%s\n", */
   /*     lval_symbol->str); */
@@ -141,12 +141,12 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
   int is_local_ref =
-      context->function_context == lval_compiler->context->function_context;
+      context->function_context == lval_compiled->context->function_context;
   /* print_wasm_context(wasm); */
   /* print_context(lval_wasm_ref->context); */
   /* printf("------------\n"); */
   if (is_local_ref) {
-    switch (lval_compiler->subtype) {
+    switch (lval_compiled->subtype) {
       case PARAM:;
         Ber stack_pointer = BinaryenGlobalGet(wasm->module, "stack_pointer",
                                               BinaryenTypeInt32());
@@ -159,18 +159,18 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
         int _signed = 0;
         int _aligned = 0;
 
-        int offset = sp_adjustment - (lval_compiler->offset + 1) * 4;
+        int offset = sp_adjustment - (lval_compiled->offset + 1) * 4;
         Ber load_arg_lval =
             BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
                          BinaryenTypeInt32(), stack_pointer);
         return cresult(load_arg_lval);
       case LOCAL:;
-        Ber local = BinaryenLocalGet(wasm->module, lval_compiler->offset,
+        Ber local = BinaryenLocalGet(wasm->module, lval_compiled->offset,
                                      BinaryenTypeInt32());
         return cresult(local);
       default:
-        quit(wasm, "ERROR: Unknown lval_compiler subtype: %d",
-             lval_compiler->subtype);
+        quit(wasm, "ERROR: Unknown lval_compiled subtype: %d",
+             lval_compiled->subtype);
         return cnull();
     }
   } else {  // ref to closure val
@@ -181,7 +181,7 @@ CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
       Lval* lval_closure_sym = make_lval_sym(lval_symbol->str);
       closure_offset = lval_closure_sym->offset =
           context->function_context->closure_count++;
-      lenv_put(context->function_context->closure, lval_symbol, lval_compiler);
+      lenv_put(context->function_context->closure, lval_symbol, lval_compiled);
     } else {
       closure_offset = closure_lval->offset;
     }
@@ -287,9 +287,9 @@ CResult store_args_in_locals(Wasm* wasm, Lenv* params_env, Lval** lispy_params,
         BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
                      BinaryenTypeInt32(), get_stack_pointer_from_local);
     int local_index = li_new(wasm);
-    Lval* lval_compiler = make_lval_compiler(context, LOCAL, local_index);
-    lenv_put(params_env, lispy_params[i], lval_compiler);
-    release(lval_compiler);
+    Lval* lval_compiled = make_lval_compiled(context, LOCAL, local_index);
+    lenv_put(params_env, lispy_params[i], lval_compiled);
+    release(lval_compiled);
     Ber store_in_local = BinaryenLocalSet(module, local_index, load_arg_lval);
     children[children_count++] = store_in_local;
   }
@@ -446,7 +446,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
     Cell* pair = closure_cell->car;
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
-    Ber closure_lval_pointer = compile_lval_compiler(wasm, lval_sym, lval).ber;
+    Ber closure_lval_pointer = comple_lval_compiled(wasm, lval_sym, lval).ber;
     offset -= 4;
 
     Ber store_wasm_ref =
@@ -708,8 +708,8 @@ void add_dep(Wasm* wasm, char* global_name) {
   wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
 }
 
-CResult compile_lval_compiler(Wasm* wasm, Lval* lval_symbol,
-                              Lval* lval_compiler);
+CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
+                             Lval* lval_compiled);
 
 char* make_global_name(char* prefix, char* namespace, char* name) {
   int size = _strlen(prefix) + _strlen(namespace) + _strlen(name) + 2;
@@ -793,7 +793,7 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
                  lval_first->subtype);
         }
         break;
-      case LVAL_COMPILER:;
+      case LVAL_COMPILED:;
         // we've assigned something to a local ref in wasm, but we don't know
         // what it is, and whether it's a fn even. It'll have to be worked out
         // at runtime. With some clever optimisations we can in some cases
@@ -802,7 +802,7 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
         // assume anything about the lval.
 
         Ber compiled_symbol =
-            compile_lval_compiler(wasm, lval_first, resolved_symbol).ber;
+            comple_lval_compiled(wasm, lval_first, resolved_symbol).ber;
         fn_call = compile_wasm_fn_call(wasm, compiled_symbol, NULL, NULL, args);
         break;
       case LVAL_SYMBOL:
@@ -879,10 +879,10 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       switch (resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->str);
-        case LVAL_COMPILER:;
+        case LVAL_COMPILED:;
           // symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
-          CResult ret = compile_lval_compiler(wasm, lval, resolved_sym);
+          CResult ret = comple_lval_compiled(wasm, lval, resolved_sym);
           release(resolved_sym);
           return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env

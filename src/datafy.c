@@ -23,8 +23,8 @@
 // are deduped.
 
 Ber make_ptr(Wasm* wasm, int ptr) {
+  if (!wasm->pic) return make_int32(wasm->module, wasm->__data_end + ptr);
   Ber ber_ptr = make_int32(wasm->module, ptr);
-  if (!wasm->pic) return ber_ptr;
   Ber data_offset =
       BinaryenGlobalGet(wasm->module, "data_offset", BinaryenTypeInt32());
   return BinaryenBinary(wasm->module, BinaryenAddInt32(), data_offset, ber_ptr);

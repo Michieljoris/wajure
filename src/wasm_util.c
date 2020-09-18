@@ -3,6 +3,7 @@
 #include <binaryen-c.h>
 
 #include "compile.h"
+#include "datafy.h"
 #include "env.h"
 #include "fns.h"
 #include "lib.h"
@@ -85,7 +86,7 @@ BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
 }
 
 BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
-  return make_int32(wasm->module, wasm->__data_end + offset);
+  return make_ptr(wasm, offset);
 }
 
 BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
@@ -310,9 +311,9 @@ void leave_env(Wasm* wasm) {
   /* release(env); */
 }
 
-Lval* make_lval_compiler(Context* context, int subtype, int offset) {
+Lval* make_lval_compiled(Context* context, int subtype, int offset) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COMPILER,
+  *lval = (Lval){.type = LVAL_COMPILED,
                  .subtype = subtype,
                  .offset = offset,
                  .context = context};

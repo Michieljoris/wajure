@@ -169,7 +169,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
       }
     case LVAL_FUNCTION:
       return lval_fun_print(out, arg, lval);
-    case LVAL_COMPILER:
+    case LVAL_COMPILED:
       switch (lval->subtype) {
         case PARAM:
           return fctprintf(out, arg, "P%d", lval->offset);

@@ -188,7 +188,7 @@ enum {
   USER,
 
   // compiler types
-  LVAL_COMPILER,
+  LVAL_COMPILED,
   LVAL_EXTERNAL,  // a required symbol
   // local ref subtypes
   PARAM,
