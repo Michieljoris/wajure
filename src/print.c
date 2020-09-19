@@ -169,14 +169,14 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
       }
     case LVAL_FUNCTION:
       return lval_fun_print(out, arg, lval);
-    case LVAL_COMPILED:
+    case LVAL_REF:
       switch (lval->subtype) {
         case PARAM:
           return fctprintf(out, arg, "P%d", lval->offset);
         case LOCAL:
           return fctprintf(out, arg, "L%d", lval->offset);
       }
-    case LVAL_WASM_LAMBDA:
+    case WVAL_FUN:
       wval_print((WvalFun*)lval);
       return 0;
     case LVAL_ERR:

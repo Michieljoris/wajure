@@ -11,7 +11,7 @@ CResult wasm_retain(Wasm* wasm, Ber wval);
 CResult wasm_retain_and_drop(Wasm* wasm, Ber wval);
 CResult wasm_release(Wasm* wasm, Ber wval);
 
-BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x);
+Ber make_int32(BinaryenModuleRef module, int x);
 void write_wat(Wasm* wasm, char* file_name);
 
 void write_wasm(Wasm* wasm, char* file_name);
@@ -22,17 +22,17 @@ int add_string_to_data(Wasm* wasm, char* str);
 int add_bytes_to_data(Wasm* wasm, char* data, int len);
 int add_fn_to_table(Wasm* wasm, char* fn_name);
 
-BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
+Ber wasm_offset(Wasm* wasm, int offset);
 
-BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32);
+Ber wasm_log_int(Wasm* wasm, Ber int32);
 
-BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset);
+Ber wasm_printf(Wasm* wasm, int offset);
 
 BinaryenType* make_type_int32_array(int count);
 
 BinaryenType make_type_int32(int count);
 
-BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset);
+Ber wasm_offset(Wasm* wasm, int offset);
 
 Wasm* enter_context(Wasm* wasm);
 
@@ -71,7 +71,7 @@ Lenv* enter_env(Wasm* wasm);
 
 void leave_env(Wasm* wasm);
 
-Lval* make_lval_compiled(Context* context, int subtype, int offset);
+Lval* make_lval_ref(Context* context, int subtype, int offset);
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg);
 

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# See deps.edn for paths
+clojure -J-Dclojure.server.repl="{:port 5555 :accept clojure.core.server/repl}"

@@ -13,7 +13,7 @@ WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
                                int partial_count) {
   WvalFun* wval = lalloc_type(LVAL);
-  *wval = (WvalFun){.type = LVAL_WASM_LAMBDA,
+  *wval = (WvalFun){.type = WVAL_FUN,
                     .subtype = -1,
                     .fn_table_index = fn_table_index,
                     .param_count = param_count,
@@ -24,6 +24,15 @@ WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                     /* .str = "fn_name:TODO" */};
   return wval;
 }
+
+int get_wval_type(Lval* lval) { return lval->type; }
+int get_wval_subtype(Lval* lval) { return lval->subtype; }
+int get_wval_fn_table_index(WvalFun* wval) { return wval->fn_table_index; }
+int get_wval_param_count(WvalFun* wval) { return wval->param_count; }
+int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
+int get_wval_closure(WvalFun* wval) { return wval->closure; }
+int get_wval_partials(WvalFun* wval) { return wval->partials; }
+int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
 
 // Used in runtime of lispy compiler
 void init_rest_args(Lval** lval_array, int rest_arg_length) {

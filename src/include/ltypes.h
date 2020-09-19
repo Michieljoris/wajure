@@ -188,14 +188,14 @@ enum {
   USER,
 
   // compiler types
-  LVAL_COMPILED,
+  LVAL_REF,
   LVAL_EXTERNAL,  // a required symbol
   // local ref subtypes
   PARAM,
   LOCAL,
 
   // lispy runtime lval fn type
-  LVAL_WASM_LAMBDA
+  WVAL_FUN
 };
 
 // Compiler

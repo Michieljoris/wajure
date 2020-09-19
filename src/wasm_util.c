@@ -70,31 +70,29 @@ void write_wasm(Wasm* wasm, char* file_name) {
   free(sourceMap);
 }
 
-BinaryenExpressionRef make_int32(BinaryenModuleRef module, int x) {
+Ber make_int32(BinaryenModuleRef module, int x) {
   return BinaryenConst(module, BinaryenLiteralInt32(x));
 }
 
-BinaryenExpressionRef wasm_log_int(Wasm* wasm, int int32) {
+Ber wasm_log_int(Wasm* wasm, Ber int32) {
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {make_int32(module, int32)};
+  Ber operands[] = {int32};
 
-  BinaryenExpressionRef log_int =
+  Ber log_int =
       BinaryenCall(module, "log_int", operands, 1, BinaryenTypeNone());
 
   return log_int;
 }
 
-BinaryenExpressionRef wasm_offset(Wasm* wasm, int offset) {
-  return make_ptr(wasm, offset);
-}
+Ber wasm_offset(Wasm* wasm, int offset) { return make_ptr(wasm, offset); }
 
-BinaryenExpressionRef wasm_log_string(Wasm* wasm, int offset) {
+Ber wasm_log_string(Wasm* wasm, int offset) {
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset)};
+  Ber operands[] = {wasm_offset(wasm, offset)};
 
-  BinaryenExpressionRef log_string =
+  Ber log_string =
       BinaryenCall(module, "log_string", operands, 1, BinaryenTypeNone());
 
   return log_string;
@@ -105,37 +103,34 @@ CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
 
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {make_int32(wasm->module, err_no),
-                                      wasm_offset(wasm, msg_offset)};
+  Ber operands[] = {make_int32(wasm->module, err_no),
+                    wasm_offset(wasm, msg_offset)};
 
-  BinaryenExpressionRef runtime_error =
+  Ber runtime_error =
       BinaryenCall(module, "runtime_error", operands, 2, BinaryenTypeNone());
 
   return cresult(runtime_error);
 }
 
-BinaryenExpressionRef wasm_log_string_n(Wasm* wasm, int offset, int n) {
+Ber wasm_log_string_n(Wasm* wasm, int offset, int n) {
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset),
-                                      make_int32(module, n)};
+  Ber operands[] = {wasm_offset(wasm, offset), make_int32(module, n)};
 
-  BinaryenExpressionRef log_string_n =
+  Ber log_string_n =
       BinaryenCall(module, "log_string_n", operands, 2, BinaryenTypeNone());
 
   return log_string_n;
 }
 
-BinaryenExpressionRef wasm_printf(Wasm* wasm, int offset) {
+Ber wasm_printf(Wasm* wasm, int offset) {
   BinaryenModuleRef module = wasm->module;
 
-  BinaryenExpressionRef operands[] = {wasm_offset(wasm, offset),
-                                      make_int32(module, 0)};
+  Ber operands[] = {wasm_offset(wasm, offset), make_int32(module, 0)};
 
-  BinaryenExpressionRef printf =
-      BinaryenCall(module, "printf", operands, 2, BinaryenTypeNone());
+  Ber printf = BinaryenCall(module, "printf", operands, 2, BinaryenTypeNone());
 
-  BinaryenExpressionRef drop = BinaryenDrop(module, printf);
+  Ber drop = BinaryenDrop(module, printf);
   return drop;
 }
 
@@ -311,9 +306,9 @@ void leave_env(Wasm* wasm) {
   /* release(env); */
 }
 
-Lval* make_lval_compiled(Context* context, int subtype, int offset) {
+Lval* make_lval_ref(Context* context, int subtype, int offset) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COMPILED,
+  *lval = (Lval){.type = LVAL_REF,
                  .subtype = subtype,
                  .offset = offset,
                  .context = context};
@@ -443,20 +438,19 @@ void add_test_fn(Wasm* wasm) {
   /* BinaryenType localTypes[] = {BinaryenTypeInt32(), BinaryenTypeInt32()}; */
 
   /* int offset = 5; */
-  /* BinaryenExpressionRef printf = wasm_printf(wasm, offset); */
-  /* BinaryenExpressionRef log_int = wasm_log_int(wasm, 123); */
-  /* BinaryenExpressionRef log_string = wasm_log_string(wasm, offset); */
-  /* BinaryenExpressionRef log_string_n = wasm_log_string_n(wasm, offset, 2); */
+  /* Ber printf = wasm_printf(wasm, offset); */
+  /* Ber log_int = wasm_log_int(wasm, 123); */
+  /* Ber log_string = wasm_log_string(wasm, offset); */
+  /* Ber log_string_n = wasm_log_string_n(wasm, offset, 2); */
 
-  /* BinaryenExpressionRef my_value_list[] = {printf, log_int, log_string, */
+  /* Ber my_value_list[] = {printf, log_int, log_string, */
   /*                                          log_string_n}; */
   BinaryenType TypeNone = BinaryenTypeNone();
   BinaryenType TypeInt32x1 = make_type_int32(1);
-  BinaryenExpressionRef my_value_list[] = {};
-  BinaryenExpressionRef body =
+  Ber my_value_list[] = {};
+  Ber body =
       BinaryenBlock(module, "my-block", my_value_list,
-                    sizeof(my_value_list) / sizeof(BinaryenExpressionRef),
-                    BinaryenTypeAuto());
+                    sizeof(my_value_list) / sizeof(Ber), BinaryenTypeAuto());
 
   BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
                       sizeof(localTypes) / sizeof(BinaryenType), body);

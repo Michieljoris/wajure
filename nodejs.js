@@ -28,7 +28,8 @@ function makeLogString(memory, offset) {
 
 const runtime_error_codes = {
     TOO_FEW_ARGS: 0,
-    TOO_MANY_ARGS: 1
+    TOO_MANY_ARGS: 1,
+    NOT_A_FN: 2
 }
 
 function make_runtime_error_fn(memory, offset) {
@@ -43,6 +44,9 @@ function make_runtime_error_fn(memory, offset) {
                 string = "Too few args passed to " + string; break;
             case runtime_error_codes.TOO_MANY_ARGS:
                 string = "Too many args passed to " + string; break;
+            case runtime_error_codes.NOT_A_FN:
+                string = "Not a fn!!!" + string; break;
+            default: string = "Unknown runtime error code: " + err_no + " " + string;
         }
         throw string;
     }

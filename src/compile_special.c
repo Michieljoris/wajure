@@ -64,9 +64,9 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
 
     // LENV_PUT
     int local_index = context->function_context->local_count++;
-    Lval* lval_compiled = make_lval_compiled(context, LOCAL, local_index);
-    lenv_put(let_env, lval_sym, lval_compiled);
-    release(lval_compiled);
+    Lval* lval_ref = make_lval_ref(context, LOCAL, local_index);
+    lenv_put(let_env, lval_sym, lval_ref);
+    release(lval_ref);
     let_body[let_body_count++] = local_var;
 
     /* if (lval->type == LVAL_ERR) { */

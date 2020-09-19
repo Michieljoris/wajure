@@ -126,14 +126,13 @@ CResult compile_do_list(Wasm* wasm, Ber init_rest_arg, Ber args_into_locals,
   return cresult(ret);
 }
 
-// A lval_compiled is a value that we don't know at compile time, but that we
+// A lval_ref is a value that we don't know at compile time, but that we
 // can retrieve at runtime, because it's either a local var, a param or a closed
 // over var. So we insert the code to do this in place of the symbol.
-CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
-                             Lval* lval_compiled) {
+CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
   /* printf( */
-  /*     "We've got a LVAL_COMPILED (param, local or closed over binding)!!! "
+  /*     "We've got a LVAL_REF (param, local or closed over binding)!!! "
    */
   /*     "%s\n", */
   /*     lval_symbol->str); */
@@ -141,12 +140,12 @@ CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
   BinaryenModuleRef module = wasm->module;
   Context* context = wasm->context->car;
   int is_local_ref =
-      context->function_context == lval_compiled->context->function_context;
+      context->function_context == lval_ref->context->function_context;
   /* print_wasm_context(wasm); */
   /* print_context(lval_wasm_ref->context); */
   /* printf("------------\n"); */
   if (is_local_ref) {
-    switch (lval_compiled->subtype) {
+    switch (lval_ref->subtype) {
       case PARAM:;
         Ber stack_pointer = BinaryenGlobalGet(wasm->module, "stack_pointer",
                                               BinaryenTypeInt32());
@@ -159,18 +158,17 @@ CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
         int _signed = 0;
         int _aligned = 0;
 
-        int offset = sp_adjustment - (lval_compiled->offset + 1) * 4;
+        int offset = sp_adjustment - (lval_ref->offset + 1) * 4;
         Ber load_arg_lval =
             BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
                          BinaryenTypeInt32(), stack_pointer);
         return cresult(load_arg_lval);
       case LOCAL:;
-        Ber local = BinaryenLocalGet(wasm->module, lval_compiled->offset,
+        Ber local = BinaryenLocalGet(wasm->module, lval_ref->offset,
                                      BinaryenTypeInt32());
         return cresult(local);
       default:
-        quit(wasm, "ERROR: Unknown lval_compiled subtype: %d",
-             lval_compiled->subtype);
+        quit(wasm, "ERROR: Unknown lval_ref subtype: %d", lval_ref->subtype);
         return cnull();
     }
   } else {  // ref to closure val
@@ -181,7 +179,7 @@ CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
       Lval* lval_closure_sym = make_lval_sym(lval_symbol->str);
       closure_offset = lval_closure_sym->offset =
           context->function_context->closure_count++;
-      lenv_put(context->function_context->closure, lval_symbol, lval_compiled);
+      lenv_put(context->function_context->closure, lval_symbol, lval_ref);
     } else {
       closure_offset = closure_lval->offset;
     }
@@ -198,7 +196,8 @@ CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
   }
 }
 
-enum { RT_TOO_FEW_ARGS, RT_TOO_MANY_ARGS };
+// Runtime error codes
+enum { RT_TOO_FEW_ARGS, RT_TOO_MANY_ARGS, RT_NOT_A_FN };
 
 CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index) {
   BinaryenModuleRef module = wasm->module;
@@ -287,9 +286,9 @@ CResult store_args_in_locals(Wasm* wasm, Lenv* params_env, Lval** lispy_params,
         BinaryenLoad(wasm->module, 4, _signed, offset, _aligned,
                      BinaryenTypeInt32(), get_stack_pointer_from_local);
     int local_index = li_new(wasm);
-    Lval* lval_compiled = make_lval_compiled(context, LOCAL, local_index);
-    lenv_put(params_env, lispy_params[i], lval_compiled);
-    release(lval_compiled);
+    Lval* lval_ref = make_lval_ref(context, LOCAL, local_index);
+    lenv_put(params_env, lispy_params[i], lval_ref);
+    release(lval_ref);
     Ber store_in_local = BinaryenLocalSet(module, local_index, load_arg_lval);
     children[children_count++] = store_in_local;
   }
@@ -381,7 +380,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
 // it has a rest arg and a map of free variables (closed over variables).
 // These are vars that couldn't be found in the local fn's env.
 
-// We then add code that builds at runtime an lval of type LVAL_WASM_LAMBDA
+// We then add code that builds at runtime an lval of type WVAL_FUN
 // that holds all info on the lambda so that it can be called. We add to this
 // lval at runtime a closure data block that holds values of the free vars
 // found in the fn.
@@ -446,7 +445,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
     Cell* pair = closure_cell->car;
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
-    Ber closure_lval_pointer = comple_lval_compiled(wasm, lval_sym, lval).ber;
+    Ber closure_lval_pointer = compile_lval_ref(wasm, lval_sym, lval).ber;
     offset -= 4;
 
     Ber store_wasm_ref =
@@ -539,28 +538,14 @@ union FnRef {
 
 enum { BER, FN_NAME, GLOBAL };
 
-CResult compile_wasm_fn_call(Wasm* wasm, int fn_ref_type, union FnRef fn_ref,
-                             Cell* args) {
-  /* CResult compile_wasm_fn_call(Wasm* wasm, Ber lval_wasm_ref, char* fn_name,
-   */
-  /*                              char* fn_table_index_global, Cell* args) { */
+Ber make_frame(Wasm* wasm, Cell* args, Ber* block, int* block_count,
+               LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
-  Context* context = wasm->context->car;
-  /* printf("compile local ref call!!!!!!!!!!!!!!!\n"); */
-  /* printf("compile_wasm_fn_call %s\n", fn_name); */
-
-  // Puts args of a fn like (f a b c) on stack like this: <c b a 3> where
-  // stack pointer points at <
-  int block_children_count = 0;
   int args_count = list_count(args);
-  int max_block_children_count = args_count + 5;  // args,  update stackpointer,
-  // call, reset stackpointer, release_locals, result
-  Ber* block_children = malloc(sizeof(Ber) * max_block_children_count);
   int sp_offset = args_count * 4;
+
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
-
-  LocalIndices* li = li_init();
 
   // Put args on stack ====================================================
   while (args) {
@@ -576,79 +561,134 @@ CResult compile_wasm_fn_call(Wasm* wasm, int fn_ref_type, union FnRef fn_ref,
     }
 
     /* lval_println(args->car); */
-    push_arg =
-        BinaryenStore(module, 4, sp_offset - (block_children_count + 1) * 4, 0,
-                      stack_pointer, compiled_arg, BinaryenTypeInt32());
-    block_children[block_children_count++] = push_arg;
+    push_arg = BinaryenStore(module, 4, sp_offset - (*block_count + 1) * 4, 0,
+                             stack_pointer, compiled_arg, BinaryenTypeInt32());
+    block[(*block_count)++] = push_arg;
     args = args->cdr;
   }
+  return make_int32(module, args_count);
+}
+
+Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop) {
+  Ber operands[] = {wval};
+  char* fn_call_prefix = "get_wval_";
+  char* fn_call = malloc(_strlen(fn_call_prefix) + _strlen(prop) + 1);
+  sprintf(fn_call, "%s%s", fn_call_prefix, prop);
+  printf("wval get call: %s\n", fn_call);
+  Ber ret = BinaryenCall(module, fn_call, operands, 1, make_type_int32(1));
+  free(fn_call);
+  return ret;
+}
+
+Ber validate_as_fn(Wasm* wasm, Ber wval) {
+  BinaryenModuleRef module = wasm->module;
+  Ber wval_type = get_wval_prop(module, wval, "type");
+  Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(),
+                                       wval_type, make_int32(module, WVAL_FUN));
+  char* rt_error_msg = "not a fn";
+  scoped char* str = lalloc_size(_strlen(rt_error_msg));
+  Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber;
+  Ber all_ok = BinaryenNop(module);
+  return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok);
+}
+
+CResult compile_wasm_fn_call(Wasm* wasm, int fn_ref_type, union FnRef fn_ref,
+                             Lval* lval_fun, Cell* args) {
+  BinaryenModuleRef module = wasm->module;
+  Context* context = wasm->context->car;
+  /* printf("compile local ref call!!!!!!!!!!!!!!!\n"); */
+  /* printf("compile_wasm_fn_call %s\n", fn_name); */
+
+  // Puts args of a fn like (f a b c) on stack like this: <c b a 3> where
+  // stack pointer points at <
+  int block_children_count = 0;
+
+  // put partials on stack, args,  update stackpointer,call, reset stackpointer,
+  // release_locals, result
+  /* int block_size = 6; */
+  int block_size = 99;  // TODO: for debugging
+  int max_block_children_count = list_count(args) + block_size;
+  Ber* block_children = malloc(sizeof(Ber) * max_block_children_count);
+  Ber stack_pointer =
+      BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
+
+  LocalIndices* li = li_init();
+
+  // Put args on stack ====================================================
+  Ber args_count =
+      make_frame(wasm, args, block_children, &block_children_count, li);
+
+  Ber frame_size = BinaryenBinary(module, BinaryenMulInt32(), args_count,
+                                  make_int32(module, 4));
 
   // Increase stack pointer to free mem ====================================.
-  BinaryenExpressionRef sp_plus_offset = BinaryenBinary(
-      module, BinaryenAddInt32(), stack_pointer, make_int32(module, sp_offset));
+  BinaryenExpressionRef add_framesize_to_sp =
+      BinaryenBinary(module, BinaryenAddInt32(), stack_pointer, frame_size);
   block_children[block_children_count++] =
-      BinaryenGlobalSet(module, "stack_pointer", sp_plus_offset);
+      BinaryenGlobalSet(module, "stack_pointer", add_framesize_to_sp);
 
   BinaryenType params_type = make_type_int32(2);
-  Ber ber_args_count = make_int32(module, args_count);
+  Ber call_operands[] = {0, args_count};
 
   // Call fn ================================================================
   Ber result = NULL;
   switch (fn_ref_type) {
     case BER:;
-      Ber lval_wasm_ref = fn_ref.ber;
-      // TODO: write in wasm:
-      // currently we assume lval_wasm_ref === LVAL_WASM_LAMBDA
-      // so we call indirect, as below
-      // TODO: implement using maps and sets and vectors as fns.
-      // else throw runtime error. (let [a 1] (a 2)) , can't use number as fn
+      Ber wval = fn_ref.ber;
+
+      Ber get_type_call = get_wval_prop(module, wval, "type");
+      block_children[block_children_count++] =
+          wasm_log_int(wasm, get_type_call);
+
+      // TODO: implement using maps and sets and vectors and keywords as fns.
+      block_children[block_children_count++] = validate_as_fn(wasm, wval);
 
       // Get fn_index and closure pointer from lval_wasm_ref
       int fn_table_index_offset = 2;
+      // TODO: lval_wasm_ref ber is used twice, not recommended by Binaryen,
+      // optimizations could have trouble
       Ber wasm_fn_index = BinaryenLoad(module, 2, 0, fn_table_index_offset, 0,
-                                       BinaryenTypeInt32(), lval_wasm_ref);
+                                       BinaryenTypeInt32(), wval);
       int closure_pointer_offset = 12;
-      Ber wasm_closure_pointer =
-          BinaryenLoad(module, 4, 0, closure_pointer_offset, 0,
-                       BinaryenTypeInt32(), lval_wasm_ref);
+      Ber wasm_closure_pointer = BinaryenLoad(
+          module, 4, 0, closure_pointer_offset, 0, BinaryenTypeInt32(), wval);
 
       // Pass closure pointer and args count to wasm fn
-      Ber operands[] = {wasm_closure_pointer, ber_args_count};
+      call_operands[0] = wasm_closure_pointer;
 
-      result = BinaryenCallIndirect(module, wasm_fn_index, operands, 2,
+      result = BinaryenCallIndirect(module, wasm_fn_index, call_operands, 2,
                                     params_type, BinaryenTypeInt32());
       break;
     case FN_NAME:;
       char* fn_name = fn_ref.fn_name;
-      Ber call_operands[] = {make_int32(module, 0), ber_args_count};
+      call_operands[0] = make_int32(module, 0);
       result =
           BinaryenCall(module, fn_name, call_operands, 2, BinaryenTypeInt32());
       break;
     case GLOBAL:;
       char* fn_table_index_global = fn_ref.global_name;
-      /* printf("in compile_wasm_fn_call: %s\n", fn_table_index_global); */
       wasm_fn_index = BinaryenGlobalGet(wasm->module, fn_table_index_global,
                                         BinaryenTypeInt32());
-      Ber indirect_call_operands[] = {make_int32(module, 0), ber_args_count};
-      result =
-          BinaryenCallIndirect(module, wasm_fn_index, indirect_call_operands, 2,
-                               params_type, BinaryenTypeInt32());
+      call_operands[0] = make_int32(module, 0);
+      result = BinaryenCallIndirect(module, wasm_fn_index, call_operands, 2,
+                                    params_type, BinaryenTypeInt32());
 
       break;
     default:
       quit(wasm, "Unknown fn_ref_type %d", fn_ref_type);
   }
 
-  // Store result in local wasm var =========================================
+  // Store fn call result in local wasm var
+  // =========================================
   int result_index = context->function_context->local_count++;
   block_children[block_children_count++] =
       BinaryenLocalSet(module, result_index, result);
 
   // Reset stack pointer; ===================================================
-  BinaryenExpressionRef sp_minus_offset = BinaryenBinary(
-      module, BinaryenSubInt32(), stack_pointer, make_int32(module, sp_offset));
+  BinaryenExpressionRef substract_framesize_from_sp =
+      BinaryenBinary(module, BinaryenSubInt32(), stack_pointer, frame_size);
   block_children[block_children_count++] =
-      BinaryenGlobalSet(module, "stack_pointer", sp_minus_offset);
+      BinaryenGlobalSet(module, "stack_pointer", substract_framesize_from_sp);
 
   // Release results of fn calls =============================================
   Ber release_locals_block =
@@ -687,7 +727,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
               wasm->module, anon_lambda_index, BinaryenTypeInt32());
           int fn_call_result_index = li_new(wasm);
           union FnRef fn_ref = {.ber = local_get_anon_lambda};
-          Ber fn_call = compile_wasm_fn_call(wasm, BER, fn_ref, args).ber;
+          Ber fn_call = compile_wasm_fn_call(wasm, BER, fn_ref, NULL, args).ber;
           Ber local_set_fn_result =
               BinaryenLocalSet(wasm->module, fn_call_result_index, fn_call);
           Ber local_get_fn_result = BinaryenLocalGet(
@@ -701,9 +741,6 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
               BinaryenBlock(wasm->module, uniquify_name(wasm, "anon-lambda"),
                             children, 4, BinaryenTypeInt32());
           return cresult(block);
-          /*   return compile_wasm_fn_call(wasm, compiled_list, NULL, NULL,
-           * args);
-           */
         case VECTOR:
         case MAP:
         case SET:
@@ -731,8 +768,7 @@ void add_dep(Wasm* wasm, char* global_name) {
   wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
 }
 
-CResult comple_lval_compiled(Wasm* wasm, Lval* lval_symbol,
-                             Lval* lval_compiled);
+CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref);
 
 char* make_global_name(char* prefix, char* namespace, char* name) {
   int size = _strlen(prefix) + _strlen(namespace) + _strlen(name) + 2;
@@ -757,7 +793,6 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
   if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
 
   Lval* lval_first = lval_list->head->car;
-
   Cell* args = lval_list->head->cdr;
   CResult fn_call = cnull();
 
@@ -790,16 +825,19 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
             break;
           case LAMBDA:  // root functions in compiler env
             /* printf("Calling lambda!! %s\n", lval_first->str); */
+            printf("APPLY LAMBDA: ");
+            lval_println(resolved_symbol);
             if (symbol_is_external) {
               char* global_name =
                   make_global_name("fn:", result.ns->namespace, result.name);
               add_dep(wasm, global_name);
               union FnRef fn_ref = {.global_name = global_name};
-              fn_call = compile_wasm_fn_call(wasm, GLOBAL, fn_ref, args);
-              /* release(global_name); */
+              fn_call = compile_wasm_fn_call(wasm, GLOBAL, fn_ref,
+                                             resolved_symbol, args);
             } else {
               union FnRef fn_ref = {.fn_name = lval_first->str};
-              fn_call = compile_wasm_fn_call(wasm, FN_NAME, fn_ref, args);
+              fn_call = compile_wasm_fn_call(wasm, FN_NAME, fn_ref,
+                                             resolved_symbol, args);
             }
             break;
           case MACRO:;
@@ -817,19 +855,19 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
                  lval_first->subtype);
         }
         break;
-      case LVAL_COMPILED:;
-        // we've assigned something to a local ref in wasm, but we don't know
-        // what it is, and whether it's a fn even. It'll have to be worked out
-        // at runtime. With some clever optimisations we can in some cases
-        // probably work out what it is at compile time and can reduce it to a
-        // compile_list/lambda_cal. However the default case is that we cannot
-        // assume anything about the lval.
+      case LVAL_REF:;
+        // we've assigned something to a local or closed over ref in wasm, but
+        // we don't know what it is, and whether it's a fn even. It'll have to
+        // be worked out at runtime. With some clever optimisations we can in
+        // some cases probably work out what it is at compile time and can
+        // reduce it to a compile_list/lambda_call. However the default case is
+        // that we cannot assume anything about the lval.
 
         Ber compiled_symbol =
-            comple_lval_compiled(wasm, lval_first, resolved_symbol).ber;
+            compile_lval_ref(wasm, lval_first, resolved_symbol).ber;
 
         union FnRef fn_ref = {.ber = compiled_symbol};
-        fn_call = compile_wasm_fn_call(wasm, BER, fn_ref, args);
+        fn_call = compile_wasm_fn_call(wasm, BER, fn_ref, NULL, args);
         break;
       case LVAL_SYMBOL:
         quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
@@ -840,16 +878,18 @@ CResult apply(Wasm* wasm, Lval* lval_list) {
             quit(wasm, "ERROR: A list can't be cast to a fn");
           default:;
         }
+        // Fall through.
       default:;
         // Not a function or wasm ref, perhaps it's something else we can use
-        // as a fn
+        // as a fn, such as a vector or kw or set
         fn_call = compile_as_fn_call(wasm, resolved_symbol, args);
     }
 
     release(result.name);
   } else {
     // Not a function or wasm ref, perhaps it's something else we can use as a
-    // fn
+    // fn, such as a vector, or kw or set, or perhaps an anonymous lambda eg:
+    // (fn [x] x)
     // TODO: make sure is_fn_call is set properly when we use a map as a fn!!!
     fn_call = compile_as_fn_call(wasm, lval_first, args);
   }
@@ -905,10 +945,10 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       switch (resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->str);
-        case LVAL_COMPILED:;
+        case LVAL_REF:;
           // symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
-          CResult ret = comple_lval_compiled(wasm, lval, resolved_sym);
+          CResult ret = compile_lval_ref(wasm, lval, resolved_sym);
           release(resolved_sym);
           return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env

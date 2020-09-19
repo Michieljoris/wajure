@@ -175,7 +175,7 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   *(int*)(p + data_p_offset) =
       wasm->__data_end + wasm->data_offset + slot_type_size;
 
-  *(char*)(p + wval_type_offset) = LVAL_WASM_LAMBDA;
+  *(char*)(p + wval_type_offset) = WVAL_FUN;
   *(char*)(p + subtype_offset) = -1;
   *(short*)(p + fn_table_index_offset) = fn_table_index;
   *(short*)(p + param_count_offset) = param_count;

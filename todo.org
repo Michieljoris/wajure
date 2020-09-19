@@ -1,4 +1,6 @@
 * TODO compiler
+** chuck as as many wajure args into wasm args, and then onto stack
+Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
 ** partial
 See if we can put args on stack from low to high iso of high to low as we have
 now. If so we can do apply easier as well.
@@ -289,6 +291,20 @@ make compile
 *** Build wasm runtime (compiles wajure interpreter to wasm):
 PLATFORM=wasm make clean
 PLATFORM=wasm make runtime
+** clj repl
+bin/clj-repl
+
+When using in-ns also evoke
+(clojure.core/use 'clojure.core)
+
+Path to clj dir is set in deps.edn in project root
+
+In Emacs connect with inf-clojure (connect to localhost:5555)
+https://github.com/clojure-emacs/inf-clojure
+;; (add-hook 'clojure-mode-hook #'inf-clojure-minor-mode)
+
+(setq inf-clojure-custom-startup  '("localhost" . 5555))
+(setq inf-clojure-custom-repl-type  'clojure)
 
 *  More from wajure tutorial
 ** Ch10

@@ -1,1 +1,3 @@
+#!/bin/bash
+
 PLATFORM=wasm make runtime

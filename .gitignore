@@ -2,6 +2,7 @@ out/
 out_wasm/
 .ccls-cache/
 .clangd/
+.cpcache/
 make-output
 compiled/
 *.wat
