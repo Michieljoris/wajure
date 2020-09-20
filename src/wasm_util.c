@@ -101,6 +101,7 @@ Ber wasm_log_string(Wasm* wasm, int offset) {
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
   int msg_offset = add_string_to_data(wasm, msg);
 
+  /* BinaryenUnreachable(module); */
   BinaryenModuleRef module = wasm->module;
 
   Ber operands[] = {make_int32(wasm->module, err_no),
@@ -425,6 +426,23 @@ CResult wasm_lalloc_size(Wasm* wasm, int size) {
                               make_type_int32(1)));
 }
 
+char* make_global_name(char* prefix, char* namespace, char* name) {
+  int size = _strlen(prefix) + _strlen(namespace) + _strlen(name) + 2;
+  if (size > MAX_CHAR_SIZE) {
+    printf("Trying to make a wasm global name that's larger than %d: %s/%s\n",
+           MAX_CHAR_SIZE, namespace, name);
+    abort();
+  }
+  char* str = lalloc_size(size);
+  sprintf(str, "%s%s/%s", prefix, namespace, name);
+  return str;
+}
+
+void add_dep(Wasm* wasm, char* global_name) {
+  /* printf("ADD DEP %s %d\n", global_name, get_ref_count(global_name)); */
+  wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
+}
+
 // experiment
 void add_test_fn(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
@@ -455,4 +473,10 @@ void add_test_fn(Wasm* wasm) {
   BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
                       sizeof(localTypes) / sizeof(BinaryenType), body);
   BinaryenAddFunctionExport(wasm->module, "test", "test");
+}
+
+char* number_fn_name(Wasm* wasm, char* fn_name) {
+  char* numbered_fn_name = lalloc_size(512);
+  sprintf(numbered_fn_name, "%s#%d", fn_name, wasm->fns_count);
+  return numbered_fn_name;
 }

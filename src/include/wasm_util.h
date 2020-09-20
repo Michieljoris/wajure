@@ -100,4 +100,10 @@ CResult wasm_lalloc_type(Wasm* wasm, int type);
 
 CResult wasm_lalloc_size(Wasm* wasm, int size);
 
+char* make_global_name(char* prefix, char* namespace, char* name);
+
+void add_dep(Wasm* wasm, char* global_name);
+
+char* number_fn_name(Wasm* wasm, char* fn_name);
+
 #endif  // __WASM_UTIL_H_

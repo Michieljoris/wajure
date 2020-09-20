@@ -89,6 +89,33 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
     param = param->cdr;
   }
 
+  // Includes any rest arg, so [a & b] has param_count = 2
+  int param_count = 0;
+  int rest_arg_index = 0;
+  int offset = 0;
+  while (param) {
+    if (rest_arg_index && param_count == rest_arg_index) {
+      lval_println(lval_params);
+      return make_lval_err("ERROR: only one rest arg allowed");
+    }
+    Lval* lval_sym = param->car;
+    if (_strcmp(lval_sym->str, "&") == 0) {
+      rest_arg_index = offset + 1;  // number of params
+      param = param->cdr;
+      continue;
+    }
+    offset++;
+    /* Lval* lval_ref = make_lval_ref(context, PARAM, param_count + 1); */
+    /* lenv_put(params_env, lval_sym, lval_ref); */
+    /* release(lval_ref); */
+
+    param_count++;
+    param = param->cdr;
+  }
+
+  if (rest_arg_index && param_count != rest_arg_index)
+    return make_lval_err("ERROR: rest arg missing");
+
   // Creates lambda lval and sets the parent_env of its env field (bindings)
   // to the passed in env
   Lval* lval_body = make_lval_list();
@@ -102,6 +129,8 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ddebug("refcount: %d\n", get_ref_count(env));
   Lval* fn =
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
+  fn->param_count = param_count;
+  fn->rest_arg_index = rest_arg_index;
   return fn;
 }
 

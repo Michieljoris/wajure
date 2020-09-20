@@ -1,7 +1,7 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
-(clojure.core/use 'clojure.core)
-(require '[foo.core :as foo])
+;; (clojure.core/use 'clojure.core)
+;; (require '[foo.core :as foo])
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
 ;;            ])
@@ -14,15 +14,17 @@
 ;; (def fox bar)
 ;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
-(print "hello")
-(defn f [x & y] x)
+;; (print "hello")
+(defn f [x] x)
 (defn main [x y]
-  (foo/foo 1)
+  (f 1)
+  ;; (foo/foo 1)
   ;; (foo/foo2 1)
-  (let [g (fn [x] x)
-        a 123]
-    (print "hello" (f 1 2 3) (g 2) g f ;; foo/foo
-           )))
+  ;; (let [g (fn [x] x)
+  ;;       a 123]
+  ;;   (print "hello" (f 1 2 3) (g 2) g f ;; foo/foo
+  ;;          ))
+  )
 ;; (main 1 2)
 ;; (defn g [
 ;;          k0 k1 k2 k3 k4 k5 k6 k7 k8 k9

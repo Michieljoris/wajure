@@ -79,6 +79,53 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
   return rest_args;
 }
 
+Lval* eval_lambda_call_old(Lval* lval_fun, Lval* arg_list) {
+  debug("---------------------eval_lambda_call\n");
+  scoped Lenv* bindings_env = lenv_new();
+
+  scoped_iter Cell* p = iter_new(lval_fun->params);
+  Lval* param = iter_next(p);
+
+  scoped_iter Cell* a = iter_new(arg_list);
+  Lval* arg = iter_next(a);
+
+  // Try to bind all the arg in arg_list ====================
+  while (param) {
+    if (_strcmp(param->str, "&") == 0) {
+      param = iter_next(p);
+      arg = read_rest_args(param, p, a);
+      if (!arg)
+        return make_lval_err(
+            "Function format invalid. "
+            "Symbol '&' not followed by single symbol.");
+    } else
+      retain(arg);
+
+    if (arg)
+      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg);
+    else
+      break;
+    arg = iter_next(a);
+    param = iter_next(p);
+  }
+  if (!param && arg)
+    return make_lval_err("Function passed too many args. Got %i, expected %i.",
+                         list_count(arg_list->head),
+                         list_count(lval_fun->params->head));
+
+  bindings_env->parent_env = retain(lval_fun->closure);
+
+  /* Eval body expressions, but only if all params are bound */
+  if (!param) {
+    return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
+  } else {
+    Lval* params = make_lval_vector();
+    params->head = retain(iter_current_cell(p));
+    return make_lval_lambda(retain(bindings_env), params,
+                            retain(lval_fun->body), LAMBDA);
+  }
+}
+
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   debug("---------------------eval_lambda_call\n");
   scoped Lenv* bindings_env = lenv_new();
@@ -223,7 +270,7 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
-Lval* eval_list(Lenv* env, Lval* lval_list) {
+Lval* eval_application(Lenv* env, Lval* lval_list) {
   debug("evalling fn call: ");
   lval_debugln(lval_list);
 
@@ -284,7 +331,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return eval_list(env, lval);
+          return eval_application(env, lval);
         case VECTOR:
           return eval_vector(env, lval);
         case MAP:
