@@ -66,16 +66,13 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
   return make_lval_nil();
 }
 
-Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
-  /* if the param is & there should be exactly one formal left  */
-  if (!param || iter_peek(p)) {
-    return NIL;
-  }
-  Lval* rest_args = make_lval_list();
-  rest_args->head = retain(iter_current_cell(a));
-  Lval* arg = NIL;
-  do arg = iter_next(a);
-  while (arg);
+Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
+  Lval* rest_args;
+  if (args) {
+    rest_args = make_lval_list();
+    rest_args->head = retain(args);
+  } else
+    rest_args = make_lval_nil();
   return rest_args;
 }
 
@@ -134,41 +131,41 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
   int param_count = lval_fun->param_count;
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
-  int arg_list_count = list_count(arg_list->head);
+  int arg_list_count =
+      list_count(lval_fun->partials) + list_count(arg_list->head);
   if (arg_list_count < min_param_count)
     return make_lval_err("Not enough args passed, expected %d, got %d.",
                          min_param_count, arg_list_count);
   if (!rest_arg_index && arg_list_count > param_count)
-    make_lval_err("Too many args passed, expected %i, got %i.", param_count,
-                  arg_list_count);
+    return make_lval_err("Too many args passed, expected %i, got %i.",
+                         param_count, arg_list_count);
 
   scoped Lenv* bindings_env = lenv_new();
 
   scoped_iter Cell* p = iter_new(lval_fun->params);
   Lval* param = iter_next(p);
 
-  scoped_iter Cell* a = iter_new(arg_list);
-  Lval* arg = iter_next(a);
+  scoped Cell* args = list_concat(lval_fun->partials, arg_list->head);
 
   int i = 0;
   // Try to bind all the arg in arg_list ====================
-  while (param) {
-    if (i < min_param_count)
-      bindings_env->kv =
-          alist_prepend(bindings_env->kv, retain(param), retain(arg));
-    else {
-      param = iter_next(p);
-      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param),
-                                       read_rest_args(param, p, a));
-      break;
-    }
-
-    arg = iter_next(a);
+  while (i < min_param_count) {
+    lval_println(param);
+    Lval* arg = args->car;
+    bindings_env->kv =
+        alist_prepend(bindings_env->kv, retain(param), retain(arg));
+    args = args->cdr;
     param = iter_next(p);
     i++;
   }
-  bindings_env->parent_env = retain(lval_fun->closure);
 
+  if (rest_arg_index) {
+    param = iter_next(p);
+    bindings_env->kv = alist_prepend(bindings_env->kv, retain(param),
+                                     read_rest_args(param, p, args));
+  }
+
+  bindings_env->parent_env = retain(lval_fun->closure);
   return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
 }
 

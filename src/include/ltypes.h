@@ -76,13 +76,14 @@ struct lval {
   Lenv* closure;
   Lval* params;
   Lval* body;
+  Cell* partials;
+  int param_count;
+  int rest_arg_index;
 
   // compiler to wasm data
   int wval_ptr;
   Context* context;
   int offset;
-  int param_count;
-  int rest_arg_index;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
