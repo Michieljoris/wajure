@@ -1,6 +1,7 @@
 * TODO compiler
 ** chuck as as many wajure args into wasm args, and then onto stack
 Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
+** use one set of tests for both compiler and interpreter
 ** partial
 See if we can put args on stack from low to high iso of high to low as we have
 now. If so we can do apply easier as well.
@@ -41,6 +42,8 @@ last arg is a list (put a check in if it's a lval_compiler)
    fns for that first.
 ** ----------------
 ** release uniquify_name
+** cleanup memory of namespaces
+so get interpreter to end with all slots free again!
 ** add repl and watch options to config
 in repl you can (re)compile namespaces. Also, it can watch directory and if any
 clj source file gets modified, recompile. Because it's a live env we can expand

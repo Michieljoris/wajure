@@ -1,10 +1,65 @@
 (in-ns 'run)
-;; (require '[test.tests])
+(require '[test.tests])
 
-(defn f0 [] :f0)
-(defn f1 [x] [x])
-(defn f2 [x y] [x y])
-(defn f3 [x y z] [x y z])
+;; (defn f0 [] :f0)
+;; (defn f1 [x] [x])
+;; (defn f2 [x y] [x y])
+;; (defn f2r [x y & z] [x y z])
+;; (partial f 1 2 3 )
+;; (print (f 2 3 4))
+;; (print (f 2 3 4))
+
+;; (def f1a (partial f1 1))
+;; (def f2a (partial f2 1))
+;; (def f2ra (partial f2r 1 2))
+;; (def f2rb (partial f2r 1 2 3))
+;; (def f2rc (partial f2r 1 2 3))
+
+;; (t (f1a) [1])
+;; (t (f2a 2) [1 2])
+;; (t (f2ra) [1 2 nil])
+;; (t (f2rb) [1 2 (3)])
+;; (t (f2rc) [1 2 (3)])
+;; (t (f2rc) [1 2 (3)])
+
+;; (print (f2rc) )
+;; (print (f2rc) )
+;; (t (f2ra 5 6) [1 2 (5 6)])
+;; (t (f2rb 5 6) [1 2 (3 5 6)])
+;; (t (f2rc 5 6) [1 2 (3 4 5 6)])
+
+;; (t (f1a) [1])
+;; (t (f2a 2) [1 2])
+;; (t (f2ra) [1 2 nil])
+;; (t (f2rb) [1 2 (3)])
+;; (t (f2rc) [1 2 (3 4)])
+;; (t (f2rc) [1 2 (3 4)])
+;; (t (f2ra 5 6) [1 2 (5 6)])
+;; (t (f2rb 5 6) [1 2 (3 5 6)])
+;; (t (f2rc 5 6) [1 2 (3 4 5 6)])
+;; (print (macroexpand '(t 1 1)))
+;; (defmacro m[] :foo)
+;; (print (macroexpand '(m)))
+
+;; (defmacro t2 [expr expected & str]
+;;   `(let [evalled ~expr]
+;;      (when (not= evalled (quote ~expected))
+;;       (do
+;;         (pr "FAIL" ~str)
+;;         (pr (quote ~expr) )
+;;         (pr "Expected:" (quote ~expected))
+;;         (pr "Got:" ~expr))
+;;       )))
+
+;; (print (macroexpand '(t2 1 1)))
+
+;; (t (apply f0 nil) :f1)
+
+  ;; (t (apply f0 nil) :f0)
+  ;; (t (apply f1 1 nil) [1])
+  ;; (t (apply f1 (list 1)) [1])
+  ;; (t (apply f2 1 2 nil) [1 2])
+  ;; (t (apply f2 1 (list 2)) [1 2])
 ;; (defn g [x & y] [x y])
 ;; (def q (partial let))
 ;; (def f1 (partial f 1 ))
@@ -16,16 +71,16 @@
 ;; (print ">>>>> " (f2 3) )
 
 ;;TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!
-;; (def plus2 (partial + 2))
+;; (def plus2 (partial + 2 3))
 ;; (print (plus2 2))
 ;;TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ;; (print (apply f0))
-(print (apply f0 nil))
-(print (apply f1 1 nil))
-(print (apply f1 (list 1)))
-(print (apply f2 1 2 nil))
-(print (apply f2 1 (list 2)))
+;; (print (apply f0 nil))
+;; (print (apply f1 1 nil))
+;; (print (apply f1 (list 1)))
+;; (print (apply f2 1 2 nil))
+;; (print (apply f2 1 (list 2)))
 ;; (pr "hello from run.clj!!")
 ;; (test2/test)
 

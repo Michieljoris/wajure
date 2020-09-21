@@ -24,10 +24,11 @@
   `(let [evalled ~expr]
      (when (not= evalled (quote ~expected))
       (do
-        (pr "FAIL" ~@str)
+        (pr "FAIL" ~str)
         (pr (quote ~expr) )
         (pr "Expected:" (quote ~expected))
-        (pr "Got:" ~expr)))))
+        (pr "Got:" ~expr))
+      )))
 
 (defmacro macroexpand-all [form]
   (list 'let ['form `(macroexpand ~form)]

@@ -15,9 +15,10 @@
 ;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
 ;; (print "hello")
-(defn f [x] x)
+;; (defn f [x] x)
 (defn main [x y]
-  (f 1)
+  (print 1)
+  ;; (f 1)
   ;; (foo/foo 1)
   ;; (foo/foo2 1)
   ;; (let [g (fn [x] x)

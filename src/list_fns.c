@@ -103,7 +103,10 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
 
 Lval* count_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("count", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
+  ITER_NEXT
+  if (arg->type == LVAL_LITERAL && arg->subtype == LNIL)
+    return make_lval_num(0);
+  LASSERT_TYPE("count", arg_list, 1, LVAL_COLLECTION, -1, arg)
   int count = list_count(arg->head);
   ITER_END
   return make_lval_num(count);

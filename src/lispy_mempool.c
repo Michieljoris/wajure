@@ -118,6 +118,7 @@ void destroy_lval(void* data) {
         release(lval->params);
         /* if (debug) ddebug("\n freeing body:"); */
         release(lval->body);
+        release(lval->partials);
         /* if (debug) ddebug("\n freeing closure_env:"); */
         /* if (debug) */
         /*   debug("ref count for closure_env = %d\n", */

@@ -81,6 +81,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
    * lval_fun->param_count, */
   /*      lval_fun->rest_arg_index); */
   /* lval_println(lval_fun); */
+
   int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
   int param_count = lval_fun->param_count;
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
@@ -98,25 +99,45 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   scoped_iter Cell* p = iter_new(lval_fun->params);
   Lval* param = iter_next(p);
 
-  scoped Cell* args = list_concat(lval_fun->partials, arg_list->head);
+  scoped Cell* head = list_concat(lval_fun->partials, arg_list->head);
 
   int i = 0;
   while (i < min_param_count) {
-    Lval* arg = args->car;
+    Lval* arg = head->car;
     bindings_env->kv =
         alist_prepend(bindings_env->kv, retain(param), retain(arg));
-    args = args->cdr;
+    head = head->cdr;
     param = iter_next(p);
     i++;
   }
 
   if (rest_arg_index) {
     param = iter_next(p);
-    bindings_env->kv = alist_prepend(bindings_env->kv, retain(param),
-                                     read_rest_args(param, p, args));
+    /* Lval* rest_args = read_rest_args(param, p, args); */
+    scoped Lval* rest_arg = make_lval_list();
+    Cell** cdr = &rest_arg->head;
+    while (head) {
+      Lval* arg = head->car;
+      Cell* c = make_cell();
+      c->car = retain(arg);
+      *cdr = c;
+      cdr = &c->cdr;
+      head = head->cdr;
+    }
+    if (!rest_arg->head) {
+      rest_arg->type = LVAL_LITERAL;
+      rest_arg->subtype = LNIL;
+    }
+    /*   retain(args); */
+    /* lval_println(rest_args); */
+    /* printf("ref count: %d\n", get_ref_count(args)); */
+    bindings_env->kv =
+        alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
   }
 
   bindings_env->parent_env = retain(lval_fun->closure);
+  /* env_print(bindings_env); */
+  /* printf("------\n"); */
   return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
 }
 
@@ -247,20 +268,29 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
     default:;
   }
   switch (lval_fun->subtype) {
-    case SYS:
-      return lval_fun->fun(env, evalled_arg_list);
-      break;
+    case SYS:;
+      Cell* head = list_concat(lval_fun->partials, evalled_arg_list->head);
+      Lval* rest_arg = make_lval_list();
+      Cell** cdr = &rest_arg->head;
+      while (head) {
+        Lval* arg = head->car;
+        Cell* c = make_cell();
+        c->car = retain(arg);
+        *cdr = c;
+        cdr = &c->cdr;
+        head = head->cdr;
+      }
+      ret = lval_fun->fun(env, rest_arg);
+      release(head);
+      release(rest_arg);
+      return ret;
     case SPECIAL: {
       return lval_fun->fun(env, arg_list);
-      break;
     }
     case MACRO:
       return eval_macro_call(env, lval_fun, arg_list);
-      return ret;
-      break;
     case LAMBDA:
       return eval_lambda_call(lval_fun, evalled_arg_list);
-      break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
                            lval_fun->str);
