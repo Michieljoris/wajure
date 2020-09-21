@@ -127,7 +127,21 @@ Lval* eval_lambda_call_old(Lval* lval_fun, Lval* arg_list) {
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  debug("---------------------eval_lambda_call\n");
+  /* info("---------------------eval_lambda_call %d %d\n",
+   * lval_fun->param_count, */
+  /*      lval_fun->rest_arg_index); */
+  /* lval_println(lval_fun); */
+  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
+  int param_count = lval_fun->param_count;
+  int min_param_count = rest_arg_index ? param_count - 1 : param_count;
+  int arg_list_count = list_count(arg_list->head);
+  if (arg_list_count < min_param_count)
+    return make_lval_err("Not enough args passed, expected %d, got %d.",
+                         min_param_count, arg_list_count);
+  if (!rest_arg_index && arg_list_count > param_count)
+    make_lval_err("Too many args passed, expected %i, got %i.", param_count,
+                  arg_list_count);
+
   scoped Lenv* bindings_env = lenv_new();
 
   scoped_iter Cell* p = iter_new(lval_fun->params);
@@ -136,41 +150,26 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   scoped_iter Cell* a = iter_new(arg_list);
   Lval* arg = iter_next(a);
 
+  int i = 0;
   // Try to bind all the arg in arg_list ====================
   while (param) {
-    if (_strcmp(param->str, "&") == 0) {
+    if (i < min_param_count)
+      bindings_env->kv =
+          alist_prepend(bindings_env->kv, retain(param), retain(arg));
+    else {
       param = iter_next(p);
-      arg = read_rest_args(param, p, a);
-      if (!arg)
-        return make_lval_err(
-            "Function format invalid. "
-            "Symbol '&' not followed by single symbol.");
-    } else
-      retain(arg);
-
-    if (arg)
-      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg);
-    else
+      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param),
+                                       read_rest_args(param, p, a));
       break;
+    }
+
     arg = iter_next(a);
     param = iter_next(p);
+    i++;
   }
-  if (!param && arg)
-    return make_lval_err("Function passed too many args. Got %i, expected %i.",
-                         list_count(arg_list->head),
-                         list_count(lval_fun->params->head));
-
   bindings_env->parent_env = retain(lval_fun->closure);
 
-  /* Eval body expressions, but only if all params are bound */
-  if (!param) {
-    return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
-  } else {
-    Lval* params = make_lval_vector();
-    params->head = retain(iter_current_cell(p));
-    return make_lval_lambda(retain(bindings_env), params,
-                            retain(lval_fun->body), LAMBDA);
-  }
+  return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {

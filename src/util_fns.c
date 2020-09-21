@@ -90,6 +90,13 @@ Lval* str_fn(Lenv* env, Lval* arg_list) {
   return make_lval_str(str);
 }
 
+Lval* partial_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW("partial")
+  ITER_NEXT_TYPE(LVAL_FUNCTION, STRING)
+  int pos = 0;
+  return read_expr(arg->str, &pos, '\0');
+}
+
 LispyFn util_builtin_fns[] = {
     {"print", print_fn, "print_fn", 2, 1},
     {"pr", pr_fn, "pr_fn", 2, 1},
@@ -98,6 +105,7 @@ LispyFn util_builtin_fns[] = {
     {"hash", hash_fn, "hash_fn", 2, 1},
     {"str", str_fn, "str_fn", 2, 1},
     {"read-string", read_string_fn, "read_string_fn", 2, 1},
+    {"partial", partial_fn, "partial_fn", 2, 1},
     {NIL}
 
 };

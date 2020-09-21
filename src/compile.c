@@ -214,8 +214,8 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Params
   Lenv* params_env = enter_env(wasm);
 
-  Cell* param = lval_fun->params->head;
   // Includes any rest arg, so [a & b] has param_count = 2
+  Cell* param = lval_fun->params->head;
   int param_count = 0;
   int rest_arg_index = 0;
   int offset = 0;
@@ -238,7 +238,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
     param_count++;
     param = param->cdr;
   }
-  context->function_context->param_count = param_count;
+  /* context->function_context->param_count = param_count; */
 
   if (rest_arg_index && param_count != rest_arg_index)
     quit(wasm, "ERROR: rest arg missing");

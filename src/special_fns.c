@@ -81,22 +81,22 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_params = arg;
 
   Cell* param = lval_params->head;
-  while (param) {
-    LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
-            "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name(param->car),
-            lval_type_constant_to_name(LVAL_SYMBOL));
-    param = param->cdr;
-  }
 
   // Includes any rest arg, so [a & b] has param_count = 2
   int param_count = 0;
   int rest_arg_index = 0;
   int offset = 0;
   while (param) {
+    LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
+            "Canot bind non-symbol. Got %s, expected %s.",
+            lval_type_to_name(param->car),
+            lval_type_constant_to_name(LVAL_SYMBOL));
     if (rest_arg_index && param_count == rest_arg_index) {
       lval_println(lval_params);
-      return make_lval_err("ERROR: only one rest arg allowed");
+      return make_lval_err(
+          "Function format invalid. "
+          "Symbol '&' not followed by single symbol.");
+      /* return make_lval_err("ERROR: only one rest arg allowed"); */
     }
     Lval* lval_sym = param->car;
     if (_strcmp(lval_sym->str, "&") == 0) {
@@ -114,7 +114,10 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   }
 
   if (rest_arg_index && param_count != rest_arg_index)
-    return make_lval_err("ERROR: rest arg missing");
+    return make_lval_err(
+        "Function format invalid. "
+        "Symbol '&' not followed by single symbol.");
+  /* return make_lval_err("ERROR: rest arg missing"); */
 
   // Creates lambda lval and sets the parent_env of its env field (bindings)
   // to the passed in env

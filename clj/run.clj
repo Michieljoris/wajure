@@ -1,13 +1,20 @@
 (in-ns 'run)
-(require '[test.tests])
+;; (require '[test.tests])
 
-(pr "hello from run.clj!!")
+(defn f [x y z] [x y z])
+(defn g [x & y] [x y])
+;; (def g (partial f 1))
+;; (def plus (partial + 1))
+;; (def g (f 1))
+;; (def plus (+ 1))
+(print (f 1 2 3) (g 1 2 3))
+;; (pr "hello from run.clj!!")
 ;; (test2/test)
 
-(require '[foo.core :as foo :refer [foo]])
-(print "foo.core/foo = " foo.core/foo)
-(print "foo/foo = " foo/foo)
-(print "foo" foo)
+;; (require '[foo.core :as foo :refer [foo]])
+;; (print "foo.core/foo = " foo.core/foo)
+;; (print "foo/foo = " foo/foo)
+;; (print "foo" foo)
 
 
 ;; (print "foo2" foo2)
