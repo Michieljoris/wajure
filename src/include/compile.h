@@ -6,6 +6,7 @@
 // Runtime error codes
 enum { RT_TOO_FEW_ARGS, RT_TOO_MANY_ARGS, RT_NOT_A_FN };
 
+CResult compile_list(Wasm* wasm, Cell* head);
 void compile(Namespace* ns);
 
 CResult lval_compile(Wasm* wasm, Lval* lval);

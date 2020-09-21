@@ -16,7 +16,7 @@ int get_wval_closure(WvalFun* wval);
 int get_wval_partials(WvalFun* wval);
 int get_wval_partial_count(WvalFun* wval);
 
-void init_rest_args(Lval** lval_array, int rest_arg_length);
+void bundle_rest_args(Lval** lval_array, int rest_arg_length);
 
 void wval_print(WvalFun* wval);
 

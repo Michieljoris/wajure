@@ -15,9 +15,18 @@
 ;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
 ;; (print "hello")
-;; (defn f [x] x)
+;; (defn q [])
+;; (defn f [x y & z] [x y z])
+;; (defn g [x y z a] (list x y (f z a)))
 (defn main [x y]
-  (print 1)
+  (let [f (fn [x y] [x y])]
+    (print (f 1 2)))
+  ;; (let [h (fn [x y] [x y])]
+  ;;   ;; (let [a 1]
+  ;;   ;;   (print "hello" a x y))
+  ;;   ;; (print (h 123 456 999) ;; (g 1 2 3 4)
+  ;;   ;;        )
+  ;;   )
   ;; (f 1)
   ;; (foo/foo 1)
   ;; (foo/foo2 1)

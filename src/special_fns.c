@@ -164,6 +164,7 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
   LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "splice-unquote");
   Lval* ret = lval_eval(env, lval->head->cdr->car);
   if (ret->type == LVAL_ERR) return ret;
+  if (ret->subtype == LNIL) return ret;
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
   return ret;
 }

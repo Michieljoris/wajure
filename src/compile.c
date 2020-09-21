@@ -31,6 +31,7 @@
 
 CResult lval_compile(Wasm* wasm, Lval* lval);
 
+// This list can be released. It will also release all its elements
 CResult compile_list(Wasm* wasm, Cell* head) {
   BinaryenModuleRef module = wasm->module;
   if (!head) {
@@ -39,14 +40,14 @@ CResult compile_list(Wasm* wasm, Cell* head) {
   /* printf("compile fn rest args:\n"); */
   /* lval_println(head->car); */
   /* printf("compile fn rest args:\n"); */
-  Ber ber = lval_compile(wasm, head->car).ber;
-  Ber operands[] = {ber,
+  CResult result = lval_compile(wasm, head->car);
+  Ber compiled_arg =
+      result.is_fn_call ? result.ber : wasm_retain(wasm, result.ber).ber;
+  Ber operands[] = {compiled_arg,
                     // recursive call:
                     compile_list(wasm, head->cdr).ber};
-  // TODO: don't use list_cons, list_cons version that doesn't retain cells, but
-  // does still retain its car
   return cresult(
-      BinaryenCall(module, "list_cons", operands, 2, make_type_int32(1)));
+      BinaryenCall(module, "prefix_list", operands, 2, make_type_int32(1)));
 }
 
 CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
@@ -147,7 +148,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
   if (is_local_ref) {
     switch (lval_ref->subtype) {
       case PARAM: {
-        Ber local = BinaryenLocalGet(wasm->module, lval_ref->offset + 1,
+        Ber local = BinaryenLocalGet(wasm->module, lval_ref->offset,
                                      BinaryenTypeInt32());
         return cresult(local);
       }
@@ -204,7 +205,10 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
 
 FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
                                Lval* lval_fun) {
-  int wasm_params_count = 2;  // the function's closure and args count
+  int param_count = lval_fun->param_count;
+  int wajure_params_count = 1;
+  int wasm_params_count =
+      wajure_params_count + param_count;  // the function's closure
   int results_count = 1;
   CONTEXT_FUNCTION(">>>>>>>add_wasm_function", fn_name, wasm_params_count)
 
@@ -214,34 +218,27 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Params
   Lenv* params_env = enter_env(wasm);
 
-  // Includes any rest arg, so [a & b] has param_count = 2
+  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
+  int min_param_count = rest_arg_index ? param_count - 1 : param_count;
+
+  int i = 0;
   Cell* param = lval_fun->params->head;
-  int param_count = 0;
-  int rest_arg_index = 0;
-  int offset = 0;
-  while (param) {
-    if (rest_arg_index && param_count == rest_arg_index) {
-      lval_println(lval_fun);
-      quit(wasm, "ERROR: only one rest arg allowed");
-    }
+  while (i < min_param_count) {
+    Lval* lval_ref = make_lval_ref(context, PARAM, i + wajure_params_count);
     Lval* lval_sym = param->car;
-    if (_strcmp(lval_sym->str, "&") == 0) {
-      rest_arg_index = offset + 1;  // number of params
-      param = param->cdr;
-      continue;
-    }
-    offset++;
-    Lval* lval_ref = make_lval_ref(context, PARAM, param_count + 1);
     lenv_put(params_env, lval_sym, lval_ref);
     release(lval_ref);
-
-    param_count++;
     param = param->cdr;
+    i++;
   }
-  /* context->function_context->param_count = param_count; */
 
-  if (rest_arg_index && param_count != rest_arg_index)
-    quit(wasm, "ERROR: rest arg missing");
+  if (rest_arg_index) {
+    param = param->cdr;
+    Lval* lval_ref = make_lval_ref(context, PARAM, i + wajure_params_count);
+    Lval* lval_sym = param->car;
+    lenv_put(params_env, lval_sym, lval_ref);
+  }
+  /* env_print(params_env); */
 
   // Compile body
   Ber body = compile_do_list(wasm, lval_fun->body).ber;
@@ -409,25 +406,39 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   /* printf("compile sys call!!!!!!!!!!!!!!!\n"); */
+  BinaryenModuleRef module = wasm->module;
+
   Ber arg_list_head = compile_list(wasm, args).ber;
 
   Ber lval_list_operands[1] = {arg_list_head};
-  Ber wasm_lval_list = BinaryenCall(wasm->module, "new_lval_list",
-                                    lval_list_operands, 1, make_type_int32(1));
+  int wasm_lval_list_index = li_new(wasm);
+  Ber wasm_lval_list = BinaryenCall(module, "new_lval_list", lval_list_operands,
+                                    1, make_type_int32(1));
+  wasm_lval_list = BinaryenLocalTee(module, wasm_lval_list_index,
+                                    wasm_lval_list, BinaryenTypeInt32());
 
-  Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), wasm_lval_list};
+  Ber sys_fn_operands[2] = {make_int32(module, 0), wasm_lval_list};
   char* c_fn_name =
       alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_fn_sym->str);
 
   if (!c_fn_name)
     quit(wasm, "System fn not found in runtime: %s", lval_fn_sym->str);
 
-  Ber sys_fn_call = BinaryenCall(wasm->module, c_fn_name, sys_fn_operands, 2,
-                                 make_type_int32(1));
-  // TODO: after sys call, release list, which will also release all its
-  // cells.
-
-  return cresult(sys_fn_call);
+  Ber sys_fn_call =
+      BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
+  int call_result_index = li_new(wasm);
+  Ber store_call_result =
+      BinaryenLocalSet(module, call_result_index, sys_fn_call);
+  Ber release_list =
+      wasm_release(wasm, BinaryenLocalGet(module, wasm_lval_list_index,
+                                          BinaryenTypeInt32()))
+          .ber;
+  Ber get_call_result =
+      BinaryenLocalGet(module, call_result_index, BinaryenTypeInt32());
+  Ber children[3] = {store_call_result, release_list, get_call_result};
+  Ber block = BinaryenBlock(module, uniquify_name(wasm, "sys_call"), children,
+                            3, BinaryenTypeInt32());
+  return cresult(block);
 }
 
 CResult compile_vector(Wasm* wasm, Lval* lval) {
@@ -438,7 +449,8 @@ CResult compile_vector(Wasm* wasm, Lval* lval) {
       BinaryenCall(wasm->module, "new_lval_vector", lval_vector_operands, 1,
                    make_type_int32(1));
 
-  return cresult(wasm_lval_vector);
+  CResult ret = {.ber = wasm_lval_vector, .is_fn_call = 1};
+  return ret;
 }
 
 // This will compile an unevalled lval (so which is composed of only literals,
@@ -498,7 +510,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return apply(wasm, lval);  // fn call
+          return compile_application(wasm, lval);  // fn call
         case VECTOR:;
           return compile_vector(wasm, lval);
       }

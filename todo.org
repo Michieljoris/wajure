@@ -1,4 +1,14 @@
 * TODO compiler
+
+** better compile time arg count checking
+You could be a bit smarter about it at compile time.
+1. When a symbol resolves to a sys fn you can check arg count
+2. When a symbol resolves to a root lambda fn (as found in compiler env) you can check arg count
+3. When a symbol resolves to lval_ref in some cases we can know whether the
+   lval_ref is a ref to a lambda, and which one eg:
+   (let [f (fn [x] x)] (f 123)) but also in:
+    (let [f (fn [x y] ..) g (partial f 1)] (g 2)) but not in:
+    (fn [g] (g 123))
 ** chuck as as many wajure args into wasm args, and then onto stack
 Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
 ** use one set of tests for both compiler and interpreter
@@ -78,15 +88,6 @@ interpreted fn to the interpreter's repl. Interpreter and runtime can easily
 share env though.
 ** don't reuse Ber's!!!
 As per warning in Binaryen docs. When reusing optimisations might screw things up.
-** better compile time arg count checking
-You could be a bit smarter about it at compile time.
-1. When a symbol resolves to a sys fn you can check arg count
-2. When a symbol resolves to a root lambda fn (as found in compiler env) you can check arg count
-3. When a symbol resolves to lval_compiler in some cases we can know whether the
-   lval_compiler is a ref to a lambda, and which one eg:
-   (let [f (fn [x] x)] (f 123)) but also in:
-    (let [f (fn [x y] ..) g (partial f 1)] (g 2)) but not in:
-    (fn [g] (g 123))
 ** pass floats, strings, maps, vectors, sets etc from js to wajure fn
 Currently only ints work
 ** named fns for recursion of locally defined lambdas

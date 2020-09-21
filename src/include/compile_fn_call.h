@@ -13,9 +13,9 @@ union FnRef {
 enum { BER, FN_NAME, GLOBAL };
 
 void add_call_fns(Wasm* wasm);
-CResult apply(Wasm* wasm, Lval* lval_list);
+CResult compile_application(Wasm* wasm, Lval* lval_list);
 
-CResult compile_application(Wasm* wasm, int fn_ref_type, union FnRef fn_ref,
-                            Lval* lval_fun, Cell* args);
+CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
+              Cell* args);
 
 #endif  // __COMPILE_FN_CALL_H_

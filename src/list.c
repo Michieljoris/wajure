@@ -10,12 +10,18 @@ Cell* list_new() { return make_cell(); }
 // Conses cons to list. Returns new head.
 Cell* list_cons(void* cons, Cell* list) {
   Cell* new_head = make_cell();
-  new_head->car = cons;
-  new_head->cdr = list;
-  retain(cons);
-  retain(list);
+  new_head->car = retain(cons);
+  new_head->cdr = retain(list);
   return new_head;
 }
+
+Cell* prefix_list(void* cons, Cell* list) {
+  Cell* new_head = make_cell();
+  new_head->car = cons;
+  new_head->cdr = list;
+  return new_head;
+}
+
 void* list_first(Cell* list) {
   if (list)
     return retain(list->car);

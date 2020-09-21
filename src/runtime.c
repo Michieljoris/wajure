@@ -35,15 +35,26 @@ int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
 
 // Used in runtime of lispy compiler
-void init_rest_args(Lval** lval_array, int rest_arg_length) {
+/* void init_rest_args(Lval** lval_array, int rest_arg_length) { */
+/*   /\* printf("Args_count: %d\n", rest_arg_length); *\/ */
+/*   Lval* lval_list = make_lval_list(); */
+/*   Cell* head = NULL; */
+/*   int i = 0; */
+/*   while (i < rest_arg_length) head = list_cons(lval_array[i++], head); */
+/*   lval_list->head = head; */
+/*   /\* lval_println(lval_list); *\/ */
+/*   lval_array[rest_arg_length - 1] = lval_list; */
+/* } */
+
+void bundle_rest_args(Lval** lval_array, int rest_arg_length) {
   /* printf("Args_count: %d\n", rest_arg_length); */
   Lval* lval_list = make_lval_list();
   Cell* head = NULL;
-  int i = 0;
-  while (i < rest_arg_length) head = list_cons(lval_array[i++], head);
+  int i = rest_arg_length - 1;
+  while (i >= 0) head = list_cons(lval_array[i--], head);
   lval_list->head = head;
   /* lval_println(lval_list); */
-  lval_array[rest_arg_length - 1] = lval_list;
+  lval_array[0] = lval_list;
 }
 
 void wval_print(WvalFun* wval) {

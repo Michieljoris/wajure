@@ -11,6 +11,7 @@ void* list_nth(Cell* list, int n);
 void list_print(Cell* cell, void print(void*), char* seperator);
 Cell* copy_cells(Cell* from_cell, Cell* to_cell, Cell* till_cell);
 Cell* list_cons(void* cons, Cell* list);
+Cell* prefix_list(void* cons, Cell* list);
 void* list_first(Cell* list);
 Cell* list_rest(Cell* list);
 Cell* list_concat(Cell* list1, Cell* list2);
