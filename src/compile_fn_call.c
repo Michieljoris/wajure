@@ -126,6 +126,30 @@ Ber call_bundle_rest_args(Wasm* wasm, Ber args_block_start, Ber args_count,
                       BinaryenTypeNone());
 }
 
+Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, Ber* block_children,
+                   int* block_children_count, LocalIndices* li) {
+  BinaryenModuleRef module = wasm->module;
+  Ber wval_fn_index = get_wval_prop(module, wval, "fn_table_index");
+  Ber wval_param_count = get_wval_prop(module, wval, "param_count");
+  Ber wval_closure = get_wval_prop(module, wval, "closure");
+  /* Ber wval_rest_arg_index = get_wval_prop(module, wval, "rest_arg_index"); */
+
+  block_children[(*block_children_count)++] = validate_as_fn(wasm, wval);
+
+  Ber args_block = compile_args_into_block(wasm, args, li);
+  block_children[(*block_children_count)++] = args_block;
+
+  // Pass closure pointer and fn_table_index count to wasm call fn
+  Ber call_operands[] = {wval_closure, wval_fn_index};
+
+  // The first 20 fns in the global fn table redirect to the real fn with
+  // index wval_fn_index, loading the right number of args from the args
+  // block.
+  Ber fn_table_index = wval_param_count;
+  return BinaryenCallIndirect(module, fn_table_index, call_operands, 2,
+                              make_type_int32(2), BinaryenTypeInt32());
+}
+
 Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fun,
                                 Cell* args, LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
@@ -207,30 +231,6 @@ Ber call_global_fn(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
   return result;
 }
 
-Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, Ber* block_children,
-                   int block_children_count, LocalIndices* li) {
-  BinaryenModuleRef module = wasm->module;
-  Ber wval_fn_index = get_wval_prop(module, wval, "fn_table_index");
-  Ber wval_param_count = get_wval_prop(module, wval, "param_count");
-  Ber wval_closure = get_wval_prop(module, wval, "closure");
-  /* Ber wval_rest_arg_index = get_wval_prop(module, wval, "rest_arg_index"); */
-
-  block_children[block_children_count++] = validate_as_fn(wasm, wval);
-
-  Ber args_block = compile_args_into_block(wasm, args, li);
-  block_children[block_children_count++] = args_block;
-
-  // Pass closure pointer and fn_table_index count to wasm call fn
-  Ber call_operands[] = {wval_closure, wval_fn_index};
-
-  // The first 20 fns in the global fn table redirect to the real fn with
-  // index wval_fn_index, loading the right number of args from the args
-  // block.
-  Ber fn_table_index = wval_param_count;
-  return BinaryenCallIndirect(module, fn_table_index, call_operands, 2,
-                              make_type_int32(2), BinaryenTypeInt32());
-}
-
 CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
               Cell* args) {
   BinaryenModuleRef module = wasm->module;
@@ -258,7 +258,7 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
       /* block_children[block_children_count++] = */
       /*     wasm_log_int(wasm, get_type_call); */
       result = call_fn_by_ref(wasm, wval, args, block_children,
-                              block_children_count, li);
+                              &block_children_count, li);
 
     } break;
     case FN_NAME: {

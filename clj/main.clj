@@ -19,8 +19,14 @@
 ;; (defn f [x y & z] [x y z])
 ;; (defn g [x y z a] (list x y (f z a)))
 (defn main [x y]
-  (let [f (fn [x y] [x y])]
-    (print (f 1 2)))
+  (let [p +
+        ;; f (fn [x y] [x y])
+        ]
+    ;; (print (+ 1 1) (p 1 1))
+    (p 1 1)
+    )
+  ;; (let [f (fn [x y] [x y])]
+  ;;   (print (f 1 2)))
   ;; (let [h (fn [x y] [x y])]
   ;;   ;; (let [a 1]
   ;;   ;;   (print "hello" a x y))
