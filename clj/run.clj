@@ -1,19 +1,31 @@
 (in-ns 'run)
 ;; (require '[test.tests])
 
-(defn f [x y & z] [x y z])
+(defn f0 [] :f0)
+(defn f1 [x] [x])
+(defn f2 [x y] [x y])
+(defn f3 [x y z] [x y z])
 ;; (defn g [x & y] [x y])
 ;; (def q (partial let))
-(def f1 (partial f 1 ))
-(def f2 (partial f1 2 ))
-;; (def plus2 (partial + 2))
-;; (def plus (partial + 2))
+;; (def f1 (partial f 1 ))
+;; (def f2 (partial f1 2 ))
 ;; (def g (f 1))
 ;; (def plus (+ 1))
 ;; (print (f 1 2 3) (g 1 2 3))
-(print ">>>>> " (f1 2  ) )
-(print ">>>>> " (f2 3) )
+;; (print ">>>>> " (f1 2  ) )
+;; (print ">>>>> " (f2 3) )
+
+;;TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!
+;; (def plus2 (partial + 2))
 ;; (print (plus2 2))
+;;TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!
+
+;; (print (apply f0))
+(print (apply f0 nil))
+(print (apply f1 1 nil))
+(print (apply f1 (list 1)))
+(print (apply f2 1 2 nil))
+(print (apply f2 1 (list 2)))
 ;; (pr "hello from run.clj!!")
 ;; (test2/test)
 

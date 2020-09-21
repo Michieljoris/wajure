@@ -76,53 +76,6 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
   return rest_args;
 }
 
-Lval* eval_lambda_call_old(Lval* lval_fun, Lval* arg_list) {
-  debug("---------------------eval_lambda_call\n");
-  scoped Lenv* bindings_env = lenv_new();
-
-  scoped_iter Cell* p = iter_new(lval_fun->params);
-  Lval* param = iter_next(p);
-
-  scoped_iter Cell* a = iter_new(arg_list);
-  Lval* arg = iter_next(a);
-
-  // Try to bind all the arg in arg_list ====================
-  while (param) {
-    if (_strcmp(param->str, "&") == 0) {
-      param = iter_next(p);
-      arg = read_rest_args(param, p, a);
-      if (!arg)
-        return make_lval_err(
-            "Function format invalid. "
-            "Symbol '&' not followed by single symbol.");
-    } else
-      retain(arg);
-
-    if (arg)
-      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg);
-    else
-      break;
-    arg = iter_next(a);
-    param = iter_next(p);
-  }
-  if (!param && arg)
-    return make_lval_err("Function passed too many args. Got %i, expected %i.",
-                         list_count(arg_list->head),
-                         list_count(lval_fun->params->head));
-
-  bindings_env->parent_env = retain(lval_fun->closure);
-
-  /* Eval body expressions, but only if all params are bound */
-  if (!param) {
-    return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
-  } else {
-    Lval* params = make_lval_vector();
-    params->head = retain(iter_current_cell(p));
-    return make_lval_lambda(retain(bindings_env), params,
-                            retain(lval_fun->body), LAMBDA);
-  }
-}
-
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   /* info("---------------------eval_lambda_call %d %d\n",
    * lval_fun->param_count, */
@@ -148,9 +101,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   scoped Cell* args = list_concat(lval_fun->partials, arg_list->head);
 
   int i = 0;
-  // Try to bind all the arg in arg_list ====================
   while (i < min_param_count) {
-    lval_println(param);
     Lval* arg = args->car;
     bindings_env->kv =
         alist_prepend(bindings_env->kv, retain(param), retain(arg));

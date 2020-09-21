@@ -91,41 +91,6 @@ Lval* str_fn(Lenv* env, Lval* arg_list) {
   return make_lval_str(str);
 }
 
-void print_lval(void* lval) { lval_print(lval); }
-
-Lval* partial_fn(Lenv* env, Lval* arg_list) {
-  ITER_NEW_MIN("partial", 1)
-  ITER_NEXT_TYPE(LVAL_FUNCTION, -1)
-  Lval* lval_fun = arg;
-  if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
-    return make_lval_err(
-        "Can't take value of a macro or special form such as %s",
-        lval_fun->str);
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int param_count = lval_fun->param_count;
-  int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->head) - 1;
-  printf("arg_list_count %d %d\n", param_count, arg_list_count);
-  if (!rest_arg_index && lval_fun->subtype != SYS &&
-      arg_list_count > param_count)
-    return make_lval_err("Too many args, expected not more than %i, got %i.",
-                         param_count, arg_list_count);
-
-  printf("PARTIAL\n");
-  lval_println(arg_list);
-  /* printf("Current partials: "); */
-  /* list_print(lval_fun->partials, print_lval, ", "); */
-
-  Lval* partial_fn =
-      make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
-                       retain(lval_fun->body), LAMBDA);
-  partial_fn->param_count = lval_fun->param_count;
-  partial_fn->rest_arg_index = lval_fun->rest_arg_index;
-  partial_fn->partials = list_concat(lval_fun->partials, arg_list->head->cdr);
-
-  return partial_fn;
-}
-
 LispyFn util_builtin_fns[] = {
     {"print", print_fn, "print_fn", 2, 1},
     {"pr", pr_fn, "pr_fn", 2, 1},
@@ -134,7 +99,6 @@ LispyFn util_builtin_fns[] = {
     {"hash", hash_fn, "hash_fn", 2, 1},
     {"str", str_fn, "str_fn", 2, 1},
     {"read-string", read_string_fn, "read_string_fn", 2, 1},
-    {"partial", partial_fn, "partial_fn", 2, 1},
     {NIL}
 
 };
