@@ -1,7 +1,13 @@
 (in-ns 'run)
-(require '[test.tests])
+(require '[test.run :refer [run-tests]])
 
-(defn g [x y] x y)
+(defn main []
+  (run-tests))
+
+(main)
+;; (require '[test.tests])
+
+;; (defn g [x y] x y)
 ;; (defn f0 [] :f0)
 ;; (defn f1 [x] [x])
 ;; (defn f2 [x y] [x y])

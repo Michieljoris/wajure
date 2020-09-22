@@ -46,7 +46,7 @@ void make_config(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   init_malloc(1, 10, 64 * 1024);
-  init_lispy_mempools(800, 800, 800);
+  init_lispy_mempools(3200, 3200, 3200);
 
   /* char* s = lalloc_size(100); */
   /* sprintf(s, "hello there!!!!"); */

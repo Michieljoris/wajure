@@ -7,6 +7,7 @@
 (require '[test-compile.test7 :as test7])
 (require '[test-compile.test8 :as test8])
 
+
 ;; ;; (require '[test-compile.test5-tco :as test6])
 
 (defn run-tests []
@@ -15,8 +16,6 @@
   (test2/test)
   (test3/test)
 
-
- 
   (pr "test4")
   (test4/test4a)
   (test4/test4b)

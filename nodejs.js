@@ -183,7 +183,7 @@ async function instantiate_runtime(env) {
     runtime.exports.init_malloc();
     let stack_pointer = runtime.exports._malloc(config.stack_size); //8MB stack
 
-    runtime.exports.init_lispy_mempools(800, 800, 800);
+    runtime.exports.init_lispy_mempools(3200, 3200, 3200);
     env.stack_pointer = stack_pointer;
     env.stack_pointer_global = new WebAssembly.Global({ value: 'i32', mutable: true }, stack_pointer);
     env.runtime = runtime;
