@@ -62,6 +62,8 @@ struct lval2 {
 
 typedef struct context Context;
 
+typedef struct namespace Namespace;
+
 struct lval {
   char type;
   char subtype;
@@ -81,6 +83,7 @@ struct lval {
   Cell* partials;
   int param_count;
   int rest_arg_index;
+  Namespace* ns;
 
   // compiler to wasm data
   int wval_ptr;
@@ -127,7 +130,7 @@ struct context {
   int pos;
 };
 
-typedef struct {
+struct namespace {
   char* namespace;
   Lenv* env;
   Map as;  // alias -> namespace
@@ -144,7 +147,7 @@ typedef struct {
   // interpreter calculates, other than fns, are hardcoded in the dependant
   // module's data section..
   Map dependants;
-} Namespace;
+};
 
 typedef struct {
   Lenv* builtins_env;
