@@ -117,6 +117,9 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
     return make_lval_err(
         "Function format invalid. "
         "Symbol '&' not followed by single symbol.");
+
+  if (param_count > MAX_FN_PARAMS)
+    return make_lval_err("A function cannot have more than 20 parameters");
   /* return make_lval_err("ERROR: rest arg missing"); */
 
   // Creates lambda lval and sets the parent_env of its env field (bindings)

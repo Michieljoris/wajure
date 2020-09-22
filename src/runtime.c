@@ -29,7 +29,9 @@ int get_wval_type(Lval* lval) { return lval->type; }
 int get_wval_subtype(Lval* lval) { return lval->subtype; }
 int get_wval_fn_table_index(WvalFun* wval) { return wval->fn_table_index; }
 int get_wval_param_count(WvalFun* wval) { return wval->param_count; }
+int get_wval_min_param_count(WvalFun* wval) { return wval->param_count - 1; }
 int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
+int get_wval_rest_arg_index(WvalFun* wval) { return wval->has_rest_arg - 1; }
 int get_wval_closure(WvalFun* wval) { return wval->closure; }
 int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
@@ -77,11 +79,13 @@ void wval_print(WvalFun* wval) {
 }
 
 int check_args_count(int param_count, int args_count, int has_rest_arg) {
-  if (!has_rest_arg) {
-    if (args_count < param_count) return TOO_FEW_ARGS;
-    if (args_count > param_count) return TOO_MANY_ARGS;
-  } else {
-    if (args_count < param_count - 1) return TOO_FEW_ARGS;
+  if (has_rest_arg != 1) {
+    if (!has_rest_arg) {
+      if (args_count < param_count) return TOO_FEW_ARGS;
+      if (args_count > param_count) return TOO_MANY_ARGS;
+    } else {
+      if (args_count < param_count - 1) return TOO_FEW_ARGS;
+    }
   }
   return ARGS_MATCH_PARAMS;
 }

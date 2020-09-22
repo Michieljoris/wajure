@@ -99,6 +99,7 @@ Ber wasm_log_string(Wasm* wasm, int offset) {
 }
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
+  /* printf("msg: %s\n", msg); */
   int msg_offset = add_string_to_data(wasm, msg);
 
   /* BinaryenUnreachable(module); */

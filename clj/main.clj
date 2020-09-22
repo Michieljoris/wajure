@@ -17,14 +17,21 @@
 ;; (print "hello")
 ;; (defn q [])
 ;; (defn f [x y & z] [x y z])
+(defn h [x y & z] [x y z])
 ;; (defn g [x y z a] (list x y (f z a)))
 (defn main [x y]
-  (let [p +
-        ;; f (fn [x y] [x y])
-        ]
-    ;; (print (+ 1 1) (p 1 1))
-    (p 1 1)
-    )
+  (let [f h]
+    (print (f 1 )))
+  ;; (let [;; p +
+  ;;       ;; f (fn [x y] [x y])
+  ;;       f1 f
+  ;;       h1 h
+  ;;       m (if false f1 h1)
+  ;;       ]
+  ;;  (print (f1 1 2 3 4) (h1 1 2 3 4) (m 1 2 3 4))
+  ;;   ;; (print (+ 1 1) (p 1 1))
+  ;;   ;; (print (+ 1 1) (p 1 1))
+  ;;   )
   ;; (let [f (fn [x y] [x y])]
   ;;   (print (f 1 2)))
   ;; (let [h (fn [x y] [x y])]

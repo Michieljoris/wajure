@@ -1,6 +1,8 @@
 #ifndef __LTYPES_H_
 #define __LTYPES_H_
 
+#define MAX_FN_PARAMS 20
+
 typedef struct {
   char* src;     // root dir of src files
   char* main;    // namespace containing main fn

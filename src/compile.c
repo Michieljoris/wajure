@@ -578,7 +578,10 @@ void compile(Namespace* ns) {
   // Since we load config->main ("main") first in nodejs that module will have
   // offset of 0 for data and fns, so we add the call fns to main and now we can
   // refer to these call fns by index 0-20 throughout all the modules.
-  if (_strcmp(ns->namespace, config->main) == 0) add_call_fns(wasm);
+  if (_strcmp(ns->namespace, config->main) == 0) {
+    add_call_fns(wasm);
+    add_validate_fn_fn(wasm);
+  }
 
   printf("Processing env =============\n");
   Cell* cell = env->kv;

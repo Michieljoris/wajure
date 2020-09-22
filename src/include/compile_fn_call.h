@@ -13,6 +13,7 @@ union FnRef {
 enum { BER, FN_NAME, GLOBAL };
 
 void add_call_fns(Wasm* wasm);
+void add_validate_fn_fn(Wasm* wasm);
 CResult compile_application(Wasm* wasm, Lval* lval_list);
 
 CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
