@@ -119,7 +119,7 @@ Lval* load(Lenv* _, char* file_name) {
   int pos = 0;
   Lval* lval = NULL;
   Lval* result = NULL;
-  /* printf("Loading %s\n", file_name); */
+  printf("Loading: %s\n", file_name);
   do {
     lval = read_expr(str, &pos, '\0');
     if (!lval) break;
@@ -127,6 +127,7 @@ Lval* load(Lenv* _, char* file_name) {
     if (lval->type == LVAL_ERR) {
       lval_println(lval);
       result = retain(lval);
+      break;
     } else {
       Namespace* current_ns = get_current_ns();
       result = lval_eval(current_ns->env, lval);

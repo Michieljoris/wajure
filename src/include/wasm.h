@@ -4,6 +4,8 @@
 
 #include "ltypes.h"
 
+#define VALIDATE_FN_INDEX 21
+
 #define Ber BinaryenExpressionRef
 
 typedef struct {
@@ -52,7 +54,6 @@ typedef struct {
 
   int validate_fn_at_rt;
   Map deps;
-  int validate_fn_index;
 } Wasm;
 
 typedef struct {

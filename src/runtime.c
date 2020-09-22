@@ -12,6 +12,11 @@
 WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
                                int partial_count) {
+  /* printf("fn_table_index %d, closure: %d, partials %d\n", fn_table_index, */
+  /*        closure, partials); */
+  /* printf("*closure: %li\n", *(long*)closure); */
+  /* Lval* lval = (Lval*)*(long*)closure; */
+  /* lval_println(lval); */
   WvalFun* wval = lalloc_type(LVAL);
   *wval = (WvalFun){.type = WVAL_FUN,
                     .subtype = -1,
@@ -23,6 +28,22 @@ WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                     .partial_count = partial_count,
                     /* .str = "fn_name:TODO" */};
   return wval;
+}
+
+void dbg(Lval* lval) {
+  printf("DBG: Hello!!!\n");
+  lval_println(lval);
+
+  printf("releasing:\n");
+  printf("lval_list: %d\n", get_ref_count(lval));
+  printf("lval_list->head: %d\n", get_ref_count(lval->head));
+  printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car));
+  printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr));
+  printf("lval_list->head->cdr-car: %d\n", get_ref_count(lval->head->cdr->car));
+  printf("lval_list->head->cdr->cdr: %d\n",
+         get_ref_count(lval->head->cdr->cdr));
+  printf("lval_list->head->cdr-->cdr->car: %d\n",
+         get_ref_count(lval->head->cdr->cdr->car));
 }
 
 int get_wval_type(Lval* lval) { return lval->type; }
@@ -119,10 +140,15 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   /*        (long)((int*)cell_offsets_ptr)[0]); */
 
   for (int i = 0; i < cell_offsets_count; i++) {
+    /* printf("slot_ptr %li\n", (long)((int*)cell_offsets_ptr)[i]); */
     Slot* slot_ptr = (Slot*)(long)(((int*)cell_offsets_ptr)[i] + data_offset);
     Cell* cell_ptr =
         (Cell*)(long)(((int*)cell_offsets_ptr)[i] + data_offset + sizeof(Slot));
+    /* printf("rewriting: slot: %li cell: %li: \n", (long)slot_ptr, */
+    /*        (long)cell_ptr); */
+    /* printf("slot_ptr->data_p %li\n", (long)slot_ptr->data_p); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
+    /* printf("slot_ptr->data_p %li\n", (long)slot_ptr->data_p); */
     if (cell_ptr->car) cell_ptr->car += data_offset;
     if (cell_ptr->cdr)
       cell_ptr->cdr = (Cell*)((char*)cell_ptr->cdr + data_offset);

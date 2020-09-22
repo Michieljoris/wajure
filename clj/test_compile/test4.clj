@@ -1,7 +1,7 @@
 (in-ns 'test-compile.test4)
 
-(defn test4a []
-  (pr "test4a")
+
+(defn test4a [] 
   ;; ;; Testing list functions
   (t (list) ())
   ;;TODO TEST
@@ -125,7 +125,7 @@
 
 
   ;; ;; Testing closures
-  (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
+  ;; (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
   ;; (t 1 2)
   )
 

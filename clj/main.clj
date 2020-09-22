@@ -1,5 +1,5 @@
 (in-ns 'main)
-;; (require '[test.run :refer [run-tests]])
+(require '[test.run :refer [run-tests]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -17,11 +17,71 @@
 ;; (print "hello")
 ;; (defn q [])
 ;; (defn f [x y & z] [x y z])
-(defn h [x y & z] [x y z])
+;; (defn h [x y z] [x y z])
 ;; (defn g [x y z a] (list x y (f z a)))
+
+  ;; (let [p +
+  ;;       h1 h
+  ;;       f (fn [x y z] [x y z])
+  ;;       l nil
+  ;;       ]
+  ;;   (print
+  ;;    (apply + 1 1 l)
+  ;;    (apply p 1 1 l)
+  ;;    (apply h 1 2 3 l)
+  ;;    (apply h1 1 2 3 l)
+  ;;    (apply f 1 2 3 l)
+
+  ;;    ))
+;; (def l (list 4 5 6))
+;; (defn f []
+;;   (let [a 888
+;;         b 999]
+;;     (fn [] [a b])))
+
 (defn main [x y]
-  (let [f h]
-    (print (f 1 )))
+  (run-tests)
+
+  ;; (print a)
+  ;; (let [f (fn [a b] [a b])]
+  ;;   (print (f 3 4))
+  ;;   (print ( (fn [a b] [a b]) 3 4))
+  ;;   )
+
+  ;; (let [g (f)]
+  ;;   (print (g)))
+
+  ;; (let [f (fn [a]
+  ;;           (let [g (fn [b] (+ a b)
+  ;;                     )]
+  ;;             g))
+  ;;       f2 (f 5)]
+
+  ;;   (print "answer:" ( f2 7)))
+
+  ;; (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
+
+  ;; (cons 3 a)
+
+  ;; (print "hello")
+  ;; 100
+  ;; (apply + [1 1 l)
+  ;; (apply h 1 2 3 l)
+  ;; (let [p +
+  ;;       h1 h
+  ;;       f (fn [x y z] [x y z])
+  ;;       l nil
+  ;;       ]
+  ;;   (print
+  ;;    (apply + 1 1 l)
+  ;;    (apply h 1 2 3 l)
+  ;;    (apply p 1 1 l)
+  ;;    (apply h1 1 2 3 l)
+  ;;    (apply f 1 2 3 l)
+
+  ;;    ))
+  ;; (let [f h]
+  ;;   (print (f 1 )))
   ;; (let [;; p +
   ;;       ;; f (fn [x y] [x y])
   ;;       f1 f

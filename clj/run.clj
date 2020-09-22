@@ -1,5 +1,5 @@
 (in-ns 'run)
-;; (require '[test.tests])
+(require '[test.tests])
 
 (defn g [x y] x y)
 ;; (defn f0 [] :f0)

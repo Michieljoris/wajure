@@ -125,11 +125,12 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
 
   leave_env(wasm);
 
-  Ber ret = BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
-                          let_body_count, BinaryenTypeInt32());
+  Ber block = BinaryenBlock(module, uniquify_name(wasm, "let"), let_body,
+                            let_body_count, BinaryenTypeInt32());
   li_close(li);
   free(let_body);
-  return cresult(ret);
+  CResult ret = {.ber = block, .is_fn_call = 1};
+  return ret;
 }
 
 CResult is_falsy(Wasm* wasm, Ber wval) {
@@ -214,20 +215,26 @@ CResult compile_if(Wasm* wasm, Cell* args) {
     Ber block = BinaryenBlock(module, uniquify_name(wasm, "if_block"), children,
                               3, BinaryenTypeInt32());
     free(block_name);
-    return cresult(block);
+
+    CResult ret = {.ber = block, .is_fn_call = 1};
+    return ret;
   } else {
-    return cresult(ber_if);
+    CResult ret = {.ber = ber_if, .is_fn_call = 1};
+    return ret;
   }
 }
 
 CResult compile_try(Wasm* wasm, Cell* args) {
   printf("NOTE!!!!!: try/catch is not implemented yet\n");
-  return cresult(make_int32(wasm->module, 0));
+
+  CResult ret = {.ber = make_int32(wasm->module, 0), .is_fn_call = 1};
+  return ret;
 }
 
 CResult compile_throw(Wasm* wasm, Cell* args) {
   printf("NOTE!!!!!: throw is not implemented yet\n");
-  return cresult(make_int32(wasm->module, 0));
+  CResult ret = {.ber = make_int32(wasm->module, 0), .is_fn_call = 1};  //????
+  return ret;
 }
 
 CResult compile_quote(Wasm* wasm, Cell* args) {
@@ -241,5 +248,7 @@ CResult compile_quote(Wasm* wasm, Cell* args) {
 
 CResult compile_quasiquote(Wasm* wasm, Cell* args) {
   printf("NOTE!!!!!: quasiquote is not implemented yet\n");
-  return cresult(make_int32(wasm->module, 0));
+
+  CResult ret = {.ber = make_int32(wasm->module, 0), .is_fn_call = 1};  //????
+  return ret;
 }

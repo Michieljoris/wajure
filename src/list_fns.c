@@ -20,6 +20,19 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   lval_list2->head = list_cons(x, lval_list->head);
   /* lval_list2->hash = lval_list2->head->hash = */
   /*     calc_list_hash(lval_list2->head, lval_list->head); */
+
+  /* Lval* lval = lval_list2; */
+  /* printf("result of cons (cons_fn):\n"); */
+  /* printf("lval_list: %d\n", get_ref_count(lval)); */
+  /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
+  /* printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car)); */
+  /* printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr)); */
+  /* printf("lval_list->head->cdr-car: %d\n",
+   * get_ref_count(lval->head->cdr->car)); */
+  /* printf("lval_list->head->cdr->cdr: %d\n", */
+  /*        get_ref_count(lval->head->cdr->cdr)); */
+  /* printf("lval_list->head->cdr-->cdr->car: %d\n", */
+  /*        get_ref_count(lval->head->cdr->cdr->car)); */
   return lval_list2;
 }
 

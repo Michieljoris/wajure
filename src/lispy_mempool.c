@@ -2,8 +2,10 @@
 
 #include "io.h"
 #include "ltypes.h"
+#include "lval.h"
 #include "malloc.h"
 #include "mempool.h"
+#include "print.h"
 #include "refcount.h"
 
 /* int debug = 0; */
@@ -82,15 +84,18 @@ void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
 
   /* if (debug) */
-  /*   ddebug("destroying lval:%li (%s):", (long int)lval, */
-  /*          lval_type_to_name(lval)); */
-  /* if (debug) lval_debugln(lval); */
+  /* printf("destroying lval: %li (%s):", (long int)lval,
+   * lval_type_to_name(lval)); */
+  /* lval_println(lval); */
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->str);
-      /* free(lval->str); */
       break;
     case LVAL_COLLECTION:
+      /* printf("releasing head\n"); */
+      /* printf("head rc %d\n", get_ref_count(lval->head)); */
+      /* printf("head-car rc %d\n", get_ref_count(lval->head->car)); */
+      /* printf("head-cdr rc %d\n", get_ref_count(lval->head->cdr)); */
       release(lval->head);
       break;
     case LVAL_LITERAL:
@@ -154,6 +159,12 @@ void destroy_lenv(void* env) {
   release(((Lenv*)env)->parent_env);
 }
 void destroy_cell(void* cell) {
+  /* printf("destroy cell\n"); */
+
+  /* printf("cell-car rc %d %li\n", get_ref_count(((Cell*)cell)->car), */
+  /*        (long)(((Cell*)cell)->car)); */
+  /* printf("cell-cdr rc %d %li\n", get_ref_count(((Cell*)cell)->cdr), */
+  /*        (long)(((Cell*)cell)->cdr)); */
   release(((Cell*)cell)->car);
   release(((Cell*)cell)->cdr);
 }

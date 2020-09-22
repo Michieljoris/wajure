@@ -1,5 +1,6 @@
 * TODO compiler
-** sys fns as lambdas, datafied
+** DONE sys fns as lambdas, datafied
+** Don't export all fns from module!!! Only main
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
 ** DONE rest args for lambdas, lval_ref's
@@ -70,7 +71,7 @@ Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
 ** fix freeing of fn_name ("anon")
 ** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-** releasing args to sys fn!!!
+** DONE releasing args to sys fn!!!
 ** rewrite sys fns to use stack iso c arg_list
 ** loop/recur
 ** multimethods
@@ -111,7 +112,7 @@ Similar to clojure.core. Probably needs namespaces implemented first
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement partial, apply,
+** DONE implement partial, apply,
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
 ** multi-arity fns

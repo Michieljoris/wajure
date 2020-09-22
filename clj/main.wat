@@ -5,10 +5,10 @@
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
- (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (type $none_=>_none (func))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
+ (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
@@ -26,13 +26,14 @@
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fnot a fn\00fn_name???\00\01\00\00\00\00\00\00\00\00\00\00\00(\00\00\00\19\ff\16\00\03\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00L\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00p\00\00\00\19\ff\17\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00<\00\00\00\18\00\00\00`\00\00\00\84\00\00\00\01\00\00\00\88\00\00\00\00\00\00\00\88\00\00\00\02\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0fnot a fn\00fn_name???\00\01\00\00\00\00\00\00\00\00\00\00\00(\00\00\00\19\ff\16\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\18\00\00\00<\00\00\00\00\00\00\00<\00\00\00\00\00\00\00<\00\00\00\01\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $call#0 $call#1 $call#2 $call#3 $call#4 $call#5 $call#6 $call#7 $call#8 $call#9 $call#10 $call#11 $call#12 $call#13 $call#14 $call#15 $call#16 $call#17 $call#18 $call#19 $call#20 $validate_fn $h $main)
+ (elem (global.get $fn_table_offset) $call#0 $call#1 $call#2 $call#3 $call#4 $call#5 $call#6 $call#7 $call#8 $call#9 $call#10 $call#11 $call#12 $call#13 $call#14 $call#15 $call#16 $call#17 $call#18 $call#19 $call#20 $validate_fn $main)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
+ (import "env" "fn:test.run/run-tests" (global $fn:test.run/run-tests i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -71,6 +72,7 @@
  (import "env" "bundle_rest_args" (func $bundle_rest_args (param i32 i32)))
  (import "env" "check_args_count" (func $check_args_count (param i32 i32 i32) (result i32)))
  (import "env" "rewrite_pointers" (func $rewrite_pointers (param i32 i32 i32)))
+ (import "env" "dbg" (func $dbg (param i32)))
  (import "env" "add_fn" (func $add_fn (param i32 i32) (result i32)))
  (import "env" "sub_fn" (func $sub_fn (param i32 i32) (result i32)))
  (import "env" "mul_fn" (func $mul_fn (param i32 i32) (result i32)))
@@ -119,23 +121,18 @@
  (export "call#19" (func $call#19))
  (export "call#20" (func $call#20))
  (export "validate_fn" (func $validate_fn))
- (export "h" (func $h))
  (export "main" (func $main))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
  (func $call#0 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (local.get $1)
   )
  )
  (func $call#1 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -144,9 +141,7 @@
  )
  (func $call#2 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -158,9 +153,7 @@
  )
  (func $call#3 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -175,9 +168,7 @@
  )
  (func $call#4 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -195,9 +186,7 @@
  )
  (func $call#5 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -218,9 +207,7 @@
  )
  (func $call#6 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -244,9 +231,7 @@
  )
  (func $call#7 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -273,9 +258,7 @@
  )
  (func $call#8 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -305,9 +288,7 @@
  )
  (func $call#9 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -340,9 +321,7 @@
  )
  (func $call#10 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -378,9 +357,7 @@
  )
  (func $call#11 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -419,9 +396,7 @@
  )
  (func $call#12 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -463,9 +438,7 @@
  )
  (func $call#13 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -510,9 +483,7 @@
  )
  (func $call#14 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -560,9 +531,7 @@
  )
  (func $call#15 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -613,9 +582,7 @@
  )
  (func $call#16 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -669,9 +636,7 @@
  )
  (func $call#17 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -728,9 +693,7 @@
  )
  (func $call#18 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -790,9 +753,7 @@
  )
  (func $call#19 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -855,9 +816,7 @@
  )
  (func $call#20 (param $0 i32) (param $1 i32) (result i32)
   (call_indirect (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32)
-   (i32.load align=2
-    (local.get $0)
-   )
+   (local.get $0)
    (i32.load align=2
     (global.get $stack_pointer)
    )
@@ -946,13 +905,8 @@
    (if
     (i32.lt_u
      (local.get $1)
-     (i32.sub
-      (local.tee $2
-       (call $get_wval_param_count
-        (local.get $0)
-       )
-      )
-      (i32.const 1)
+     (call $get_wval_min_param_count
+      (local.get $0)
      )
     )
     (call $runtime_error
@@ -967,7 +921,9 @@
    (if
     (i32.gt_u
      (local.get $1)
-     (local.get $2)
+     (call $get_wval_param_count
+      (local.get $0)
+     )
     )
     (call $runtime_error
      (i32.const 1)
@@ -993,118 +949,22 @@
    )
   )
  )
- (func $h (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
-  (block $do_1 (result i32)
-   (call $new_lval_vector
-    (call $prefix_list
-     (call $retain
-      (local.get $1)
-     )
-     (call $prefix_list
-      (call $retain
-       (local.get $2)
-      )
-      (call $prefix_list
-       (call $retain
-        (local.get $3)
-       )
-       (i32.const 0)
-      )
-     )
-    )
-   )
-  )
- )
  (func $main (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
-  (local $4 i32)
-  (local $5 i32)
-  (local $6 i32)
-  (local $7 i32)
-  (block $do_6 (result i32)
-   (block $let_5 (result i32)
+  (block $do_1785 (result i32)
+   (block $lambda_call_1784 (result i32)
     (local.set $3
-     (i32.add
-      (global.get $data_offset)
-      (i32.const 40)
+     (call_indirect (type $i32_=>_i32)
+      (i32.const 0)
+      (global.get $fn:test.run/run-tests)
      )
     )
-    (block $sys_call_4 (result i32)
-     (local.set $7
-      (call $print_fn
-       (i32.const 0)
-       (local.tee $6
-        (call $new_lval_list
-         (call $prefix_list
-          (block $lambda_call_3 (result i32)
-           (call_indirect (type $i32_i32_=>_none)
-            (local.get $3)
-            (i32.const 1)
-            (i32.const 21)
-           )
-           (block $args_2
-            (i32.store align=2
-             (global.get $stack_pointer)
-             (i32.add
-              (global.get $data_offset)
-              (i32.const 76)
-             )
-            )
-           )
-           (if
-            (call $get_wval_has_rest_arg
-             (local.get $3)
-            )
-            (call $bundle_rest_args
-             (i32.add
-              (global.get $stack_pointer)
-              (i32.mul
-               (i32.const 4)
-               (local.tee $4
-                (call $get_wval_rest_arg_index
-                 (local.get $3)
-                )
-               )
-              )
-             )
-             (i32.sub
-              (i32.const 1)
-              (local.get $4)
-             )
-            )
-            (nop)
-           )
-           (local.set $5
-            (call_indirect (type $i32_i32_=>_i32)
-             (call $get_wval_closure
-              (local.get $3)
-             )
-             (call $get_wval_fn_table_index
-              (local.get $3)
-             )
-             (call $get_wval_param_count
-              (local.get $3)
-             )
-            )
-           )
-           (local.get $5)
-          )
-          (i32.const 0)
-         )
-        )
-       )
-      )
-     )
-     (call $release
-      (local.get $6)
-     )
-     (local.get $7)
-    )
+    (local.get $3)
    )
   )
  )
- ;; custom section "symbol_table", size 46
- ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "172"
- ;; custom section "fn_table_size", size 2, contents: "24"
+ ;; custom section "symbol_table", size 24
+ ;; custom section "deps", size 22
+ ;; custom section "data_size", size 2, contents: "92"
+ ;; custom section "fn_table_size", size 2, contents: "23"
 )

@@ -131,7 +131,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   closure_env->parent_env = retain(env->parent_env);
   closure_env->kv = retain(env->kv);
   ddebug("lambda has retained env: %d ", is_ns_env(env));
-  lenv_print(env);
+  /* lenv_print(env); */
   ddebug("refcount: %d\n", get_ref_count(env));
   Lval* fn =
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
@@ -402,7 +402,7 @@ Lval* eval_do(Lenv* env, Lval* body) {
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   ddebug("ENV IN LET:");
-  lenv_print(env);
+  /* lenv_print(env); */
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
   scoped_iter Cell* a = iter_new(arg_list);

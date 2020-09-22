@@ -189,6 +189,7 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "bundle_rest_args", 2, 0},
     {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},
+    {NULL, NULL, "dbg", 1, 0},
     {NULL}};
 
 extern LispyFn list_builtin_fns[];

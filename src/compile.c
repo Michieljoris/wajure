@@ -194,7 +194,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
         wasm->module, 0,
         BinaryenTypeInt32());  // first param to fn is closure pointer
     int _signed = 0;
-    int _aligned = 0;
+    int _aligned = 2;
     Ber load_closure_lval =
         BinaryenLoad(wasm->module, 4, _signed, closure_offset * 4, _aligned,
                      BinaryenTypeInt32(), closure_pointer);
@@ -299,8 +299,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   FunctionData function_data =
       add_wasm_function(wasm, wasm->env, lambda_name, lval_fun);
 
-  /* printf("COMPILED FUNCTION!!! %d %d\n", function_data.fn_table_index, */
-  /*        function_data.closure_count); */
+  printf("COMPILED FUNCTION!!! %d %d %d\n", function_data.fn_table_index,
+         function_data.closure_count, function_data.param_count);
 
   release(lval_fun);
   Ber fn_table_index =
@@ -318,8 +318,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   Ber* lambda_list = malloc((function_data.closure_count + 2) * sizeof(Ber));
 
-  /* env_print(function_data.closure); */
-  /* printf("closure from compiled fn:\n"); */
+  printf("closure from compiled fn:\n");
+  env_print(function_data.closure);
   Cell* closure_cell = function_data.closure->kv;
   int lambda_block_count = 0;
 
@@ -362,6 +362,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
+  partials = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
   Ber operands[6] = {fn_table_index,       lispy_param_count, wasm_has_rest_arg,
                      wasm_closure_pointer, partials,          partial_count};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
@@ -374,7 +375,9 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
                     lambda_block_count, BinaryenTypeAuto());
   free(lambda_list);
   release(lambda_name);
-  return cresult(lambda_block);
+
+  CResult ret = {.ber = lambda_block, .is_fn_call = 1};
+  return ret;
 }
 
 CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
@@ -387,6 +390,7 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
     do_list->head = retain(args);
     CResult result = compile_do_list(wasm, do_list);
     release(do_list);
+    result.is_fn_call = 1;
     return result;
   }
 
@@ -571,7 +575,7 @@ void compile(Namespace* ns) {
   /* printf("foo.core: %s", foo_ns->namespace); */
   Lenv* env = ns->env;
 
-  env_print(env);
+  /* env_print(env); */
 
   import_runtime(wasm);
 

@@ -371,18 +371,23 @@ CResult li_release(Wasm* wasm, LocalIndices* li, char* name) {
     return cnull();
   }
   BinaryenModuleRef module = wasm->module;
-  Ber release_locals[li->local_indices_count];
+  Ber release_locals[li->local_indices_count * 1];
   Ber get_local[1];
+  int index = 0;
   for (int i = 0; i < li->local_indices_count; i++) {
+    /* get_local[0] = */
+    /*     BinaryenLocalGet(module, li->local_indices[i], BinaryenTypeInt32());
+     */
+    /* release_locals[index++] = */
+    /*     BinaryenCall(module, "dbg", get_local, 1, BinaryenTypeNone()); */
     get_local[0] =
         BinaryenLocalGet(module, li->local_indices[i], BinaryenTypeInt32());
-    release_locals[i] =
+    release_locals[index++] =
         BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
   }
-
   Ber release_locals_block =
-      BinaryenBlock(module, uniquify_name(wasm, name), release_locals,
-                    li->local_indices_count, BinaryenTypeNone());
+      BinaryenBlock(module, uniquify_name(wasm, name), release_locals, index,
+                    BinaryenTypeNone());
   return cresult(release_locals_block);
 }
 

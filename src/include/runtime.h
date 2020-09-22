@@ -25,5 +25,7 @@ int check_args_count(int param_count, int args_count, int has_rest_arg);
 
 void rewrite_pointers(int data_start, int data_size, int fn_table_offset);
 
+void dbg(Lval* lval);
+
 /* int is_falsy(Lval* lval); */
 #endif  // __RUNTIME_H_

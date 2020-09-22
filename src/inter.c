@@ -64,8 +64,6 @@ int* make_data_cell(Wasm* wasm, Cell* cell) {
   int* data_cell = calloc(1, wcell_size);
 
   data_cell[ref_count_offset] = 1;
-  data_cell[data_p_offset / 4] =
-      wasm->__data_end + wasm->data_offset + slot_type_size;
   data_cell[car_offset / 4] = 0;
   data_cell[cdr_offset / 4] = 0;
   data_cell[cell_hash_offset / 4] = cell->hash;
@@ -73,6 +71,9 @@ int* make_data_cell(Wasm* wasm, Cell* cell) {
 }
 
 CResult inter_data_cell(Wasm* wasm, int* data_cell) {
+  /* printf() */
+  data_cell[data_p_offset / 4] =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
   int offset = add_bytes_to_data(wasm, (char*)data_cell, wcell_size);
   add_to_offset_list(&wasm->cell_offsets, &wasm->cell_offsets_count,
                      &wasm->cell_offsets_allocated, offset);
