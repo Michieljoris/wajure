@@ -1,7 +1,7 @@
-(in-ns 'test-compile.test4)
+(in-ns 'test.test4)
 
-(defn test4a []
-  (pr "test4a")
+
+(defn test4a [] 
   ;; ;; Testing list functions
   (t (list) ())
   ;;TODO TEST
@@ -125,7 +125,7 @@
 
 
   ;; ;; Testing closures
-  (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
+  ;; (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
   ;; (t 1 2)
   )
 
@@ -217,23 +217,23 @@
 
   (t ( (fn [& more] (count more)) 1 2 3)
      3)
-  ;; (t ( (fn [& more] (list? more)) 1 2 3)
-  ;;    true)
+  (t ( (fn [& more] (list? more)) 1 2 3)
+     true)
   (t ( (fn [& more] (count more)) 1)
      1)
   (t ( (fn [& more] (count more)) )
      0)
-  ;; ;; (t ( (fn [& more] (list? more)) )
-  ;; ;;    true)
+  (t ( (fn [& more] (list? more)) )
+     false)
   (t ( (fn [a & more] (count more)) 1 2 3)
      2)
   (t ( (fn [a & more] (count more)) 1)
      0)
-  ;; (t ( (fn [a & more] (list? more)) 1)
-  ;;    true)
+  (t ( (fn [a & more] (list? more)) 1)
+     false)
 
 
-  ;; ;; Testing language defined not function
+  ;; ;; ;; Testing language defined not function
   (t (not false)
      true)
   (t (not nil)
@@ -243,7 +243,8 @@
   (t (not "a")
      false)
   (t (not 0)
-     false))
+     false)
+  )
 
 
 ;; ;; -----------------------------------------------------

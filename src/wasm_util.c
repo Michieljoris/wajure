@@ -99,8 +99,10 @@ Ber wasm_log_string(Wasm* wasm, int offset) {
 }
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
+  /* printf("msg: %s\n", msg); */
   int msg_offset = add_string_to_data(wasm, msg);
 
+  /* BinaryenUnreachable(module); */
   BinaryenModuleRef module = wasm->module;
 
   Ber operands[] = {make_int32(wasm->module, err_no),
@@ -369,18 +371,23 @@ CResult li_release(Wasm* wasm, LocalIndices* li, char* name) {
     return cnull();
   }
   BinaryenModuleRef module = wasm->module;
-  Ber release_locals[li->local_indices_count];
+  Ber release_locals[li->local_indices_count * 1];
   Ber get_local[1];
+  int index = 0;
   for (int i = 0; i < li->local_indices_count; i++) {
+    /* get_local[0] = */
+    /*     BinaryenLocalGet(module, li->local_indices[i], BinaryenTypeInt32());
+     */
+    /* release_locals[index++] = */
+    /*     BinaryenCall(module, "dbg", get_local, 1, BinaryenTypeNone()); */
     get_local[0] =
         BinaryenLocalGet(module, li->local_indices[i], BinaryenTypeInt32());
-    release_locals[i] =
+    release_locals[index++] =
         BinaryenCall(module, "release", get_local, 1, BinaryenTypeNone());
   }
-
   Ber release_locals_block =
-      BinaryenBlock(module, uniquify_name(wasm, name), release_locals,
-                    li->local_indices_count, BinaryenTypeNone());
+      BinaryenBlock(module, uniquify_name(wasm, name), release_locals, index,
+                    BinaryenTypeNone());
   return cresult(release_locals_block);
 }
 
@@ -425,6 +432,23 @@ CResult wasm_lalloc_size(Wasm* wasm, int size) {
                               make_type_int32(1)));
 }
 
+char* make_global_name(char* prefix, char* namespace, char* name) {
+  int size = _strlen(prefix) + _strlen(namespace) + _strlen(name) + 2;
+  if (size > MAX_CHAR_SIZE) {
+    printf("Trying to make a wasm global name that's larger than %d: %s/%s\n",
+           MAX_CHAR_SIZE, namespace, name);
+    abort();
+  }
+  char* str = lalloc_size(size);
+  sprintf(str, "%s%s/%s", prefix, namespace, name);
+  return str;
+}
+
+void add_dep(Wasm* wasm, char* global_name) {
+  /* printf("ADD DEP %s %d\n", global_name, get_ref_count(global_name)); */
+  wasm->deps = alist_put(wasm->deps, is_eq_str, global_name, NULL);
+}
+
 // experiment
 void add_test_fn(Wasm* wasm) {
   BinaryenModuleRef module = wasm->module;
@@ -455,4 +479,10 @@ void add_test_fn(Wasm* wasm) {
   BinaryenAddFunction(module, "test", TypeNone, TypeInt32x1, localTypes,
                       sizeof(localTypes) / sizeof(BinaryenType), body);
   BinaryenAddFunctionExport(wasm->module, "test", "test");
+}
+
+char* number_fn_name(Wasm* wasm, char* fn_name) {
+  char* numbered_fn_name = lalloc_size(512);
+  sprintf(numbered_fn_name, "%s#%d", fn_name, wasm->fns_count);
+  return numbered_fn_name;
 }

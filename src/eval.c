@@ -66,64 +66,87 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
   return make_lval_nil();
 }
 
-Lval* read_rest_args(Lval* param, Cell* p, Cell* a) {
-  /* if the param is & there should be exactly one formal left  */
-  if (!param || iter_peek(p)) {
-    return NIL;
-  }
-  Lval* rest_args = make_lval_list();
-  rest_args->head = retain(iter_current_cell(a));
-  Lval* arg = NIL;
-  do arg = iter_next(a);
-  while (arg);
+Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
+  Lval* rest_args;
+  if (args) {
+    rest_args = make_lval_list();
+    rest_args->head = retain(args);
+  } else
+    rest_args = make_lval_nil();
   return rest_args;
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  debug("---------------------eval_lambda_call\n");
+  /* printf("---------------------eval_lambda_call %d %d\n",
+   * lval_fun->param_count, */
+  /*        lval_fun->rest_arg_index); */
+  /* printf("namespace: %s\n ", lval_fun->ns->namespace); */
+  /* lval_println(lval_fun); */
+
+  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
+  int param_count = lval_fun->param_count;
+  int min_param_count = rest_arg_index ? param_count - 1 : param_count;
+  int arg_list_count =
+      list_count(lval_fun->partials) + list_count(arg_list->head);
+  if (arg_list_count < min_param_count)
+    return make_lval_err("Not enough args passed, expected %d, got %d.",
+                         min_param_count, arg_list_count);
+  if (!rest_arg_index && arg_list_count > param_count)
+    return make_lval_err("Too many args passed, expected %i, got %i.",
+                         param_count, arg_list_count);
+
   scoped Lenv* bindings_env = lenv_new();
 
   scoped_iter Cell* p = iter_new(lval_fun->params);
   Lval* param = iter_next(p);
 
-  scoped_iter Cell* a = iter_new(arg_list);
-  Lval* arg = iter_next(a);
+  scoped Cell* head = list_concat(lval_fun->partials, arg_list->head);
 
-  // Try to bind all the arg in arg_list ====================
-  while (param) {
-    if (_strcmp(param->str, "&") == 0) {
-      param = iter_next(p);
-      arg = read_rest_args(param, p, a);
-      if (!arg)
-        return make_lval_err(
-            "Function format invalid. "
-            "Symbol '&' not followed by single symbol.");
-    } else
-      retain(arg);
-
-    if (arg)
-      bindings_env->kv = alist_prepend(bindings_env->kv, retain(param), arg);
-    else
-      break;
-    arg = iter_next(a);
+  int i = 0;
+  while (i < min_param_count) {
+    Lval* arg = head->car;
+    bindings_env->kv =
+        alist_prepend(bindings_env->kv, retain(param), retain(arg));
+    head = head->cdr;
     param = iter_next(p);
+    i++;
   }
-  if (!param && arg)
-    return make_lval_err("Function passed too many args. Got %i, expected %i.",
-                         list_count(arg_list->head),
-                         list_count(lval_fun->params->head));
+
+  if (rest_arg_index) {
+    param = iter_next(p);
+    /* Lval* rest_args = read_rest_args(param, p, args); */
+    scoped Lval* rest_arg = make_lval_list();
+    Cell** cdr = &rest_arg->head;
+    while (head) {
+      Lval* arg = head->car;
+      Cell* c = make_cell();
+      c->car = retain(arg);
+      *cdr = c;
+      cdr = &c->cdr;
+      head = head->cdr;
+    }
+    if (!rest_arg->head) {
+      rest_arg->type = LVAL_LITERAL;
+      rest_arg->subtype = LNIL;
+    }
+    /*   retain(args); */
+    /* lval_println(rest_args); */
+    /* printf("ref count: %d\n", get_ref_count(args)); */
+    bindings_env->kv =
+        alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
+  }
 
   bindings_env->parent_env = retain(lval_fun->closure);
+  /* env_print(bindings_env); */
+  /* printf("------\n"); */
 
-  /* Eval body expressions, but only if all params are bound */
-  if (!param) {
-    return do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
-  } else {
-    Lval* params = make_lval_vector();
-    params->head = retain(iter_current_cell(p));
-    return make_lval_lambda(retain(bindings_env), params,
-                            retain(lval_fun->body), LAMBDA);
-  }
+  Namespace* old_ns = state->current_ns;
+  // TODO: bit iffy, look into more
+  if (lval_fun->ns) state->current_ns = lval_fun->ns;
+  Lval* ret = do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
+
+  state->current_ns = old_ns;
+  return ret;
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
@@ -170,6 +193,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
                           lval_name);  // resolved in the symbol's namespace
     ns->dependants = alist_put(ns->dependants, is_eq_str,
                                retain(current_ns->namespace), current_ns);
+    ret.lval->ns = ns;
     return ret;
   }
 
@@ -177,6 +201,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
     ret.lval = lval_resolved_sym;  // resolved in symbols lexical env
+    ret.lval->ns = current_ns;
     return ret;
   }
 
@@ -193,6 +218,8 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
 
     ns->dependants = alist_put(ns->dependants, is_eq_str,
                                retain(current_ns->namespace), current_ns);
+
+    ret.lval->ns = ns;
     return ret;
   }
 
@@ -204,6 +231,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
       ret.lval = lval_resolved_sym;  // resolved in stdlib env
       /* ret.fqn = make_fqn(ns->namespace, lval_symbol->str); */
       ret.ns = ns;
+      ret.lval->ns = ns;
       return ret;
     }
   }
@@ -223,9 +251,9 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
-Lval* eval_list(Lenv* env, Lval* lval_list) {
-  debug("evalling fn call: ");
-  lval_debugln(lval_list);
+Lval* eval_application(Lenv* env, Lval* lval_list) {
+  /* printf("evalling fn call: \n"); */
+  /* lval_println(lval_list); */
 
   if (lval_list->head == NIL) {
     return make_lval_list();  // empty;
@@ -253,20 +281,29 @@ Lval* eval_list(Lenv* env, Lval* lval_list) {
     default:;
   }
   switch (lval_fun->subtype) {
-    case SYS:
-      return lval_fun->fun(env, evalled_arg_list);
-      break;
+    case SYS:;
+      Cell* head = list_concat(lval_fun->partials, evalled_arg_list->head);
+      Lval* rest_arg = make_lval_list();
+      Cell** cdr = &rest_arg->head;
+      while (head) {
+        Lval* arg = head->car;
+        Cell* c = make_cell();
+        c->car = retain(arg);
+        *cdr = c;
+        cdr = &c->cdr;
+        head = head->cdr;
+      }
+      ret = lval_fun->fun(env, rest_arg);
+      release(head);
+      release(rest_arg);
+      return ret;
     case SPECIAL: {
       return lval_fun->fun(env, arg_list);
-      break;
     }
     case MACRO:
       return eval_macro_call(env, lval_fun, arg_list);
-      return ret;
-      break;
     case LAMBDA:
       return eval_lambda_call(lval_fun, evalled_arg_list);
-      break;
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
                            lval_fun->str);
@@ -284,7 +321,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
-          return eval_list(env, lval);
+          return eval_application(env, lval);
         case VECTOR:
           return eval_vector(env, lval);
         case MAP:

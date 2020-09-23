@@ -4,16 +4,37 @@
 #include "io.h"
 #include "iter.h"
 #include "lispy_mempool.h"
+#include "list.h"
 #include "platform.h"
 #include "print.h"
 #include "read.h"
 
 Lval* print_fn(Lenv* env, Lval* arg_list) {
-  ddebug("executing print_fn:");
+  /* printf("executing print_fn:\n"); */
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   while (arg) {
+    /* printf("print arg :\n"); */
     lval_print(arg);
+    /* Lval* lval = arg; */
+    /* printf("lval_list: %d\n", get_ref_count(lval)); */
+    /* Cell* c = lval->head; */
+    /* printf("lval_list->head: rf: %d c: %li slot->data_p: %li\n", */
+    /*        get_ref_count(c), (long)c, (long)get_slot_p(c)->data_p); */
+    /* Lval* l = c->car; */
+    /* /\* printf("lval_list->head->car: rc: %d lval: %li slot->data_p: %li\n",
+     * *\/ */
+    /* /\*        get_ref_count(l), (long)l, (long)get_slot_p(l)->data_p); *\/
+     */
+    /* c = (Cell*)(c->cdr); */
+    /* printf("lval_list->head: rf: %d c: %li slot->data_p: %li\n", */
+    /*        get_ref_count(c), (long)c, (long)get_slot_p(c)->data_p); */
+
+    /* l = c->car; */
+    /* /\* printf("lval_list->head->car: %d %li %li\n", get_ref_count(l),
+     * (long)l, */
+    /*  *\/ */
+    /* /\*        (long)get_slot_p(l)->data_p); *\/ */
     putchar(' ');
     arg = iter_next(i);
   }

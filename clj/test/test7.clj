@@ -1,4 +1,4 @@
-(in-ns 'test-compile.test7)
+(in-ns 'test.test7)
 
 (def a (list 2 3))
 
@@ -32,18 +32,20 @@
      (2 3))
 
   ;; Testing concat function
+  
+  (t (concat (list 1 2) (list 3 4))
+     (1 2 3 4))
+  (t (concat (list) (list))
+     ())
+  
   ;; (t (concat)
   ;;    ())
   ;; (t (concat (list 1 2))
   ;;    (1 2))
-  (t (concat (list 1 2) (list 3 4))
-     (1 2 3 4))
   ;; (t (concat (list 1 2) (list 3 4) (list 5 6))
   ;;    (1 2 3 4 5 6))
   ;; (t (concat (concat))
   ;;    ())
-  (t (concat (list) (list))
-     ())
 
   ;; (t (concat a b (list 5 6))
   ;;    (1 2 3 4 5 6))

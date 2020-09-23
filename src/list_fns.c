@@ -20,6 +20,19 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   lval_list2->head = list_cons(x, lval_list->head);
   /* lval_list2->hash = lval_list2->head->hash = */
   /*     calc_list_hash(lval_list2->head, lval_list->head); */
+
+  /* Lval* lval = lval_list2; */
+  /* printf("result of cons (cons_fn):\n"); */
+  /* printf("lval_list: %d\n", get_ref_count(lval)); */
+  /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
+  /* printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car)); */
+  /* printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr)); */
+  /* printf("lval_list->head->cdr-car: %d\n",
+   * get_ref_count(lval->head->cdr->car)); */
+  /* printf("lval_list->head->cdr->cdr: %d\n", */
+  /*        get_ref_count(lval->head->cdr->cdr)); */
+  /* printf("lval_list->head->cdr-->cdr->car: %d\n", */
+  /*        get_ref_count(lval->head->cdr->cdr->car)); */
   return lval_list2;
 }
 
@@ -103,10 +116,25 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
 
 Lval* count_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("count", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
+  ITER_NEXT
+  if (arg->type == LVAL_LITERAL && arg->subtype == LNIL)
+    return make_lval_num(0);
+  LASSERT_TYPE("count", arg_list, 1, LVAL_COLLECTION, -1, arg)
   int count = list_count(arg->head);
   ITER_END
   return make_lval_num(count);
+}
+
+Lval* is_nil_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("nil?", 1)
+  ITER_NEXT
+  if (arg->subtype == LNIL)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
 }
 
 Lval* is_list_fn(Lenv* env, Lval* arg_list) {
@@ -148,6 +176,7 @@ LispyFn list_builtin_fns[] = {
     {"count", count_fn, "count_fn", 2, 1},
     {"nth", nth_fn, "nth_fn", 2, 1},
     {"list?", is_list_fn, "is_list_fn", 2, 1},
+    {"nil?", is_nil_fn, "is_nil_fn", 2, 1},
     {"foo", foo_fn, "foo_fn", 2, 1},
     {NIL}
 

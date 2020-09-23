@@ -9,13 +9,28 @@ Cell* list_new() { return make_cell(); }
 
 // Conses cons to list. Returns new head.
 Cell* list_cons(void* cons, Cell* list) {
+  /* printf("troublesome cell : %li", (long)list); */
+  /* Slot* slot = get_slot_p(list); */
+  /* printf("slot->data_p for this cell: %li\n", (long)slot->data_p); */
+  Cell* new_head = make_cell();
+  new_head->car = retain(cons);
+  new_head->cdr = retain(list);
+  /* printf("cons new_head %d %li cons %d %li list %d %li\n", */
+  /*        get_ref_count(new_head), (long)new_head, get_ref_count(cons), */
+  /*        (long)cons, get_ref_count(list), (long)list); */
+  return new_head;
+}
+
+Cell* prefix_list(void* cons, Cell* list) {
   Cell* new_head = make_cell();
   new_head->car = cons;
   new_head->cdr = list;
-  retain(cons);
-  retain(list);
+  /* printf("prefix_list new_head %d %li cons %d %li list %d %li\n", */
+  /*        get_ref_count(new_head), (long)new_head, get_ref_count(cons), */
+  /*        (long)cons, get_ref_count(list), (long)list); */
   return new_head;
 }
+
 void* list_first(Cell* list) {
   if (list)
     return retain(list->car);

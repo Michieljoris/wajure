@@ -81,13 +81,46 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   Lval* lval_params = arg;
 
   Cell* param = lval_params->head;
+
+  // Includes any rest arg, so [a & b] has param_count = 2
+  int param_count = 0;
+  int rest_arg_index = 0;
+  int offset = 0;
   while (param) {
     LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
             "Canot bind non-symbol. Got %s, expected %s.",
             lval_type_to_name(param->car),
             lval_type_constant_to_name(LVAL_SYMBOL));
+    if (rest_arg_index && param_count == rest_arg_index) {
+      lval_println(lval_params);
+      return make_lval_err(
+          "Function format invalid. "
+          "Symbol '&' not followed by single symbol.");
+      /* return make_lval_err("ERROR: only one rest arg allowed"); */
+    }
+    Lval* lval_sym = param->car;
+    if (_strcmp(lval_sym->str, "&") == 0) {
+      rest_arg_index = offset + 1;  // number of params
+      param = param->cdr;
+      continue;
+    }
+    offset++;
+    /* Lval* lval_ref = make_lval_ref(context, PARAM, param_count + 1); */
+    /* lenv_put(params_env, lval_sym, lval_ref); */
+    /* release(lval_ref); */
+
+    param_count++;
     param = param->cdr;
   }
+
+  if (rest_arg_index && param_count != rest_arg_index)
+    return make_lval_err(
+        "Function format invalid. "
+        "Symbol '&' not followed by single symbol.");
+
+  if (param_count > MAX_FN_PARAMS)
+    return make_lval_err("A function cannot have more than 20 parameters");
+  /* return make_lval_err("ERROR: rest arg missing"); */
 
   // Creates lambda lval and sets the parent_env of its env field (bindings)
   // to the passed in env
@@ -98,10 +131,12 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   closure_env->parent_env = retain(env->parent_env);
   closure_env->kv = retain(env->kv);
   ddebug("lambda has retained env: %d ", is_ns_env(env));
-  lenv_print(env);
+  /* lenv_print(env); */
   ddebug("refcount: %d\n", get_ref_count(env));
   Lval* fn =
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
+  fn->param_count = param_count;
+  fn->rest_arg_index = rest_arg_index;
   return fn;
 }
 
@@ -132,6 +167,7 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
   LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "splice-unquote");
   Lval* ret = lval_eval(env, lval->head->cdr->car);
   if (ret->type == LVAL_ERR) return ret;
+  if (ret->subtype == LNIL) return ret;
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
   return ret;
 }
@@ -366,7 +402,7 @@ Lval* eval_do(Lenv* env, Lval* body) {
 
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   ddebug("ENV IN LET:");
-  lenv_print(env);
+  /* lenv_print(env); */
   LASSERT(arg_list, list_count(arg_list->head) >= 1,
           "Error: let needs at least binding vector")
   scoped_iter Cell* a = iter_new(arg_list);

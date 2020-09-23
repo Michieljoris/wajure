@@ -7,7 +7,7 @@ var memory;
 var runtime;
 
 var page_size = 64 * 1024;
-var max_page_count = 10;
+var max_page_count = 100;
 var max_size = page_size * max_page_count;
 var initial_page_count = 2
 var page_count = initial_page_count;
@@ -65,18 +65,15 @@ async function run_wajure_fn(env, module, fn_name, ...args) {
     // console.log("stack_pointer: ", stack_pointer);
 
     let args_count = args.length;
-
-    var int32s = new Uint32Array(env.runtime.exports.memory.buffer, 0);
-    stack_pointer /= 4;
-    for (i = args_count; i >= 0; --i) {
+    let wajure_args = [];
+    for (i = 0;  i < args_count; i++) {
         let arg = env.runtime.exports.make_lval_num(args[i]);
-        int32s[stack_pointer + i] = arg
+        wajure_args[i] = arg;
     }
-    env.stack_pointer_global.value += args_count * 4;
 
     let closure_pointer = 0;
     try {
-        module.instance.exports[fn_name](closure_pointer, args_count);
+        module.instance.exports[fn_name](closure_pointer, ... wajure_args);
     } catch (e) {
         console.log("RUNTIME ERROR");
         console.log(e);
@@ -168,12 +165,13 @@ async function instantiate_runtime(env) {
                 process.stdout.write(String.fromCharCode(arg));
             } ,
             grow_memory: () => {
-                console.log("Grow_memory from ", page_count * page_size, " to ", (page_count+1) * page_size);
                 if (++page_count > max_page_count) {
-                    console.log("Error: can't allocate memory beyond max (nodejs)\n");
+                    console.log("Error: can't allocate memory beyond max (nodejs) of " +
+                                max_page_count * page_size / 1024 + "kb\n");
                     // throw "Error: can't allocate memory beyond max\n";
                     return 0;
                 }
+                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
                 memory = runtime.exports.memory.grow(1);
                 return 1;
             },
@@ -186,7 +184,7 @@ async function instantiate_runtime(env) {
     runtime.exports.init_malloc();
     let stack_pointer = runtime.exports._malloc(config.stack_size); //8MB stack
 
-    runtime.exports.init_lispy_mempools(800, 800, 800);
+    runtime.exports.init_lispy_mempools(3200, 3200, 3200);
     env.stack_pointer = stack_pointer;
     env.stack_pointer_global = new WebAssembly.Global({ value: 'i32', mutable: true }, stack_pointer);
     env.runtime = runtime;

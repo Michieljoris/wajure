@@ -27,7 +27,8 @@
         (pr "FAIL" ~@str)
         (pr (quote ~expr) )
         (pr "Expected:" (quote ~expected))
-        (pr "Got:" ~expr)))))
+        (pr "Got:" ~expr))
+      )))
 
 (defmacro macroexpand-all [form]
   (list 'let ['form `(macroexpand ~form)]

@@ -1,11 +1,85 @@
 (in-ns 'main)
-;; (require '[test.run :refer [run-tests]])
-(clojure.core/use 'clojure.core)
-(require '[foo.core :as foo])
+(require '[test.run :refer [run-tests]])
+;; (clojure.core/use 'clojure.core)
+;; (require '[foo.core :as foo])
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
+
+(defn main [x y]
+  (run-tests)
+
+  )
+
+
+
+;; (print a)
+;; (let [f (fn [a b] [a b])]
+;;   (print (f 3 4))
+;;   (print ( (fn [a b] [a b]) 3 4))
+;;   )
+
+;; (let [g (f)]
+;;   (print (g)))
+
+;; (let [f (fn [a]
+;;           (let [g (fn [b] (+ a b)
+;;                     )]
+;;             g))
+;;       f2 (f 5)]
+
+;;   (print "answer:" ( f2 7)))
+
+;; (t ( ( (fn [a] (fn [b] (+ a b))) 5) 7) 12)
+
+;; (cons 3 a)
+
+;; (print "hello")
+;; 100
+;; (apply + [1 1 l)
+;; (apply h 1 2 3 l)
+;; (let [p +
+;;       h1 h
+;;       f (fn [x y z] [x y z])
+;;       l nil
+;;       ]
+;;   (print
+;;    (apply + 1 1 l)
+;;    (apply h 1 2 3 l)
+;;    (apply p 1 1 l)
+;;    (apply h1 1 2 3 l)
+;;    (apply f 1 2 3 l)
+
+;;    ))
+;; (let [f h]
+;;   (print (f 1 )))
+;; (let [;; p +
+;;       ;; f (fn [x y] [x y])
+;;       f1 f
+;;       h1 h
+;;       m (if false f1 h1)
+;;       ]
+;;  (print (f1 1 2 3 4) (h1 1 2 3 4) (m 1 2 3 4))
+;;   ;; (print (+ 1 1) (p 1 1))
+;;   ;; (print (+ 1 1) (p 1 1))
+;;   )
+;; (let [f (fn [x y] [x y])]
+;;   (print (f 1 2)))
+;; (let [h (fn [x y] [x y])]
+;;   ;; (let [a 1]
+;;   ;;   (print "hello" a x y))
+;;   ;; (print (h 123 456 999) ;; (g 1 2 3 4)
+;;   ;;        )
+;;   )
+;; (f 1)
+;; (foo/foo 1)
+;; (foo/foo2 1)
+;; (let [g (fn [x] x)
+;;       a 123]
+;;   (print "hello" (f 1 2 3) (g 2) g f ;; foo/foo
+;;          ))
+
 
 ;; (def a 123)
 ;; (def b 123)
@@ -14,15 +88,30 @@
 ;; (def fox bar)
 ;; (def list-with-bar (list bar))
 ;; (def bar2 bar)
-(print "hello")
-(defn f [x & y] x)
-(defn main [x y]
-  (foo/foo 1)
-  ;; (foo/foo2 1)
-  (let [g (fn [x] x)
-        a 123]
-    (print "hello" (f 1 2 3) (g 2) g f ;; foo/foo
-           )))
+;; (print "hello")
+;; (defn q [])
+;; (defn f [x y & z] [x y z])
+;; (defn h [x y z] [x y z])
+;; (defn g [x y z a] (list x y (f z a)))
+
+  ;; (let [p +
+  ;;       h1 h
+  ;;       f (fn [x y z] [x y z])
+  ;;       l nil
+  ;;       ]
+  ;;   (print
+  ;;    (apply + 1 1 l)
+  ;;    (apply p 1 1 l)
+  ;;    (apply h 1 2 3 l)
+  ;;    (apply h1 1 2 3 l)
+  ;;    (apply f 1 2 3 l)
+
+  ;;    ))
+;; (def l (list 4 5 6))
+;; (defn f []
+;;   (let [a 888
+;;         b 999]
+;;     (fn [] [a b])))
 ;; (main 1 2)
 ;; (defn g [
 ;;          k0 k1 k2 k3 k4 k5 k6 k7 k8 k9

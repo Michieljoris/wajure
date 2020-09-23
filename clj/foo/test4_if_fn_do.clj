@@ -11,7 +11,6 @@
 
 
 (defn test4a []
-  (pr "test4a")
   ;; ;; Testing list functions
   (t (list) ())
   ;;TODO TEST

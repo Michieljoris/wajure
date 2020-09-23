@@ -113,6 +113,7 @@ void reset_lval(Lval* lval) {
 }
 
 void maybe_compile(Namespace* ns) {
+  /* ns->compile = 1; */
   if (ns->compile) {
     compile(ns);
     /* printf("maybe compile\n"); */

@@ -1,6 +1,7 @@
 #include "misc_fns.h"
 
 #include "assert.h"
+#include "cell.h"
 #include "compile.h"
 #include "eval.h"
 #include "io.h"
@@ -118,7 +119,7 @@ Lval* load(Lenv* _, char* file_name) {
   int pos = 0;
   Lval* lval = NULL;
   Lval* result = NULL;
-  /* printf("Loading %s\n", file_name); */
+  /* printf("Loading: %s\n", file_name); */
   do {
     lval = read_expr(str, &pos, '\0');
     if (!lval) break;
@@ -126,6 +127,7 @@ Lval* load(Lenv* _, char* file_name) {
     if (lval->type == LVAL_ERR) {
       lval_println(lval);
       result = retain(lval);
+      break;
     } else {
       Namespace* current_ns = get_current_ns();
       result = lval_eval(current_ns->env, lval);
@@ -364,6 +366,87 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
   return make_lval_nil();
 }
 
+void print_lval(void* lval) { lval_print(lval); }
+
+Lval* partial_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_MIN("partial", 1)
+  ITER_NEXT_TYPE(LVAL_FUNCTION, -1)
+  Lval* lval_fun = arg;
+  if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
+    return make_lval_err(
+        "Can't take value of a macro or special form such as %s",
+        lval_fun->str);
+  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
+  int param_count = lval_fun->param_count;
+  int arg_list_count =
+      list_count(lval_fun->partials) + list_count(arg_list->head) - 1;
+  if (!rest_arg_index && lval_fun->subtype != SYS &&
+      arg_list_count > param_count)
+    return make_lval_err("Too many args, expected not more than %i, got %i.",
+                         param_count, arg_list_count);
+
+  /* printf("Current partials: "); */
+  /* list_print(lval_fun->partials, print_lval, ", "); */
+
+  Lval* partial_fn =
+      make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
+                       retain(lval_fun->body), LAMBDA);
+  partial_fn->fun = lval_fun->fun;
+  partial_fn->subtype = lval_fun->subtype;
+  partial_fn->param_count = lval_fun->param_count;
+  partial_fn->rest_arg_index = lval_fun->rest_arg_index;
+  partial_fn->partials = list_concat(lval_fun->partials, arg_list->head->cdr);
+
+  return partial_fn;
+}
+
+Lval* apply_fn(Lenv* env, Lval* arg_list) {
+  ITER_NEW_MIN("partial", 2)
+  ITER_NEXT_TYPE(LVAL_FUNCTION, -1)
+  Lval* lval_fun = arg;
+  if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
+    return make_lval_err(
+        "Can't take value of a macro or special form such as %s",
+        lval_fun->str);
+  ITER_NEXT
+  Lval* args = make_lval_list();
+  Cell** cdr = &args->head;
+  Cell* head = iter_current_cell(i);
+  while (head) {
+    arg = head->car;
+    if (!head->cdr) {
+      switch (arg->subtype) {
+        case LNIL:
+          break;
+        case LIST:;
+          head = arg->head;
+          while (head) {
+            arg = head->car;
+            Cell* c = make_cell();
+            c->car = retain(arg);
+            *cdr = c;
+            cdr = &c->cdr;
+            head = head->cdr;
+          }
+          continue;
+        case MAP:
+        case SET:
+        case VECTOR:
+        default:
+          return make_lval_err("Don't know how to make a list of %s",
+                               lval_type_to_name(arg));
+      }
+    } else {
+      Cell* c = make_cell();
+      c->car = retain(arg);
+      *cdr = c;
+      cdr = &c->cdr;
+    }
+    head = head->cdr;
+  }
+  return eval_lambda_call(lval_fun, args);
+}
+
 LispyFn misc_builtins[] = {{"eval", eval_fn},
                            {"print-env", print_env_fn},
                            {"exit", exit_fn},
@@ -374,6 +457,8 @@ LispyFn misc_builtins[] = {{"eval", eval_fn},
                            /* {"compile", compile_fn}, */
                            {"in-ns", in_ns_fn},
                            {"require", require_fn},
+                           {"partial", partial_fn, "partial_fn", 2, 1},
+                           {"apply", apply_fn, "apply", 2, 1},
                            {NIL}
 
 };

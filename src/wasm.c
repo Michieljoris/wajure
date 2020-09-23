@@ -38,7 +38,7 @@ Wasm* init_wasm() {
       .lval_num_end = 100,
       .lval_num_offset = calloc(sizeof(CResult), 201),
       .context = malloc(sizeof(Cell)),
-      .runtime_check_args_count = 1,
+      .validate_fn_at_rt = 1,
       .symbol_table = malloc(1),
       .symbol_table_count = 0,
       .lval_offsets = malloc(100 * sizeof(int)),
@@ -159,6 +159,7 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "make_lval_list", 0, 1},
     {NULL, NULL, "new_lval_list", 1, 1},
     {NULL, NULL, "make_lval_sym", 1, 1},
+    {NULL, NULL, "new_lval_vector", 1, 1},
     // lispy_mempool
     {NULL, NULL, "lalloc_size", 1, 1},
     {NULL, NULL, "lalloc_type", 1, 1},
@@ -167,7 +168,8 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "release", 1, 0},
 
     // list
-    {NULL, NULL, "list_cons", 2, 1},
+    {NULL, NULL, "prefix_list", 2, 1},
+
     // lib
     {NULL, NULL, "_strcpy", 2, 1},
     {NULL, NULL, "print_slot_size", 0, 0},
@@ -178,13 +180,16 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
     {NULL, NULL, "get_wval_param_count", 1, 1},
+    {NULL, NULL, "get_wval_min_param_count", 1, 1},
     {NULL, NULL, "get_wval_has_rest_arg", 1, 1},
+    {NULL, NULL, "get_wval_rest_arg_index", 1, 1},
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
-    {NULL, NULL, "init_rest_args", 2, 0},
+    {NULL, NULL, "bundle_rest_args", 2, 0},
     {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},
+    {NULL, NULL, "dbg", 1, 0},
     {NULL}};
 
 extern LispyFn list_builtin_fns[];

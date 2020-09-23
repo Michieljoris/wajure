@@ -2,8 +2,10 @@
 
 #include "io.h"
 #include "ltypes.h"
+#include "lval.h"
 #include "malloc.h"
 #include "mempool.h"
+#include "print.h"
 #include "refcount.h"
 
 /* int debug = 0; */
@@ -51,9 +53,9 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   int char256_count = 10;
   int char128_count = 10;
   int char64_count = 10;
-  int char32_count = 10;
-  int char16_count = 40;
-  int char8_count = 200;
+  int char32_count = 40;
+  int char16_count = 200;
+  int char8_count = 1600;
   int mempool_count = SLOT_TYPE_COUNT;
   /* printf("malloc mempools count: %d\n", SLOT_TYPE_COUNT); */
   mempools = _malloc(sizeof(Mempool*) * mempool_count);
@@ -82,15 +84,18 @@ void destroy_lval(void* data) {
   Lval* lval = (Lval*)data;
 
   /* if (debug) */
-  /*   ddebug("destroying lval:%li (%s):", (long int)lval, */
-  /*          lval_type_to_name(lval)); */
-  /* if (debug) lval_debugln(lval); */
+  /* printf("destroying lval: %li (%s):", (long int)lval,
+   * lval_type_to_name(lval)); */
+  /* lval_println(lval); */
   switch (lval->type) {
     case LVAL_SYMBOL:
       release(lval->str);
-      /* free(lval->str); */
       break;
     case LVAL_COLLECTION:
+      /* printf("releasing head\n"); */
+      /* printf("head rc %d\n", get_ref_count(lval->head)); */
+      /* printf("head-car rc %d\n", get_ref_count(lval->head->car)); */
+      /* printf("head-cdr rc %d\n", get_ref_count(lval->head->cdr)); */
       release(lval->head);
       break;
     case LVAL_LITERAL:
@@ -118,6 +123,7 @@ void destroy_lval(void* data) {
         release(lval->params);
         /* if (debug) ddebug("\n freeing body:"); */
         release(lval->body);
+        release(lval->partials);
         /* if (debug) ddebug("\n freeing closure_env:"); */
         /* if (debug) */
         /*   debug("ref count for closure_env = %d\n", */
@@ -153,6 +159,12 @@ void destroy_lenv(void* env) {
   release(((Lenv*)env)->parent_env);
 }
 void destroy_cell(void* cell) {
+  /* printf("destroy cell\n"); */
+
+  /* printf("cell-car rc %d %li\n", get_ref_count(((Cell*)cell)->car), */
+  /*        (long)(((Cell*)cell)->car)); */
+  /* printf("cell-cdr rc %d %li\n", get_ref_count(((Cell*)cell)->cdr), */
+  /*        (long)(((Cell*)cell)->cdr)); */
   release(((Cell*)cell)->car);
   release(((Cell*)cell)->cdr);
 }

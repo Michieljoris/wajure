@@ -87,6 +87,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval);
 
 int lval_collection_print(void (*out)(char character, void* arg), void* arg,
                           Lval* lval, char open, char close) {
+  /* printf("Printing collectin:\n"); */
   int ret = 0;
   if (open) {
     out(open, arg);

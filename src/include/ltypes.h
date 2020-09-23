@@ -1,6 +1,8 @@
 #ifndef __LTYPES_H_
 #define __LTYPES_H_
 
+#define MAX_FN_PARAMS 20
+
 typedef struct {
   char* src;     // root dir of src files
   char* main;    // namespace containing main fn
@@ -60,6 +62,8 @@ struct lval2 {
 
 typedef struct context Context;
 
+typedef struct namespace Namespace;
+
 struct lval {
   char type;
   char subtype;
@@ -76,13 +80,15 @@ struct lval {
   Lenv* closure;
   Lval* params;
   Lval* body;
+  Cell* partials;
+  int param_count;
+  int rest_arg_index;
+  Namespace* ns;
 
   // compiler to wasm data
   int wval_ptr;
   Context* context;
   int offset;
-  int param_count;
-  int rest_arg_index;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
@@ -124,7 +130,7 @@ struct context {
   int pos;
 };
 
-typedef struct {
+struct namespace {
   char* namespace;
   Lenv* env;
   Map as;  // alias -> namespace
@@ -141,7 +147,7 @@ typedef struct {
   // interpreter calculates, other than fns, are hardcoded in the dependant
   // module's data section..
   Map dependants;
-} Namespace;
+};
 
 typedef struct {
   Lenv* builtins_env;

@@ -1,6 +1,20 @@
 * TODO compiler
-** chuck as as many wajure args into wasm args, and then onto stack
+** DONE sys fns as lambdas, datafied
+** Don't export all fns from module!!! Only main
+** get fn name for lval_ref's
+So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
+** DONE rest args for lambdas, lval_ref's
+** DONE better compile time arg count checking
+You could be a bit smarter about it at compile time.
+1. When a symbol resolves to a sys fn you can check arg count
+2. When a symbol resolves to a root lambda fn (as found in compiler env) you can check arg count
+3. When a symbol resolves to lval_ref we can know whether the
+   lval_ref is a ref to a lambda, and which one eg:
+   (let [f (fn [x] x)] (f 123)) but also in:
+    (let [f (fn [x y] ..) g (partial f 1)] (g 2))
+** DONE chuck as as many wajure args into wasm args, and then onto stack
 Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
+** use one set of tests for both compiler and interpreter
 ** partial
 See if we can put args on stack from low to high iso of high to low as we have
 now. If so we can do apply easier as well.
@@ -41,6 +55,8 @@ last arg is a list (put a check in if it's a lval_compiler)
    fns for that first.
 ** ----------------
 ** release uniquify_name
+** cleanup memory of namespaces
+so get interpreter to end with all slots free again!
 ** add repl and watch options to config
 in repl you can (re)compile namespaces. Also, it can watch directory and if any
 clj source file gets modified, recompile. Because it's a live env we can expand
@@ -55,7 +71,7 @@ Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
 ** fix freeing of fn_name ("anon")
 ** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-** releasing args to sys fn!!!
+** DONE releasing args to sys fn!!!
 ** rewrite sys fns to use stack iso c arg_list
 ** loop/recur
 ** multimethods
@@ -75,15 +91,6 @@ interpreted fn to the interpreter's repl. Interpreter and runtime can easily
 share env though.
 ** don't reuse Ber's!!!
 As per warning in Binaryen docs. When reusing optimisations might screw things up.
-** better compile time arg count checking
-You could be a bit smarter about it at compile time.
-1. When a symbol resolves to a sys fn you can check arg count
-2. When a symbol resolves to a root lambda fn (as found in compiler env) you can check arg count
-3. When a symbol resolves to lval_compiler in some cases we can know whether the
-   lval_compiler is a ref to a lambda, and which one eg:
-   (let [f (fn [x] x)] (f 123)) but also in:
-    (let [f (fn [x y] ..) g (partial f 1)] (g 2)) but not in:
-    (fn [g] (g 123))
 ** pass floats, strings, maps, vectors, sets etc from js to wajure fn
 Currently only ints work
 ** named fns for recursion of locally defined lambdas
@@ -105,7 +112,7 @@ Similar to clojure.core. Probably needs namespaces implemented first
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
-** implement partial, apply,
+** DONE implement partial, apply,
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
 ** multi-arity fns

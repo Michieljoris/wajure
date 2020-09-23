@@ -4,6 +4,8 @@
 
 #include "ltypes.h"
 
+#define VALIDATE_FN_INDEX 21
+
 #define Ber BinaryenExpressionRef
 
 typedef struct {
@@ -50,7 +52,7 @@ typedef struct {
   int wval_fn_offsets_count;
   int wval_fn_offsets_allocated;
 
-  int runtime_check_args_count;
+  int validate_fn_at_rt;
   Map deps;
 } Wasm;
 
