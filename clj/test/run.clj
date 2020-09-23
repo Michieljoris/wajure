@@ -14,6 +14,8 @@
   (pr "-------------- Running tests ---------------------")
 
   (test2/test)
+  ;; (test2/test-apply)
+  ;; (test2/test-partial)
   (test3/test)
 
   (pr "test4")

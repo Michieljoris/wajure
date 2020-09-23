@@ -952,8 +952,8 @@
  )
  (func $main (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
-  (block $do_2 (result i32)
-   (block $lambda_call_1 (result i32)
+  (block $do_183 (result i32)
+   (block $lambda_call_182 (result i32)
     (local.set $3
      (call_indirect (type $i32_=>_i32)
       (i32.const 0)

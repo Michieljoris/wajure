@@ -1,5 +1,46 @@
 (in-ns 'test.test2-eval)
 
+(defn f0 [] :f0)
+(defn f1 [x] [x])
+(defn f2 [x y] [x y])
+(defn f2r [x y & z] [x y z])
+;; (def f1a (partial f1 1))
+;; (def f2a (partial f2 1))
+;; (def f2ra (partial f2r 1 2))
+;; (def f2rb (partial f2r 1 2 3))
+;; (def f2rc (partial f2r 1 2 3 4))
+
+;; (def plus2 (partial + 2))
+
+;; (defn test-apply []
+
+;;   (t (apply f0 nil) :f0)
+;;   (t (apply f1 1 nil) [1])
+;;   (t (apply f1 (list 1)) [1])
+;;   (t (apply f2 1 2 nil) [1 2])
+;;   (t (apply f2 1 (list 2)) [1 2])
+
+;;   )
+
+;; (defn test-partial []
+
+;;   (t (f1a) [1])
+;;   (t (f2a 2) [1 2])
+;;   (t (f2ra) [1 2 nil])
+;;   (t (f2rb) [1 2 (3)])
+;;   (t (f2rc) [1 2 (3 4)])
+;;   (t (f2rc) [1 2 (3 4)])
+;;   (t (f2ra 5 6) [1 2 (5 6)])
+;;   (t (f2rb 5 6) [1 2 (3 5 6)])
+;;   (t (f2rc 5 6) [1 2 (3 4 5 6)])
+;;   (t (f2ra) [1 2 nil])
+;;   (t (f2rb) [1 2 (3)])
+;;   (t (f2rc) [1 2 (3 4)])
+;;   (t (f2rc) [1 2 (3 4)])
+;;   (t (plus2 2) 4)
+
+;;   )
+
 ;; Testing evaluation of arithmetic operations
 (defn test []
   (pr "test2")
