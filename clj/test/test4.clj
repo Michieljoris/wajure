@@ -1,4 +1,4 @@
-(in-ns 'test-compile.test4)
+(in-ns 'test.test4)
 
 
 (defn test4a [] 
@@ -224,13 +224,14 @@
   (t ( (fn [& more] (count more)) )
      0)
   (t ( (fn [& more] (list? more)) )
-     true)
+     false)
   (t ( (fn [a & more] (count more)) 1 2 3)
      2)
   (t ( (fn [a & more] (count more)) 1)
      0)
   (t ( (fn [a & more] (list? more)) 1)
-     true)
+     false)
+
 
   ;; ;; ;; Testing language defined not function
   (t (not false)

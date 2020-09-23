@@ -7,7 +7,7 @@ var memory;
 var runtime;
 
 var page_size = 64 * 1024;
-var max_page_count = 10;
+var max_page_count = 100;
 var max_size = page_size * max_page_count;
 var initial_page_count = 2
 var page_count = initial_page_count;
@@ -165,12 +165,13 @@ async function instantiate_runtime(env) {
                 process.stdout.write(String.fromCharCode(arg));
             } ,
             grow_memory: () => {
-                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
                 if (++page_count > max_page_count) {
-                    console.log("Error: can't allocate memory beyond max (nodejs)\n");
+                    console.log("Error: can't allocate memory beyond max (nodejs) of " +
+                                max_page_count * page_size / 1024 + "kb\n");
                     // throw "Error: can't allocate memory beyond max\n";
                     return 0;
                 }
+                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
                 memory = runtime.exports.memory.grow(1);
                 return 1;
             },

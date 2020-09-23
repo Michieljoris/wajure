@@ -119,7 +119,7 @@ Lval* load(Lenv* _, char* file_name) {
   int pos = 0;
   Lval* lval = NULL;
   Lval* result = NULL;
-  printf("Loading: %s\n", file_name);
+  /* printf("Loading: %s\n", file_name); */
   do {
     lval = read_expr(str, &pos, '\0');
     if (!lval) break;

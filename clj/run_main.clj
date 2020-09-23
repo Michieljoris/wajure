@@ -1,10 +1,9 @@
-(in-ns 'run)
-(require '[test.run :refer [run-tests]])
+(in-ns 'run-main)
+(require '[main :refer [main]])
 
-(defn main []
-  (run-tests))
 
-(main)
+
+(main 1 2)
 ;; (require '[test.tests])
 
 ;; (defn g [x y] x y)

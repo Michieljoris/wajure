@@ -91,6 +91,7 @@
  (import "env" "count_fn" (func $count_fn (param i32 i32) (result i32)))
  (import "env" "nth_fn" (func $nth_fn (param i32 i32) (result i32)))
  (import "env" "is_list_fn" (func $is_list_fn (param i32 i32) (result i32)))
+ (import "env" "is_nil_fn" (func $is_nil_fn (param i32 i32) (result i32)))
  (import "env" "foo_fn" (func $foo_fn (param i32 i32) (result i32)))
  (import "env" "print_fn" (func $print_fn (param i32 i32) (result i32)))
  (import "env" "pr_fn" (func $pr_fn (param i32 i32) (result i32)))
@@ -951,8 +952,8 @@
  )
  (func $main (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
-  (block $do_1860 (result i32)
-   (block $lambda_call_1859 (result i32)
+  (block $do_2 (result i32)
+   (block $lambda_call_1 (result i32)
     (local.set $3
      (call_indirect (type $i32_=>_i32)
       (i32.const 0)

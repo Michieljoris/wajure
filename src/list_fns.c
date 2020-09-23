@@ -125,6 +125,18 @@ Lval* count_fn(Lenv* env, Lval* arg_list) {
   return make_lval_num(count);
 }
 
+Lval* is_nil_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("nil?", 1)
+  ITER_NEXT
+  if (arg->subtype == LNIL)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
+}
+
 Lval* is_list_fn(Lenv* env, Lval* arg_list) {
   Lval* result;
   ITER_NEW_N("list?", 1)
@@ -164,6 +176,7 @@ LispyFn list_builtin_fns[] = {
     {"count", count_fn, "count_fn", 2, 1},
     {"nth", nth_fn, "nth_fn", 2, 1},
     {"list?", is_list_fn, "is_list_fn", 2, 1},
+    {"nil?", is_nil_fn, "is_nil_fn", 2, 1},
     {"foo", foo_fn, "foo_fn", 2, 1},
     {NIL}
 

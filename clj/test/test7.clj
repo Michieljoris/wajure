@@ -1,4 +1,4 @@
-(in-ns 'test-compile.test7)
+(in-ns 'test.test7)
 
 (def a (list 2 3))
 

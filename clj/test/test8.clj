@@ -1,4 +1,4 @@
-(in-ns 'test-compile.test8)
+(in-ns 'test.test8)
 ;; Testing trivial macros
 (defmacro one [] 1)
 (defmacro two [] 2)

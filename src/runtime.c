@@ -71,6 +71,10 @@ int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
 
 void bundle_rest_args(Lval** lval_array, int rest_arg_length) {
   /* printf("Args_count: %d\n", rest_arg_length); */
+  if (rest_arg_length == 0) {
+    lval_array[0] = make_lval_nil();
+    return;
+  }
   Lval* lval_list = make_lval_list();
   Cell* head = NULL;
   int i = rest_arg_length - 1;

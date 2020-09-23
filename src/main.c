@@ -30,7 +30,7 @@
 
 void make_config(int argc, char** argv) {
   config->src = "clj";
-  config->main = "run";
+  config->main = "run-main";
   config->stdlib = "wajure.core";
   config->user = "user";
   config->do_compile = 0;

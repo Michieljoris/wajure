@@ -7,14 +7,11 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
-;; (defn f "foo" [x] x)
-
-
 (defn main [x y]
-
-  (run-tests )
+  (run-tests)
 
   )
+
 
 
 ;; (print a)
