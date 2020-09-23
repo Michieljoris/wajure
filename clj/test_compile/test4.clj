@@ -217,23 +217,22 @@
 
   (t ( (fn [& more] (count more)) 1 2 3)
      3)
-  ;; (t ( (fn [& more] (list? more)) 1 2 3)
-  ;;    true)
+  (t ( (fn [& more] (list? more)) 1 2 3)
+     true)
   (t ( (fn [& more] (count more)) 1)
      1)
   (t ( (fn [& more] (count more)) )
      0)
-  ;; ;; (t ( (fn [& more] (list? more)) )
-  ;; ;;    true)
+  (t ( (fn [& more] (list? more)) )
+     true)
   (t ( (fn [a & more] (count more)) 1 2 3)
      2)
   (t ( (fn [a & more] (count more)) 1)
      0)
-  ;; (t ( (fn [a & more] (list? more)) 1)
-  ;;    true)
+  (t ( (fn [a & more] (list? more)) 1)
+     true)
 
-
-  ;; ;; Testing language defined not function
+  ;; ;; ;; Testing language defined not function
   (t (not false)
      true)
   (t (not nil)
@@ -243,7 +242,8 @@
   (t (not "a")
      false)
   (t (not 0)
-     false))
+     false)
+  )
 
 
 ;; ;; -----------------------------------------------------

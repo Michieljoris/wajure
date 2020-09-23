@@ -7,3 +7,5 @@ make-output
 compiled/
 *.wat
 *.wasm
+.clj-kondo
+.lsp/

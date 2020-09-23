@@ -9,6 +9,57 @@
 
 
 ;; ;; (require '[test-compile.test5-tco :as test6])
+(defn test4c []
+  ;; Testing string equality
+
+  (t (= "" "")
+     true)
+  (t (= "abc" "abc")
+     true)
+  (t (= "abc" "")
+     false)
+  (t (= "" "abc")
+     false)
+  (t (= "abc" "def")
+     false)
+  (t (= "abc" "ABC")
+     false)
+  (t (= (list) "")
+     false)
+  (t (= "" (list))
+     false)
+
+  ;; ;; Testing variable length arguments
+
+  (t ( (fn [& more] (count more)) 1 2 3)
+     3)
+  ;; (t ( (fn [& more] (list? more)) 1 2 3)
+  ;;    true)
+  (t ( (fn [& more] (count more)) 1)
+     1)
+  (t ( (fn [& more] (count more)) )
+     0)
+  ;; ;; (t ( (fn [& more] (list? more)) )
+  ;; ;;    true)
+  (t ( (fn [a & more] (count more)) 1 2 3)
+     2)
+  (t ( (fn [a & more] (count more)) 1)
+     0)
+  ;; (t ( (fn [a & more] (list? more)) 1)
+  ;;    true)
+
+
+  ;; ;; Testing language defined not function
+  (t (not false)
+     true)
+  (t (not nil)
+     true)
+  (t (not true)
+     false)
+  (t (not "a")
+     false)
+  (t (not 0)
+     false))
 
 (defn run-tests []
   (pr "-------------- Running tests ---------------------")
@@ -19,7 +70,7 @@
   (pr "test4")
   (test4/test4a)
   (test4/test4b)
-  (test4/test4c)
+  (test4/test4c) ;;TODO
   (test4/test4d)
   (test4/test4e)
 
