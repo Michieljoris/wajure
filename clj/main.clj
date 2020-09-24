@@ -7,8 +7,27 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
+;; (defn f [x y z] [x y z])
+;; (def f2 (partial f 1))
+
+;; (defn new-tests []
+;;   (let [f (fn [x y z] [x y z])
+;;         g (fn [x] x)]
+;;     (t (f 2 (g 1) 3) [2 1 3])))
+
 (defn main [x y]
-  (run-tests)
+  (let [f (fn [] 123)]
+    (f)
+    )
+  ;; (new-tests)
+  ;; (run-tests)
+
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       f2 (partial f 1)]
+  ;;   (print (f2 2 3))
+  ;;   )
+ 
+
 
   )
 

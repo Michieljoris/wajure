@@ -16,12 +16,13 @@
   (test2/test)
   ;; (test2/test-apply)
   ;; (test2/test-partial)
+ 
   (test3/test)
 
   (pr "test4")
   (test4/test4a)
   (test4/test4b)
-  (test4/test4c) ;;TODO
+  (test4/test4c)
   (test4/test4d)
   (test4/test4e)
 

@@ -1,5 +1,7 @@
 * TODO compiler
+** store result of call_fn_by_ref in local, free args_block_ptr anr return result
 ** DONE sys fns as lambdas, datafied
+** Release/retain partials, closure and rest args
 ** Don't export all fns from module!!! Only main
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
@@ -14,7 +16,7 @@ You could be a bit smarter about it at compile time.
     (let [f (fn [x y] ..) g (partial f 1)] (g 2))
 ** DONE chuck as as many wajure args into wasm args, and then onto stack
 Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
-** use one set of tests for both compiler and interpreter
+** DONE use one set of tests for both compiler and interpreter
 ** partial
 See if we can put args on stack from low to high iso of high to low as we have
 now. If so we can do apply easier as well.

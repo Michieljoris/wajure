@@ -232,7 +232,6 @@
   (t ( (fn [a & more] (list? more)) 1)
      false)
 
-
   ;; ;; ;; Testing language defined not function
   (t (not false)
      true)
