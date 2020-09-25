@@ -14,6 +14,7 @@ typedef struct {
   Ber ber;
   int wasm_ptr;
   int is_fn_call;
+  Lval* lval;
 } CResult;
 
 typedef struct {
@@ -34,7 +35,8 @@ typedef struct {
   int lval_num_start;
   int lval_num_end;
   int* lval_num_offset;
-  Cell* lispy_to_c_fn_map;
+  Cell* wajure_to_c_fn_map;
+  Cell* wajure_to_native_fn_map;
   Cell* string_pool;
   Cell* lval_str_pool;
   Cell* lval_symbol_pool;
@@ -75,5 +77,15 @@ void add_function_table(Wasm* wasm);
 
 CResult quit(Wasm* wasm, char* fmt, ...);
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
+
+typedef struct {
+  char* wajure_fn_name;
+  int fn_table_index;
+  int params_count;
+  int has_rest_arg;
+  int rest_arg_index;
+} NativeFn;
+
+void register_native_fns(Wasm* wasm);
 
 #endif  // __WASM_INIT_H_

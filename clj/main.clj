@@ -1,5 +1,5 @@
 (in-ns 'main)
-(require '[test.run :refer [run-tests]])
+;; (require '[test.run :refer [run-tests]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -7,18 +7,39 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
-;; (defn f [x y z] [x y z])
 ;; (def f2 (partial f 1))
 
 ;; (defn new-tests []
 ;;   (let [f (fn [x y z] [x y z])
 ;;         g (fn [x] x)]
-;;     (t (f 2 (g 1) 3) [2 1 3])))
+;;     (t (f 2 (g 1) 3) [2 1 3])
 
+(def v  [5 6 7])
+(def l (list 1 2 3))
+
+(defn f [x y z] [x y z])
 (defn main [x y]
-  (let [f (fn [] 123)]
-    (f)
-    )
+    (print ((partial f 1) 2 3   ))
+  ;; (let [f1 f]
+
+  ;;   (print (f1 1)))
+ ;; (partial f 1 2)
+ ;; (partial 123 1 2)
+
+  ;; (let [f (fn [x] x)
+  ;;       n 123]
+  ;;   (print (partial f))
+  ;;   ;; (partial f 1 2)
+  ;;   ;; (partial n 1 2)
+  ;;   ;; (partial (f 1 2 3) 1 2)
+  ;;   ;; (partial [1 2 3] 1 2)
+  ;;   ;; (partial v 1 2)
+  ;;   ;; (partial (fn [x] y))
+  ;;   ;; (partial l)
+  ;;   )
+  ;; (let [f (fn [] 123)]
+  ;;   (f)
+  ;;   )
   ;; (new-tests)
   ;; (run-tests)
 
@@ -30,6 +51,7 @@
 
 
   )
+
 
 
 

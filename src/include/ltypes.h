@@ -28,18 +28,18 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
-typedef struct wval_fun WvalFun;
+typedef struct wval_fn WvalFun;
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
 // Used to store data on runtime builtin fns
 typedef struct {
-  char* lispy_fn_name;
+  char* wajure_fn_name;
   Lbuiltin fun;
   char* c_fn_name;
   int params_count;
   int results_count;
-} LispyFn;
+} RuntimeFn;
 
 // TODO: refactor!!!
 struct fun {
@@ -76,6 +76,7 @@ struct lval {
   Cell* head;
   int hash;
 
+  // Interpreter props
   Lbuiltin fun;
   Lenv* closure;
   Lval* params;
@@ -85,14 +86,14 @@ struct lval {
   int rest_arg_index;
   Namespace* ns;
 
-  // compiler to wasm data
+  // Compiler to wasm data
   int wval_ptr;
   Context* context;
   int offset;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
-struct wval_fun {
+struct wval_fn {
   char type;     // wasm offset: 0
   char subtype;  // 1
 

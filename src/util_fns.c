@@ -111,7 +111,7 @@ Lval* str_fn(Lenv* env, Lval* arg_list) {
   return make_lval_str(str);
 }
 
-LispyFn util_builtin_fns[] = {
+RuntimeFn util_builtin_fns[] = {
     {"print", print_fn, "print_fn", 2, 1},
     {"pr", pr_fn, "pr_fn", 2, 1},
     {"debug", debug_fn, "debug_fn", 2, 1},

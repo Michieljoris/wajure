@@ -50,7 +50,7 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   BinaryenType results_type = make_type_int32(results_count);
   int locals_count = 0;
   char* c_fn_name =
-      alist_get(wasm->lispy_to_c_fn_map, is_eq_str, lval_sys_fun->str);
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_sys_fun->str);
 
   if (!c_fn_name)
     quit(wasm, "System fn not found in runtime: %s", lval_sys_fun->str);

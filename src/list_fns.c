@@ -166,7 +166,7 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   return nth_lval;
 }
 
-LispyFn list_builtin_fns[] = {
+RuntimeFn list_builtin_fns[] = {
 
     {"cons", cons_fn, "cons_fn", 2, 1},
     {"first", first_fn, "first_fn", 2, 1},

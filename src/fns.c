@@ -21,17 +21,17 @@ void lenv_add_builtin(Lenv* env, char* name, Lbuiltin func, int type) {
   release(lval_fun);
 }
 
-void lenv_add_builtins(Lenv* env, LispyFn builtins[], int type) {
-  for (int i = 0; builtins[i].lispy_fn_name; i++) {
-    lenv_add_builtin(env, builtins[i].lispy_fn_name, builtins[i].fun, type);
+void lenv_add_builtins(Lenv* env, RuntimeFn builtins[], int type) {
+  for (int i = 0; builtins[i].wajure_fn_name; i++) {
+    lenv_add_builtin(env, builtins[i].wajure_fn_name, builtins[i].fun, type);
   }
 }
 
-extern LispyFn misc_builtins[];
-extern LispyFn list_builtin_fns[];
-extern LispyFn math_builtin_fns[];
-extern LispyFn special_builtins[];
-extern LispyFn util_builtin_fns[];
+extern RuntimeFn misc_builtins[];
+extern RuntimeFn list_builtin_fns[];
+extern RuntimeFn math_builtin_fns[];
+extern RuntimeFn special_builtins[];
+extern RuntimeFn util_builtin_fns[];
 
 void lenv_add_builtin_fns(Lenv* env) {
   printf("adding builtins\n");

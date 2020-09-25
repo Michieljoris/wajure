@@ -133,13 +133,7 @@ void add_function_table(Wasm* wasm) {
                            fn_table_offset);
 }
 
-typedef struct {
-  char* func_name;
-  int params_count;
-  int results_count;
-} RuntimeFunction;
-
-LispyFn runtime_fns[] = {
+RuntimeFn runtime_fns[] = {
     // from js
     {NULL, NULL, "log_int", 1, 0},
     {NULL, NULL, "log_string", 1, 0},
@@ -192,11 +186,11 @@ LispyFn runtime_fns[] = {
     {NULL, NULL, "dbg", 1, 0},
     {NULL}};
 
-extern LispyFn list_builtin_fns[];
-extern LispyFn math_builtin_fns[];
-extern LispyFn util_builtin_fns[];
+extern RuntimeFn list_builtin_fns[];
+extern RuntimeFn math_builtin_fns[];
+extern RuntimeFn util_builtin_fns[];
 
-void runtime_add_fns(Wasm* wasm, LispyFn lispy_fns[]) {
+void runtime_add_fns(Wasm* wasm, RuntimeFn lispy_fns[]) {
   BinaryenModuleRef module = wasm->module;
   int i = 0;
   char* c_fn_name;
@@ -209,9 +203,9 @@ void runtime_add_fns(Wasm* wasm, LispyFn lispy_fns[]) {
     BinaryenAddFunctionImport(module, c_fn_name, "env", c_fn_name,
                               make_type_int32(params_count),
                               make_type_int32(results_count));
-    if (lispy_fns[i].lispy_fn_name)
-      wasm->lispy_to_c_fn_map = alist_prepend(
-          wasm->lispy_to_c_fn_map, lispy_fns[i].lispy_fn_name, c_fn_name);
+    if (lispy_fns[i].wajure_fn_name)
+      wasm->wajure_to_c_fn_map = alist_prepend(
+          wasm->wajure_to_c_fn_map, lispy_fns[i].wajure_fn_name, c_fn_name);
     i++;
   } while (c_fn_name);
 }
@@ -265,4 +259,21 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   free(line);
   wasm->symbol_table_count += line_count;
   /* printf("%.*s", wasm->symbol_table_count, wasm->symbol_table); */
+}
+
+NativeFn native_fns[] = {{"partial", PARTIAL_FN_INDEX, 2, 0, 1},
+                         {"apply", APPLY_FN_INDEX, 1, 0, 1},
+                         {NULL}};
+
+void register_native_fns(Wasm* wasm) {
+  int i = 0;
+
+  do {
+    char* wajure_fn_name = native_fns[i].wajure_fn_name;
+    if (!wajure_fn_name) break;
+    wasm->wajure_to_native_fn_map =
+        alist_prepend(wasm->wajure_to_native_fn_map,
+                      native_fns[i].wajure_fn_name, &native_fns[i]);
+    i++;
+  } while (1);
 }
