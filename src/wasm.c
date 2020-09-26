@@ -59,7 +59,8 @@ Wasm* init_wasm() {
   Context context = (Context){.msg = "Root context"};
   wasm->context->car = &context;
 
-  BinaryenModuleSetFeatures(wasm->module, BinaryenFeatureMutableGlobals());
+  BinaryenModuleSetFeatures(wasm->module, BinaryenFeatureBulkMemory() |
+                                              BinaryenFeatureMutableGlobals());
 
   return wasm;
 }
@@ -183,6 +184,7 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "bundle_rest_args", 2, 0},
     {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},
+    {NULL, NULL, "new_cell", 2, 1},
     {NULL, NULL, "dbg", 1, 0},
     {NULL}};
 

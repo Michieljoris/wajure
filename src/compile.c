@@ -34,18 +34,12 @@ CResult lval_compile(Wasm* wasm, Lval* lval);
 // This list can be released. It will also release all its elements
 CResult compile_list(Wasm* wasm, Cell* head) {
   BinaryenModuleRef module = wasm->module;
-  if (!head) {
-    return cresult(make_int32(module, 0));
-  }
-  /* printf("compile fn rest args:\n"); */
-  /* lval_println(head->car); */
-  /* printf("compile fn rest args:\n"); */
+  if (!head) return cresult(make_int32(module, 0));
   CResult result = lval_compile(wasm, head->car);
   Ber compiled_arg =
       result.is_fn_call ? result.ber : wasm_retain(wasm, result.ber).ber;
   Ber operands[] = {compiled_arg,
-                    // recursive call:
-                    compile_list(wasm, head->cdr).ber};
+                    compile_list(wasm, head->cdr).ber};  // recursive call:
   return cresult(
       BinaryenCall(module, "prefix_list", operands, 2, make_type_int32(1)));
 }
@@ -451,6 +445,9 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         } while (head);
 
         Ber fn_table_index = make_int32(module, first_arg.lval->offset);
+        fn_table_index = BinaryenBinary(
+            module, BinaryenAddInt32(), fn_table_index,
+            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
         Ber param_count = make_int32(module, first_arg.lval->param_count);
         Ber has_rest_arg = make_int32(module, first_arg.lval->rest_arg_index);
         Ber closure_ptr = make_int32(module, 0);

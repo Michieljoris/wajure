@@ -1,5 +1,9 @@
 * TODO compiler
-** store result of call_fn_by_ref in local, free args_block_ptr anr return result
+** store result of call_fn_by_ref in local, free args_block_ptr and return result
+** in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
+so when datafying a LVAL_FUNCTION also datafy its partials!!!!
+** DONE in (partial f 1 2) make sure fn_table_index is relative
+** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
 ** DONE sys fns as lambdas, datafied
 ** Release/retain partials, closure and rest args
 ** Don't export all fns from module!!! Only main

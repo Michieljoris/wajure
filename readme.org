@@ -22,10 +22,10 @@ TODO:
 - [x] keywords
 - [x] compile test suite
 - [x] str and read-str
-- [ ] partial
+- [x] partial
+- [ ] apply
 - [ ] loop/recur
 - [ ] try/throw/catch
-- [ ] apply
 - [ ] multi-arity fns
 - [ ] persistent maps/sets/vectors
 - [ ] multimethods

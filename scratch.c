@@ -484,3 +484,37 @@ Return
       /*                             retain(lval_fun->body), LAMBDA); */
       /*   } */
       /* } */
+
+      // Sketch of copying partials to args block when memcopy is not available
+      /* int partial_count_local = li_new(wasm); */
+      /* children[i++] = */
+      /*     BinaryenLocalSet(module, partial_count_local, */
+      /*                      get_wval_prop(module, wval, "partial_count")); */
+
+      /* int partial_ptr = li_new(wasm); */
+      /* children[i++] = BinaryenLocalSet(module, partial_ptr, */
+      /*                                  get_wval_prop(module, wval,
+       * "partials"));
+       */
+      /* Ber* block_children = malloc(sizeof(Ber) * 3); */
+      /* Ber dec_local = BinaryenBinary( */
+      /*     module, BinaryenSubInt32(), */
+      /*     BinaryenLocalGet(module, partial_count_local, BinaryenTypeInt32()),
+       */
+      /*     make_int32(module, 1)); */
+      /* Ber  */
+      /* BinaryenBlock(module, NULL, block_children, 3, BinaryenTypeNone()); */
+      /* BinaryenIf(module, */
+      /*            BinaryenLocalGet(module, partial_count_local, ifTrue,
+       * BinaryenNop(module)); */
+      /*            //if local != 0 then */
+      /*            //dec local by 1 */
+      /*            //store partial_ptr + 4 * i at args_block + 4 * i */
+      /*            //br $LOOP */
+
+      /*     Ber body = BinaryenNop(module); */
+      /* children[i++] = */
+      /*     BinaryenLoop(module, uniquify_name(wasm, "add_partials_to_args"),
+       * body); */
+      // End of sketch of copying partials to args block when memcopy is not
+      // available

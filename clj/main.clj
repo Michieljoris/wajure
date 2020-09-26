@@ -1,5 +1,6 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
+(require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -9,17 +10,63 @@
 
 ;; (def f2 (partial f 1))
 
+(defn f [x y z] [x y z])
+;; (defn g [x y & z] [x y z])
+(def fp (partial f 1 2))
+;; (def gp (partial g 1 2))
+
 ;; (defn new-tests []
 ;;   (let [f (fn [x y z] [x y z])
 ;;         g (fn [x] x)]
-;;     (t (f 2 (g 1) 3) [2 1 3])
+;;     (t (f 2 (g 1) 3) [2 1 3]))
 
-(def v  [5 6 7])
-(def l (list 1 2 3))
+;;   (let [f1 (partial f 1 2)
+;;         g1 (partial g 1 2)]
+;;     (t (f1 3) [1 2 3])
 
-(defn f [x y z] [x y z])
+;;     (t (g1) [1 2 nil])
+;;     (t (g1 3) [1 2 (3)])
+;;     (t (g1 3 4) [1 2 (3 4)])
+;;     (t (g1 3 4 5) [1 2 (3 4 5)])
+;;     )
+;;   (t (fp 3) [1 2 3])
+;;   (t (gp) [1 2 nil])
+;;   (t (gp 3) [1 2 (3)])
+;;   (t (gp 3 4) [1 2 (3 4)])
+;;   (t (gp 3 4 5) [1 2 (3 4 5)])
+;;   (t (gp 3 4 5 6) [1 2 (3 4 5 6)])
+
+;;   (let [fp (partial f)]
+;;     (t (fp 1 2 3) [1 2 3])
+;;     (t (partial 1) 1)
+;;     (t (partial "abc") "abc")
+;;     )
+;;   )
+
+;; (def v  [5 6 7])
+;; (def l (list 1 2 3))
+
 (defn main [x y]
-    (print ((partial f 1) 2 3   ))
+  ;; (let [f2 fp]
+  ;;   (print (f2 3)))
+  (test-partial)
+  ;; (print (fp 3))
+  ;; (print (gp 3))
+
+  ;; (let [f (fn [x y & z] [x y z] )]
+  ;;   (print (f 1 2 3 4)))
+
+  ;; (print (gp  ))
+  ;; (print (gp 3 ))
+  ;; (print (gp 3 4))
+  ;; (print (gp 3 4 5 ))
+  ;; (print (gp 3 4 5 6 ))
+  ;; (print (gp 3 4 5 6 7))
+  ;; (print (gp 3 4 5 6 7 8))
+  ;; (new-tests)
+  )
+  ;; (let [f (partial f 1 2 4 5 6 )]
+  ;;   (print (f 3   )))
   ;; (let [f1 f]
 
   ;;   (print (f1 1)))
@@ -50,7 +97,7 @@
  
 
 
-  )
+  
 
 
 
