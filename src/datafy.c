@@ -84,7 +84,7 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   fn_table_index = add_fn_to_table(wasm, c_fn_name);
   fn_table_index = add_fn_to_table(wasm, fn_name);
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + fn_table_index, 1, 1);
+      wasm, wasm->__fn_table_end + fn_table_index, 1, 1, NULL);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr),
@@ -103,7 +103,8 @@ CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
 
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + function_data.fn_table_index,
-      function_data.param_count, function_data.has_rest_arg);
+      function_data.param_count, function_data.has_rest_arg,
+      lval_fun->partials);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;

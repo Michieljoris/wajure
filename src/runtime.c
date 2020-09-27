@@ -175,10 +175,21 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
                                             data_offset + sizeof(Slot));
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
     wval_fn_ptr->fn_table_index += fn_table_offset;
+    int* partials = (int*)((long)wval_fn_ptr->partials);
+
+    /* printf("partials %d\n", partials); */
+    for (int i = 0; i < wval_fn_ptr->partial_count; i++) {
+      /* printf("partial[%d] = %d\n", partials[i]); */
+      partials[i] += data_offset;
+    }
+    wval_fn_ptr->partials += data_offset;
+    /* printf("wval_fn->partials %d\n", wval_fn_ptr->partials); */
+    /* printf("wval_fn->partial_count %d\n", wval_fn_ptr->partial_count); */
     /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);
      */
   }
 }
+
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */
 /* } */

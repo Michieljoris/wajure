@@ -225,7 +225,6 @@ Ber compile_args_into_block(Wasm* wasm, Ber wval, Cell* args, int args_count,
     offset += 4;
     args = args->cdr;
   }
-  printf("Children count: %d\n", children_count);
   Ber block = BinaryenBlock(module, uniquify_name(wasm, "args"), children,
                             children_count, BinaryenTypeNone());
   free(children);

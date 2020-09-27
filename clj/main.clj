@@ -49,7 +49,8 @@
 (defn main [x y]
   ;; (let [f2 fp]
   ;;   (print (f2 3)))
-  (test-partial)
+  ;; (test-partial)
+  (print fp)
   ;; (print (fp 3))
   ;; (print (gp 3))
 

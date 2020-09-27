@@ -392,9 +392,9 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   Cell* head = args;
   CResult first_arg = lval_compile(wasm, head->car);
 
-  printf("-------------partial first arg------is_fn_call %d\n ",
-         first_arg.is_fn_call);
-  lval_println(first_arg.lval);
+  /* printf("-------------partial first arg------is_fn_call %d\n ", */
+  /*        first_arg.is_fn_call); */
+  /* lval_println(first_arg.lval); */
 
   head = head->cdr;
   // If just one arg, return compiled arg
@@ -419,8 +419,13 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         // If we know this is a function at compile time then we compile the
         // rest of the args and put them in the partials block of a copy of the
         // lval_wasm_lambda we know we have.
-        Ber* children = malloc(sizeof(Ber) * args_count + 1);  //
+        Ber* children = malloc(sizeof(Ber) * (args_count + 1));  //
         int children_count = 0;
+
+        // TODO: this is wrong, we need to add to any existing partials for this
+        // function
+
+        // Allocate a block for the partials
         Ber lalloc_size_operands[] = {make_int32(module, (args_count - 1) * 4)};
         Ber lalloc_partials =
             BinaryenCall(module, "lalloc_size", lalloc_size_operands, 1,
@@ -429,6 +434,9 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         Ber set_local_to_partials_ptr =
             BinaryenLocalSet(module, partials_ptr_index, lalloc_partials);
         children[children_count++] = set_local_to_partials_ptr;
+
+        // Compile the args and put their lval_refs on the partials block. If
+        // they're not the result of a fn call retain them.
         int i = 0;
         do {
           CResult compiled_arg = lval_compile(wasm, head->car);
@@ -444,22 +452,29 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
           head = head->cdr;
         } while (head);
 
-        Ber fn_table_index = make_int32(module, first_arg.lval->offset);
-        fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), fn_table_index,
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
+        // Copy the props of the LVAL_FUN to our new lval_wasm_lambda:
         Ber param_count = make_int32(module, first_arg.lval->param_count);
         Ber has_rest_arg = make_int32(module, first_arg.lval->rest_arg_index);
         Ber closure_ptr = make_int32(module, 0);
         Ber partials_ptr =
             BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
         Ber partial_count = make_int32(module, args_count - 1);
+
+        // We know the offset/fn_table_index, let's add the module's
+        // fn_table_offset global
+        Ber fn_table_index = make_int32(module, first_arg.lval->offset);
+        fn_table_index = BinaryenBinary(
+            module, BinaryenAddInt32(), fn_table_index,
+            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
+
+        // Call the runtime make_lval_wasm_lambda fn
         Ber operands[6] = {fn_table_index, param_count,  has_rest_arg,
                            closure_ptr,    partials_ptr, partial_count};
         children[children_count++] =
             BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 6,
                          make_type_int32(1));
 
+        // And return a block that does all of the above
         Ber block =
             BinaryenBlock(module, uniquify_name(wasm, "make_partial_fn"),
                           children, children_count, BinaryenTypeInt32());

@@ -1,9 +1,28 @@
 * TODO compiler
-** store result of call_fn_by_ref in local, free args_block_ptr and return result
-** in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
-so when datafying a LVAL_FUNCTION also datafy its partials!!!!
+** clean up and comment all of code
+** compiled partial
+*** (let [p partial]
+    (p f 1 2))
+
+So we need to have a native fn that does the right thing. And it should receive
+all of its args in an arg block!!! Because why bother putting it all in a list
+like we do for sys fns
+*** And what about (partial partial 1 2) or where either partial is an lval_ref or result of fn call!!!
+*** in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
+*** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
+*** or (partial a 1 2) where a is a LVAL_REF
+*** (printf fp) gives an refcount error
+trying to release that's not managed by
+*** little problem, duplicate wasm fns
+(defn f [x y z] [x y z])
+(def fp (partial f 1 2))
+We'll get two identical fns, f and fp
+*** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
+in a lval_wasm_lambda any partials should all be retained, meaning we can release all
+of the partials when releasing the lval_wasm_lambda
+** DONE so when datafying a LVAL_FUNCTION also datafy its partials!!!!
+** DONE store result of call_fn_by_ref in local, free args_block_ptr and return result
 ** DONE in (partial f 1 2) make sure fn_table_index is relative
-** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
 ** DONE sys fns as lambdas, datafied
 ** Release/retain partials, closure and rest args
 ** Don't export all fns from module!!! Only main
@@ -21,7 +40,7 @@ You could be a bit smarter about it at compile time.
 ** DONE chuck as as many wajure args into wasm args, and then onto stack
 Clojure has max of 20 args, not sure what happens in (foo a1..a20, & rest-arg)
 ** DONE use one set of tests for both compiler and interpreter
-** partial
+** DONE partial
 See if we can put args on stack from low to high iso of high to low as we have
 now. If so we can do apply easier as well.
 ** multi arity fns!!!
