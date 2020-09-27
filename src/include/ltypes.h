@@ -90,6 +90,7 @@ struct lval {
   int wval_ptr;
   Context* context;
   int offset;
+  Lval* full_fn;  // ref to full fn from partial fns
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval

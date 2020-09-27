@@ -46,6 +46,7 @@ void dbg(Lval* lval) {
          get_ref_count(lval->head->cdr->cdr->car));
 }
 
+// Used in runtime of lispy compiler
 int get_wval_type(Lval* lval) { return lval->type; }
 int get_wval_subtype(Lval* lval) { return lval->subtype; }
 int get_wval_fn_table_index(WvalFun* wval) { return wval->fn_table_index; }
@@ -56,18 +57,6 @@ int get_wval_rest_arg_index(WvalFun* wval) { return wval->has_rest_arg - 1; }
 int get_wval_closure(WvalFun* wval) { return wval->closure; }
 int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
-
-// Used in runtime of lispy compiler
-/* void init_rest_args(Lval** lval_array, int rest_arg_length) { */
-/*   /\* printf("Args_count: %d\n", rest_arg_length); *\/ */
-/*   Lval* lval_list = make_lval_list(); */
-/*   Cell* head = NULL; */
-/*   int i = 0; */
-/*   while (i < rest_arg_length) head = list_cons(lval_array[i++], head); */
-/*   lval_list->head = head; */
-/*   /\* lval_println(lval_list); *\/ */
-/*   lval_array[rest_arg_length - 1] = lval_list; */
-/* } */
 
 void bundle_rest_args(Lval** lval_array, int rest_arg_length) {
   /* printf("Args_count: %d\n", rest_arg_length); */
@@ -175,14 +164,14 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
                                             data_offset + sizeof(Slot));
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
     wval_fn_ptr->fn_table_index += fn_table_offset;
+
+    wval_fn_ptr->partials += data_offset;
     int* partials = (int*)((long)wval_fn_ptr->partials);
 
-    /* printf("partials %d\n", partials); */
     for (int i = 0; i < wval_fn_ptr->partial_count; i++) {
-      /* printf("partial[%d] = %d\n", partials[i]); */
       partials[i] += data_offset;
+      /* printf("partial[%d] = %d\n", i, partials[i]); */
     }
-    wval_fn_ptr->partials += data_offset;
     /* printf("wval_fn->partials %d\n", wval_fn_ptr->partials); */
     /* printf("wval_fn->partial_count %d\n", wval_fn_ptr->partial_count); */
     /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);

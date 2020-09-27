@@ -93,18 +93,21 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   return ret;
 }
 
-CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fun) {
-  /* BinaryenModuleRef module = wasm->module; */
-  fn_name = fn_name         ? fn_name
-            : lval_fun->str ? lval_fun->str
-                            : uniquify_name(wasm, "anon");
-  FunctionData function_data =
-      add_wasm_function(wasm, lval_fun->closure, fn_name, lval_fun);
+CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fn) {
+  fn_name = fn_name        ? fn_name
+            : lval_fn->str ? lval_fn->str
+                           : uniquify_name(wasm, "anon");
+  Cell* partials = NULL;
+  if (lval_fn->full_fn) {
+    partials = lval_fn->partials;
+    lval_fn = lval_fn->full_fn;
+  } else {
+    add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
+  }
 
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + function_data.fn_table_index,
-      function_data.param_count, function_data.has_rest_arg,
-      lval_fun->partials);
+      wasm, wasm->__fn_table_end + lval_fn->offset, lval_fn->param_count,
+      lval_fn->rest_arg_index, partials);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;

@@ -122,9 +122,9 @@ void add_function_table(Wasm* wasm) {
 
   const char** funcNames = (const char**)wasm->fn_names;
 
-  for (int i = 0; i < wasm->fns_count; i++) {
-    BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]);
-  };
+  /* for (int i = 0; i < wasm->fns_count; i++) { */
+  /*   BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]); */
+  /* }; */
   int numFuncNames = wasm->fns_count;
 
   Ber fn_table_offset = wasm->pic ? BinaryenGlobalGet(module, "fn_table_offset",

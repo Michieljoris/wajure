@@ -227,8 +227,6 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
 
   int fn_table_index = add_fn_to_table(wasm, fn_name);
   lval_fun->offset = fn_table_index;
-  lval_fun->param_count = param_count;
-  lval_fun->rest_arg_index = rest_arg_index;
 
   BinaryenModuleRef module = wasm->module;
 
@@ -240,9 +238,8 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Add fn to wasm
   BinaryenAddFunction(module, fn_name, params_type, results_type, local_types,
                       locals_count, body);
-  FunctionData function_data = {
-      fn_table_index, retain(context->function_context->closure),
-      context->function_context->closure_count, param_count, rest_arg_index};
+  FunctionData function_data = {retain(context->function_context->closure),
+                                context->function_context->closure_count};
 
   wasm->env = current_env;
   return function_data;
@@ -261,57 +258,61 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
 
   Context* context = wasm->context->car;
-  Lval* arg_list = new_lval_list(retain(args));
 
   // Eval the lambda form to get info on params and body
-  Lval* lval_fun = eval_lambda_form(wasm->env, arg_list, LAMBDA);
+  Lval* arg_list = new_lval_list(retain(args));
+  Lval* lval_fn = eval_lambda_form(wasm->env, arg_list, LAMBDA);
   release(arg_list);
 
-  /* char* lambda_name = lalloc_size(512); */
-  /* _strcpy(lambda_name, context->function_context->fn_name); */
-  /* _strcat(lambda_name, "#"); */
-  /* itostr(lambda_name + _strlen(lambda_name), wasm->fns_count + 1); */
+  // Create an actual wasm fn
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
-
   FunctionData function_data =
-      add_wasm_function(wasm, wasm->env, lambda_name, lval_fun);
+      add_wasm_function(wasm, wasm->env, lambda_name, lval_fn);
 
-  printf("COMPILED FUNCTION!!! %d %d %d\n", function_data.fn_table_index,
-         function_data.closure_count, function_data.param_count);
+  // Which gives us info on the wasm fn's fn_table_index and which and
+  // how many bindings it closes over
+  int fn_table_index = lval_fn->offset;
+  Lenv* closure = function_data.closure;
+  int closure_count = function_data.closure_count;
 
-  release(lval_fun);
-  Ber fn_table_index =
-      make_int32(module, wasm->__fn_table_end + function_data.fn_table_index);
+  // We get param info from lval_fn
+  int param_count = lval_fn->param_count;
+  int rest_arg_index = lval_fn->rest_arg_index;
+
+  // We're done with with lval_fn
+  release(lval_fn);
+
+  /* printf("COMPILED FUNCTION!!! %d %d %d\n", rest_arg_index, */
+  /*        closure_count, param_count); */
+
+  // Make ber versions of our info on the lambda we now have
+  Ber ber_fn_table_index =
+      make_int32(module, wasm->__fn_table_end + fn_table_index);
   if (wasm->pic) {
     Ber fn_table_offset =
         BinaryenGlobalGet(wasm->module, "fn_table_offset", BinaryenTypeInt32());
-    fn_table_index = BinaryenBinary(wasm->module, BinaryenAddInt32(),
-                                    fn_table_offset, fn_table_index);
+    ber_fn_table_index = BinaryenBinary(wasm->module, BinaryenAddInt32(),
+                                        fn_table_offset, ber_fn_table_index);
   }
-  Ber partial_count = make_int32(module, 0);
-  Ber partials = make_int32(module, 0);  // NULL
-  Ber lispy_param_count = make_int32(module, function_data.param_count);
-  Ber wasm_has_rest_arg = make_int32(module, function_data.has_rest_arg);
+  Ber ber_partial_count = make_int32(module, 0);
+  Ber ber_partials = make_int32(module, 0);  // NULL
+  Ber ber_param_count = make_int32(module, param_count);
+  Ber ber_has_rest_arg = make_int32(module, rest_arg_index);
 
-  Ber* lambda_list = malloc((function_data.closure_count + 2) * sizeof(Ber));
-
-  printf("closure from compiled fn:\n");
-  env_print(function_data.closure);
-  Cell* closure_cell = function_data.closure->kv;
+  // Let's create a block in which we prepare the args for and then call
+  // make_lval_wasm_lambda
+  Ber* lambda_block_children = malloc((closure_count + 2) * sizeof(Ber));
   int lambda_block_count = 0;
 
   // Allocate a block of memory to hold the closure for the lambda, and store
-  // pointer in local var
-  Ber wasm_closure_pointer =
+  // pointer to it in local var
+  Cell* closure_cell = closure->kv;
+  Ber ber_closure_ptr =
       wasm_lalloc_size(wasm, function_data.closure_count * 4).ber;
-  int closure_pointer_local_index = context->function_context->local_count;
-  Ber local_set = BinaryenLocalSet(module, closure_pointer_local_index,
-                                   wasm_closure_pointer);
-  context->function_context->local_count++;
-  lambda_list[lambda_block_count++] = local_set;
-
-  wasm_closure_pointer = BinaryenLocalGet(module, closure_pointer_local_index,
-                                          BinaryenTypeInt32());
+  int closure_pointer_local_index = li_new(wasm);
+  Ber local_set =
+      BinaryenLocalSet(module, closure_pointer_local_index, ber_closure_ptr);
+  lambda_block_children[lambda_block_count++] = local_set;
 
   // Store lval pointers in the closure memory block
   int offset = function_data.closure_count * 4;
@@ -321,36 +322,35 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
     Ber closure_lval_pointer = compile_lval_ref(wasm, lval_sym, lval).ber;
     offset -= 4;
-
+    Ber ber_closure_ptr = BinaryenLocalGet(module, closure_pointer_local_index,
+                                           BinaryenTypeInt32());
     Ber store_wasm_ref =
-        BinaryenStore(module, 4, offset, 0, wasm_closure_pointer,
+        BinaryenStore(module, 4, offset, 0, ber_closure_ptr,
                       closure_lval_pointer, BinaryenTypeInt32());
-    lambda_list[lambda_block_count++] = store_wasm_ref;
-    /* lval_print(lval_sym); */
-    /* printf(": %d ", lval->offset); */
-    /* lval_println(lval); */
+    lambda_block_children[lambda_block_count++] = store_wasm_ref;
     closure_cell = closure_cell->cdr;
   }
-  /* printf("Current env:\n"); */
-  /* env_print(wasm->env); */
 
-  /* printf("Current closure:\n"); */
-  /* env_print(context->function_context->closure); */
+  // With this closure ptr we have now all the operands for our
+  // make_lval_lambda_call
+  ber_closure_ptr = BinaryenLocalGet(module, closure_pointer_local_index,
+                                     BinaryenTypeInt32());
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  partials = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
-  Ber operands[6] = {fn_table_index,       lispy_param_count, wasm_has_rest_arg,
-                     wasm_closure_pointer, partials,          partial_count};
+  Ber operands[6] = {ber_fn_table_index, ber_param_count, ber_has_rest_arg,
+                     ber_closure_ptr,    ber_partials,    ber_partial_count};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
       wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
 
-  lambda_list[lambda_block_count++] = make_lval_wasm_lambda_call;
+  // Add this call to the lambda block
+  lambda_block_children[lambda_block_count++] = make_lval_wasm_lambda_call;
 
-  Ber lambda_block =
-      BinaryenBlock(module, uniquify_name(wasm, lambda_name), lambda_list,
-                    lambda_block_count, BinaryenTypeAuto());
-  free(lambda_list);
+  // Make and return the block
+  Ber lambda_block = BinaryenBlock(module, uniquify_name(wasm, lambda_name),
+                                   lambda_block_children, lambda_block_count,
+                                   BinaryenTypeAuto());
+  free(lambda_block_children);
   release(lambda_name);
 
   CResult ret = {.ber = lambda_block, .is_fn_call = 1};
@@ -416,17 +416,25 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   } else
     switch (first_arg.lval->type) {
       case LVAL_FUNCTION: {
+        Lval* lval_fn = first_arg.lval;
+        /* printf("LVAL_FUNCTION wval->ptr %d\n", lval_fn->wval_ptr); */
         // If we know this is a function at compile time then we compile the
         // rest of the args and put them in the partials block of a copy of the
         // lval_wasm_lambda we know we have.
-        Ber* children = malloc(sizeof(Ber) * (args_count + 1));  //
+
+        int fn_partial_count = list_count(lval_fn->partials);
+        int total_partial_count = (fn_partial_count + (args_count - 1));
+
+        // set_local_to_partials_ptr and make_partial_fn call
+        int extra_children = 2;
+        Ber* children =
+            malloc(sizeof(Ber) * (total_partial_count + extra_children));
         int children_count = 0;
 
-        // TODO: this is wrong, we need to add to any existing partials for this
-        // function
-
-        // Allocate a block for the partials
-        Ber lalloc_size_operands[] = {make_int32(module, (args_count - 1) * 4)};
+        // Allocate a block for the partials (including any partials of the fn
+        // itself)
+        Ber lalloc_size_operands[] = {
+            make_int32(module, total_partial_count * 4)};
         Ber lalloc_partials =
             BinaryenCall(module, "lalloc_size", lalloc_size_operands, 1,
                          BinaryenTypeInt32());
@@ -435,9 +443,28 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
             BinaryenLocalSet(module, partials_ptr_index, lalloc_partials);
         children[children_count++] = set_local_to_partials_ptr;
 
+        int partial_count = 0;
+
+        // Add any partials that the fn has already
+        Cell* partials_head = lval_fn->partials;
+        while (partials_head) {
+          Lval* lval = partials_head->car;
+          CResult result = datafy_lval(wasm, lval, NULL);
+          Ber wval_ptr = make_int32(module, result.wasm_ptr);
+          wval_ptr = BinaryenBinary(
+              module, BinaryenAddInt32(), wval_ptr,
+              BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));
+          wval_ptr = wasm_retain(wasm, wval_ptr).ber;
+          Ber partials_ptr =
+              BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
+          children[children_count++] =
+              BinaryenStore(module, 4, partial_count++ * 4, 2, partials_ptr,
+                            wval_ptr, BinaryenTypeInt32());
+          partials_head = partials_head->cdr;
+        }
+
         // Compile the args and put their lval_refs on the partials block. If
         // they're not the result of a fn call retain them.
-        int i = 0;
         do {
           CResult compiled_arg = lval_compile(wasm, head->car);
           // This is so that we can release all partials when releasing the
@@ -447,29 +474,32 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
           Ber partials_ptr =
               BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
           children[children_count++] =
-              BinaryenStore(module, 4, i++ * 4, 2, partials_ptr,
+              BinaryenStore(module, 4, partial_count++ * 4, 2, partials_ptr,
                             compiled_arg.ber, BinaryenTypeInt32());
           head = head->cdr;
         } while (head);
 
         // Copy the props of the LVAL_FUN to our new lval_wasm_lambda:
-        Ber param_count = make_int32(module, first_arg.lval->param_count);
-        Ber has_rest_arg = make_int32(module, first_arg.lval->rest_arg_index);
+        Ber param_count = make_int32(module, lval_fn->param_count);
+        Ber has_rest_arg = make_int32(module, lval_fn->rest_arg_index);
         Ber closure_ptr = make_int32(module, 0);
         Ber partials_ptr =
             BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
-        Ber partial_count = make_int32(module, args_count - 1);
+        Ber ber_partial_count = make_int32(module, partial_count);
 
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset global
-        Ber fn_table_index = make_int32(module, first_arg.lval->offset);
-        fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), fn_table_index,
+        int fn_table_index =
+            lval_fn->full_fn ? lval_fn->full_fn->offset : lval_fn->offset;
+
+        Ber ber_fn_table_index = make_int32(module, fn_table_index);
+        ber_fn_table_index = BinaryenBinary(
+            module, BinaryenAddInt32(), ber_fn_table_index,
             BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
 
         // Call the runtime make_lval_wasm_lambda fn
-        Ber operands[6] = {fn_table_index, param_count,  has_rest_arg,
-                           closure_ptr,    partials_ptr, partial_count};
+        Ber operands[6] = {ber_fn_table_index, param_count,  has_rest_arg,
+                           closure_ptr,        partials_ptr, ber_partial_count};
         children[children_count++] =
             BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 6,
                          make_type_int32(1));
@@ -725,9 +755,18 @@ void compile(Namespace* ns) {
   }
 
   printf("Processing env =============\n");
-  Cell* cell = env->kv;
-  while (cell) {
-    Cell* pair = cell->car;
+  Cell* head = env->kv;
+  int count = list_count(head);
+  int i = count - 1;
+  Cell** pairs = malloc(count * sizeof(Cell));
+  while (head) {
+    pairs[i--] = head->car;
+    head = head->cdr;
+  }
+  /* Cell* cell = env->kv; */
+  /* while (cell) { */
+  for (int i = 0; i < count; i++) {
+    Cell* pair = pairs[i];
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
 
@@ -747,8 +786,6 @@ void compile(Namespace* ns) {
       result = datafy_lval(wasm, lval, NULL);
       add_to_symbol_table(wasm, lval_sym->str, lval);
     }
-
-    cell = cell->cdr;
   }
 
   printf("===== DONE Processing env\n");
@@ -757,6 +794,10 @@ void compile(Namespace* ns) {
   /* add_fn_to_table(wasm, "printf_"); */
 
   add_function_table(wasm);
+
+  if (_strcmp(ns->namespace, config->main) == 0) {
+    BinaryenAddFunctionExport(wasm->module, "main", "main");
+  }
 
   inter_rewrite_info(wasm);
   add_memory_section(wasm);

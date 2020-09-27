@@ -173,8 +173,6 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   /* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); */
 
   *(int*)(p + ref_count_offset * 4) = 1;
-  *(int*)(p + data_p_offset) =
-      wasm->__data_end + wasm->data_offset + slot_type_size;
 
   *(char*)(p + wval_type_offset) = WVAL_FUN;
   *(char*)(p + subtype_offset) = -1;
@@ -185,19 +183,28 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
 
   Cell* head = partials;
   int partial_count = list_count(partials);
-
   int partial_ptrs[partial_count];
   int i = 0;
   while (head) {
     Lval* lval = head->car;
-    datafy_lval(wasm, lval, NULL);
-    partial_ptrs[i++] = lval->wval_ptr;
+    CResult result = datafy_lval(wasm, lval, NULL);
+    partial_ptrs[i++] = result.wasm_ptr;
+    /* lval->wval_ptr; */
+    /* printf("partial-ptr: %d\n", lval->wval_ptr); */
     head = head->cdr;
   }
   int data_ptr =
       add_bytes_to_data(wasm, (char*)partial_ptrs, 4 * partial_count);
+  /* printf("data_ptr %d\n", data_ptr); */
+  /* printf("partial_ptr[0] %d\n", partial_ptrs[0]); */
+  /* printf("partial_ptr[1] %d\n", partial_ptrs[1]); */
   *(int*)(p + partials_offset) = data_ptr;
   *(int*)(p + partial_count_offset) = partial_count;
+
+  // We really need to set this pointer at the end since we set the datap_p
+  // relative to wasm->data_offset, and we have just done a add_bytes_to_data.
+  *(int*)(p + data_p_offset) =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
 
   return (int*)data_lval;
 }
@@ -207,12 +214,6 @@ int inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
   add_to_offset_list(&wasm->wval_fn_offsets, &wasm->wval_fn_offsets_count,
                      &wasm->wval_fn_offsets_allocated, offset);
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
-  /* printf("wval_ptr %d\n", wval_ptr); */
-  /* CResult ret = { */
-  /*     .ber = make_ptr(wasm, wval_ptr), /\* make_int32(wasm->module,
-   * wval_ptr), *\/ */
-  /*     .wasm_ptr = wval_ptr}; */
-  /* return ret; */
   return wval_ptr;
 }
 

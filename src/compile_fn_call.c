@@ -106,6 +106,8 @@ Ber validate_as_fn(Wasm* wasm, Ber wval) {
   return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok);
 }
 
+// Wasm fn that receives ptr to wval_fn in local 0, and args count in local 1
+// and throws runtime error when args count is invalid for  the wval_fn
 Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) {
   BinaryenModuleRef module = wasm->module;
   /* Context* context = wasm->context->car; */
@@ -114,13 +116,19 @@ Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) {
   scoped char* rt_error_msg = lalloc_size(_strlen(error_msg));
   sprintf(rt_error_msg, "%s", error_msg);
 
+  // Put the param count of the wval_fn in local 2
   Ber wval_param_count = get_wval_prop(module, wval, "param_count");
   Ber param_count_tee =
       BinaryenLocalTee(module, 2, wval_param_count, BinaryenTypeInt32());
   Ber get_param_count = BinaryenLocalGet(module, 2, BinaryenTypeInt32());
-  Ber has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
 
+  // has_rest_arg
+  Ber has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
+  // min param_count
   Ber min_param_count = get_wval_prop(module, wval, "min_param_count");
+
+  // Check if args count is less than min param count (so param count minus any
+  // rest param)
   Ber args_count_lt_min_param_count =
       BinaryenBinary(module, BinaryenLtUInt32(), args_count, min_param_count);
   Ber all_ok = BinaryenNop(module);
@@ -129,17 +137,29 @@ Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) {
   Ber if_args_count_lt_min_param_count = BinaryenIf(
       module, args_count_lt_min_param_count, too_few_rt_error, all_ok);
 
+  // Check if args count is less than param count (in case there's no rest
+  // param)
   Ber args_count_lt_param_count =
       BinaryenBinary(module, BinaryenLtUInt32(), args_count, get_param_count);
   Ber if_args_count_lt_param_count = BinaryenIf(
       module, args_count_lt_param_count,
       wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber, all_ok);
+
+  // if args count > param count throw rt_error else check if less than param
+  // count
   Ber args_count_gt_param_count =
       BinaryenBinary(module, BinaryenGtUInt32(), args_count, param_count_tee);
   Ber if_args_count_gt_param_count =
       BinaryenIf(module, args_count_gt_param_count,
                  wasm_runtime_error(wasm, RT_TOO_MANY_ARGS, rt_error_msg).ber,
                  if_args_count_lt_param_count);
+  // Result is as this pseudo code:
+  /* if (has_rest_arg) { */
+  /*   if (args_count < min_param_count) rt_error */
+  /*   } else { */
+  /*   if (args_count > param_count) throw rt_error */
+  /*   else if (args_count < param_count) throw rt_error */
+  /* } */
   Ber if_has_rest_arg =
       BinaryenIf(module, has_rest_arg, if_args_count_lt_min_param_count,
                  if_args_count_gt_param_count);
@@ -153,6 +173,12 @@ void add_validate_fn_fn(Wasm* wasm) {
 
   Ber children[] = {
       validate_as_fn(wasm, BinaryenLocalGet(module, 0, BinaryenTypeInt32())),
+
+      /* wasm_log_int( */
+      /*     wasm, get_wval_prop(module, */
+      /*                         BinaryenLocalGet(module, 0,
+         BinaryenTypeInt32()), */
+      /*                         "param_count")), */
       validate_args_count(wasm,
                           BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
                           BinaryenLocalGet(module, 1, BinaryenTypeInt32()))};
@@ -179,7 +205,7 @@ Ber compile_args_into_block(Wasm* wasm, Ber wval, Cell* args, int args_count,
                             int args_block_ptr_index, LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
   Ber* children = malloc((2 + args_count) * sizeof(Ber));
-  printf("CHILDREN COUNT: %d\n", 2 + args_count);
+  /* printf("CHILDREN COUNT: %d\n", 2 + args_count); */
   int children_count = 0;
 
   // Put partials on block
@@ -281,6 +307,11 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_index,
     Ber call_validate_fn = BinaryenCallIndirect(
         module, make_int32(module, VALIDATE_FN_INDEX), operands, 2,
         make_type_int32(2), BinaryenTypeNone());
+
+    /* block_children[(*block_children_count)++] = wasm_log_int( */
+    /*     wasm, */
+    /*     BinaryenLocalGet(module, total_args_count_local,
+     * BinaryenTypeInt32())); */
     block_children[(*block_children_count)++] = call_validate_fn;
   }
 
@@ -399,7 +430,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fun,
       int i = total_args_count - 1;
       do {
         Ber operands[] = {compiled_args[i], head};
-        printf("Making new cell %d\n ", i);
+        /* printf("Making new cell %d\n ", i); */
         head =
             BinaryenCall(module, "new_cell", operands, 2, BinaryenTypeInt32());
         i--;
@@ -426,10 +457,22 @@ Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fun, Cell* args,
                     LocalIndices* li) {
   Ber* call_operands =
       compile_args_into_operands(wasm, fn_name, lval_fun, args, li);
-
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
-  Ber result = BinaryenCall(wasm->module, fn_name, call_operands, param_count,
-                            BinaryenTypeInt32());
+  Ber result;
+
+  if (lval_fun->full_fn) {
+    Ber fn_table_index = make_int32(wasm->module, lval_fun->full_fn->offset);
+    fn_table_index =
+        BinaryenBinary(wasm->module, BinaryenAddInt32(), fn_table_index,
+                       BinaryenGlobalGet(wasm->module, "fn_table_offset",
+                                         BinaryenTypeInt32()));
+    result = BinaryenCallIndirect(wasm->module, fn_table_index, call_operands,
+                                  param_count, make_type_int32(param_count),
+                                  BinaryenTypeInt32());
+  } else {
+    result = BinaryenCall(wasm->module, fn_name, call_operands, param_count,
+                          BinaryenTypeInt32());
+  }
   free(call_operands);
   return result;
 }
@@ -470,24 +513,26 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
     case BER: {
       Ber wval = fn_ref.ber;
       // TODO: implement using maps and sets and vectors and keywords as fns.
-      /* Ber get_type_call = get_wval_prop(module, wval, "type"); */
-      /* block_children[block_children_count++] = */
-      /*     wasm_log_int(wasm, get_type_call); */
+
+      // Allocate a block of memory to copy the arg ptrs into
       int args_count = list_count(args);
-      Ber operands[] = {make_int32(module, args_count)};
+      Ber operands[] = {make_int32(module, args_count * 4)};
       Ber args_block_ptr =
           BinaryenCall(module, "lalloc_size", operands, 1, BinaryenTypeInt32());
       args_block_ptr_index = li_new(wasm);
+
+      // And put the ptr to this block into a local
       Ber local_set_args_block_ptr =
           BinaryenLocalSet(module, args_block_ptr_index, args_block_ptr);
       block_children[block_children_count++] = local_set_args_block_ptr;
 
+      // We've got this ptr to a wval_fn at runtime, let's check if it is indeed
+      // a fn, validate the number of args and bundle any rest arg
       result = call_fn_by_ref(wasm, wval, args, args_block_ptr_index,
                               block_children, &block_children_count, li);
 
     } break;
     case FN_NAME: {
-      // TODO: add partials to args
       result = call_fn_by_name(wasm, fn_ref.fn_name, lval_fun, args, li);
     } break;
     case GLOBAL: {
@@ -628,7 +673,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             break;
           case LAMBDA:  // root functions in compiler env
             /* printf("Calling lambda!! %s\n", lval_first->str); */
-            printf("APPLY LAMBDA %s :", lval_first->str);
+            /* printf("APPLY LAMBDA %s :", lval_first->str); */
             lval_println(resolved_symbol);
             if (symbol_is_external) {
               char* global_name =
@@ -771,3 +816,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
 /*   } */
 /*   return cnull(); */
 /* } */
+
+/* Ber get_type_call = get_wval_prop(module, wval, "type"); */
+/* block_children[block_children_count++] = */
+/*     wasm_log_int(wasm, get_type_call); */

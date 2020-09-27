@@ -396,8 +396,10 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   partial_fn->param_count = lval_fun->param_count;
   partial_fn->rest_arg_index = lval_fun->rest_arg_index;
   partial_fn->partials = list_concat(lval_fun->partials, arg_list->head->cdr);
-  /* partial_fn->wval_ptr = lval_fun->wval_ptr; */
-  /* partial_fn->offset = lval_fun->offset; */
+
+  // For compiler purposes so we know what the fn is that this partial is
+  // derived from.
+  partial_fn->full_fn = lval_fun->full_fn ? lval_fun->full_fn : lval_fun;
 
   return partial_fn;
 }

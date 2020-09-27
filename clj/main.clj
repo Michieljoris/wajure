@@ -10,47 +10,40 @@
 
 ;; (def f2 (partial f 1))
 
-(defn f [x y z] [x y z])
-;; (defn g [x y & z] [x y z])
-(def fp (partial f 1 2))
-;; (def gp (partial g 1 2))
-
-;; (defn new-tests []
-;;   (let [f (fn [x y z] [x y z])
-;;         g (fn [x] x)]
-;;     (t (f 2 (g 1) 3) [2 1 3]))
-
-;;   (let [f1 (partial f 1 2)
-;;         g1 (partial g 1 2)]
-;;     (t (f1 3) [1 2 3])
-
-;;     (t (g1) [1 2 nil])
-;;     (t (g1 3) [1 2 (3)])
-;;     (t (g1 3 4) [1 2 (3 4)])
-;;     (t (g1 3 4 5) [1 2 (3 4 5)])
-;;     )
-;;   (t (fp 3) [1 2 3])
-;;   (t (gp) [1 2 nil])
-;;   (t (gp 3) [1 2 (3)])
-;;   (t (gp 3 4) [1 2 (3 4)])
-;;   (t (gp 3 4 5) [1 2 (3 4 5)])
-;;   (t (gp 3 4 5 6) [1 2 (3 4 5 6)])
-
-;;   (let [fp (partial f)]
-;;     (t (fp 1 2 3) [1 2 3])
-;;     (t (partial 1) 1)
-;;     (t (partial "abc") "abc")
-;;     )
-;;   )
 
 ;; (def v  [5 6 7])
 ;; (def l (list 1 2 3))
 
+
+(defn f [x y z] [x y z])
+(def fp (partial f 1))
+;; ;; (defn g [x y & z] [x y z])
+;; (def fp (partial f 1))
+
 (defn main [x y]
-  ;; (let [f2 fp]
-  ;;   (print (f2 3)))
   ;; (test-partial)
-  (print fp)
+ ;; (let [fp2 (partial fp 2)]
+ ;;   (print (fp2 3)))
+  (print (str 1 "foo" "bar"))
+  ;; (print (fp 2 3))
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       fp (partial f 1)]
+  ;;   ;; (print (f 1 2 3))
+  ;;   ;; (print (fp  2 3))
+  ;;   (print fp)
+  ;;   )
+    ;; (print fp)
+  ;; (let [f2 fp]
+  ;;   (print fp)
+  ;;   (f2 2 3))
+
+  ;; (t (fp 2 3) [1 2 3 4])
+  ;; (new-tests)
+  ;; (let [f2 (partial fp 3)]
+  ;;   (print (f2 1 3)))
+  ;; (print (fp 2 3))
+  ;; (print (fp2  3))
+  ;; (print (fp 3))
   ;; (print (fp 3))
   ;; (print (gp 3))
 
@@ -64,7 +57,6 @@
   ;; (print (gp 3 4 5 6 ))
   ;; (print (gp 3 4 5 6 7))
   ;; (print (gp 3 4 5 6 7 8))
-  ;; (new-tests)
   )
   ;; (let [f (partial f 1 2 4 5 6 )]
   ;;   (print (f 3   )))
@@ -90,11 +82,11 @@
   ;;   )
   ;; (new-tests)
   ;; (run-tests)
+;; (let [f (fn [x y z] [x y z])
+;;       f2 (partial f 1)]
+;;   (print (f2 2 3))
+;;   )
 
-  ;; (let [f (fn [x y z] [x y z])
-  ;;       f2 (partial f 1)]
-  ;;   (print (f2 2 3))
-  ;;   )
  
 
 
@@ -183,19 +175,19 @@
 ;; (defn h [x y z] [x y z])
 ;; (defn g [x y z a] (list x y (f z a)))
 
-  ;; (let [p +
-  ;;       h1 h
-  ;;       f (fn [x y z] [x y z])
-  ;;       l nil
-  ;;       ]
-  ;;   (print
-  ;;    (apply + 1 1 l)
-  ;;    (apply p 1 1 l)
-  ;;    (apply h 1 2 3 l)
-  ;;    (apply h1 1 2 3 l)
-  ;;    (apply f 1 2 3 l)
+;; (let [p +
+;;       h1 h
+;;       f (fn [x y z] [x y z])
+;;       l nil
+;;       ]
+;;   (print
+;;    (apply + 1 1 l)
+;;    (apply p 1 1 l)
+;;    (apply h 1 2 3 l)
+;;    (apply h1 1 2 3 l)
+;;    (apply f 1 2 3 l)
 
-  ;;    ))
+;;    ))
 ;; (def l (list 4 5 6))
 ;; (defn f []
 ;;   (let [a 888
@@ -269,93 +261,93 @@
 ;;        )
 ;;       )
 
-  ;; (t r 1010)
+;; (t r 1010)
 
   
-  ;; (t (+ 1 2 3 4 5 6 7 8 9)
-  ;;    1010)
+;; (t (+ 1 2 3 4 5 6 7 8 9)
+;;    1010)
   
-  ;; (t (+ 11 12 13 14 15 16 17 18 19)
-  ;;    1010)
-  ;; (t (* -3 6)
-  ;;    -18)
+;; (t (+ 11 12 13 14 15 16 17 18 19)
+;;    1010)
+;; (t (* -3 6)
+;;    -18)
 
-  ;; (if false 1 )
-  ;; (if false 1)
-  ;; "foo"
-  ;; (t (/ (- (+ 515 (* 87 311)) 302) 27)
-  ;;    1010)
-  ;; (test2/test)
-  ;; (if (+ 1 1) 1 2)
-  ;; (if true (+ 1 1))
-  ;; (if false 1)
-  ;; "foo"
+;; (if false 1 )
+;; (if false 1)
+;; "foo"
+;; (t (/ (- (+ 515 (* 87 311)) 302) 27)
+;;    1010)
+;; (test2/test)
+;; (if (+ 1 1) 1 2)
+;; (if true (+ 1 1))
+;; (if false 1)
+;; "foo"
 
-  ;; (let [evalled 1]
-  ;;   (when (not= evalled (quote 1))
-  ;;     (do
-  ;;       (pr "FAIL" "foo")
-  ;;       (pr (quote 1) )
-  ;;       (pr "Expected:" (quote 1))
-  ;;       (pr "Got:" 1))))
+;; (let [evalled 1]
+;;   (when (not= evalled (quote 1))
+;;     (do
+;;       (pr "FAIL" "foo")
+;;       (pr (quote 1) )
+;;       (pr "Expected:" (quote 1))
+;;       (pr "Got:" 1))))
 
-  ;; (t 1 1)
+;; (t 1 1)
 
-  ;; (let [evalled 1]
-  ;;   (when (not= evalled (quote 1))
-  ;;     (do
-  ;;       (pr "FAIL" "foo")
-  ;;       (pr (quote 1) )
-  ;;       (pr "Expected:" (quote 1))
-  ;;       (pr "Got:" 1))))
+;; (let [evalled 1]
+;;   (when (not= evalled (quote 1))
+;;     (do
+;;       (pr "FAIL" "foo")
+;;       (pr (quote 1) )
+;;       (pr "Expected:" (quote 1))
+;;       (pr "Got:" 1))))
  
-  ;; (t 1 2)
-  ;; "foo"
+;; (t 1 2)
+;; "foo"
 
-  ;; (if 1 false)
-  ;; (if (f 1) false)
-  ;; bar.core/bar
-  ;; fox
-  ;; bar.core/bar
-  ;; (print "main/test--------------")
-  ;; (print "bar.core/bar: " bar.core/bar)
-  ;; (print "fox: " bar/fox)
-  ;; (print "bar: " bar)
-  ;; (print "bar: " bar/bar)
-  ;; (print list-with-bar +)
-  ;; (print +)
-  ;; (print bar)
-  ;; (print (list bar))
+;; (if 1 false)
+;; (if (f 1) false)
+;; bar.core/bar
+;; fox
+;; bar.core/bar
+;; (print "main/test--------------")
+;; (print "bar.core/bar: " bar.core/bar)
+;; (print "fox: " bar/fox)
+;; (print "bar: " bar)
+;; (print "bar: " bar/bar)
+;; (print list-with-bar +)
+;; (print +)
+;; (print bar)
+;; (print (list bar))
 
-  ;; (print "bar.core/bar: " bar.core/bar)
+;; (print "bar.core/bar: " bar.core/bar)
  
 
 
-  ;; (print "foo: " bar bax)
-  ;; (print "calling test2/test")
-  ;; (test2/test)
-  ;; (print "done---------------")
-  ;; (test2/test)
-  ;; (print (foo/f 456))
-  ;; (let [f foo/f]
-  ;;   (print "hello" (f 123) (foo/f 456)
-  ;;          ))
-  ;; (print "hello" a b (foo 4444) bar)
-  ;; (print "hello there" (foo 555))
-  ;; (print "hello", 123, 345, false, true, x y (list 1 2) "some string")
-  ;; (print foo.core/foo foo/foo foo foo/f a b)
-  ;; (foo/f) foo2/foo2
-  ;; (foo/f)
-  ;; a foo.core/foo foo/foo foo
+;; (print "foo: " bar bax)
+;; (print "calling test2/test")
+;; (test2/test)
+;; (print "done---------------")
+;; (test2/test)
+;; (print (foo/f 456))
+;; (let [f foo/f]
+;;   (print "hello" (f 123) (foo/f 456)
+;;          ))
+;; (print "hello" a b (foo 4444) bar)
+;; (print "hello there" (foo 555))
+;; (print "hello", 123, 345, false, true, x y (list 1 2) "some string")
+;; (print foo.core/foo foo/foo foo foo/f a b)
+;; (foo/f) foo2/foo2
+;; (foo/f)
+;; a foo.core/foo foo/foo foo
 
-  ;; (print "foo.core/foo = " foo.core/foo)
-  ;; (print "foo/foo = " foo/foo)
-  ;; (print "foo" foo)
-  ;; (let [f foo
-  ;;       p print]
-  ;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
-  ;; (print 123 456 999 "foo")
-  ;; (print 12345 a (foo))
+;; (print "foo.core/foo = " foo.core/foo)
+;; (print "foo/foo = " foo/foo)
+;; (print "foo" foo)
+;; (let [f foo
+;;       p print]
+;;   (p "foobar" "hello" :kw 'symbol '(1 2 3 4 5 ) (foo) (f)))
+;; (print 123 456 999 "foo")
+;; (print 12345 a (foo))
 
 ;; (compile "lispy/test_compile.lispy")
 
@@ -841,9 +833,9 @@
 
 ;; (defmacro defn [sym params & body])
 
-  ;; `(def ~sym (fn ~params ~@body)))
+;; `(def ~sym (fn ~params ~@body)))
 
-  ;; `(def ~sym (fn ~params ~@body))
+;; `(def ~sym (fn ~params ~@body))
 
 ;; (def defn (macro [sym params & body] `(def ~sym (fn ~params ~@body))))
 
