@@ -84,7 +84,11 @@ struct lval {
   Cell* partials;
   int param_count;
   int rest_arg_index;
+  // When an lval is found in another namespace in eval_symbol this is the final
+  // symbol the lval was assigned to, so we can actually assign the ns and name
+  // to this lval.
   Namespace* ns;
+  char* name;
 
   // Compiler to wasm data
   int wval_ptr;

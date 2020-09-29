@@ -4,17 +4,17 @@
 *** global partial fns from another namespace
 *** Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
 *** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
+*** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg), is a fn (or not)
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
 in a lval_wasm_lambda any partials should all be retained, meaning we can release all
 of the partials when releasing the lval_wasm_lambda
-*** (let [p partial]
+*** (let [p partial], so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
     (p f 1 2))
 
 So we need to have a native fn that does the right thing. And it should receive
 all of its args in an arg block!!! Because why bother putting it all in a list
 like we do for sys fns
 *** And what about (partial partial 1 2) or where either partial is an lval_ref or result of fn call!!!
-*** or (partial a 1 2) where a is a LVAL_REF
 *** DONE in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
 *** DONE little problem, duplicate wasm fns
 (defn f [x y z] [x y z])

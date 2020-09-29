@@ -7,6 +7,7 @@
 #include "list.h"
 #include "misc_fns.h"
 #include "platform.h"
+#include "print.h"
 #include "printf.h"
 #include "wasm_util.h"
 
@@ -243,24 +244,20 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int ptr_len = 10;
   int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
   char* line = malloc(max_len);
-  /* int data_end = wasm->__data_end; */
-  /* int offset = lval->wval_ptr - data_end; */
   int offset = lval->wval_ptr;
-  /* printf("OFFSET: %d\n", offset); */
-  if (lval->type == LVAL_FUNCTION)
+  if (lval->type == LVAL_FUNCTION) {
+    int fn_table_index =
+        lval->full_fn ? lval->full_fn->offset : lval->offset;  // partials
     snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", sym, type_str, offset,
-             lval->offset, lval->param_count, lval->rest_arg_index);
-  else
+             fn_table_index, lval->param_count, lval->rest_arg_index);
+  } else
     snprintf(line, max_len, "%s,%s,%d\n", sym, type_str, offset);
   int line_count = _strlen(line);
-  /* printf("line: %d %d %d %d %s", lval->wval_ptr, data_end, */
-  /*        wasm->symbol_table_count, line_count, line); */
   wasm->symbol_table =
       realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
   _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
   free(line);
   wasm->symbol_table_count += line_count;
-  /* printf("%.*s", wasm->symbol_table_count, wasm->symbol_table); */
 }
 
 NativeFn native_fns[] = {{"partial", PARTIAL_FN_INDEX, 2, 0, 1},

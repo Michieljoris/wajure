@@ -1,4 +1,4 @@
-#include "compile.h"
+
 
 #include <binaryen-c.h>
 #include <stdlib.h>
@@ -390,7 +390,9 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   int args_count = list_count(args);
   if (args_count == 0) quit(wasm, "Need at last one argument for partial");
   Cell* head = args;
-  CResult first_arg = lval_compile(wasm, head->car);
+  printf("compile_partial_call: ");
+  lval_println(head->car);
+  CResult fn_arg = lval_compile(wasm, head->car);
 
   /* printf("-------------partial first arg------is_fn_call %d\n ", */
   /*        first_arg.is_fn_call); */
@@ -399,10 +401,10 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   head = head->cdr;
   // If just one arg, return compiled arg
   if (!head) {
-    return first_arg;
+    return fn_arg;
   }
 
-  if (first_arg.is_fn_call || first_arg.lval->type == LVAL_REF) {
+  if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
     // Put the compiled args in a block (lalloc_size) and pass them to our
     // native partial fn
     // Check for type:
@@ -412,11 +414,12 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
     // as partials
     // 3. anything else: return as is
 
-    return first_arg;  // TODO
+    return fn_arg;  // TODO
   } else
-    switch (first_arg.lval->type) {
+    switch (fn_arg.lval->type) {
       case LVAL_FUNCTION: {
-        Lval* lval_fn = first_arg.lval;
+        Lval* lval_fn = fn_arg.lval;
+        printf("in LVAL_FUNCTION\n");
         /* printf("LVAL_FUNCTION wval->ptr %d\n", lval_fn->wval_ptr); */
         // If we know this is a function at compile time then we compile the
         // rest of the args and put them in the partials block of a copy of the
@@ -487,6 +490,8 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
             BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
         Ber ber_partial_count = make_int32(module, partial_count);
 
+        printf("is_external? %d\n", fn_arg.is_external);
+
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset global
         int fn_table_index =
@@ -532,7 +537,7 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
           }
           head = head->cdr;
         } while (head);
-        children[children_count++] = first_arg.ber;
+        children[children_count++] = fn_arg.ber;
 
         Ber block = BinaryenBlock(
             module, uniquify_name(wasm, "make_pointless_partial_fn"), children,
@@ -631,26 +636,23 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       // no notion of environments or symbols that resolve to other lvalues.
       // Symbols at runtime are just that, a literal similar to strings,
       // numbers etc.
-
       struct resolved_symbol result = eval_symbol(wasm->env, lval);
 
       resolved_sym = result.lval;
-      /* printf("resolved:"); */
-      /* lval_println(lval_resolved_sym); */
-      /* printf("namespace: %s\n", result.ns->namespace); */
-      if (result.ns) {
-        global_name =
-            make_global_name("data:", result.ns->namespace, result.name);
+
+      int symbol_is_external =
+          resolved_sym->ns && resolved_sym->ns != state->current_ns ? 1 : 0;
+      if (symbol_is_external) {
+        global_name = make_global_name("data:", resolved_sym->ns->namespace,
+                                       resolved_sym->name);
         release(result.name);
         add_dep(wasm, global_name);
-        /* lval_println(lval_resolved_sym); */
       }
-      /* lval_println(lval_resolved_sym); */
       switch (resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->str);
         case LVAL_REF:;
-          // symbol has been added to env while compiling, so
+          // Symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
           CResult ret = compile_lval_ref(wasm, lval, resolved_sym);
           ret.lval = resolved_sym;
@@ -687,7 +689,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
   CResult ret = datafy_lval(wasm, lval, global_name);
   ret.lval = lval;
-  /* release(global_name); */
+  release(global_name);
   release(resolved_sym);
   return ret;
 }
@@ -831,48 +833,3 @@ void compile(Namespace* ns) {
 
   free_wasm(wasm);
 }
-
-/* CResult store_args_in_locals(Wasm* wasm, Lenv* params_env, Lval**
- * lispy_params, */
-/*                              int param_count) { */
-/*   BinaryenModuleRef module = wasm->module; */
-/*   Context* context = wasm->context->car; */
-/*   Ber children[param_count + 1]; */
-/*   int stack_pointer_index = li_new(wasm); */
-/*   Ber stack_pointer = */
-/*       BinaryenGlobalGet(wasm->module, "stack_pointer",
- * BinaryenTypeInt32());
- */
-
-/*   int sp_adjustment = param_count * 4; */
-/*   stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
- */
-/*                                  make_int32(module, sp_adjustment)); */
-/*   Ber store_stack_pointer_in_local = */
-/*       BinaryenLocalSet(module, stack_pointer_index, stack_pointer); */
-/*   int children_count = 0; */
-/*   children[children_count++] = store_stack_pointer_in_local; */
-
-/*   int _signed = 0; */
-/*   int _aligned = 0; */
-/*   for (int i = 0; i < param_count; i++) { */
-/*     Ber get_stack_pointer_from_local = */
-/*         BinaryenLocalGet(module, stack_pointer_index, BinaryenTypeInt32());
- */
-/*     int offset = sp_adjustment - (i + 1) * 4; */
-/*     Ber load_arg_lval = */
-/*         BinaryenLoad(wasm->module, 4, _signed, offset, _aligned, */
-/*                      BinaryenTypeInt32(), get_stack_pointer_from_local); */
-/*     int local_index = li_new(wasm); */
-/*     Lval* lval_ref = make_lval_ref(context, LOCAL, local_index); */
-/*     lenv_put(params_env, lispy_params[i], lval_ref); */
-/*     release(lval_ref); */
-/*     Ber store_in_local = BinaryenLocalSet(module, local_index,
- * load_arg_lval); */
-/*     children[children_count++] = store_in_local; */
-/*   } */
-/*   Ber ret = BinaryenBlock(module, uniquify_name(wasm,
- * "store_args_in_locals"), */
-/*                           children, children_count, BinaryenTypeNone()); */
-/*   return cresult(ret); */
-/* } */

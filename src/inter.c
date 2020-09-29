@@ -167,6 +167,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
 
 int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
                                 int has_rest_arg, Cell* partials) {
+  printf("make_data_lval_wasm_lambda");
   int* data_lval = calloc(1, wval_fun_size);
   long p = (long)data_lval;
   /* int string_offset = 0; */
@@ -189,8 +190,6 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
     Lval* lval = head->car;
     CResult result = datafy_lval(wasm, lval, NULL);
     partial_ptrs[i++] = result.wasm_ptr;
-    /* lval->wval_ptr; */
-    /* printf("partial-ptr: %d\n", lval->wval_ptr); */
     head = head->cdr;
   }
   int data_ptr =

@@ -284,6 +284,7 @@ Ber call_bundle_rest_args(Wasm* wasm, int args_block_ptr_index, Ber args_count,
 Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_index,
                    Ber* block_children, int* block_children_count,
                    LocalIndices* li) {
+  /* printf("call_fn_by_ref\n"); */
   BinaryenModuleRef module = wasm->module;
   Ber wval_fn_index = get_wval_prop(module, wval, "fn_table_index");
   Ber wval_closure = get_wval_prop(module, wval, "closure");
@@ -344,14 +345,14 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_index,
                               make_type_int32(4), BinaryenTypeInt32());
 }
 
-Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fun,
+Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
                                 Cell* args, LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
-  int param_count = lval_fun->param_count;
-  int has_rest_arg = lval_fun->rest_arg_index;
+  int param_count = lval_fn->param_count;
+  int has_rest_arg = lval_fn->rest_arg_index;
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
   int args_count = list_count(args);
-  int partial_count = list_count(lval_fun->partials);
+  int partial_count = list_count(lval_fn->partials);
   int total_args_count = args_count + partial_count;
 
   // Check total number of args (partials plus args) matches signature of
@@ -370,7 +371,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fun,
   int compiled_args_count = 0;
 
   // Grab and datafy the partials from the function
-  Cell* head = lval_fun->partials;
+  Cell* head = lval_fn->partials;
   while (head) {
     Ber compiled_arg = datafy_lval(wasm, head->car, NULL).ber;
     // We need to retain datafied values if the value ends up in the rest arg
@@ -455,6 +456,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fun,
 
 Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fun, Cell* args,
                     LocalIndices* li) {
+  printf("call_fn_by_name\n");
   Ber* call_operands =
       compile_args_into_operands(wasm, fn_name, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
@@ -479,6 +481,7 @@ Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fun, Cell* args,
 
 Ber call_global_fn(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
                    LocalIndices* li) {
+  printf("call_global_fn\n");
   Ber* call_operands =
       compile_args_into_operands(wasm, lval_fun->str, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
@@ -536,7 +539,6 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
       result = call_fn_by_name(wasm, fn_ref.fn_name, lval_fun, args, li);
     } break;
     case GLOBAL: {
-      // TODO: add partials to args
       char* fn_table_index_global = fn_ref.global_name;
       Ber wasm_fn_index = BinaryenGlobalGet(wasm->module, fn_table_index_global,
                                             BinaryenTypeInt32());
@@ -648,49 +650,47 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   if (lval_first->type == LVAL_SYMBOL) {
     // Let's see if the symbol refers to something we know how to compile
     // already
-
     struct resolved_symbol result = eval_symbol(wasm->env, lval_first);
-    Lval* resolved_symbol = result.lval;
-    int symbol_is_external = result.ns != NULL;
+    Lval* resolved_sym = result.lval;
+    int symbol_is_external =
+        resolved_sym->ns && resolved_sym->ns != state->current_ns ? 1 : 0;
 
     // If it's a symbol it has to be known in our compiler env!!!
-    if (resolved_symbol->type == LVAL_ERR) {
+    if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_first);
       quit(wasm, "ERROR: Can't apply an unknowm symbol: %s", lval_first->str);
     }
 
-    switch (resolved_symbol->type) {
+    switch (resolved_sym->type) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
-        switch (resolved_symbol->subtype) {
+        switch (resolved_sym->subtype) {
           case SYS:
             /* lval_println(resolved_symbol); */
             /* printf("sys fn: %s\n", resolved_symbol->str); */
-            fn_call = compile_sys_call(wasm, resolved_symbol, args);
+            fn_call = compile_sys_call(wasm, resolved_sym, args);
             break;
           case SPECIAL:
-            fn_call = compile_special_call(wasm, resolved_symbol, args);
+            fn_call = compile_special_call(wasm, resolved_sym, args);
             break;
           case LAMBDA:  // root functions in compiler env
-            /* printf("Calling lambda!! %s\n", lval_first->str); */
-            /* printf("APPLY LAMBDA %s :", lval_first->str); */
-            lval_println(resolved_symbol);
             if (symbol_is_external) {
-              char* global_name =
-                  make_global_name("fn:", result.ns->namespace, result.name);
+              char* global_name = make_global_name(
+                  "fn:", resolved_sym->ns->namespace, resolved_sym->name);
               add_dep(wasm, global_name);
               union FnRef fn_ref = {.global_name = global_name};
-              fn_call = apply(wasm, GLOBAL, fn_ref, resolved_symbol, args);
+              fn_call = apply(wasm, GLOBAL, fn_ref, resolved_sym, args);
+              release(global_name);
             } else {
               union FnRef fn_ref = {.fn_name = lval_first->str};
-              fn_call = apply(wasm, FN_NAME, fn_ref, resolved_symbol, args);
+              fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);
             }
             fn_call.is_fn_call = 1;
             break;
           case MACRO:;
             Lval* arg_list = make_lval_list();
             arg_list->head = retain(args);
-            Lval* bound_macro = expand_macro(resolved_symbol, arg_list);
+            Lval* bound_macro = expand_macro(resolved_sym, arg_list);
             release(arg_list);
             CResult result = lval_compile(wasm, bound_macro);
             release(bound_macro);
@@ -711,7 +711,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         // is that we cannot assume anything about the lval.
 
         Ber compiled_symbol =
-            compile_lval_ref(wasm, lval_first, resolved_symbol).ber;
+            compile_lval_ref(wasm, lval_first, resolved_sym).ber;
 
         union FnRef fn_ref = {.ber = compiled_symbol};
         fn_call = apply(wasm, BER, fn_ref, NULL, args);
@@ -719,9 +719,9 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         break;
       case LVAL_SYMBOL:
         quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
-             resolved_symbol->str);
+             resolved_sym->str);
       case LVAL_COLLECTION:
-        switch (resolved_symbol->subtype) {
+        switch (resolved_sym->subtype) {
           case LIST:
             quit(wasm, "ERROR: A list can't be cast to a fn");
           default:;
@@ -730,7 +730,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
       default:;
         // Not a function or wasm ref, perhaps it's something else we can use
         // as a fn, such as a vector or kw or set
-        fn_call = compile_as_fn_call(wasm, resolved_symbol, args);
+        fn_call = compile_as_fn_call(wasm, resolved_sym, args);
         fn_call.is_fn_call = 1;
     }
 
@@ -820,3 +820,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
 /* Ber get_type_call = get_wval_prop(module, wval, "type"); */
 /* block_children[block_children_count++] = */
 /*     wasm_log_int(wasm, get_type_call); */
+
+/* printf("Calling lambda!! %s\n", lval_first->str); */
+/* printf("Current ns: %s\n", state->current_ns->namespace); */
+/* printf("lambda ns: %s\n", resolved_symbol->ns->namespace); */
+/* printf("lambda ns name: %s\n", resolved_symbol->name); */
+/* printf("APPLY LAMBDA %s :", lval_first->str); */
+/* lval_println(resolved_symbol); */

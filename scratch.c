@@ -518,3 +518,52 @@ Return
        * body); */
       // End of sketch of copying partials to args block when memcopy is not
       // available
+
+      /* CResult store_args_in_locals(Wasm* wasm, Lenv* params_env, Lval**
+       * lispy_params, */
+      /*                              int param_count) { */
+      /*   BinaryenModuleRef module = wasm->module; */
+      /*   Context* context = wasm->context->car; */
+      /*   Ber children[param_count + 1]; */
+      /*   int stack_pointer_index = li_new(wasm); */
+      /*   Ber stack_pointer = */
+      /*       BinaryenGlobalGet(wasm->module, "stack_pointer",
+       * BinaryenTypeInt32());
+       */
+
+      /*   int sp_adjustment = param_count * 4; */
+      /*   stack_pointer = BinaryenBinary(module, BinaryenSubInt32(),
+       * stack_pointer,
+       */
+      /*                                  make_int32(module, sp_adjustment)); */
+      /*   Ber store_stack_pointer_in_local = */
+      /*       BinaryenLocalSet(module, stack_pointer_index, stack_pointer); */
+      /*   int children_count = 0; */
+      /*   children[children_count++] = store_stack_pointer_in_local; */
+
+      /*   int _signed = 0; */
+      /*   int _aligned = 0; */
+      /*   for (int i = 0; i < param_count; i++) { */
+      /*     Ber get_stack_pointer_from_local = */
+      /*         BinaryenLocalGet(module, stack_pointer_index,
+       * BinaryenTypeInt32());
+       */
+      /*     int offset = sp_adjustment - (i + 1) * 4; */
+      /*     Ber load_arg_lval = */
+      /*         BinaryenLoad(wasm->module, 4, _signed, offset, _aligned, */
+      /*                      BinaryenTypeInt32(),
+         get_stack_pointer_from_local); */
+      /*     int local_index = li_new(wasm); */
+      /*     Lval* lval_ref = make_lval_ref(context, LOCAL, local_index); */
+      /*     lenv_put(params_env, lispy_params[i], lval_ref); */
+      /*     release(lval_ref); */
+      /*     Ber store_in_local = BinaryenLocalSet(module, local_index,
+       * load_arg_lval); */
+      /*     children[children_count++] = store_in_local; */
+      /*   } */
+      /*   Ber ret = BinaryenBlock(module, uniquify_name(wasm,
+       * "store_args_in_locals"), */
+      /*                           children, children_count,
+         BinaryenTypeNone()); */
+      /*   return cresult(ret); */
+      /* } */
