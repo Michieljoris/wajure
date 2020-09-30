@@ -123,6 +123,7 @@ void add_function_table(Wasm* wasm) {
 
   const char** funcNames = (const char**)wasm->fn_names;
 
+  // Exports all fns
   /* for (int i = 0; i < wasm->fns_count; i++) { */
   /*   BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]); */
   /* }; */

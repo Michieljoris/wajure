@@ -8,6 +8,7 @@
 #include "list.h"
 #include "ltypes.h"
 #include "lval.h"
+#include "namespace.h"
 #include "print.h"
 #include "refcount.h"
 #include "state.h"
@@ -456,7 +457,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
 
 Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fun, Cell* args,
                     LocalIndices* li) {
-  printf("call_fn_by_name\n");
+  printf("call_fn_by_name %s\n", fn_name);
   Ber* call_operands =
       compile_args_into_operands(wasm, fn_name, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
@@ -642,24 +643,24 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   // Empty list
   if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
 
-  Lval* lval_first = lval_list->head->car;
+  Lval* lval_applicator = lval_list->head->car;
   Cell* args = lval_list->head->cdr;
   CResult fn_call = cnull();
 
   // Fn call > (symbol args ...)
-  if (lval_first->type == LVAL_SYMBOL) {
+  if (lval_applicator->type == LVAL_SYMBOL) {
     // Let's see if the symbol refers to something we know how to compile
     // already
-    struct resolved_symbol result = eval_symbol(wasm->env, lval_first);
+    struct resolved_symbol result = eval_symbol(wasm->env, lval_applicator);
     Lval* resolved_sym = result.lval;
-    int symbol_is_external =
-        resolved_sym->ns && resolved_sym->ns != state->current_ns ? 1 : 0;
+    int symbol_is_external = result.ns && result.ns != get_current_ns() ? 1 : 0;
 
     // If it's a symbol it has to be known in our compiler env!!!
     if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);
-      lval_println(lval_first);
-      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s", lval_first->str);
+      lval_println(lval_applicator);
+      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s",
+           lval_applicator->str);
     }
 
     switch (resolved_sym->type) {
@@ -675,14 +676,19 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             break;
           case LAMBDA:  // root functions in compiler env
             if (symbol_is_external) {
-              char* global_name = make_global_name(
-                  "fn:", resolved_sym->ns->namespace, resolved_sym->name);
+              char* global_name =
+                  make_global_name("fn:", result.ns->namespace, result.name);
+              printf("global name %s\n", global_name);
               add_dep(wasm, global_name);
               union FnRef fn_ref = {.global_name = global_name};
               fn_call = apply(wasm, GLOBAL, fn_ref, resolved_sym, args);
               release(global_name);
             } else {
-              union FnRef fn_ref = {.fn_name = lval_first->str};
+              /* union FnRef fn_ref = {.fn_name = lval_first->str}; */
+              union FnRef fn_ref = {.fn_name = resolved_sym->binding};
+              printf("fn call FN_NAME\n");
+              printf("lval_resolved_sym: %s/%s\n", resolved_sym->ns->namespace,
+                     resolved_sym->binding);
               fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);
             }
             fn_call.is_fn_call = 1;
@@ -699,7 +705,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             /* lval_println(resolved_symbol); */
             quit(wasm,
                  "ERROR: Can't compile function with unknown subtype %d\n",
-                 lval_first->subtype);
+                 lval_applicator->subtype);
         }
         break;
       case LVAL_REF:;
@@ -711,7 +717,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         // is that we cannot assume anything about the lval.
 
         Ber compiled_symbol =
-            compile_lval_ref(wasm, lval_first, resolved_sym).ber;
+            compile_lval_ref(wasm, lval_applicator, resolved_sym).ber;
 
         union FnRef fn_ref = {.ber = compiled_symbol};
         fn_call = apply(wasm, BER, fn_ref, NULL, args);
@@ -740,7 +746,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     // fn, such as a vector, or kw or set, or perhaps an anonymous lambda eg:
     // (fn [x] x)
     // TODO: make sure is_fn_call is set properly when we use a map as a fn!!!
-    fn_call = compile_as_fn_call(wasm, lval_first, args);
+    fn_call = compile_as_fn_call(wasm, lval_applicator, args);
     fn_call.is_fn_call = 1;
   }
 

@@ -9,7 +9,6 @@
 
 ;; ;; (require '[test-compile.test5-tco :as test6])
 
-
 (defn run-tests []
   (pr "-------------- Running tests ---------------------")
 

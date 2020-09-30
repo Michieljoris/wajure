@@ -134,15 +134,18 @@ void unmark(Namespace* ns) { ns->compile = 0; }
 
 int compile_main() {
   init_wajure();
+  state->mark_deps = 0;
   if (load_main() == 1) exit(1);
 
   Namespace* main_ns = get_namespace(config->main);
   walk_namespaces(unmark);
   mark(main_ns);
-  main_ns->compile = 1;
+  main_ns->compile = 1;  // for debugging compiling
   /* Namespace* bar_ns = get_namespace("test-compile.test4-if-fn-do"); */
   /* bar_ns->compile = 0; */
   walk_namespaces(p_info);
+
+  state->mark_deps = 1;
   walk_namespaces(maybe_compile);
   printf("----------------------\n");
 
@@ -157,16 +160,6 @@ int compile_main() {
 
   return 1;
 }
-
-/* if (!is_src_newer(ns_to_src(namespace_str), ns_to_wasm(namespace_str))) {
- */
-/*   printf( */
-/*       "Not compiling '%s' because the source has not been modified since "
- */
-/*       "last compilation of this namespace.\n", */
-/*       namespace_str); */
-/*   return 1; */
-/* } */
 
 char** get_module_deps(char* namespace_str) {
   char* wasm_file_name = ns_to_wasm(namespace_str);

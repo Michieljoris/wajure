@@ -21,6 +21,7 @@ int add_string_to_data(Wasm* wasm, char* str);
 
 int add_bytes_to_data(Wasm* wasm, char* data, int len);
 int add_fn_to_table(Wasm* wasm, char* fn_name);
+int fn_exists(Wasm* wasm, char* fn_name);
 
 Ber wasm_offset(Wasm* wasm, int offset);
 

@@ -7,6 +7,7 @@
 #define VALIDATE_FN_INDEX 21
 #define PARTIAL_FN_INDEX 22
 #define APPLY_FN_INDEX 23
+#define NATIVE_INDEX_COUNT 24
 
 #define Ber BinaryenExpressionRef
 
@@ -59,6 +60,7 @@ typedef struct {
 
   int validate_fn_at_rt;
   Map deps;
+  char* current_binding;
 } Wasm;
 
 typedef struct {

@@ -57,9 +57,6 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
 
   int do_list_index = 0;
 
-  /* if (init_rest_arg) do_body[do_list_index++] = init_rest_arg; */
-  /* if (args_into_locals) do_body[do_list_index++] = args_into_locals; */
-
   Ber do_result = NULL;
 
   Cell* list = lval_list->head;
@@ -182,6 +179,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
 
 FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
                                Lval* lval_fun) {
+  printf(">>>>>>>> add_wasm_function %s\n", fn_name);
   int param_count = lval_fun->param_count;
   int wajure_params_count = 1;
   int wasm_params_count =
@@ -641,10 +639,10 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       resolved_sym = result.lval;
 
       int symbol_is_external =
-          resolved_sym->ns && resolved_sym->ns != state->current_ns ? 1 : 0;
+          result.ns && result.ns != get_current_ns() ? 1 : 0;
       if (symbol_is_external) {
-        global_name = make_global_name("data:", resolved_sym->ns->namespace,
-                                       resolved_sym->name);
+        global_name =
+            make_global_name("data:", result.ns->namespace, result.name);
         release(result.name);
         add_dep(wasm, global_name);
       }
@@ -664,7 +662,6 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
             case LAMBDA:  // functions in compiler env
               if (resolved_sym->str == NULL)
                 resolved_sym->str = retain(lval->str);
-
             default:;
           }
         default:
@@ -780,7 +777,7 @@ void compile(Namespace* ns) {
     lval_println(lval);
     if (lval->type == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
-        lval->str = retain(lval_sym->str);
+        wasm->current_binding = retain(lval_sym->str);
         result = lval_compile(wasm, lval);
         add_to_symbol_table(wasm, lval_sym->str, lval);
       }

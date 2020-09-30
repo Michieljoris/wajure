@@ -22,6 +22,21 @@ like we do for sys fns
 We'll get two identical fns, f and fp
 *** DONE (printf fp) gives an refcount error
 trying to release that's not managed by
+** Fatal: Module::addFunction: f already exists
+(defn f [x y z] [x y z])
+(def f2 f)
+(defn f [x] 1)
+
+(defn main [x y]
+ (print (f  1 2 3)))
+
+This is because f gets replaced by the second f, but and the second f is already
+processed and added to wasm because it came first in the env (so when compiling
+f2, which still refers to the old f we get the error, because it'll get added as
+f), and that's because we do lenv_put, and not lenv_prepend, which would solve
+this problem. Well, that is, if we check for the function in wasm in
+add_wasm_function and remove it and replace it with the update one when
+compiling.
 ** Release/retain partials, closure and rest args properly
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval

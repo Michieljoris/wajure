@@ -48,6 +48,25 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     }
   }
 
+  if (lval->type == LVAL_FUNCTION && !lval->ns && !lval->full_fn) {
+    // We need to keep track of in which namespace a fn is actually defined and
+    // under which name so we can refer to its fn_table_index from other
+    // namespaces in compiled code by imported global.
+    printf("def of lambda: %s/%s\n", get_current_ns()->namespace,
+           lval_sym->str);
+    lval_println(lval);
+    // Remove any current binding.
+    Lval* current_lval = lenv_get(ns->env, lval_sym);
+    if (current_lval) {
+      release(current_lval->ns);
+      release(current_lval->binding);
+      current_lval->ns = NULL;
+      current_lval->binding = NULL;
+    }
+    lval->ns = retain(get_current_ns());
+    lval->binding = retain(lval_sym->str);
+  }
+  // And replace with updated binding
   lenv_put(ns->env, lval_sym, lval);
   release(lval);
   return make_lval_nil();
@@ -137,6 +156,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
       make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
   fn->param_count = param_count;
   fn->rest_arg_index = rest_arg_index;
+
   return fn;
 }
 

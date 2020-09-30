@@ -114,7 +114,6 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 
   if (rest_arg_index) {
     param = iter_next(p);
-    /* Lval* rest_args = read_rest_args(param, p, args); */
     scoped Lval* rest_arg = make_lval_list();
     Cell** cdr = &rest_arg->head;
     while (head) {
@@ -129,23 +128,19 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
       rest_arg->type = LVAL_LITERAL;
       rest_arg->subtype = LNIL;
     }
-    /*   retain(args); */
-    /* lval_println(rest_args); */
-    /* printf("ref count: %d\n", get_ref_count(args)); */
     bindings_env->kv =
         alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
   }
 
   bindings_env->parent_env = retain(lval_fun->closure);
-  /* env_print(bindings_env); */
-  /* printf("------\n"); */
 
-  Namespace* old_ns = state->current_ns;
+  /* Namespace* old_ns = state->current_ns; */
   // TODO: bit iffy, look into more
-  if (lval_fun->ns) state->current_ns = lval_fun->ns;
+  /* if (lval_fun->ns) state->current_ns = lval_fun->ns; */
   Lval* ret = do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
 
-  state->current_ns = old_ns;
+  // TODO: if ret is a lambda then set its ns to lval_fun->ns!!!!
+  /* state->current_ns = old_ns; */
   return ret;
 }
 
@@ -175,6 +170,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   Namespace* current_ns = get_current_ns();
+
   // From a required namespace
   if (namespace_or_alias) {
     Namespace* ns =
@@ -191,16 +187,10 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
-    ns->dependants = alist_put(ns->dependants, is_eq_str,
-                               retain(current_ns->namespace), current_ns);
-    /* printf("eval symbol "); */
-    /* lval_println(lval_symbol); */
-    /* lval_println(ret.lval); */
-    /* printf("lval %p\n", ret.lval); */
-    if (!ret.lval->ns) {
-      ret.lval->ns = ns;
-      ret.lval->name = retain(name);
-    }
+    if (state->mark_deps)
+      ns->dependants = alist_put(ns->dependants, is_eq_str,
+                                 retain(current_ns->namespace), current_ns);
+    /* ret.lval->ns = ns; */
     return ret;
   }
 
@@ -208,10 +198,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
     ret.lval = lval_resolved_sym;  // resolved in symbols lexical env
-    if (!ret.lval->ns) {
-      ret.lval->ns = current_ns;
-      ret.lval->name = retain(lval_symbol->str);
-    }
+    /* ret.lval->ns = current_ns; */
     return ret;
   }
 
@@ -226,13 +213,11 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
 
-    ns->dependants = alist_put(ns->dependants, is_eq_str,
-                               retain(current_ns->namespace), current_ns);
+    if (state->mark_deps)
+      ns->dependants = alist_put(ns->dependants, is_eq_str,
+                                 retain(current_ns->namespace), current_ns);
 
-    if (!ret.lval->ns) {
-      ret.lval->ns = ns;
-      ret.lval->name = retain(lval_symbol->str);
-    }
+    /* ret.lval->ns = ns; */
     return ret;
   }
 
@@ -243,11 +228,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     if (lval_resolved_sym) {
       ret.lval = lval_resolved_sym;  // resolved in stdlib env
       ret.ns = ns;
-
-      if (!ret.lval->ns) {
-        ret.lval->ns = ns;
-        ret.lval->name = retain(lval_symbol->str);
-      }
+      /* ret.lval->ns = ns; */
       return ret;
     }
   }

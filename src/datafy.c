@@ -7,6 +7,7 @@
 #include "list.h"
 #include "ltypes.h"
 #include "lval.h"
+#include "namespace.h"
 #include "print.h"
 #include "state.h"
 #include "wasm.h"
@@ -94,21 +95,28 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   return ret;
 }
 
-CResult datafy_global_lambda(Wasm* wasm, char* fn_name, Lval* lval_fn) {
-  fn_name = fn_name        ? fn_name
-            : lval_fn->str ? lval_fn->str
-                           : uniquify_name(wasm, "anon");
+CResult datafy_global_lambda(Wasm* wasm, Lval* lval_fn) {
+  char* fn_name;
+  if (lval_fn->binding)
+    fn_name = lval_fn->binding;
+  else if (wasm->current_binding) {
+    fn_name = wasm->current_binding;
+    lval_fn->ns = get_current_ns();
+    lval_fn->binding = retain(fn_name);
+  } else
+    fn_name = uniquify_name(wasm, "anon");
+
   printf("datafy global_lambda, partial count: %d\n",
          list_count(lval_fn->partials));
   Cell* partials = NULL;
   if (lval_fn->full_fn) {
+    printf("is partial lambda so not creating wasm fn again");
     partials = lval_fn->partials;
     lval_fn = lval_fn->full_fn;
   } else {
     add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
   }
 
-  printf("calling make_data_lval_wasm_lambda\n");
   lval_println(lval_fn);
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + lval_fn->offset, lval_fn->param_count,
@@ -178,7 +186,7 @@ int inter_literal(Wasm* wasm, Lval* lval) {
 }
 
 CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
-  printf("datafy ======================= %s\n", global_name);
+  printf("datafy ======================= (global name: %s)\n", global_name);
   lval_println(lval);
   /* printf("wval_ptr: %d\n", lval->wval_ptr); */
 
@@ -204,16 +212,13 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
           ret = datafy_sys_fn(wasm, lval);
           break;
         case LAMBDA:  // functions in compiler env
-          printf("LAMBDA: global_name %s\n", global_name);
           if (global_name) {
-            printf("YES! LAMBDA: global_name %s\n", global_name);
             ret.ber = BinaryenGlobalGet(wasm->module, global_name,
                                         BinaryenTypeInt32());
             ret.is_external = 1;
           } else {
-            ret = datafy_global_lambda(wasm, lval->str, lval);
+            ret = datafy_global_lambda(wasm, lval);
           }
-          printf("Done with LAMBDA\n");
           break;
         case SPECIAL:
           return quit(wasm,

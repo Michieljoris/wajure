@@ -84,11 +84,11 @@ struct lval {
   Cell* partials;
   int param_count;
   int rest_arg_index;
-  // When an lval is found in another namespace in eval_symbol this is the final
-  // symbol the lval was assigned to, so we can actually assign the ns and name
-  // to this lval.
+  // We need to keep track of in which namespace a fn is defined and under which
+  // name so we can refer to its fn_table_index from other namespaces in
+  // compiled code by imported global.
   Namespace* ns;
-  char* name;
+  char* binding;
 
   // Compiler to wasm data
   int wval_ptr;
@@ -162,6 +162,7 @@ typedef struct {
   // Cache:
   Map namespaces;
   /* {"namespace.name": Namespace* ns} */
+  int mark_deps;
 } State;
 
 struct resolved_symbol {

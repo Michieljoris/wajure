@@ -1,6 +1,6 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
-(require '[test.test-partial :refer [test-partial]])
+;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
 (require '[foo.core :as foo])
 
@@ -16,18 +16,50 @@
 ;; (def l (list 1 2 3))
 
 
-;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (def foo (list 1 2 3))
 ;; ;; (defn g [x y & z] [x y z])
 ;; (def fp foo/fp)
-(def f foo/fp)
-(def fp (partial foo/fp 2))
+;; (def f foo/f)
+;; (def fp foo/fp)
+;; (def fpp (partial foo/fp 2))
 ;; (defn g [x] x)
 ;; (def p partial)
+(defn f [x y z] (print "in f") [x y z])
+(def f2 f)
+(def foo (f 1 2 3))
+(defn f [x] (print "in redefined f") 1)
 
 (defn main [x y]
+ (print (f 1))
+ (print (f2 1 2 3))
+  (print foo)
+ ;; (print (f  1 2 3))
+ ;; (print (fpp   3))
+ ;; (print (fp   3))
+ ;; (run-tests)
   ;; (test-partial)
+  ;; (print foo/f)
+  ;; (foo/f 1 2 3)
+  ;; (foo/f2 123)
+  ;; (print foo/x)
+  ;; (print f)
+  ;;  (f  2 3)
+  ;; (print foo/fp )
+  ;; (foo/fp 2 3)
+  ;; (print fp )
+  ;; (fp 3)
+
+  ;; ;; These ones get the fn table index
+  ;; (f 2 3)
+  ;; (foo/fp 2 3)
+  ;; (fp 3)
+
+  ;; (partial f 2)
+  ;; (partial foo/fp 2)
+  ;; (partial fp 3)
+
+
   ;; (print (partial foo/fp 2))
   ;; (print (partial f 2))
   ;; (print (partial fp 3))
@@ -35,15 +67,8 @@
   ;; (print fp)
   ;; (print foo/fp)
   ;; (print foo/fp)
-  ;; These ones get the fn table index
-  (print (f 2 3))
-  (print (foo/fp 2 3))
-  (print (fp 3))
 
   ;;These ones get the data offset by name
-  (print f)
-  (print foo/fp )
-  (print fp)
   ;; (let [fp foo/fp]
   ;;   (print (fp 2 3)))
   ;; (let [p partial]
