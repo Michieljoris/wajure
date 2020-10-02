@@ -93,22 +93,32 @@ void reset_lval(Lval* lval) {
   lval->wval_ptr = 0;
   lval->offset = 0;
   lval->context = NULL;
-  if (lval->type == LVAL_COLLECTION) {
-    switch (lval->subtype) {
-      case LIST:
-      case VECTOR:;
-        Cell* cell = lval->head;
-        while (cell) {
-          lval = (Lval*)cell->car;
-          reset_lval(lval);
-          cell = cell->cdr;
-        }
-        break;
-      case MAP:
-        break;
-      case SET:
-        break;
+  switch (lval->type) {
+    case LVAL_COLLECTION: {
+      switch (lval->subtype) {
+        case LIST:
+        case VECTOR:;
+          Cell* cell = lval->head;
+          while (cell) {
+            lval = (Lval*)cell->car;
+            reset_lval(lval);
+            cell = cell->cdr;
+          }
+          break;
+        case MAP:
+          break;
+        case SET:
+          break;
+      }
     }
+    case LVAL_FUNCTION: {
+      Cell* cell = lval->partials;
+      while (cell) {
+        reset_lval(cell->car);
+        cell = cell->cdr;
+      }
+    }
+    default:;
   }
 }
 
@@ -141,8 +151,8 @@ int compile_main() {
   walk_namespaces(unmark);
   mark(main_ns);
   main_ns->compile = 1;  // for debugging compiling
-  /* Namespace* bar_ns = get_namespace("test-compile.test4-if-fn-do"); */
-  /* bar_ns->compile = 0; */
+  Namespace* foo_core_ns = get_namespace("foo.core");
+  foo_core_ns->compile = 1;
   walk_namespaces(p_info);
 
   state->mark_deps = 1;

@@ -113,6 +113,9 @@ CResult datafy_global_lambda(Wasm* wasm, Lval* lval_fn) {
     printf("is partial lambda so not creating wasm fn again");
     partials = lval_fn->partials;
     lval_fn = lval_fn->full_fn;
+    if (lval_fn->offset == -1) {
+      add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
+    }
   } else {
     add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
   }
@@ -194,6 +197,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
   if (!global_name && lval->wval_ptr > 0) {
     int lval_ptr = lval->wval_ptr;
     CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+    printf("returing pre computed wval_ptr\n");
     return _ret;
   }
 

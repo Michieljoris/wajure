@@ -360,12 +360,12 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // function
   if (has_rest_arg) {
     if (total_args_count < min_param_count)
-      quit(wasm, "Not enough args passed to %s (need at least %d)", fn_name,
-           min_param_count);
+      quit(wasm, "Not enough args passed to %s/%s (need at least %d)",
+           lval_fn->ns->namespace, fn_name, min_param_count);
   } else {
     if (total_args_count != param_count)
-      quit(wasm, "Wrong number of args (%d) passed to %s (%d expected)",
-           total_args_count, fn_name, param_count);
+      quit(wasm, "Wrong number of args (%d) passed to %s/%s (%d expected)",
+           total_args_count, lval_fn->ns->namespace, fn_name, param_count);
   }
 
   Ber* compiled_args = malloc(sizeof(Ber) * total_args_count);
@@ -374,6 +374,8 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // Grab and datafy the partials from the function
   Cell* head = lval_fn->partials;
   while (head) {
+    printf("Partial: ");
+    lval_println(head->car);
     Ber compiled_arg = datafy_lval(wasm, head->car, NULL).ber;
     // We need to retain datafied values if the value ends up in the rest arg
     // because it will be released when we're done with this fn call
@@ -480,11 +482,11 @@ Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fun, Cell* args,
   return result;
 }
 
-Ber call_global_fn(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
-                   LocalIndices* li) {
+Ber call_external_fn(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
+                     LocalIndices* li) {
   printf("call_global_fn\n");
   Ber* call_operands =
-      compile_args_into_operands(wasm, lval_fun->str, lval_fun, args, li);
+      compile_args_into_operands(wasm, lval_fun->binding, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
   Ber result = BinaryenCallIndirect(wasm->module, fn_table_index, call_operands,
                                     param_count, make_type_int32(param_count),
@@ -543,7 +545,7 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
       char* fn_table_index_global = fn_ref.global_name;
       Ber wasm_fn_index = BinaryenGlobalGet(wasm->module, fn_table_index_global,
                                             BinaryenTypeInt32());
-      result = call_global_fn(wasm, wasm_fn_index, lval_fun, args, li);
+      result = call_external_fn(wasm, wasm_fn_index, lval_fun, args, li);
     } break;
     default:
       quit(wasm, "Unknown fn_ref_type %d", fn_ref_type);
