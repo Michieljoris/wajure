@@ -638,11 +638,11 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       resolved_sym = result.lval;
 
-      int symbol_is_external =
-          result.ns && result.ns != get_current_ns() ? 1 : 0;
-      if (symbol_is_external) {
-        global_name =
-            make_global_name("data:", result.ns->namespace, result.name);
+      int lval_is_external =
+          resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1 : 0;
+      if (lval_is_external) {
+        global_name = make_global_name("data:", resolved_sym->ns->namespace,
+                                       resolved_sym->binding);
         release(result.name);
         add_dep(wasm, global_name);
       }

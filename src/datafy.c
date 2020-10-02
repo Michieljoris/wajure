@@ -95,7 +95,7 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   return ret;
 }
 
-CResult datafy_global_lambda(Wasm* wasm, Lval* lval_fn) {
+CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   char* fn_name;
   if (lval_fn->binding)
     fn_name = lval_fn->binding;
@@ -191,13 +191,12 @@ int inter_literal(Wasm* wasm, Lval* lval) {
 CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
   printf("datafy ======================= (global name: %s)\n", global_name);
   lval_println(lval);
-  /* printf("wval_ptr: %d\n", lval->wval_ptr); */
 
   CResult ret = {};
   if (!global_name && lval->wval_ptr > 0) {
     int lval_ptr = lval->wval_ptr;
     CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
-    printf("returing pre computed wval_ptr\n");
+    /* printf("returing pre computed wval_ptr\n"); */
     return _ret;
   }
 
@@ -221,7 +220,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
                                         BinaryenTypeInt32());
             ret.is_external = 1;
           } else {
-            ret = datafy_global_lambda(wasm, lval);
+            ret = datafy_root_fn(wasm, lval);
           }
           break;
         case SPECIAL:

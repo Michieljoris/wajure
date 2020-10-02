@@ -8,9 +8,10 @@ union FnRef {
   Ber ber;
   char* fn_name;
   char* global_name;
+  int fn_table_index;
 };
 
-enum { BER, FN_NAME, GLOBAL };
+enum { BER, FN_NAME, INDIRECT_EXTERNAL, INDIRECT_LOCAL };
 
 void add_call_fns(Wasm* wasm);
 void add_validate_fn_fn(Wasm* wasm);
