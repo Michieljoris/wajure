@@ -25,15 +25,16 @@
 ;; (def fpp (partial foo/fp 2))
 ;; (defn g [x] x)
 ;; (def p partial)
-(defn f [x y z] (print "in f") [x y z])
-(def f2 f)
-(def foo (f 1 2 3))
-(defn f [x] (print "in redefined f") 1)
+
+;; (defn f [x y z] (print "in f") [x y z])
+;; (def f2 f)
+;; (def foo (f 1 2 3))
+;; (defn f [x] (print "in redefined f") 1)
 
 (defn main [x y]
- (print (f 1))
- (print (f2 1 2 3))
-  (print foo)
+ (print (foo/f 1))
+ (print (foo/f2 1 2 3))
+  (print foo/foo)
  ;; (print (f  1 2 3))
  ;; (print (fpp   3))
  ;; (print (fp   3))

@@ -10,7 +10,7 @@
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\19\ff\00\00\03\00\00\00\00\00\00\00\00\00\00\00\04\00\00\00\01\00\00\00\00\00\00\00\00\00\00\008\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff8\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00`\00\00\00\19\ff\00\00\03\00\00\00\01\00\00\00\00\00\00\00L\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\84\00\00\00\19\ff\01\00\01\00\00\00\00\00\00\00\00\00\00\00t\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\a8\00\00\00\02\08\00\00{\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff(\00\00\00\98\00\00\00\04\00\00\00P\00\00\00t\00\00\00\bc\00\00\00\02\00\00\00\c4\00\00\00\00\00\00\00\c4\00\00\00\03\00\00\00\18\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0fin redefined f\00\01\00\00\00\00\00\00\00\00\00\00\00#\00\00\00\02\t\00\00\00\00\00\00\04\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00G\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00k\00\00\00\19\ff\00\00\01\00\00\00\00\00\00\00\00\00\00\00[\00\00\00in f\00\01\00\00\00\00\00\00\00\00\00\00\00\94\00\00\00\02\t\00\00\00\00\00\00\7f\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\b8\00\00\00\19\ff\01\00\03\00\00\00\00\00\00\00\00\00\00\00\a8\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\dc\00\00\00\02\08\00\00\02\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\02\08\00\00\03\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00$\01\00\00\00\00\00\00\00\01\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\01\00\00\00\00\00\00\dc\00\00\00$\01\00\00\01\00\00\00\00\00\00\00\00\00\00\00\\\01\00\00\00\00\00\00G\00\00\00@\01\00\00\01\00\00\00\00\00\00\00\00\00\00\00x\01\00\00\01\12\00\00\00\00\00\00\00\00\00\00\\\01\00\00\03\00\00\00\13\00\00\007\00\00\00\84\00\00\00\cc\00\00\00\f0\00\00\00h\01\00\00\14\01\00\000\01\00\00L\01\00\00[\00\00\00\a8\00\00\00\8c\01\00\00\06\00\00\00\a4\01\00\00\03\00\00\00\b0\01\00\00\02\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $f $f2)
  (import "env" "__data_end" (global $__data_end i32))
@@ -86,61 +86,102 @@
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
- (func $f (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $f (param $0 i32) (param $1 i32) (result i32)
+  (local $2 i32)
+  (local $3 i32)
   (local $4 i32)
   (local $5 i32)
-  (block $do_2 (result i32)
-   (block $sys_call_1 (result i32)
-    (local.set $5
-     (call $print_fn
-      (i32.const 0)
-      (local.tee $4
-       (call $new_lval_list
-        (call $prefix_list
-         (call $new_lval_vector
-          (call $prefix_list
-           (call $retain
-            (local.get $1)
-           )
-           (call $prefix_list
-            (call $retain
-             (local.get $2)
-            )
-            (call $prefix_list
-             (call $retain
-              (local.get $3)
-             )
-             (i32.const 0)
-            )
+  (block $do_4 (result i32)
+   (local.set $4
+    (block $sys_call_1 (result i32)
+     (local.set $3
+      (call $print_fn
+       (i32.const 0)
+       (local.tee $2
+        (call $new_lval_list
+         (call $prefix_list
+          (call $retain
+           (i32.add
+            (global.get $data_offset)
+            (i32.const 35)
            )
           )
+          (i32.const 0)
          )
-         (i32.const 0)
         )
        )
       )
      )
+     (call $release
+      (local.get $2)
+     )
+     (local.get $3)
     )
-    (call $release
-     (local.get $4)
+   )
+   (block $do_body_result_3 (result i32)
+    (local.set $5
+     (call $retain
+      (i32.add
+       (global.get $data_offset)
+       (i32.const 71)
+      )
+     )
+    )
+    (block $release_locals_for_do_2
+     (call $release
+      (local.get $4)
+     )
     )
     (local.get $5)
    )
   )
  )
- (func $f2 (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (local $3 i32)
-  (block $do_4 (result i32)
-   (block $sys_call_3 (result i32)
-    (local.set $3
-     (call $print_fn
-      (i32.const 0)
-      (local.tee $2
-       (call $new_lval_list
+ (func $f2 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+  (local $4 i32)
+  (local $5 i32)
+  (local $6 i32)
+  (local $7 i32)
+  (block $do_8 (result i32)
+   (local.set $6
+    (block $sys_call_5 (result i32)
+     (local.set $5
+      (call $print_fn
+       (i32.const 0)
+       (local.tee $4
+        (call $new_lval_list
+         (call $prefix_list
+          (call $retain
+           (i32.add
+            (global.get $data_offset)
+            (i32.const 148)
+           )
+          )
+          (i32.const 0)
+         )
+        )
+       )
+      )
+     )
+     (call $release
+      (local.get $4)
+     )
+     (local.get $5)
+    )
+   )
+   (block $do_body_result_7 (result i32)
+    (local.set $7
+     (call $new_lval_vector
+      (call $prefix_list
+       (call $retain
+        (local.get $1)
+       )
+       (call $prefix_list
+        (call $retain
+         (local.get $2)
+        )
         (call $prefix_list
          (call $retain
-          (local.get $1)
+          (local.get $3)
          )
          (i32.const 0)
         )
@@ -148,15 +189,17 @@
       )
      )
     )
-    (call $release
-     (local.get $2)
+    (block $release_locals_for_do_6
+     (call $release
+      (local.get $6)
+     )
     )
-    (local.get $3)
+    (local.get $7)
    )
   )
  )
- ;; custom section "symbol_table", size 76
+ ;; custom section "symbol_table", size 58
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "236"
+ ;; custom section "data_size", size 3, contents: "468"
  ;; custom section "fn_table_size", size 1, contents: "2"
 )

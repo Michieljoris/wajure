@@ -88,7 +88,7 @@ struct lval {
   // name so we can refer to its fn_table_index from other namespaces in
   // compiled code by imported global.
   Namespace* ns;
-  char* binding;
+  char* binding;  // final_binding, or wasm_namw
 
   // Compiler to wasm data
   int wval_ptr;

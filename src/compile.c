@@ -779,7 +779,7 @@ void compile(Namespace* ns) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
         wasm->current_binding = retain(lval_sym->str);
         result = lval_compile(wasm, lval);
-        add_to_symbol_table(wasm, lval_sym->str, lval);
+        add_to_symbol_table(wasm, lval->binding, lval);
       }
     } else {
       result = datafy_lval(wasm, lval, NULL);
@@ -788,9 +788,6 @@ void compile(Namespace* ns) {
   }
 
   printf("===== DONE Processing env\n");
-
-  /* add_fn_to_table(wasm, "log_int"); */
-  /* add_fn_to_table(wasm, "printf_"); */
 
   add_function_table(wasm);
 
