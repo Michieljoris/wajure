@@ -376,7 +376,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   while (head) {
     printf("Partial: ");
     lval_println(head->car);
-    Ber compiled_arg = datafy_lval(wasm, head->car, NULL).ber;
+    Ber compiled_arg = datafy_lval(wasm, head->car).ber;
     // We need to retain datafied values if the value ends up in the rest arg
     // because it will be released when we're done with this fn call
     if (compiled_args_count >= min_param_count)
@@ -754,7 +754,6 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         fn_call.is_fn_call = 1;
     }
 
-    release(result.name);
   } else {
     // Not a function or wasm ref, perhaps it's something else we can use as a
     // fn, such as a vector, or kw or set, or perhaps an anonymous lambda eg:

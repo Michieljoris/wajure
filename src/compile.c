@@ -450,7 +450,7 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         Cell* partials_head = lval_fn->partials;
         while (partials_head) {
           Lval* lval = partials_head->car;
-          CResult result = datafy_lval(wasm, lval, NULL);
+          CResult result = datafy_lval(wasm, lval);
           Ber wval_ptr = make_int32(module, result.wasm_ptr);
           wval_ptr = BinaryenBinary(
               module, BinaryenAddInt32(), wval_ptr,
@@ -488,10 +488,12 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
             BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
         Ber ber_partial_count = make_int32(module, partial_count);
 
-        printf("is_external? %d\n", fn_arg.is_external);
+        int lval_fn_is_external =
+            lval_fn->ns && lval_fn->ns != get_current_ns() ? 1 : 0;
+        printf("is_external? %d\n", lval_fn_is_external);
 
         // We know the offset/fn_table_index, let's add the module's
-        // fn_table_offset global
+        // fn_table_offset
         int fn_table_index =
             lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
 
@@ -523,7 +525,7 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
       default: {
         // If we know we have anything that's not a result of a fn call (direct
         // or lval_ref) then we return it as is , and compile the rest
-        // of the args still for side effects. So we only compile fn calls.
+        // of the args still for side effects, ie we only compile fn calls.
         Ber* children = malloc(sizeof(Ber) * args_count);  //
         int children_count = 0;
         do {
@@ -627,7 +629,6 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
 
   Lval* resolved_sym = NULL;
-  char* global_name = NULL;
   switch (lval->type) {
     case LVAL_SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
@@ -638,16 +639,6 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       resolved_sym = result.lval;
 
-      int lval_is_external =
-          resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1 : 0;
-      /* int lval_is_partial = resolved_sym->cfn ? 1 : 0; */
-
-      if (lval_is_external) {
-        global_name = make_global_name("data:", resolved_sym->ns->namespace,
-                                       resolved_sym->cname);
-        release(result.name);
-        add_dep(wasm, global_name);
-      }
       switch (resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->str);
@@ -686,9 +677,8 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
     default:;
   }
 
-  CResult ret = datafy_lval(wasm, lval, global_name);
+  CResult ret = datafy_lval(wasm, lval);
   ret.lval = lval;
-  release(global_name);
   release(resolved_sym);
   return ret;
 }
@@ -764,8 +754,7 @@ void compile(Namespace* ns) {
     pairs[i--] = head->car;
     head = head->cdr;
   }
-  /* Cell* cell = env->kv; */
-  /* while (cell) { */
+
   for (int i = 0; i < count; i++) {
     Cell* pair = pairs[i];
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
@@ -783,7 +772,7 @@ void compile(Namespace* ns) {
         add_to_symbol_table(wasm, lval->cname, lval);
       }
     } else {
-      result = datafy_lval(wasm, lval, NULL);
+      result = datafy_lval(wasm, lval);
       add_to_symbol_table(wasm, lval_sym->str, lval);
     }
   }

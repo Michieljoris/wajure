@@ -97,21 +97,26 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
-
+  int offset;
+  Cell* partials = NULL;
   if (cfn) {
+    partials = lval_fn->partials;
     // Add the canonical fn for this partial if we haven't already
     if (cfn->offset == -1) {
       add_wasm_function(wasm, cfn->closure, cfn->cname, cfn);
     }
+    offset = cfn->offset;
   } else {
     // If not a partial fn just add the wasm fn
     add_wasm_function(wasm, lval_fn->closure, lval_fn->cname, lval_fn);
-  }
 
+    offset = lval_fn->offset;
+  }
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + lval_fn->offset, lval_fn->param_count,
-      lval_fn->rest_arg_index, lval_fn->partials);
+      wasm, wasm->__fn_table_end + offset, lval_fn->param_count,
+      lval_fn->rest_arg_index, partials);
+
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
   // And return a wasm pointer so that it can be attached to the lval for future
@@ -179,7 +184,15 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   }
 }
 
-CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
+CResult datafy_lval(Wasm* wasm, Lval* lval) {
+  scoped char* global_name = NULL;
+
+  int lval_is_external = lval->ns && lval->ns != get_current_ns() ? 1 : 0;
+
+  if (lval_is_external) {
+    global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
+    add_dep(wasm, global_name);
+  }
   printf("datafy ======================= (global name: %s)\n", global_name);
   lval_println(lval);
 
@@ -190,13 +203,11 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
     /* printf("returing pre computed wval_ptr\n"); */
     return _ret;
   }
-
   switch (lval->type) {
     case LVAL_COLLECTION:
       if (global_name) {
         ret.ber =
             BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
-        ret.is_external = 1;
       } else
         ret = datafy_collection(wasm, lval);
       break;
@@ -209,7 +220,6 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
           if (global_name) {
             ret.ber = BinaryenGlobalGet(wasm->module, global_name,
                                         BinaryenTypeInt32());
-            ret.is_external = 1;
           } else {
             ret = datafy_root_fn(wasm, lval);
           }

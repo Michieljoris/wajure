@@ -243,7 +243,7 @@ CResult compile_quote(Wasm* wasm, Cell* args) {
          list_count(args));
   }
   Lval* arg = args->car;
-  return datafy_lval(wasm, arg, NULL);
+  return datafy_lval(wasm, arg);
 }
 
 CResult compile_quasiquote(Wasm* wasm, Cell* args) {

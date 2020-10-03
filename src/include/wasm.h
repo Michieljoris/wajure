@@ -15,7 +15,6 @@ typedef struct {
   Ber ber;
   int wasm_ptr;
   int is_fn_call;
-  int is_external;
   Lval* lval;
 } CResult;
 

@@ -5,6 +5,7 @@
 #include "lib.h"
 #include "list.h"
 #include "ltypes.h"
+#include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
@@ -140,7 +141,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   int i = 0;
   /* printf("inter list, count: %d\n", count); */
   while (head) {
-    int v_ptr = datafy_lval(wasm, head->car, NULL).wasm_ptr;
+    int v_ptr = datafy_lval(wasm, head->car).wasm_ptr;
     /* printf("%d ", v_ptr); */
     /* lval_println(head->car); */
     int* data_cell = make_data_cell(wasm, head);
@@ -187,7 +188,7 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   int i = 0;
   while (head) {
     Lval* lval = head->car;
-    CResult result = datafy_lval(wasm, lval, NULL);
+    CResult result = datafy_lval(wasm, lval);
     partial_ptrs[i++] = result.wasm_ptr;
     head = head->cdr;
   }

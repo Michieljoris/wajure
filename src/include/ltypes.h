@@ -171,8 +171,6 @@ typedef struct {
 } State;
 
 struct resolved_symbol {
-  Namespace* ns;
-  char* name;
   Lval* lval;
 };
 

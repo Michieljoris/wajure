@@ -23,6 +23,7 @@
 (def fp (partial f 1))
 (def fpp (partial fp 2))
 (def fp2 (partial f 1))
+;; (def f :foo)
 ;; (def plus (partial + 1))
 ;; (def f "foo")
 ;; (def g (partial f 1))
@@ -53,6 +54,8 @@
 ;; (defn f [x] (print "in redefined f") 1)
 
 (defn main [x y]
+  ;; (let [fpp (partial fp 2)]
+  ;;   (print (fpp 3)))
   (print (fp 2 3))
   (print (fp2 2 3))
   (print (fpp  3))
