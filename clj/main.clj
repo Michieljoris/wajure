@@ -2,7 +2,7 @@
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
-(require '[foo.core :as foo])
+;; (require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -16,14 +16,22 @@
 ;; (def l (list 1 2 3))
 
 
-;; (defn f [x y z] (print "in f") [x y z])
-;; (def fp (partial f 1))
-;; (defn f [x] (print "in redefined f") 1)
-;; (def foo (list 1 2 3))
+;; (defn f [x y z] (print "in f, executing g") (x) [x y z])
+(defn f [x y z] (print "in f") [x y z])
+;; (defn g [] (print "in g") )
+(def fp (partial f 1))
+(def f2 f)
+;; (def fg [f]
+(defn f [x] (print "in redefined f") 1)
+;; (defn g [] (print "in redefined g"))
+
+
 ;; ;; (defn g [x y & z] [x y z])
-(def f foo/f)
-(def fp foo/fp)
-(def fpp (partial foo/fp 2))
+
+;; (def f foo/f)
+;; (def fp_main foo/fp)
+;; (def fpp (partial foo/fp 2))
+
 ;; (def f foo/f)
 ;; (def fp foo/fp)
 ;; (def fpp (partial foo/fp 2))
@@ -36,9 +44,12 @@
 ;; (defn f [x] (print "in redefined f") 1)
 
 (defn main [x y]
+  ;; (print "hello")
+  ;; (test-partial)
   ;; (print (f 1))
+  ;; (print (f2 1 2 3))
   ;; (print (fp 2 3))
-  (print (fpp 3))
+  ;; (print (fpp 3))
  
   ;; (print (foo/f 1))
   ;; (print (foo/fp  2 3))
@@ -50,7 +61,6 @@
  ;; (print (fpp   3))
  ;; (print (fp   3))
  ;; (run-tests)
-  ;; (test-partial)
   ;; (print foo/f)
   ;; (foo/f 1 2 3)
   ;; (foo/f2 123)

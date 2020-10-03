@@ -55,13 +55,17 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     printf("def of lambda: %s/%s\n", get_current_ns()->namespace,
            lval_sym->str);
     lval_println(lval);
-    // Remove any current binding.
+    // Set any current binding to unbound.
     Lval* current_lval = lenv_get(ns->env, lval_sym);
     if (current_lval) {
-      release(current_lval->ns);
+      /* release(current_lval->ns); */
+      /* current_lval->ns = NULL; */
+      /* current_lval->binding = NULL; */
+      char* binding =
+          lalloc_size(_strlen("unbound_") + _strlen(current_lval->binding));
+      sprintf(binding, "unbound_%s", current_lval->binding);
       release(current_lval->binding);
-      current_lval->ns = NULL;
-      current_lval->binding = NULL;
+      current_lval->binding = binding;
     }
     lval->ns = retain(get_current_ns());
     lval->binding = retain(lval_sym->str);

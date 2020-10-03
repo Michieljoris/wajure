@@ -8,6 +8,11 @@
 (def gp (partial g 1 2))
 ;; (def plus (partial + 1))
 
+;; Testing redefining function of a partial
+(defn h [x y z] [x y z])
+(def hp (partial h 1))
+(defn h [x] 1)
+
 ;; (defn test-partial []
 ;;   ;; (print (fp 2 3))
 
@@ -59,8 +64,11 @@
   (t (fp2 3) [1 2 3])
 
   ;; Making a partial of global partial fn
- (let [fp2 (partial fp 2)]
-   (t (fp2 3) [1 2 3]))
+  (let [fp2 (partial fp 2)]
+    (t (fp2 3) [1 2 3]))
 
+
+  (t (h 1) 1)
+  (t (hp 2 3) [1 2 3])
   (pr "Partial tests have run")
   )

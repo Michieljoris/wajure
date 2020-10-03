@@ -151,8 +151,8 @@ int compile_main() {
   walk_namespaces(unmark);
   mark(main_ns);
   main_ns->compile = 1;  // for debugging compiling
-  Namespace* foo_core_ns = get_namespace("foo.core");
-  foo_core_ns->compile = 1;
+  /* Namespace* foo_core_ns = get_namespace("foo.core"); */
+  /* foo_core_ns->compile = 1; */
   walk_namespaces(p_info);
 
   state->mark_deps = 1;

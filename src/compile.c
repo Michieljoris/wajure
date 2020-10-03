@@ -640,6 +640,8 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       int lval_is_external =
           resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1 : 0;
+      int lval_is_partial = resolved_sym->full_fn ? 1 : 0;
+
       if (lval_is_external) {
         global_name = make_global_name("data:", resolved_sym->ns->namespace,
                                        resolved_sym->binding);

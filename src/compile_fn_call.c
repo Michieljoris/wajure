@@ -648,9 +648,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
 
   // Fn call > (symbol args ...)
   if (lval_applicator->type == LVAL_SYMBOL) {
+    Lval* lval_sym = lval_applicator;
     // Let's see if the symbol refers to something we know how to compile
     // already
-    struct resolved_symbol result = eval_symbol(wasm->env, lval_applicator);
+    struct resolved_symbol result = eval_symbol(wasm->env, lval_sym);
     Lval* resolved_sym = result.lval;
     /* int lval_is_external = result.ns && result.ns != get_current_ns() ? 1 :
      * 0; */
@@ -658,9 +659,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     // If it's a symbol it has to be known in our compiler env!!!
     if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);
-      lval_println(lval_applicator);
-      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s",
-           lval_applicator->str);
+      lval_println(lval_sym);
+      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s", lval_sym->str);
     }
 
     switch (resolved_sym->type) {
@@ -680,13 +680,16 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                                                                          : 0;
             int lval_is_partial = resolved_sym->full_fn ? 1 : 0;
             if (lval_is_partial) {
-              printf("Partial!!!!\n");
+              /* printf("Partial!!!!\n"); */
               Lval* full_fn = resolved_sym->full_fn;
               if (full_fn->ns != get_current_ns()) {
-                printf("Partial!!!!\n");
+                if (!full_fn->ns)  // It's been redefined in the other namespace
+                {                  // So we use the binding of the actual lval
+                  full_fn->ns = resolved_sym->ns;
+                  full_fn->binding = retain(resolved_sym->binding);
+                }
                 char* global_name = make_global_name(
                     "fn:", full_fn->ns->namespace, full_fn->binding);
-                printf("Partial!!!!\n");
                 add_dep(wasm, global_name);
                 union FnRef fn_ref = {.global_name = global_name};
                 fn_call =

@@ -1,10 +1,12 @@
 * TODO compiler
 ** clean up and comment all of code
 ** compiled partial
-*** global partial fns from another namespace
+*** DONE global partial fns from another namespace
+*** namespace wasm fns of wajure fns to prevent clashes with compilter generated fns
+*** make sure that wasm fn f is not created in (def f foo/f)
 *** Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
 *** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
-*** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg), is a fn (or not)
+*** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
 in a lval_wasm_lambda any partials should all be retained, meaning we can release all
 of the partials when releasing the lval_wasm_lambda
@@ -22,7 +24,7 @@ like we do for sys fns
 We'll get two identical fns, f and fp
 *** DONE (printf fp) gives an refcount error
 trying to release that's not managed by
-** Fatal: Module::addFunction: f already exists
+** DONE Fatal: Module::addFunction: f already exists
 (defn f [x y z] [x y z])
 (def f2 f)
 (defn f [x] 1)

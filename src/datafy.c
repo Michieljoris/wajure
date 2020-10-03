@@ -96,10 +96,12 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
+  printf("datafy_root_fn\n");
   char* fn_name;
   if (lval_fn->binding)
     fn_name = lval_fn->binding;
   else if (wasm->current_binding) {
+    printf("Using currentbinding!!!!!");
     fn_name = wasm->current_binding;
     lval_fn->ns = get_current_ns();
     lval_fn->binding = retain(fn_name);
