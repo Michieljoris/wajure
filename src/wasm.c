@@ -248,7 +248,7 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int offset = lval->wval_ptr;
   if (lval->type == LVAL_FUNCTION) {
     int fn_table_index =
-        lval->full_fn ? lval->full_fn->offset : lval->offset;  // partials
+        lval->cfn ? lval->cfn->offset : lval->offset;  // partials
     snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", sym, type_str, offset,
              fn_table_index, lval->param_count, lval->rest_arg_index);
   } else

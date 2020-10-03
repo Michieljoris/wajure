@@ -60,7 +60,6 @@ typedef struct {
 
   int validate_fn_at_rt;
   Map deps;
-  char* current_binding;
 } Wasm;
 
 typedef struct {

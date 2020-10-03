@@ -493,7 +493,7 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset global
         int fn_table_index =
-            lval_fn->full_fn ? lval_fn->full_fn->offset : lval_fn->offset;
+            lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
 
         Ber ber_fn_table_index = make_int32(module, fn_table_index);
         ber_fn_table_index = BinaryenBinary(
@@ -640,11 +640,11 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       int lval_is_external =
           resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1 : 0;
-      int lval_is_partial = resolved_sym->full_fn ? 1 : 0;
+      /* int lval_is_partial = resolved_sym->cfn ? 1 : 0; */
 
       if (lval_is_external) {
         global_name = make_global_name("data:", resolved_sym->ns->namespace,
-                                       resolved_sym->binding);
+                                       resolved_sym->cname);
         release(result.name);
         add_dep(wasm, global_name);
       }
@@ -779,9 +779,8 @@ void compile(Namespace* ns) {
     lval_println(lval);
     if (lval->type == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
-        wasm->current_binding = retain(lval_sym->str);
         result = lval_compile(wasm, lval);
-        add_to_symbol_table(wasm, lval->binding, lval);
+        add_to_symbol_table(wasm, lval->cname, lval);
       }
     } else {
       result = datafy_lval(wasm, lval, NULL);
@@ -794,7 +793,14 @@ void compile(Namespace* ns) {
   add_function_table(wasm);
 
   if (_strcmp(ns->namespace, config->main) == 0) {
-    BinaryenAddFunctionExport(wasm->module, "main", "main");
+    char* main_fn_name = lalloc_size(_strlen(config->main) + 1);
+    sprintf(main_fn_name, "%s", config->main);
+    Lval* lval_sym = make_lval_sym(main_fn_name);
+    Lval* main_fn = lenv_get(ns->env, lval_sym);
+    if (!main_fn) quit(wasm, "No main fn found in %s", config->main);
+    BinaryenAddFunctionExport(wasm->module, main_fn->cname, "main");
+    release(main_fn);
+    release(lval_sym);
   }
 
   inter_rewrite_info(wasm);

@@ -17,12 +17,21 @@
 
 
 ;; (defn f [x y z] (print "in f, executing g") (x) [x y z])
-(defn f [x y z] (print "in f") [x y z])
+(defn f [x y z]  [x y z])
+(def f2 f)
 ;; (defn g [] (print "in g") )
 (def fp (partial f 1))
-(def f2 f)
-;; (def fg [f]
-(defn f [x] (print "in redefined f") 1)
+(def fpp (partial fp 2))
+(def fp2 (partial f 1))
+;; (def plus (partial + 1))
+;; (def f "foo")
+;; (def g (partial f 1))
+;; (def f2 f)
+;; (def fg [f])
+;; (defn f [x] 1)
+;; (defn f [x]  x)
+;; (def f3 f)
+;; (def f "foo")
 ;; (defn g [] (print "in redefined g"))
 
 
@@ -44,6 +53,14 @@
 ;; (defn f [x] (print "in redefined f") 1)
 
 (defn main [x y]
+  (print (fp 2 3))
+  (print (fp2 2 3))
+  (print (fpp  3))
+  ;; (let [f (fn [x] x)]
+  ;;   f)
+  ;; (print (fn [x] x))
+  ;; (let [f (fn [x] x)]
+  ;;   (f 1))
   ;; (print "hello")
   ;; (test-partial)
   ;; (print (f 1))

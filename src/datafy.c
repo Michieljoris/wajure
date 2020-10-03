@@ -96,38 +96,27 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
-  printf("datafy_root_fn\n");
-  char* fn_name;
-  if (lval_fn->binding)
-    fn_name = lval_fn->binding;
-  else if (wasm->current_binding) {
-    printf("Using currentbinding!!!!!");
-    fn_name = wasm->current_binding;
-    lval_fn->ns = get_current_ns();
-    lval_fn->binding = retain(fn_name);
-  } else
-    fn_name = uniquify_name(wasm, "anon");
+  Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
 
-  printf("datafy global_lambda, partial count: %d\n",
-         list_count(lval_fn->partials));
-  Cell* partials = NULL;
-  if (lval_fn->full_fn) {
-    printf("is partial lambda so not creating wasm fn again");
-    partials = lval_fn->partials;
-    lval_fn = lval_fn->full_fn;
-    if (lval_fn->offset == -1) {
-      add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
+  if (cfn) {
+    // Add the canonical fn for this partial if we haven't already
+    if (cfn->offset == -1) {
+      add_wasm_function(wasm, cfn->closure, cfn->cname, cfn);
     }
   } else {
-    add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
+    // If not a partial fn just add the wasm fn
+    add_wasm_function(wasm, lval_fn->closure, lval_fn->cname, lval_fn);
   }
 
-  lval_println(lval_fn);
+  // Make a lval_wasm_lambda of our fn and inter it in wasm data
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + lval_fn->offset, lval_fn->param_count,
-      lval_fn->rest_arg_index, partials);
+      lval_fn->rest_arg_index, lval_fn->partials);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+
+  // And return a wasm pointer so that it can be attached to the lval for future
+  // reference
+  CResult ret = {.wasm_ptr = lval_ptr};
   return ret;
 }
 

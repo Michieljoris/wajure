@@ -473,7 +473,7 @@ Ber call_indirect(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
                   LocalIndices* li) {
   printf("call_indirect (external or partial fn or both)\n");
   Ber* call_operands =
-      compile_args_into_operands(wasm, lval_fun->binding, lval_fun, args, li);
+      compile_args_into_operands(wasm, lval_fun->cname, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args
   Ber result = BinaryenCallIndirect(wasm->module, fn_table_index, call_operands,
                                     param_count, make_type_int32(param_count),
@@ -678,42 +678,31 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             int lval_is_external =
                 resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1
                                                                          : 0;
-            int lval_is_partial = resolved_sym->full_fn ? 1 : 0;
-            if (lval_is_partial) {
-              /* printf("Partial!!!!\n"); */
-              Lval* full_fn = resolved_sym->full_fn;
-              if (full_fn->ns != get_current_ns()) {
-                if (!full_fn->ns)  // It's been redefined in the other namespace
-                {                  // So we use the binding of the actual lval
-                  full_fn->ns = resolved_sym->ns;
-                  full_fn->binding = retain(resolved_sym->binding);
-                }
-                char* global_name = make_global_name(
-                    "fn:", full_fn->ns->namespace, full_fn->binding);
+            Lval* cfn = resolved_sym->cfn;
+            if (cfn) {  // Partial fn, derived from cfn
+              if (cfn->ns != get_current_ns()) {  // external
+                char* global_name =
+                    make_global_name("fn:", cfn->ns->namespace, cfn->cname);
                 add_dep(wasm, global_name);
                 union FnRef fn_ref = {.global_name = global_name};
                 fn_call =
                     apply(wasm, INDIRECT_EXTERNAL, fn_ref, resolved_sym, args);
                 release(global_name);
-              } else {
-                union FnRef fn_ref = {.fn_table_index = full_fn->offset};
+              } else {  // internal
+                union FnRef fn_ref = {.fn_table_index = cfn->offset};
                 fn_call =
                     apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym, args);
               }
-            } else if (lval_is_external) {
+            } else if (lval_is_external) {  // required from another namespace
               char* global_name = make_global_name(
-                  "fn:", resolved_sym->ns->namespace, resolved_sym->binding);
-              printf("global name %s\n", global_name);
+                  "fn:", resolved_sym->ns->namespace, resolved_sym->cname);
               add_dep(wasm, global_name);
               union FnRef fn_ref = {.global_name = global_name};
               fn_call =
                   apply(wasm, INDIRECT_EXTERNAL, fn_ref, resolved_sym, args);
               release(global_name);
-            } else {
-              union FnRef fn_ref = {.fn_name = resolved_sym->binding};
-              printf("fn call FN_NAME\n");
-              printf("lval_resolved_sym: %s/%s\n", resolved_sym->ns->namespace,
-                     resolved_sym->binding);
+            } else {  // local fn
+              union FnRef fn_ref = {.fn_name = resolved_sym->cname};
               fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);
             }
             fn_call.is_fn_call = 1;

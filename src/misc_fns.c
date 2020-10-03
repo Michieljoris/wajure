@@ -399,7 +399,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
 
   // For compiler purposes so we know what the fn is that this partial is
   // derived from.
-  partial_fn->full_fn = lval_fun->full_fn ? lval_fun->full_fn : lval_fun;
+  partial_fn->cfn = lval_fun->cfn ? lval_fun->cfn : lval_fun;
 
   return partial_fn;
 }

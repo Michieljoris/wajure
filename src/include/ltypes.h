@@ -88,13 +88,17 @@ struct lval {
   // name so we can refer to its fn_table_index from other namespaces in
   // compiled code by imported global.
   Namespace* ns;
-  char* binding;  // final_binding, or wasm_namw
+  char* cname;  // final_binding, or wasm_name, or canonical name, or actual
+                // name rather than an alias
 
   // Compiler to wasm data
   int wval_ptr;
   Context* context;
   int offset;
-  Lval* full_fn;  // ref to full fn from partial fns
+
+  // Ptr to canonical fn for partial fns, the fn that has the cname prop that we
+  // actually need to call in wasm when calling the partial fn derived from it.
+  Lval* cfn;
 };
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
@@ -153,6 +157,7 @@ struct namespace {
   // interpreter calculates, other than fns, are hardcoded in the dependant
   // module's data section..
   Map dependants;
+  int uid_counter;
 };
 
 typedef struct {
