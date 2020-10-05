@@ -62,6 +62,7 @@
 (defn main [x y]
   (test-partial)
 
+  ;; (foo/f)
   ;; (let [plus (partial + 1 1)]
   ;;  (t (plus 1) 3))
   ;; (let [plus1 (partial + 1 1 1 1)]

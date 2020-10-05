@@ -91,8 +91,8 @@
     (t (fpp 3) [1 2 3]))
 
   ;; Make partials from sys fns
-  ;; (let [plus (partial + 1 1)]
-  ;;  (t (plus 1) 3))
+  (let [plus (partial + 1 1)]
+   (t (plus 1) 3))
  
   (pr "Partial tests have run.")
   )

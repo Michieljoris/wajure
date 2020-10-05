@@ -721,13 +721,13 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
           // We know the offset/fn_table_index, let's add the module's
           // fn_table_offset
           ber_fn_table_index = make_int32(module, fn_table_index);
+          ber_fn_table_index =
+              BinaryenBinary(module, BinaryenAddInt32(), ber_fn_table_index,
+                             BinaryenGlobalGet(module, "fn_table_offset",
+                                               BinaryenTypeInt32()));
           param_count = make_int32(module, lval_fn->param_count);
           has_rest_arg = make_int32(module, lval_fn->rest_arg_index);
         }
-
-        ber_fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), ber_fn_table_index,
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
 
         // Call the runtime make_lval_wasm_lambda fn
         Ber operands[6] = {ber_fn_table_index, param_count,  has_rest_arg,
