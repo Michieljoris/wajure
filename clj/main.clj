@@ -1,6 +1,6 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
-;; (require '[test.test-partial :refer [test-partial]])
+(require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -60,18 +60,21 @@
 
 
 (defn main [x y]
-  (let [
-        ;; f fp
-        f (fn [x y z] [x y z])
-        fp (partial f 1)
-        fpp (partial fp 2)
-        ]
-    (print (f 1 2 3))
-    (print (fp 2 3))
-    (print (fpp 3))
-    )
-  ;; (test-partial)
- 
+  (test-partial)
+
+  ;; (let [plus (partial + 1 1)]
+  ;;  (t (plus 1) 3))
+  ;; (let [plus1 (partial + 1 1 1 1)]
+  ;;  +
+  ;;  (print (plus1 1))
+  ;;   )
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       g (fn [] f)
+  ;;       fp (partial (g) 1)
+  ;;       fpp (partial fp 2)]
+  ;;   (t (fp 2 3) [1 2 3])
+  ;;   (t (fpp  3) [1 2 3]))
+
  ;; (print (plus1 1))
  ;; (print (plus2 1))
   ;; (let [fpp (partial fp 2)]

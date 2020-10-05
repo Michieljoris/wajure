@@ -83,12 +83,16 @@
 
   ;; Partials of local fns
   (let [f (fn [x y z] [x y z])
-        fp (partial f 1)
-        fpp (partial fp 2)
-        ]
+        g (fn [] f)
+        fp (partial (g) 1)
+        fpp (partial fp 2)]
     (t (f 1 2 3) [1 2 3])
     (t (fp 2 3) [1 2 3])
     (t (fpp 3) [1 2 3]))
 
-  (pr "Partial tests have run")
+  ;; Make partials from sys fns
+  ;; (let [plus (partial + 1 1)]
+  ;;  (t (plus 1) 3))
+ 
+  (pr "Partial tests have run.")
   )

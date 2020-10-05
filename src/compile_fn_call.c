@@ -9,187 +9,12 @@
 #include "ltypes.h"
 #include "lval.h"
 #include "namespace.h"
+#include "native.h"
 #include "print.h"
 #include "refcount.h"
 #include "state.h"
 #include "wasm.h"
 #include "wasm_util.h"
-
-void add_partial_fn(Wasm* wasm) {
-  BinaryenModuleRef module = wasm->module;
-  int partial_fn_index = add_fn_to_table(wasm, "partial_fn");
-  if (partial_fn_index != PARTIAL_FN_INDEX)
-    quit(wasm,
-         "Index of partial_fn in fn table index is not %d!!! This is not "
-         "going to work!!!!",
-         PARTIAL_FN_INDEX);
-
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, "partial_fn", params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_apply_fn(Wasm* wasm) {
-  BinaryenModuleRef module = wasm->module;
-  int apply_fn_index = add_fn_to_table(wasm, "apply_fn");
-  if (apply_fn_index != APPLY_FN_INDEX)
-    quit(wasm,
-         "Index of apply_fn in fn table index is not %d!!! This is not "
-         "going to work!!!!",
-         APPLY_FN_INDEX);
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, "apply_fn", params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_call_fn(Wasm* wasm, int n) {
-  BinaryenModuleRef module = wasm->module;
-  char* fn_name = number_fn_name(wasm, "call");  // call#0 - call#n
-  add_fn_to_table(wasm, fn_name);
-
-  // closure pointer, fn_table_index, args_block_ptr and args count
-  BinaryenType fn_params_type = make_type_int32(4);
-  BinaryenType fn_results_type = make_type_int32(1);
-  BinaryenType call_params_type =
-      make_type_int32(n + 1);  // first param is closure_pointer
-  BinaryenType call_results_type = make_type_int32(1);
-
-  Ber closure_pointer = BinaryenLocalGet(module, 0, BinaryenTypeInt32());
-  Ber* operands = malloc((n + 1) * sizeof(Ber));
-  operands[0] = closure_pointer;
-
-  Ber args_block_ptr = BinaryenLocalGet(module, 2, BinaryenTypeInt32());
-  for (int i = 0; i < n; i++) {
-    operands[i + 1] = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
-                                   args_block_ptr);
-  }
-  Ber wval_fn_table_index = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
-  Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, n + 1,
-                                  call_params_type, call_results_type);
-  int children_count = 1;
-  Ber children[] = {/* wasm_log_int(wasm, make_int32(module, n)), */
-                    /* wasm_log_int(wasm, closure_pointer), */
-                    /* wasm_log_int(wasm, wval_fn_table_index), */
-                    call};
-  Ber body = BinaryenBlock(module, NULL, children, children_count,
-                           BinaryenTypeInt32());
-  BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
-                      body);
-  free(operands);
-  release(fn_name);
-}
-
-Ber validate_as_fn(Wasm* wasm, Ber wval) {
-  BinaryenModuleRef module = wasm->module;
-  Ber wval_type = get_wval_prop(module, wval, "type");
-  Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(),
-                                       wval_type, make_int32(module, WVAL_FUN));
-  char* error_msg = "not a fn";
-  scoped char* str = lalloc_size(_strlen(error_msg));
-  sprintf(str, "%s", error_msg);
-  Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber;
-  Ber all_ok = BinaryenNop(module);
-  return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok);
-}
-
-// Wasm fn that receives ptr to wval_fn in local 0, and args count in local 1
-// and throws runtime error when args count is invalid for  the wval_fn
-Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) {
-  BinaryenModuleRef module = wasm->module;
-  /* Context* context = wasm->context->car; */
-  /* char* fn_name = context->function_context->fn_name; */
-  char* error_msg = "fn_name???";
-  scoped char* rt_error_msg = lalloc_size(_strlen(error_msg));
-  sprintf(rt_error_msg, "%s", error_msg);
-
-  // Put the param count of the wval_fn in local 2
-  Ber wval_param_count = get_wval_prop(module, wval, "param_count");
-  Ber param_count_tee =
-      BinaryenLocalTee(module, 2, wval_param_count, BinaryenTypeInt32());
-  Ber get_param_count = BinaryenLocalGet(module, 2, BinaryenTypeInt32());
-
-  // has_rest_arg
-  Ber has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
-  // min param_count
-  Ber min_param_count = get_wval_prop(module, wval, "min_param_count");
-
-  // Check if args count is less than min param count (so param count minus any
-  // rest param)
-  Ber args_count_lt_min_param_count =
-      BinaryenBinary(module, BinaryenLtUInt32(), args_count, min_param_count);
-  Ber all_ok = BinaryenNop(module);
-  Ber too_few_rt_error =
-      wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber;
-  Ber if_args_count_lt_min_param_count = BinaryenIf(
-      module, args_count_lt_min_param_count, too_few_rt_error, all_ok);
-
-  // Check if args count is less than param count (in case there's no rest
-  // param)
-  Ber args_count_lt_param_count =
-      BinaryenBinary(module, BinaryenLtUInt32(), args_count, get_param_count);
-  Ber if_args_count_lt_param_count = BinaryenIf(
-      module, args_count_lt_param_count,
-      wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber, all_ok);
-
-  // if args count > param count throw rt_error else check if less than param
-  // count
-  Ber args_count_gt_param_count =
-      BinaryenBinary(module, BinaryenGtUInt32(), args_count, param_count_tee);
-  Ber if_args_count_gt_param_count =
-      BinaryenIf(module, args_count_gt_param_count,
-                 wasm_runtime_error(wasm, RT_TOO_MANY_ARGS, rt_error_msg).ber,
-                 if_args_count_lt_param_count);
-  // Result is as this pseudo code:
-  /* if (has_rest_arg) { */
-  /*   if (args_count < min_param_count) rt_error */
-  /*   } else { */
-  /*   if (args_count > param_count) throw rt_error */
-  /*   else if (args_count < param_count) throw rt_error */
-  /* } */
-  Ber if_has_rest_arg =
-      BinaryenIf(module, has_rest_arg, if_args_count_lt_min_param_count,
-                 if_args_count_gt_param_count);
-
-  Ber ret = if_has_rest_arg;
-  return ret;
-}
-
-void add_validate_fn_fn(Wasm* wasm) {
-  BinaryenModuleRef module = wasm->module;
-
-  Ber children[] = {
-      validate_as_fn(wasm, BinaryenLocalGet(module, 0, BinaryenTypeInt32())),
-
-      /* wasm_log_int( */
-      /*     wasm, get_wval_prop(module, */
-      /*                         BinaryenLocalGet(module, 0,
-         BinaryenTypeInt32()), */
-      /*                         "param_count")), */
-      validate_args_count(wasm,
-                          BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
-                          BinaryenLocalGet(module, 1, BinaryenTypeInt32()))};
-  Ber body = BinaryenBlock(module, NULL, children, 2, BinaryenTypeNone());
-
-  BinaryenType* local_types = make_type_int32_array(1);
-  BinaryenAddFunction(module, "validate_fn", make_type_int32(2),
-                      BinaryenTypeNone(), local_types, 1, body);
-  int validate_fn_index = add_fn_to_table(wasm, "validate_fn");
-  if (validate_fn_index != VALIDATE_FN_INDEX)
-    quit(wasm,
-         "Index of validate_fn in fn table index is not %d!!! This is not "
-         "going to work!!!!",
-         VALIDATE_FN_INDEX);
-}
-
-// This adds MAX_FN_PARAMS wasm fns (call#0-call#20), each fn takes 3 params:
-// closure_pointer, fn_table_index and args_block
-void add_call_fns(Wasm* wasm) {
-  for (int i = 0; i <= MAX_FN_PARAMS; i++) add_call_fn(wasm, i);
-}
 
 Ber compile_args_into_block(Wasm* wasm, Ber wval, Cell* args, int args_count,
                             int args_block_ptr_index, LocalIndices* li) {
@@ -367,8 +192,6 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // Grab and datafy the partials from the function
   Cell* head = lval_fn->partials;
   while (head) {
-    printf("Partial: ");
-    lval_println(head->car);
     Ber compiled_arg = datafy_lval(wasm, head->car).ber;
     // We need to retain datafied values if the value ends up in the rest arg
     // because it will be released when we're done with this fn call

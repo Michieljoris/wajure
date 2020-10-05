@@ -6,11 +6,24 @@
 *** DONE make sure that wasm fn f is not created in (def f foo/f)
 *** DONE Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
 *** Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
+*** Use copy_and_retain in compile_partial_call, dedup
+*** Don't call native partial fn in compile_partial_call
+can be more optimized
+*** in native partial fn:
+   TODO: make sure first arg is a wval_fn!!!! Or something that can be turned
+  into a fn, such as {},[],:kw etc
+
+   TODO: if fn is not an function we want to return just the value itself,
+  retained, since at compile time we don't know if it's been a real fn call, so
+  we'll pretend it was, and the result of the whole partial call can then be
+  released when required, but we still want to compile all args, well the fn
+  calls at least.
 *** (partial x 1 2) where we don't don't what x is
 **** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
 **** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
-*** (let [p partial], so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
-    (p f 1 2))
+*** (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
+    So find a way to call native partial fn!!!!, when we just have a pointer to
+    an lval and that's supposed to be the native partial fn:
 
 So we need to have a native fn that does the right thing. And it should receive
 all of its args in an arg block!!! Because why bother putting it all in a list

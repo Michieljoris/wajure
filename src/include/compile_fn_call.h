@@ -13,11 +13,6 @@ union FnRef {
 
 enum { BER, FN_NAME, INDIRECT_EXTERNAL, INDIRECT_LOCAL };
 
-void add_call_fns(Wasm* wasm);
-void add_validate_fn_fn(Wasm* wasm);
-void add_partial_fn(Wasm* wasm);
-
-void add_apply_fn(Wasm* wasm);
 CResult compile_application(Wasm* wasm, Lval* lval_list);
 
 CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,

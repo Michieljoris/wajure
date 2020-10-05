@@ -505,3 +505,7 @@ Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop) {
   free(fn_call);
   return ret;
 }
+
+Ber local_get_int32(BinaryenModuleRef module, int index) {
+  return BinaryenLocalGet(module, index, BinaryenTypeInt32());
+}
