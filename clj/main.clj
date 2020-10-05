@@ -1,8 +1,8 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
-(require '[test.test-partial :refer [test-partial]])
+;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
-(require '[foo.core :as foo])
+;; (require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -48,13 +48,32 @@
 ;; (defn g [x] x)
 ;; (def p partial)
 
-;; (defn f [x y z] (print "in f") [x y z])
+;; (defn f [x y z] [x y z])
+;; (def fp (partial f 1))
 ;; (def f2 f)
 ;; (def foo (f 1 2 3))
 ;; (defn f [x] (print "in redefined f") 1)
 
+;; (def plus1 (partial + 1))
+;; (def plus2 (partial plus1 1))
+;; (print "PLUS1: " (plus1 1))
+
+
 (defn main [x y]
-  (test-partial)
+  (let [
+        ;; f fp
+        f (fn [x y z] [x y z])
+        fp (partial f 1)
+        fpp (partial fp 2)
+        ]
+    (print (f 1 2 3))
+    (print (fp 2 3))
+    (print (fpp 3))
+    )
+  ;; (test-partial)
+ 
+ ;; (print (plus1 1))
+ ;; (print (plus2 1))
   ;; (let [fpp (partial fp 2)]
   ;;   (print (fpp 3)))
   ;; (print (foo/f 1))

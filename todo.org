@@ -4,12 +4,11 @@
 *** DONE global partial fns from another namespace
 *** DONE namespace wasm fns of wajure fns to prevent clashes with compilter generated fns
 *** DONE make sure that wasm fn f is not created in (def f foo/f)
-*** Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
-*** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
-*** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
-*** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
-in a lval_wasm_lambda any partials should all be retained, meaning we can release all
-of the partials when releasing the lval_wasm_lambda
+*** DONE Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
+*** Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
+*** (partial x 1 2) where we don't don't what x is
+**** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
+**** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
 *** (let [p partial], so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
     (p f 1 2))
 
@@ -39,6 +38,9 @@ f), and that's because we do lenv_put, and not lenv_prepend, which would solve
 this problem. Well, that is, if we check for the function in wasm in
 add_wasm_function and remove it and replace it with the update one when
 compiling.
+** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
+in a lval_wasm_lambda any partials should all be retained, meaning we can release all
+of the partials when releasing the lval_wasm_lambda
 ** Release/retain partials, closure and rest args properly
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval

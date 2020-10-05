@@ -6,12 +6,14 @@
 (def fp (partial f 1))
 (def fp2 (partial fp 2))
 (def gp (partial g 1 2))
-;; (def plus (partial + 1))
 
 ;; Testing redefining function of a partial
 (defn h [x y z] [x y z])
 (def hp (partial h 1))
 (defn h [x] 1)
+
+(def plus1 (partial + 1))
+(def plus2 (partial plus1 1))
 
 ;; (defn test-partial []
 ;;   ;; (print (fp 2 3))
@@ -74,6 +76,19 @@
   ;; Test partials from other namespace, with redefinition of fn used in partial
   (t (p/f 1) 1)
   (t (p/fp 2 3) [1 2 3])
+
+  ;; Partials of sys fns
+ (t (plus1 1) 2)
+ (t (plus2 1) 3)
+
+  ;; Partials of local fns
+  (let [f (fn [x y z] [x y z])
+        fp (partial f 1)
+        fpp (partial fp 2)
+        ]
+    (t (f 1 2 3) [1 2 3])
+    (t (fp 2 3) [1 2 3])
+    (t (fpp 3) [1 2 3]))
 
   (pr "Partial tests have run")
   )

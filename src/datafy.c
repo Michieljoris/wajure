@@ -193,8 +193,9 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
     global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
     add_dep(wasm, global_name);
   }
-  printf("datafy ======================= (global name: %s)\n", global_name);
-  lval_println(lval);
+  /* printf("datafy ======================= (global name: %s)\n", global_name);
+   */
+  /* lval_println(lval); */
 
   CResult ret = {};
   if (!global_name && lval->wval_ptr > 0) {

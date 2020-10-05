@@ -391,6 +391,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   Lval* partial_fn =
       make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
                        retain(lval_fun->body), LAMBDA);
+  partial_fn->str = retain(lval_fun->str);
   partial_fn->fun = lval_fun->fun;
   partial_fn->subtype = lval_fun->subtype;
   partial_fn->param_count = lval_fun->param_count;

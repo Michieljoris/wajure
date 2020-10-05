@@ -83,17 +83,6 @@ void add_call_fn(Wasm* wasm, int n) {
   release(fn_name);
 }
 
-Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop) {
-  Ber operands[] = {wval};
-  char* fn_call_prefix = "get_wval_";
-  char* fn_call = malloc(_strlen(fn_call_prefix) + _strlen(prop) + 1);
-  sprintf(fn_call, "%s%s", fn_call_prefix, prop);
-  /* printf("wval get call: %s\n", fn_call); */
-  Ber ret = BinaryenCall(module, fn_call, operands, 1, make_type_int32(1));
-  free(fn_call);
-  return ret;
-}
-
 Ber validate_as_fn(Wasm* wasm, Ber wval) {
   BinaryenModuleRef module = wasm->module;
   Ber wval_type = get_wval_prop(module, wval, "type");
@@ -205,7 +194,7 @@ void add_call_fns(Wasm* wasm) {
 Ber compile_args_into_block(Wasm* wasm, Ber wval, Cell* args, int args_count,
                             int args_block_ptr_index, LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
-  Ber* children = malloc((2 + args_count) * sizeof(Ber));
+  Ber* children = malloc((3 + args_count) * sizeof(Ber));
   /* printf("CHILDREN COUNT: %d\n", 2 + args_count); */
   int children_count = 0;
 
@@ -214,13 +203,17 @@ Ber compile_args_into_block(Wasm* wasm, Ber wval, Cell* args, int args_count,
                             get_wval_prop(module, wval, "partial_count"),
                             make_int32(module, 4));
   int size_local = li_new(wasm);
-  size = BinaryenLocalTee(module, size_local, size, BinaryenTypeInt32());
+  children[children_count++] = BinaryenLocalSet(module, size_local, size);
 
   // Copy partials to start of args_block
-  children[children_count++] = BinaryenMemoryCopy(
-      module,
-      BinaryenLocalGet(module, args_block_ptr_index, BinaryenTypeInt32()),
-      get_wval_prop(module, wval, "partials"), size);
+  children[children_count++] = BinaryenIf(
+      module, get_wval_prop(module, wval, "partial_count"),
+      BinaryenMemoryCopy(
+          module,
+          BinaryenLocalGet(module, args_block_ptr_index, BinaryenTypeInt32()),
+          get_wval_prop(module, wval, "partials"),
+          BinaryenLocalGet(module, size_local, BinaryenTypeInt32())),
+      BinaryenNop(module));
 
   // Add size of partials to arg block ptr
   int args_block_plus_partials_ptr_index = li_new(wasm);
@@ -634,10 +627,9 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
 // A non empty list is taken to be a fn call. We do our best to resolve the
 // expr in the list as a fn call, and pass the rest of the list as args.
 CResult compile_application(Wasm* wasm, Lval* lval_list) {
-  /* BinaryenModuleRef module = wasm->module; */
   CONTEXT_LVAL("apply", lval_list);
-  printf("compile_application\n");
-  lval_println(lval_list);
+  /* printf("compile_application\n"); */
+  /* lval_println(lval_list); */
 
   // Empty list
   if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
@@ -666,10 +658,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     switch (resolved_sym->type) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
         switch (resolved_sym->subtype) {
-          case SYS:
-            /* lval_println(resolved_symbol); */
-            /* printf("sys fn: %s\n", resolved_symbol->str); */
-            fn_call = compile_sys_call(wasm, resolved_sym, args);
+          case SYS:;
+            Cell* all_args = list_concat(resolved_sym->partials, args);
+            fn_call = compile_sys_call(wasm, resolved_sym, all_args);
+            release(all_args);
             break;
           case SPECIAL:
             fn_call = compile_special_call(wasm, resolved_sym, args);
@@ -683,7 +675,6 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                 cfn->ns == get_current_ns()) {  // Partial fn, derived from cfn
               union FnRef fn_ref = {.fn_table_index = cfn->offset};
               fn_call = apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym, args);
-              /* } */
             } else if (lval_is_external) {  // required from another namespace
               char* global_name = make_global_name(
                   "fn:", resolved_sym->ns->namespace, resolved_sym->cname);
@@ -707,7 +698,6 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             release(bound_macro);
             return result;
           default:
-            /* lval_println(resolved_symbol); */
             quit(wasm,
                  "ERROR: Can't compile function with unknown subtype %d\n",
                  lval_applicator->subtype);

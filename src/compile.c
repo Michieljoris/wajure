@@ -403,16 +403,164 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   }
 
   if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
+    printf("================================\n");
+    lval_println(fn_arg.lval);
+    Ber wval = fn_arg.ber;
     // Put the compiled args in a block (lalloc_size) and pass them to our
     // native partial fn
     // Check for type:
-    // 1. LVAL_WASM_LAMBDA -> add partials to a copy of the lval_wasm_lambda of
-    // fn and args to partial, return it
-    // 1. vector/set/map -> make lval_wasm_lambda of get and args to partial fn
-    // as partials
+    // 1. LVAL_WASM_LAMBDA -> add partials to a copy of the lval_wasm_lambda
+    // of fn and args to partial, return it
+    // 2.TODO: vector/set/map -> make lval_wasm_lambda of get and args to
+    // partial fn as partials
     // 3. anything else: return as is
 
-    return fn_arg;  // TODO
+    int args_count = list_count(args);
+    int extra_children = 5;
+    Ber* children = malloc((args_count + extra_children) * sizeof(Ber));
+    int children_count = 0;
+
+    Ber ber_args_count = make_int32(module, args_count - 1);
+
+    // Calculate new partial count (partial count of fn plus count of args)
+    int partial_count_local = li_new(wasm);
+    Ber wval_partial_count_tee = BinaryenLocalTee(
+        module, partial_count_local,
+        get_wval_prop(module, wval, "partial_count"), BinaryenTypeInt32());
+    Ber new_partial_count = BinaryenBinary(
+        module, BinaryenAddInt32(), wval_partial_count_tee, ber_args_count);
+    int new_partial_count_local = li_new(wasm);
+    Ber new_partial_count_tee =
+        BinaryenLocalTee(module, new_partial_count_local, new_partial_count,
+                         BinaryenTypeInt32());
+
+    // Reserve a block of memory for the partials
+    Ber lalloc_size_operands[] = {BinaryenBinary(module, BinaryenMulInt32(),
+                                                 new_partial_count_tee,
+                                                 make_int32(module, 4))};
+    Ber lalloc_new_partials = BinaryenCall(
+        module, "lalloc_size", lalloc_size_operands, 1, BinaryenTypeInt32());
+    int new_partials_local = li_new(wasm);
+    Ber set_new_partials_local =
+        BinaryenLocalSet(module, new_partials_local, lalloc_new_partials);
+    children[children_count++] = set_new_partials_local;
+
+    int offset = 0;
+    // Copy partials of fn (first arg of partial) into this block, retaining
+    // them
+    Ber wval_partials = get_wval_prop(module, wval, "partials");
+    int partials_local = li_new(wasm);
+    Ber set_partials_local =
+        BinaryenLocalSet(module, partials_local, wval_partials);
+    children[children_count++] = set_partials_local;
+
+    int new_partials_ptr_local = li_new(wasm);
+    Ber set_new_partials_ptr_local = BinaryenLocalSet(
+        module, new_partials_ptr_local,
+        BinaryenLocalGet(module, new_partials_local, BinaryenTypeInt32()));
+    children[children_count++] = set_new_partials_ptr_local;
+
+    char* loop = uniquify_name(wasm, "copy_partials");
+    Ber* c = malloc(5 * sizeof(Ber));
+    int c_count = 0;
+    // if partial_count != 0 then
+    // - dec partial_count
+    // - copy
+    Ber get_partial = BinaryenLoad(
+        module, 4, 0, 0, 2, BinaryenTypeInt32(),
+        BinaryenLocalGet(module, partials_local, BinaryenTypeInt32()));
+    get_partial = wasm_retain(wasm, get_partial).ber;
+    Ber copy_partial = BinaryenStore(
+        module, 4, 0, 2,
+        BinaryenLocalGet(module, new_partials_ptr_local, BinaryenTypeInt32()),
+        get_partial, BinaryenTypeInt32());
+    c[c_count++] = copy_partial;
+    Ber dec_partial_count = BinaryenLocalSet(
+        module, partial_count_local,
+        BinaryenBinary(
+            module, BinaryenSubInt32(),
+            BinaryenLocalGet(module, partial_count_local, BinaryenTypeInt32()),
+            make_int32(module, 1)));
+    c[c_count++] = dec_partial_count;
+    Ber add_4_to_partials_ptr = BinaryenBinary(
+        module, BinaryenAddInt32(),
+        BinaryenLocalGet(module, partials_local, BinaryenTypeInt32()),
+        make_int32(module, 4));
+    add_4_to_partials_ptr =
+        BinaryenLocalSet(module, partials_local, add_4_to_partials_ptr);
+    c[c_count++] = add_4_to_partials_ptr;
+    Ber add_4_to_new_partials_ptr = BinaryenBinary(
+        module, BinaryenAddInt32(),
+        BinaryenLocalGet(module, new_partials_ptr_local, BinaryenTypeInt32()),
+        make_int32(module, 4));
+    add_4_to_new_partials_ptr = BinaryenLocalSet(module, new_partials_ptr_local,
+                                                 add_4_to_new_partials_ptr);
+    c[c_count++] = add_4_to_new_partials_ptr;
+    Ber continue_loop = BinaryenBreak(module, loop, NULL, NULL);
+    c[c_count++] = continue_loop;
+
+    Ber loop_block =
+        BinaryenBlock(module, NULL, c, c_count, BinaryenTypeNone());
+    Ber body = BinaryenIf(
+        module,
+        BinaryenLocalGet(module, partial_count_local, BinaryenTypeInt32()),
+        loop_block, BinaryenNop(module));
+    children[children_count++] = BinaryenLoop(module, loop, body);
+
+    // Copy rest of args into this block, retaining any non fn calls
+    while (head) {
+      CResult result = lval_compile(wasm, head->car);
+      Ber compiled_arg = result.ber;
+
+      // Any arg that's not the result of a fn call will be retained, since we
+      // want to be able to release all partials when the fn is released
+      if (!result.is_fn_call) wasm_retain(wasm, compiled_arg);
+
+      // Put compiled arg on args block
+      Ber partials_ptr =
+          BinaryenLocalGet(module, new_partials_ptr_local, BinaryenTypeInt32());
+      children[children_count++] =
+          BinaryenStore(module, 4, offset, 2, partials_ptr, compiled_arg,
+                        BinaryenTypeInt32());
+
+      // And loop
+      offset += 4;
+      head = head->cdr;
+    }
+
+    // Copy props of fn to our partial fn
+    Ber wval_fn_table_index = get_wval_prop(module, wval, "fn_table_index");
+    Ber wval_closure =
+        wasm_retain(wasm, get_wval_prop(module, wval, "closure")).ber;
+    Ber wval_param_count = get_wval_prop(module, wval, "param_count");
+    Ber wval_has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
+
+    Ber operands[6] = {
+        wval_fn_table_index,
+        wval_param_count,
+        wval_has_rest_arg,
+        wval_closure,
+        BinaryenLocalGet(module, new_partials_local, BinaryenTypeInt32()),
+        BinaryenLocalGet(module, new_partial_count_local, BinaryenTypeInt32()),
+    };
+
+    // TODO: if fn is not an function we want to return just the value itself,
+    // retained, since at compile time we don't know if it's been a real fn
+    // call, so we'll pretend it was, and the result of the whole partial call
+    // can then be released when required
+
+    // Make the new wval_fn
+    Ber make_lval_wasm_lambda_call = BinaryenCall(
+        wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+    children[children_count++] = make_lval_wasm_lambda_call;
+
+    Ber block = BinaryenBlock(module, uniquify_name(wasm, "partial_call"),
+                              children, children_count, BinaryenTypeInt32());
+
+    CResult ret = {.ber = block, .is_fn_call = 1};
+
+    /* li_close(li); */
+    return ret;
   } else
     switch (fn_arg.lval->type) {
       case LVAL_FUNCTION: {
