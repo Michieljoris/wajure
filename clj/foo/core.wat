@@ -12,7 +12,7 @@
  (import "env" "memory" (memory $0 2 65536))
  (data (global.get $data_offset) "\0f\0f\0f\0fin redefined f\00\01\00\00\00\00\00\00\00\00\00\00\00#\00\00\00\02\t\00\00\00\00\00\00\04\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00G\00\00\00\02\08\00\00\01\00\00\00\00\00\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00k\00\00\00\19\ff\00\00\01\00\00\00\00\00\00\00\00\00\00\00[\00\00\00in f\00\01\00\00\00\00\00\00\00\00\00\00\00\94\00\00\00\02\t\00\00\00\00\00\00\7f\00\00\00\00\00\00\00\ff\ff\ff\ffG\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\bc\00\00\00\19\ff\01\00\03\00\00\00\01\00\00\00\00\00\00\00\a8\00\00\00\13\00\00\007\00\00\00\84\00\00\00[\00\00\00\ac\00\00\00\d0\00\00\00\03\00\00\00\dc\00\00\00\00\00\00\00\dc\00\00\00\02\00\00\00\18\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $f $fp)
+ (elem (global.get $fn_table_offset) $f_2 $f_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
@@ -86,7 +86,7 @@
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
- (func $f (param $0 i32) (param $1 i32) (result i32)
+ (func $f_2 (param $0 i32) (param $1 i32) (result i32)
   (local $2 i32)
   (local $3 i32)
   (local $4 i32)
@@ -136,7 +136,7 @@
    )
   )
  )
- (func $fp (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $f_0 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   (local $4 i32)
   (local $5 i32)
   (local $6 i32)
@@ -198,7 +198,7 @@
    )
   )
  )
- ;; custom section "symbol_table", size 43
+ ;; custom section "symbol_table", size 47
  ;; custom section "deps", size 0, contents: ""
  ;; custom section "data_size", size 3, contents: "256"
  ;; custom section "fn_table_size", size 1, contents: "2"

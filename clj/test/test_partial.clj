@@ -1,5 +1,5 @@
 (in-ns 'test.test-partial)
-
+(require '[test.test-external-partial :as p])
 
 (defn f [x y z] [x y z])
 (defn g [x y & z] [x y z])
@@ -67,8 +67,13 @@
   (let [fp2 (partial fp 2)]
     (t (fp2 3) [1 2 3]))
 
-
+  ;; Redefine f used in partial
   (t (h 1) 1)
   (t (hp 2 3) [1 2 3])
+
+  ;; Test partials from other namespace, with redefinition of fn used in partial
+  (t (p/f 1) 1)
+  (t (p/fp 2 3) [1 2 3])
+
   (pr "Partial tests have run")
   )

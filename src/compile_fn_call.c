@@ -679,20 +679,11 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                 resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1
                                                                          : 0;
             Lval* cfn = resolved_sym->cfn;
-            if (cfn) {  // Partial fn, derived from cfn
-              if (cfn->ns != get_current_ns()) {  // external
-                char* global_name =
-                    make_global_name("fn:", cfn->ns->namespace, cfn->cname);
-                add_dep(wasm, global_name);
-                union FnRef fn_ref = {.global_name = global_name};
-                fn_call =
-                    apply(wasm, INDIRECT_EXTERNAL, fn_ref, resolved_sym, args);
-                release(global_name);
-              } else {  // internal
-                union FnRef fn_ref = {.fn_table_index = cfn->offset};
-                fn_call =
-                    apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym, args);
-              }
+            if (cfn &&
+                cfn->ns == get_current_ns()) {  // Partial fn, derived from cfn
+              union FnRef fn_ref = {.fn_table_index = cfn->offset};
+              fn_call = apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym, args);
+              /* } */
             } else if (lval_is_external) {  // required from another namespace
               char* global_name = make_global_name(
                   "fn:", resolved_sym->ns->namespace, resolved_sym->cname);
@@ -753,7 +744,6 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         fn_call = compile_as_fn_call(wasm, resolved_sym, args);
         fn_call.is_fn_call = 1;
     }
-
   } else {
     // Not a function or wasm ref, perhaps it's something else we can use as a
     // fn, such as a vector, or kw or set, or perhaps an anonymous lambda eg:
