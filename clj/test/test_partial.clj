@@ -19,9 +19,13 @@
 ;;   ;; (print (fp 2 3))
 
 ;;   (let [f2 fp]
-;;     (print"hello"  (f2 2 3)))
-
+;;     (print"hello"  (f2 2 3))))
+;; 
+  
+;; (defn test-partial []
+;;   (f 1 2 3)
 ;;   )
+
 
 (defn test-partial []
 
@@ -93,6 +97,7 @@
   ;; Make partials from sys fns
   (let [plus (partial + 1 1)]
    (t (plus 1) 3))
- 
+
   (pr "Partial tests have run.")
+
   )

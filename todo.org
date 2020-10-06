@@ -5,9 +5,12 @@
 *** DONE namespace wasm fns of wajure fns to prevent clashes with compilter generated fns
 *** DONE make sure that wasm fn f is not created in (def f foo/f)
 *** DONE Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
-*** Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
-*** Use copy_and_retain in compile_partial_call, dedup
-*** Don't call native partial fn in compile_partial_call
+*** DONE Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
+*** DONE (partial x 1 2) where we don't don't what x is
+**** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
+**** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
+*** DONE Use copy_and_retain in compile_partial_call, dedup
+ Don't call native partial fn in compile_partial_call
 can be more optimized
 *** in native partial fn:
    TODO: make sure first arg is a wval_fn!!!! Or something that can be turned
@@ -18,9 +21,6 @@ can be more optimized
   we'll pretend it was, and the result of the whole partial call can then be
   released when required, but we still want to compile all args, well the fn
   calls at least.
-*** (partial x 1 2) where we don't don't what x is
-**** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
-**** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
 *** (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
     So find a way to call native partial fn!!!!, when we just have a pointer to
     an lval and that's supposed to be the native partial fn:

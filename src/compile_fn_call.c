@@ -128,10 +128,6 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_index,
         module, make_int32(module, VALIDATE_FN_INDEX), operands, 2,
         make_type_int32(2), BinaryenTypeNone());
 
-    /* block_children[(*block_children_count)++] = wasm_log_int( */
-    /*     wasm, */
-    /*     BinaryenLocalGet(module, total_args_count_local,
-     * BinaryenTypeInt32())); */
     block_children[(*block_children_count)++] = call_validate_fn;
   }
 
@@ -243,8 +239,6 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   if (has_rest_arg) {
     int rest_arg_count = total_args_count - min_param_count;
     if (rest_arg_count) {
-      /* printf("compiled-args count %d\n", compiled_args_count); */
-      /* printf("rest arg count %d\n", rest_arg_count); */
       // Make a chain of cells, one cell per extra arg
       Ber head = make_int32(module, 0);
       int i = total_args_count - 1;

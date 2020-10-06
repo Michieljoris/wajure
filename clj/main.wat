@@ -1005,7 +1005,7 @@
   (nop)
  )
  (func $copy_and_retain (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (loop $copy_and_retain_512 (result i32)
+  (loop $copy_and_retain_514 (result i32)
    (if (result i32)
     (local.get $1)
     (block
@@ -1035,7 +1035,7 @@
        (i32.const 4)
       )
      )
-     (br $copy_and_retain_512)
+     (br $copy_and_retain_514)
     )
     (local.get $2)
    )
@@ -1043,8 +1043,8 @@
  )
  (func $main_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
-  (block $do_514 (result i32)
-   (block $lambda_call_513 (result i32)
+  (block $do_516 (result i32)
+   (block $lambda_call_515 (result i32)
     (local.set $3
      (call_indirect (type $i32_=>_i32)
       (i32.const 0)
