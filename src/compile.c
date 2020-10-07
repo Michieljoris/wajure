@@ -384,13 +384,10 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   return cnull();
 }
 
-CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
-  /* printf("compile sys call!!!!!!!!!!!!!!!\n"); */
-
+CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
   char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sym->str);
-
-  if (!c_fn_name) return compile_native_call(wasm, lval_fn_sym, args);
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->str);
+  if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
 

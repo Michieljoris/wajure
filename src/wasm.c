@@ -179,11 +179,11 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "get_wval_param_count", 1, 1},
     {NULL, NULL, "get_wval_min_param_count", 1, 1},
     {NULL, NULL, "get_wval_has_rest_arg", 1, 1},
-    {NULL, NULL, "get_wval_rest_arg_index", 1, 1},
+    /* {NULL, NULL, "get_wval_rest_arg_index", 1, 1}, */
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
-    {NULL, NULL, "bundle_rest_args", 2, 0},
+    {NULL, NULL, "bundle_rest_args", 3, 0},
     {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},
     {NULL, NULL, "new_cell", 2, 1},

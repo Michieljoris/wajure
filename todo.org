@@ -12,6 +12,16 @@
 *** DONE Use copy_and_retain in compile_partial_call, dedup
  Don't call native partial fn in compile_partial_call
 can be more optimized
+*** When referring to LVAL_REF/wval only set to local when it was a fn call.
+So LOCAL and PARAM (don't set to local) vs closure (set to local)
+*** (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
+    So find a way to call native partial fn!!!!, when we just have a pointer to
+    an lval and that's supposed to be the native partial fn:
+
+So we need to have a native fn that does the right thing. And it should receive
+all of its args in an arg block!!! Because why bother putting it all in a list
+like we do for sys fns
+*** And what about (partial partial 1 2) or where either partial is an lval_ref or result of fn call!!!
 *** in native partial fn:
    TODO: make sure first arg is a wval_fn!!!! Or something that can be turned
   into a fn, such as {},[],:kw etc
@@ -21,14 +31,6 @@ can be more optimized
   we'll pretend it was, and the result of the whole partial call can then be
   released when required, but we still want to compile all args, well the fn
   calls at least.
-*** (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
-    So find a way to call native partial fn!!!!, when we just have a pointer to
-    an lval and that's supposed to be the native partial fn:
-
-So we need to have a native fn that does the right thing. And it should receive
-all of its args in an arg block!!! Because why bother putting it all in a list
-like we do for sys fns
-*** And what about (partial partial 1 2) or where either partial is an lval_ref or result of fn call!!!
 *** DONE in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
 *** DONE little problem, duplicate wasm fns
 (defn f [x y z] [x y z])
