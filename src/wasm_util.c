@@ -494,3 +494,18 @@ char* number_fn_name(Wasm* wasm, char* fn_name) {
   sprintf(numbered_fn_name, "%s#%d", fn_name, wasm->fns_count);
   return numbered_fn_name;
 }
+
+Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop) {
+  Ber operands[] = {wval};
+  char* fn_call_prefix = "get_wval_";
+  char* fn_call = malloc(_strlen(fn_call_prefix) + _strlen(prop) + 1);
+  sprintf(fn_call, "%s%s", fn_call_prefix, prop);
+  /* printf("wval get call: %s\n", fn_call); */
+  Ber ret = BinaryenCall(module, fn_call, operands, 1, make_type_int32(1));
+  free(fn_call);
+  return ret;
+}
+
+Ber local_get_int32(BinaryenModuleRef module, int index) {
+  return BinaryenLocalGet(module, index, BinaryenTypeInt32());
+}

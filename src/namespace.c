@@ -14,7 +14,9 @@ Namespace* make_or_get_namespace(char* namespace_str) {
 
   if (!ns) {
     ns = lalloc_type(NAMESPACE);
-    *ns = (Namespace){.namespace = retain(namespace_str), .env = lenv_new()};
+    *ns = (Namespace){.namespace = retain(namespace_str),
+                      .env = lenv_new(),
+                      .uid_counter = 0};
     state->namespaces =
         alist_prepend(state->namespaces, retain(namespace_str), ns);
   }

@@ -19,6 +19,7 @@
 #include "lval.h"
 #include "misc_fns.h"
 #include "namespace.h"
+#include "native.h"
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
@@ -383,195 +384,10 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   return cnull();
 }
 
-CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
-  BinaryenModuleRef module = wasm->module;
-  int args_count = list_count(args);
-  if (args_count == 0) quit(wasm, "Need at last one argument for partial");
-  Cell* head = args;
-  printf("compile_partial_call: ");
-  lval_println(head->car);
-  CResult fn_arg = lval_compile(wasm, head->car);
-
-  /* printf("-------------partial first arg------is_fn_call %d\n ", */
-  /*        first_arg.is_fn_call); */
-  /* lval_println(first_arg.lval); */
-
-  head = head->cdr;
-  // If just one arg, return compiled arg
-  if (!head) {
-    return fn_arg;
-  }
-
-  if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
-    // Put the compiled args in a block (lalloc_size) and pass them to our
-    // native partial fn
-    // Check for type:
-    // 1. LVAL_WASM_LAMBDA -> add partials to a copy of the lval_wasm_lambda of
-    // fn and args to partial, return it
-    // 1. vector/set/map -> make lval_wasm_lambda of get and args to partial fn
-    // as partials
-    // 3. anything else: return as is
-
-    return fn_arg;  // TODO
-  } else
-    switch (fn_arg.lval->type) {
-      case LVAL_FUNCTION: {
-        Lval* lval_fn = fn_arg.lval;
-        printf("in LVAL_FUNCTION\n");
-        /* printf("LVAL_FUNCTION wval->ptr %d\n", lval_fn->wval_ptr); */
-        // If we know this is a function at compile time then we compile the
-        // rest of the args and put them in the partials block of a copy of the
-        // lval_wasm_lambda we know we have.
-
-        int fn_partial_count = list_count(lval_fn->partials);
-        int total_partial_count = (fn_partial_count + (args_count - 1));
-
-        // set_local_to_partials_ptr and make_partial_fn call
-        int extra_children = 2;
-        Ber* children =
-            malloc(sizeof(Ber) * (total_partial_count + extra_children));
-        int children_count = 0;
-
-        // Allocate a block for the partials (including any partials of the fn
-        // itself)
-        Ber lalloc_size_operands[] = {
-            make_int32(module, total_partial_count * 4)};
-        Ber lalloc_partials =
-            BinaryenCall(module, "lalloc_size", lalloc_size_operands, 1,
-                         BinaryenTypeInt32());
-        int partials_ptr_index = li_new(wasm);
-        Ber set_local_to_partials_ptr =
-            BinaryenLocalSet(module, partials_ptr_index, lalloc_partials);
-        children[children_count++] = set_local_to_partials_ptr;
-
-        int partial_count = 0;
-
-        // Add any partials that the fn has already
-        Cell* partials_head = lval_fn->partials;
-        while (partials_head) {
-          Lval* lval = partials_head->car;
-          CResult result = datafy_lval(wasm, lval, NULL);
-          Ber wval_ptr = make_int32(module, result.wasm_ptr);
-          wval_ptr = BinaryenBinary(
-              module, BinaryenAddInt32(), wval_ptr,
-              BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));
-          wval_ptr = wasm_retain(wasm, wval_ptr).ber;
-          Ber partials_ptr =
-              BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
-          children[children_count++] =
-              BinaryenStore(module, 4, partial_count++ * 4, 2, partials_ptr,
-                            wval_ptr, BinaryenTypeInt32());
-          partials_head = partials_head->cdr;
-        }
-
-        // Compile the args and put their lval_refs on the partials block. If
-        // they're not the result of a fn call retain them.
-        do {
-          CResult compiled_arg = lval_compile(wasm, head->car);
-          // This is so that we can release all partials when releasing the
-          // lval_wasm_lambda:
-          if (!compiled_arg.is_fn_call)
-            compiled_arg.ber = wasm_retain(wasm, compiled_arg.ber).ber;
-          Ber partials_ptr =
-              BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
-          children[children_count++] =
-              BinaryenStore(module, 4, partial_count++ * 4, 2, partials_ptr,
-                            compiled_arg.ber, BinaryenTypeInt32());
-          head = head->cdr;
-        } while (head);
-
-        // Copy the props of the LVAL_FUN to our new lval_wasm_lambda:
-        Ber param_count = make_int32(module, lval_fn->param_count);
-        Ber has_rest_arg = make_int32(module, lval_fn->rest_arg_index);
-        Ber closure_ptr = make_int32(module, 0);
-        Ber partials_ptr =
-            BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
-        Ber ber_partial_count = make_int32(module, partial_count);
-
-        printf("is_external? %d\n", fn_arg.is_external);
-
-        // We know the offset/fn_table_index, let's add the module's
-        // fn_table_offset global
-        int fn_table_index =
-            lval_fn->full_fn ? lval_fn->full_fn->offset : lval_fn->offset;
-
-        Ber ber_fn_table_index = make_int32(module, fn_table_index);
-        ber_fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), ber_fn_table_index,
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-
-        // Call the runtime make_lval_wasm_lambda fn
-        Ber operands[6] = {ber_fn_table_index, param_count,  has_rest_arg,
-                           closure_ptr,        partials_ptr, ber_partial_count};
-        children[children_count++] =
-            BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 6,
-                         make_type_int32(1));
-
-        // And return a block that does all of the above
-        Ber block =
-            BinaryenBlock(module, uniquify_name(wasm, "make_partial_fn"),
-                          children, children_count, BinaryenTypeInt32());
-        free(children);
-        CResult ret = {.ber = block, .is_fn_call = 1};
-        return ret;
-      }
-      case LVAL_COLLECTION:;
-        // TODO: If we know its a vector/set/map at compile time we return a
-        // lval_wasm_lambda of the sys fn get, with 2+ partials: the
-        // vector/set/map and the rest of the compiled args to the partial fn.
-        // Falling through to default for now..
-      default: {
-        // If we know we have anything that's not a result of a fn call (direct
-        // or lval_ref) then we return it as is , and compile the rest
-        // of the args still for side effects. So we only compile fn calls.
-        Ber* children = malloc(sizeof(Ber) * args_count);  //
-        int children_count = 0;
-        do {
-          CResult compiled_arg = lval_compile(wasm, head->car);
-          // For any side effects:
-          if (compiled_arg.is_fn_call) {
-            compiled_arg.ber = wasm_release(wasm, compiled_arg.ber).ber;
-            children[children_count++] = compiled_arg.ber;
-          }
-          head = head->cdr;
-        } while (head);
-        children[children_count++] = fn_arg.ber;
-
-        Ber block = BinaryenBlock(
-            module, uniquify_name(wasm, "make_pointless_partial_fn"), children,
-            children_count, BinaryenTypeInt32());
-        free(children);
-        return cresult(block);
-      }
-    }
-}
-
-CResult compile_native_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
-  NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_sym->str);
-  if (!native_fn) {
-    quit(wasm, "Function %s not found in runtime", lval_fn_sym->str);
-  }
-  switch (native_fn->fn_table_index) {
-    case PARTIAL_FN_INDEX:
-      return compile_partial_call(wasm, *native_fn, args);
-    case APPLY_FN_INDEX:
-      /* return compile_apply_call(wasm, *native_fn, args); */
-      /* break; */
-    default:
-      return quit(wasm, "Oops, can't find fn table index for %s",
-                  lval_fn_sym->str);
-  }
-  return cnull();
-}
-
-CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
-  /* printf("compile sys call!!!!!!!!!!!!!!!\n"); */
-
+CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
   char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sym->str);
-
-  if (!c_fn_name) return compile_native_call(wasm, lval_fn_sym, args);
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->str);
+  if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
 
@@ -627,7 +443,6 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
 
   Lval* resolved_sym = NULL;
-  char* global_name = NULL;
   switch (lval->type) {
     case LVAL_SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
@@ -638,16 +453,6 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       resolved_sym = result.lval;
 
-      int lval_is_external =
-          resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1 : 0;
-      int lval_is_partial = resolved_sym->full_fn ? 1 : 0;
-
-      if (lval_is_external) {
-        global_name = make_global_name("data:", resolved_sym->ns->namespace,
-                                       resolved_sym->binding);
-        release(result.name);
-        add_dep(wasm, global_name);
-      }
       switch (resolved_sym->type) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->str);
@@ -686,9 +491,8 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
     default:;
   }
 
-  CResult ret = datafy_lval(wasm, lval, global_name);
+  CResult ret = datafy_lval(wasm, lval);
   ret.lval = lval;
-  release(global_name);
   release(resolved_sym);
   return ret;
 }
@@ -749,10 +553,11 @@ void compile(Namespace* ns) {
   // offset of 0 for data and fns, so we add the call fns to main and now we
   // can refer to these call fns by index 0-20 throughout all the modules.
   if (_strcmp(ns->namespace, config->main) == 0) {
-    add_call_fns(wasm);        // 0-20
-    add_validate_fn_fn(wasm);  // 21
-    add_partial_fn(wasm);      // 22
-    add_apply_fn(wasm);        // 23
+    add_call_fns(wasm);            // 0-20
+    add_validate_fn_fn(wasm);      // 21
+    add_partial_fn(wasm);          // 22
+    add_apply_fn(wasm);            // 23
+    add_copy_and_retain_fn(wasm);  // 24
   }
 
   printf("Processing env =============\n");
@@ -764,8 +569,7 @@ void compile(Namespace* ns) {
     pairs[i--] = head->car;
     head = head->cdr;
   }
-  /* Cell* cell = env->kv; */
-  /* while (cell) { */
+
   for (int i = 0; i < count; i++) {
     Cell* pair = pairs[i];
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
@@ -779,12 +583,11 @@ void compile(Namespace* ns) {
     lval_println(lval);
     if (lval->type == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
-        wasm->current_binding = retain(lval_sym->str);
         result = lval_compile(wasm, lval);
-        add_to_symbol_table(wasm, lval->binding, lval);
+        add_to_symbol_table(wasm, lval->cname, lval);
       }
     } else {
-      result = datafy_lval(wasm, lval, NULL);
+      result = datafy_lval(wasm, lval);
       add_to_symbol_table(wasm, lval_sym->str, lval);
     }
   }
@@ -794,7 +597,14 @@ void compile(Namespace* ns) {
   add_function_table(wasm);
 
   if (_strcmp(ns->namespace, config->main) == 0) {
-    BinaryenAddFunctionExport(wasm->module, "main", "main");
+    char* main_fn_name = lalloc_size(_strlen(config->main) + 1);
+    sprintf(main_fn_name, "%s", config->main);
+    Lval* lval_sym = make_lval_sym(main_fn_name);
+    Lval* main_fn = lenv_get(ns->env, lval_sym);
+    if (!main_fn) quit(wasm, "No main fn found in %s", config->main);
+    BinaryenAddFunctionExport(wasm->module, main_fn->cname, "main");
+    release(main_fn);
+    release(lval_sym);
   }
 
   inter_rewrite_info(wasm);

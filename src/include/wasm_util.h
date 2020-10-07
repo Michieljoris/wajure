@@ -107,4 +107,8 @@ void add_dep(Wasm* wasm, char* global_name);
 
 char* number_fn_name(Wasm* wasm, char* fn_name);
 
+Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop);
+
+Ber local_get_int32(BinaryenModuleRef module, int index);
+
 #endif  // __WASM_UTIL_H_

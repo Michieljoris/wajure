@@ -182,8 +182,6 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     }
     scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
-    ret.ns = ns;
-    ret.name = retain(name);
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
@@ -205,10 +203,6 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   // From a required namespace
   Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
   if (ns) {
-    /* ret.env = ns->env; */
-    ret.ns = ns;
-    ret.name = retain(lval_symbol->str);
-    /* ret.fqn = make_fqn(ns->namespace, lval_symbol->str); */
     ret.lval =
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
@@ -227,8 +221,6 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
     if (lval_resolved_sym) {
       ret.lval = lval_resolved_sym;  // resolved in stdlib env
-      ret.ns = ns;
-      /* ret.lval->ns = ns; */
       return ret;
     }
   }

@@ -5,6 +5,7 @@
 #include "lib.h"
 #include "list.h"
 #include "ltypes.h"
+#include "print.h"
 #include "wasm.h"
 #include "wasm_util.h"
 
@@ -51,8 +52,6 @@ void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
     *allocated += 100;
     *offsets = realloc(*offsets, *allocated * sizeof(int));
   }
-  /* printf("offset count %d allocated %d offset; %d\n", *count, *allocated, */
-  /* offset); */
   (*offsets)[*count] = offset;
   (*count)++;
 }
@@ -71,7 +70,6 @@ int* make_data_cell(Wasm* wasm, Cell* cell) {
 }
 
 CResult inter_data_cell(Wasm* wasm, int* data_cell) {
-  /* printf() */
   data_cell[data_p_offset / 4] =
       wasm->__data_end + wasm->data_offset + slot_type_size;
   int offset = add_bytes_to_data(wasm, (char*)data_cell, wcell_size);
@@ -80,8 +78,6 @@ CResult inter_data_cell(Wasm* wasm, int* data_cell) {
 
   free(data_cell);
   int wcell_ptr = wasm->__data_end + offset + slot_type_size;
-  /* CResult ret = {.ber = make_int32(wasm->module, wcell_ptr), */
-  /*                .wasm_ptr = wcell_ptr}; */
 
   CResult ret = {/* .ber = make_ptr(wasm, wcell_ptr), */
                  .wasm_ptr = wcell_ptr};
@@ -97,9 +93,6 @@ int* make_data_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
   if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
-  /* if (lval->str) */
-  /*   printf("Adding string to data_lval!!!!! %s, %d\n", lval->str, */
-  /*          string_offset); */
 
   data_lval[ref_count_offset] = 1;
   data_lval[data_p_offset / 4] =
@@ -119,11 +112,6 @@ int inter_data_lval(Wasm* wasm, int* data_lval) {
                      &wasm->lval_offsets_allocated, offset);
   free(data_lval);
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
-  /* printf("inter_data_lval: offset %d %d\n", offset, wval_ptr); */
-  /* CResult ret = { */
-  /*     .ber = make_ptr(wasm, wval_ptr), /\* make_int32(wasm->module,
-   * wval_ptr), *\/ */
-  /*     .wasm_ptr = wval_ptr}; */
   return wval_ptr;
 }
 
@@ -138,30 +126,24 @@ int inter_list(Wasm* wasm, Lval* lval) {
   int count = list_count(head);
   int* data_cells[count];
   int i = 0;
-  /* printf("inter list, count: %d\n", count); */
   while (head) {
-    int v_ptr = datafy_lval(wasm, head->car, NULL).wasm_ptr;
-    /* printf("%d ", v_ptr); */
-    /* lval_println(head->car); */
+    int v_ptr = datafy_lval(wasm, head->car).wasm_ptr;
     int* data_cell = make_data_cell(wasm, head);
     data_cell[car_offset / 4] = v_ptr;
     data_cells[i++] = data_cell;
     head = head->cdr;
   }
-  /* printf("\ncdr\n"); */
   int cdr = 0;
   int last_cdr = 0;
   while (i--) {
     int* data_cell = data_cells[i];
     data_cell[cdr_offset / 4] = cdr;
     cdr = inter_data_cell(wasm, data_cell).wasm_ptr;
-    /* printf("%d (%d), ", cdr - 16, cdr - last_cdr); */
     last_cdr = cdr;
   }
   int* data_list = make_data_lval(wasm, lval);
   data_list[head_offset / 4] = cdr;
   int ret = inter_data_lval(wasm, data_list);
-  /* printf("\ninter_list ptr: %d\n", ret); */
   return ret;
 }
 
@@ -187,15 +169,12 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   int i = 0;
   while (head) {
     Lval* lval = head->car;
-    CResult result = datafy_lval(wasm, lval, NULL);
+    CResult result = datafy_lval(wasm, lval);
     partial_ptrs[i++] = result.wasm_ptr;
     head = head->cdr;
   }
   int data_ptr =
       add_bytes_to_data(wasm, (char*)partial_ptrs, 4 * partial_count);
-  /* printf("data_ptr %d\n", data_ptr); */
-  /* printf("partial_ptr[0] %d\n", partial_ptrs[0]); */
-  /* printf("partial_ptr[1] %d\n", partial_ptrs[1]); */
   *(int*)(p + partials_offset) = data_ptr;
   *(int*)(p + partial_count_offset) = partial_count;
 

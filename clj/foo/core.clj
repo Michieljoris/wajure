@@ -1,9 +1,14 @@
 (in-ns 'foo.core)
 
-(defn f [x y z] (print "in f") [x y z])
-(def fp (partial f 1))
 
-(defn f [x] (print "in redefined f") 1)
+(defn f []
+  (let [plus (partial + 1 1)]
+   (t (plus 1) 3)
+   (print (plus 1))
+   )
+
+   )
+
 
 
 

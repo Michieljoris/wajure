@@ -32,42 +32,48 @@ Ber make_ptr(Wasm* wasm, int ptr) {
   return BinaryenBinary(wasm->module, BinaryenAddInt32(), data_offset, ber_ptr);
 }
 
-CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
-  printf("DATAFY SYS FN!!!!!\n");
-  lval_println(lval_sys_fun);
+CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
+  printf("DATAFY_NATIVE_FN: %s\n", lval_fn_native->str);
+  NativeFn* native_fn =
+      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
+  if (!native_fn)
+    quit(wasm, "Native function %s not found in runtime", lval_fn_native->str);
+
+  int fn_table_index =
+      0;  // not used since we're dispatching to our native fn by param_count
+  int has_rest_arg = 0;  // also not used
+  Cell* partials = NULL;
+  int* data_lval = make_data_lval_wasm_lambda(
+      wasm, fn_table_index, PARTIAL_FN_INDEX, has_rest_arg, partials);
+  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
+
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+  return ret;
+}
+
+CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
+  char* c_fn_name =
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->str);
+  if (!c_fn_name) return datafy_native_fn(wasm, lval_fn_sys);
+
   BinaryenModuleRef module = wasm->module;
 
   scoped char* fn_name = lalloc_size(512);
   _strcpy(fn_name, "sys_");
-  _strcat(fn_name, lval_sys_fun->str);
+  _strcat(fn_name, lval_fn_sys->str);
 
   int fn_table_index;
-  /* Lval* lval_num = alist_get(wasm->fn_to_offset_map, is_eq_str, fn_name); */
-  /* if (lval_num) { */
-  /*   fn_table_index = lval_num->num; */
-  /* } else { */
   int wasm_params_count = 2;  // the function's closure and rest args
   int results_count = 1;
   BinaryenType params_type = make_type_int32(wasm_params_count);
   BinaryenType results_type = make_type_int32(results_count);
   int locals_count = 0;
-  char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_sys_fun->str);
-
-  if (!c_fn_name)
-    quit(wasm, "System fn not found in runtime: %s", lval_sys_fun->str);
-  /* Ber rest_arg = NULL; */
 
   Ber stack_pointer =
       BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
   int sp_adjustment = 1 * 4;
   stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
                                  make_int32(module, sp_adjustment));
-  /* int _signed = 0; */
-  /* int _aligned = 0; */
-  /* int offset = 0; */
-  /* Ber rest_arg = BinaryenLoad(wasm->module, 4, _signed, offset, _aligned, */
-  /*                             BinaryenTypeInt32(), stack_pointer); */
   Ber rest_arg = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
   Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
 
@@ -77,57 +83,46 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_sys_fun) {
   // Actually call this sys fn with the rest args
   Ber call_sys_fn =
       BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
-  /* Ber block_children[] = {call_sys_fn}; */
   Ber body = call_sys_fn;
-  /* BinaryenBlock(module, "body", block_children, 1, BinaryenTypeInt32()); */
   BinaryenAddFunction(module, fn_name, params_type, results_type, NULL,
                       locals_count, body);
 
-  fn_table_index = add_fn_to_table(wasm, c_fn_name);
   fn_table_index = add_fn_to_table(wasm, fn_name);
   int* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + fn_table_index, 1, 1, NULL);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr),
-                 /* make_int32(wasm->module, lval_ptr), */
-                 .wasm_ptr = lval_ptr};
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
-  printf("datafy_root_fn\n");
-  char* fn_name;
-  if (lval_fn->binding)
-    fn_name = lval_fn->binding;
-  else if (wasm->current_binding) {
-    printf("Using currentbinding!!!!!");
-    fn_name = wasm->current_binding;
-    lval_fn->ns = get_current_ns();
-    lval_fn->binding = retain(fn_name);
-  } else
-    fn_name = uniquify_name(wasm, "anon");
-
-  printf("datafy global_lambda, partial count: %d\n",
-         list_count(lval_fn->partials));
+  Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
+  int offset;
   Cell* partials = NULL;
-  if (lval_fn->full_fn) {
-    printf("is partial lambda so not creating wasm fn again");
+  if (cfn) {
     partials = lval_fn->partials;
-    lval_fn = lval_fn->full_fn;
-    if (lval_fn->offset == -1) {
-      add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
+    // Add the canonical fn for this partial if we haven't already
+    if (cfn->offset == -1) {
+      add_wasm_function(wasm, cfn->closure, cfn->cname, cfn);
     }
+    offset = cfn->offset;
   } else {
-    add_wasm_function(wasm, lval_fn->closure, fn_name, lval_fn);
-  }
+    // If not a partial fn just add the wasm fn
+    add_wasm_function(wasm, lval_fn->closure, lval_fn->cname, lval_fn);
 
-  lval_println(lval_fn);
+    offset = lval_fn->offset;
+  }
+  // Make a lval_wasm_lambda of our fn and inter it in wasm data
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + lval_fn->offset, lval_fn->param_count,
+      wasm, wasm->__fn_table_end + offset, lval_fn->param_count,
       lval_fn->rest_arg_index, partials);
+
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+
+  // And return a wasm pointer so that it can be attached to the lval for future
+  // reference
+  CResult ret = {.wasm_ptr = lval_ptr};
   return ret;
 }
 
@@ -190,9 +185,18 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   }
 }
 
-CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
-  printf("datafy ======================= (global name: %s)\n", global_name);
-  lval_println(lval);
+CResult datafy_lval(Wasm* wasm, Lval* lval) {
+  scoped char* global_name = NULL;
+
+  int lval_is_external = lval->ns && lval->ns != get_current_ns() ? 1 : 0;
+
+  if (lval_is_external) {
+    global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
+    add_dep(wasm, global_name);
+  }
+  /* printf("datafy ======================= (global name: %s)\n", global_name);
+   */
+  /* lval_println(lval); */
 
   CResult ret = {};
   if (!global_name && lval->wval_ptr > 0) {
@@ -201,13 +205,11 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
     /* printf("returing pre computed wval_ptr\n"); */
     return _ret;
   }
-
   switch (lval->type) {
     case LVAL_COLLECTION:
       if (global_name) {
         ret.ber =
             BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
-        ret.is_external = 1;
       } else
         ret = datafy_collection(wasm, lval);
       break;
@@ -220,7 +222,6 @@ CResult datafy_lval(Wasm* wasm, Lval* lval, char* global_name) {
           if (global_name) {
             ret.ber = BinaryenGlobalGet(wasm->module, global_name,
                                         BinaryenTypeInt32());
-            ret.is_external = 1;
           } else {
             ret = datafy_root_fn(wasm, lval);
           }

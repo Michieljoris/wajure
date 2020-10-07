@@ -1,6 +1,6 @@
 (in-ns 'main)
 ;; (require '[test.run :refer [run-tests]])
-;; (require '[test.test-partial :refer [test-partial]])
+(require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -17,12 +17,22 @@
 
 
 ;; (defn f [x y z] (print "in f, executing g") (x) [x y z])
-(defn f [x y z] (print "in f") [x y z])
+;; (defn f [x y z]  [x y z])
+;; (def f2 f)
 ;; (defn g [] (print "in g") )
-(def fp (partial f 1))
-(def f2 f)
-;; (def fg [f]
-(defn f [x] (print "in redefined f") 1)
+;; (def fp (partial f 1))
+;; (def fpp (partial fp 2))
+;; (def fp2 (partial f 1))
+;; (def f :foo)
+;; (def plus (partial + 1))
+;; (def f "foo")
+;; (def g (partial f 1))
+;; (def f2 f)
+;; (def fg [f])
+;; (defn f [x] 1)
+;; (defn f [x]  x)
+;; (def f3 f)
+;; (def f "foo")
 ;; (defn g [] (print "in redefined g"))
 
 
@@ -38,14 +48,61 @@
 ;; (defn g [x] x)
 ;; (def p partial)
 
-;; (defn f [x y z] (print "in f") [x y z])
+;; (defn f [x y z] [x y z])
+;; (def fp (partial f 1))
 ;; (def f2 f)
 ;; (def foo (f 1 2 3))
 ;; (defn f [x] (print "in redefined f") 1)
 
+;; (def plus1 (partial + 1))
+;; (def plus2 (partial plus1 1))
+;; (print "PLUS1: " (plus1 1))
+
+
+(defn g [x & y] [x y])
 (defn main [x y]
+  (test-partial)
+    (let [p partial
+        f (fn [x y z] [x y z])
+        fp (p f 1)]
+      ;; (print (fp 2 3))
+    (t (fp 2 3) [1 2 3])
+    )
+  ;; (let [p partial
+  ;;       gp (p g 1)]
+  ;;   (print (gp 2 3)))
+  ;; (let [f (fn [x & y] [x y])]
+  ;;   (print (f 1 2 3))
+  ;;   ;; (print (g 1 2 3))
+  ;;   )
+
+  ;; (foo/f)
+  ;; (let [plus (partial + 1 1)]
+  ;;  (t (plus 1) 3))
+  ;; (let [plus1 (partial + 1 1 1 1)]
+  ;;  +
+  ;;  (print (plus1 1))
+  ;;   )
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       g (fn [] f)
+  ;;       fp (partial (g) 1)
+  ;;       fpp (partial fp 2)]
+  ;;   (t (fp 2 3) [1 2 3])
+  ;;   (t (fpp  3) [1 2 3]))
+
+ ;; (print (plus1 1))
+ ;; (print (plus2 1))
+  ;; (let [fpp (partial fp 2)]
+  ;;   (print (fpp 3)))
+  ;; (print (foo/f 1))
+  ;; (print (foo/fp 2 3))
+  ;; (print (fpp  3))
+  ;; (let [f (fn [x] x)]
+  ;;   f)
+  ;; (print (fn [x] x))
+  ;; (let [f (fn [x] x)]
+  ;;   (f 1))
   ;; (print "hello")
-  ;; (test-partial)
   ;; (print (f 1))
   ;; (print (f2 1 2 3))
   ;; (print (fp 2 3))

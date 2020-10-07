@@ -352,6 +352,7 @@ async function start() {
         await load_modules(env, module);
 
         console.log("Link modules  ----------------------------------------");
+        // console.log(util.inspect(env.modules, null, Infinity, true));
         link_modules(env, env.modules);
 
         console.log("Instantiate modules  ----------------------------------------");

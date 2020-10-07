@@ -23,6 +23,25 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
+int number_len(int n) {
+  int len = 1;
+  while (1) {
+    n = n / 10;
+    if (n)
+      len++;
+    else
+      return len;
+  }
+}
+
+char* make_cname(char* name) {
+  int uid = get_current_ns()->uid_counter++;
+  int uid_length = number_len(uid);
+  char* cname = lalloc_size(_strlen(name) + uid_length + 1);
+  sprintf(cname, "%s_%d", name, uid);
+  return cname;
+}
+
 Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("def", 2);
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
@@ -48,29 +67,19 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     }
   }
 
-  if (lval->type == LVAL_FUNCTION && !lval->ns && !lval->full_fn) {
+  if (!lval->cname) {
     // We need to keep track of in which namespace a fn is actually defined and
     // under which name so we can refer to its fn_table_index from other
     // namespaces in compiled code by imported global.
-    printf("def of lambda: %s/%s\n", get_current_ns()->namespace,
-           lval_sym->str);
-    lval_println(lval);
-    // Set any current binding to unbound.
-    Lval* current_lval = lenv_get(ns->env, lval_sym);
-    if (current_lval) {
-      /* release(current_lval->ns); */
-      /* current_lval->ns = NULL; */
-      /* current_lval->binding = NULL; */
-      char* binding =
-          lalloc_size(_strlen("unbound_") + _strlen(current_lval->binding));
-      sprintf(binding, "unbound_%s", current_lval->binding);
-      release(current_lval->binding);
-      current_lval->binding = binding;
-    }
+
+    /* printf("def of lambda: %s/%s\n", get_current_ns()->namespace, */
+    /*        lval_sym->str); */
+    /* lval_println(lval); */
+
+    // Set a unique cname on every lval we add to our environment
+    lval->cname = make_cname(lval_sym->str);
     lval->ns = retain(get_current_ns());
-    lval->binding = retain(lval_sym->str);
   }
-  // And replace with updated binding
   lenv_put(ns->env, lval_sym, lval);
   release(lval);
   return make_lval_nil();

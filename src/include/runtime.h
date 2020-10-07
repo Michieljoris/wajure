@@ -12,12 +12,12 @@ int get_wval_subtype(Lval* lval);
 int get_wval_fn_table_index(WvalFun* wval);
 int get_wval_param_count(WvalFun* wval);
 int get_wval_has_rest_arg(WvalFun* wval);
-int get_wval_rest_arg_index(WvalFun* wval);
+/* int get_wval_rest_arg_index(WvalFun* wval); */
 int get_wval_closure(WvalFun* wval);
 int get_wval_partials(WvalFun* wval);
 int get_wval_partial_count(WvalFun* wval);
 
-void bundle_rest_args(Lval** lval_array, int rest_arg_length);
+void bundle_rest_args(WvalFun* wval, Lval** args, int args_count);
 
 void wval_print(WvalFun* wval);
 
