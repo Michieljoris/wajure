@@ -30,35 +30,61 @@ void add_call_fn(Wasm* wasm, int n) {
   char* fn_name = number_fn_name(wasm, "call");  // call#0 - call#n
   add_fn_to_table(wasm, fn_name);
 
-  // closure pointer, fn_table_index, args_block_ptr and args count
-  BinaryenType fn_params_type = make_type_int32(4);
-  BinaryenType fn_results_type = make_type_int32(1);
-  BinaryenType call_params_type =
-      make_type_int32(n + 1);  // first param is closure_pointer
-  BinaryenType call_results_type = make_type_int32(1);
+  // wval, args_block_ptr and args count
+  int wval_param = 0;
+  int args_block_ptr_param = 1;
+  int args_count_param = 2;
 
-  Ber closure_pointer = BinaryenLocalGet(module, 0, BinaryenTypeInt32());
+  int body_children_count = 0;
+  Ber* body_children = malloc(10 * sizeof(Ber));
+
+  // Validate the fn as fn and number of args
+  if (wasm->validate_fn_at_rt) {
+    Ber validate_operands[] = {local_get_int32(module, wval_param),
+                               local_get_int32(module, args_count_param)};
+    Ber call_validate_fn = BinaryenCallIndirect(
+        module, make_int32(module, VALIDATE_FN_INDEX), validate_operands, 2,
+        make_type_int32(2), BinaryenTypeNone());
+    body_children[body_children_count++] = call_validate_fn;
+  }
+
+  // If there is a rest arg, bundle it into the last arg
+  Ber bundle_operands[] = {local_get_int32(module, wval_param),
+                           local_get_int32(module, args_block_ptr_param),
+                           local_get_int32(module, args_count_param)};
+  body_children[body_children_count++] = BinaryenCall(
+      module, "bundle_rest_args", bundle_operands, 3, BinaryenTypeNone());
+
+  // Load args into operands of call to fn
+  Ber closure_pointer =
+      get_wval_prop(module, local_get_int32(module, wval_param), "closure");
   Ber* operands = malloc((n + 1) * sizeof(Ber));
   operands[0] = closure_pointer;
-
-  Ber args_block_ptr = BinaryenLocalGet(module, 2, BinaryenTypeInt32());
+  Ber args_block_ptr = local_get_int32(module, args_block_ptr_param);
   for (int i = 0; i < n; i++) {
     operands[i + 1] = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
                                    args_block_ptr);
   }
-  Ber wval_fn_table_index = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
+
+  // Call fn
+  Ber wval_fn_table_index = get_wval_prop(
+      module, local_get_int32(module, wval_param), "fn_table_index");
+  BinaryenType call_params_type =
+      make_type_int32(n + 1);  // first param is closure_pointer
+  BinaryenType call_results_type = make_type_int32(1);
   Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, n + 1,
                                   call_params_type, call_results_type);
-  int children_count = 1;
-  Ber children[] = {/* wasm_log_int(wasm, make_int32(module, n)), */
-                    /* wasm_log_int(wasm, closure_pointer), */
-                    /* wasm_log_int(wasm, wval_fn_table_index), */
-                    call};
-  Ber body = BinaryenBlock(module, NULL, children, children_count,
+  body_children[body_children_count++] = call;
+  Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
                            BinaryenTypeInt32());
+
+  // Add function to wasm
+  BinaryenType fn_params_type = make_type_int32(3);
+  BinaryenType fn_results_type = make_type_int32(1);
   BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
                       body);
   free(operands);
+  free(body_children);
   release(fn_name);
 }
 
@@ -246,10 +272,11 @@ void add_copy_and_retain_fn(Wasm* wasm) {
 void add_partial_fn(Wasm* wasm) {
   CONTEXT_FUNCTION("add_partial_fn", "add_partail_fn", 4)
 
-  int wasm_params_count = 4;
+  int wasm_params_count = 3;
 
-  int args_block_ptr_param = 2;
-  int args_count_param = 3;
+  /* int wval_param = 0; */
+  int args_block_ptr_param = 1;
+  int args_count_param = 2;
 
   BinaryenModuleRef module = wasm->module;
 
@@ -728,12 +755,12 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   }
 }
 
-CResult compile_native_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
+CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
   NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_sym->str);
-  if (!native_fn) {
-    quit(wasm, "Function %s not found in runtime", lval_fn_sym->str);
-  }
+      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
+  if (!native_fn)
+    quit(wasm, "Function %s not found in runtime", lval_fn_native->str);
+
   switch (native_fn->fn_table_index) {
     case PARTIAL_FN_INDEX:
       return compile_partial_call(wasm, *native_fn, args);
@@ -742,7 +769,7 @@ CResult compile_native_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
       /* break; */
     default:
       return quit(wasm, "Oops, can't find fn table index for %s",
-                  lval_fn_sym->str);
+                  lval_fn_native->str);
   }
   return cnull();
 }

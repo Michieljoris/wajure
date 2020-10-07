@@ -98,6 +98,12 @@
   (let [plus (partial + 1 1)]
    (t (plus 1) 3))
 
+  ;; Native fns (such as partial) can be used as first class fns
+  (let [p partial
+        f (fn [x y z] [x y z])
+        fp (p f 1)]
+    (t (fp 2 3) [1 2 3]))
+ 
   (pr "Partial tests have run.")
 
   )

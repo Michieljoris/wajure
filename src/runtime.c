@@ -53,25 +53,42 @@ int get_wval_fn_table_index(WvalFun* wval) { return wval->fn_table_index; }
 int get_wval_param_count(WvalFun* wval) { return wval->param_count; }
 int get_wval_min_param_count(WvalFun* wval) { return wval->param_count - 1; }
 int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
-int get_wval_rest_arg_index(WvalFun* wval) { return wval->has_rest_arg - 1; }
 int get_wval_closure(WvalFun* wval) { return wval->closure; }
 int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
 
-void bundle_rest_args(Lval** lval_array, int rest_arg_length) {
-  /* printf("Args_count: %d\n", rest_arg_length); */
-  if (rest_arg_length == 0) {
-    lval_array[0] = make_lval_nil();
-    return;
+void bundle_rest_args(WvalFun* wval, Lval** args, int args_count) {
+  int has_rest_arg = wval->has_rest_arg;
+  if (wval->has_rest_arg) {  // one based rest arg index
+    int rest_arg_index = has_rest_arg - 1;
+    int rest_arg_length = args_count - rest_arg_index;
+    if (rest_arg_length == 0) {
+      args[rest_arg_index] = make_lval_nil();
+      return;
+    }
+    Lval* lval_list = make_lval_list();
+    Cell* head = NULL;
+    int i = args_count - 1;
+    while (i >= rest_arg_index) head = list_cons(args[i--], head);
+    lval_list->head = head;
+    args[rest_arg_index] = lval_list;
   }
-  Lval* lval_list = make_lval_list();
-  Cell* head = NULL;
-  int i = rest_arg_length - 1;
-  while (i >= 0) head = list_cons(lval_array[i--], head);
-  lval_list->head = head;
-  /* lval_println(lval_list); */
-  lval_array[0] = lval_list;
 }
+
+/* void bundle_rest_args_old(Lval** lval_array, int rest_arg_length) { */
+/*   /\* printf("Args_count: %d\n", rest_arg_length); *\/ */
+/*   if (rest_arg_length == 0) { */
+/*     lval_array[0] = make_lval_nil(); */
+/*     return; */
+/*   } */
+/*   Lval* lval_list = make_lval_list(); */
+/*   Cell* head = NULL; */
+/*   int i = rest_arg_length - 1; */
+/*   while (i >= 0) head = list_cons(lval_array[i--], head); */
+/*   lval_list->head = head; */
+/*   /\* lval_println(lval_list); *\/ */
+/*   lval_array[0] = lval_list; */
+/* } */
 
 void wval_print(WvalFun* wval) {
   printf("WVAL:\n");
