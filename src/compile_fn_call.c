@@ -129,10 +129,24 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
   // The first MAX_FN_PARAMS (20) fns in the global fn table redirect to the
   // real fn with index wval_fn_index, loading the right number of args from the
   // args block.
-  Ber wval_param_count =
-      get_wval_prop(module, local_get_int32(module, wval_local), "param_count");
-  Ber fn_table_index = wval_param_count;
-  return BinaryenCallIndirect(module, fn_table_index, call_operands, 3,
+  /* Ber wval_param_count = */
+  /*     get_wval_prop(module, local_get_int32(module, wval_local),
+   * "param_count"); */
+  /* Ber fn_table_index = wval_param_count; */
+  Ber fn_call_relay_array = get_wval_prop(
+      module, local_get_int32(module, wval_local), "fn_call_relay_array");
+  // TODO: if total_args_count > 20 ? 20 : total_args_count;
+  Ber fn_call_relay_ptr =
+      BinaryenBinary(module, BinaryenAddInt32(), fn_call_relay_array,
+                     local_get_int32(module, total_args_count_local));
+  Ber fn_table_index2 =
+      BinaryenLoad(module, 1, 0, 0, 0, BinaryenTypeInt32(), fn_call_relay_ptr);
+  /* block_children[(*block_children_count)++] = */
+  /*     wasm_log_int(wasm, fn_table_index); */
+  block_children[(*block_children_count)++] =
+      wasm_log_int(wasm, fn_table_index2);
+
+  return BinaryenCallIndirect(module, fn_table_index2, call_operands, 3,
                               make_type_int32(3), BinaryenTypeInt32());
 }
 

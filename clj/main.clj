@@ -59,13 +59,13 @@
 ;; (print "PLUS1: " (plus1 1))
 
 
-(defn g [x & y] [x y])
+;; (defn g [x & y] [x y])
 (defn main [x y]
   ;; (test-partial)
-  (let [f (fn [x] x)
+  (let [f (fn [x & y] [x y])
         ;; fp (partial f 1)
         ]
-    (f 123))
+    (print (f 123 456)))
     ;; (let [p partial
     ;;     f (fn [x y z] [x y z])
     ;;     fp (p f 1)]

@@ -68,11 +68,11 @@ void add_call_fn(Wasm* wasm, int n) {
   }
 
   // If there is a rest arg, bundle it into the last arg
-  Ber bundle_operands[] = {local_get_int32(module, wval_param),
-                           local_get_int32(module, args_block_ptr_param),
-                           local_get_int32(module, args_count_param)};
-  body_children[body_children_count++] = BinaryenCall(
-      module, "bundle_rest_args", bundle_operands, 3, BinaryenTypeNone());
+  /* Ber bundle_operands[] = {local_get_int32(module, wval_param), */
+  /*                          local_get_int32(module, args_block_ptr_param), */
+  /*                          local_get_int32(module, args_count_param)}; */
+  /* body_children[body_children_count++] = BinaryenCall( */
+  /*     module, "bundle_rest_args", bundle_operands, 3, BinaryenTypeNone()); */
 
   // Load args into operands of call to fn
   Ber closure_pointer =
@@ -476,18 +476,23 @@ void add_partial_fn(Wasm* wasm) {
   Ber wval_has_rest_arg = get_wval_prop(
       module, local_get_int32(module, wval_local), "has_rest_arg");
 
-  Ber operands[6] = {
-      wval_fn_table_index,
-      wval_param_count,
-      wval_has_rest_arg,
-      wval_closure,
-      local_get_int32(module, partials_local),
-      local_get_int32(module, total_partial_count_local),
-  };
+  // Reserve space for the fn_call_relay array
+  // TODO: replace with lalloc_type
+  Ber lalloc_operands[] = {make_int32(module, 21)};
+  Ber fn_call_relay_ptr = BinaryenCall(module, "lalloc_size", lalloc_operands,
+                                       1, BinaryenTypeInt32());
+
+  Ber operands[7] = {wval_fn_table_index,
+                     wval_param_count,
+                     wval_has_rest_arg,
+                     wval_closure,
+                     local_get_int32(module, partials_local),
+                     local_get_int32(module, total_partial_count_local),
+                     fn_call_relay_ptr};
 
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
   Ber block = BinaryenBlock(module, NULL, children, children_count,
                             BinaryenTypeInt32());
@@ -683,23 +688,29 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
   Ber wval_param_count = get_wval_prop(module, wval, "param_count");
   Ber wval_has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
 
-  Ber operands[6] = {
+  Ber lalloc_operands[] = {make_int32(module, 21)};
+  Ber fn_call_relay_ptr = BinaryenCall(module, "lalloc_size", lalloc_operands,
+                                       1, BinaryenTypeInt32());
+
+  Ber operands[7] = {
       wval_fn_table_index,
       wval_param_count,
       wval_has_rest_arg,
       wval_closure,
       BinaryenLocalGet(module, new_partials_local, BinaryenTypeInt32()),
       BinaryenLocalGet(module, new_partial_count_local, BinaryenTypeInt32()),
-  };
+      fn_call_relay_ptr};
 
   // TODO: if fn is not an function we want to return just the value itself,
   // retained, since at compile time we don't know if it's been a real fn
   // call, so we'll pretend it was, and the result of the whole partial call
   // can then be released when required
 
+  // Reserve space for the fn_call_relay array
+  // TODO: replace with lalloc_type
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
 
   Ber block = BinaryenBlock(module, uniquify_name(wasm, "partial_call"),
@@ -820,11 +831,18 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         has_rest_arg = make_int32(module, lval_fn->rest_arg_index);
       }
 
+      // Reserve space for the fn_call_relay array
+      // TODO: replace with lalloc_type
+      Ber lalloc_operands[] = {make_int32(module, 21)};
+      Ber fn_call_relay_ptr = BinaryenCall(
+          module, "lalloc_size", lalloc_operands, 1, BinaryenTypeInt32());
+
       // Call the runtime make_lval_wasm_lambda fn
-      Ber operands[6] = {ber_fn_table_index, param_count,  has_rest_arg,
-                         closure_ptr,        partials_ptr, ber_partial_count};
+      Ber operands[7] = {ber_fn_table_index, param_count,  has_rest_arg,
+                         closure_ptr,        partials_ptr, ber_partial_count,
+                         fn_call_relay_ptr};
       children[children_count++] =
-          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 6,
+          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 7,
                        make_type_int32(1));
 
       // And return a block that does all of the above

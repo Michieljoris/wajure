@@ -54,8 +54,15 @@ struct lval2 {
   char type;     // more like the protocol (collection, function, literal etc)
   char subtype;  // more like the actual type (list, map, vector, lambda, macro
                  // etc)
+
+  // wval_fn
+  short fn_table_index;
+  short partial_count;
+  int closure;
+  int partials;
+
   // num, str, symbol, keyword or pointer to fun or cell (or persistent map
-  // (hamt) or pvector)
+  // (hamt) or pvector), or fn_call_relay table
   void* data;
   int hash;  // or pointer to compiler data
 };
@@ -74,6 +81,14 @@ struct lval {
 
   // List
   Cell* head;
+
+  // wval_fn
+  /* short fn_table_index;   */
+  /* short partial_count;    */
+  /* int closure;            */
+  /* int partials;           */
+  /* char* fn_call_relay; */
+
   int hash;
 
   // Interpreter props
@@ -112,6 +127,7 @@ struct wval_fn {
   short partial_count;   // 8
   int closure;           // 12
   int partials;          // 16
+  char* fn_call_relay_array;
   /* char* str;             // 20 */
 };
 

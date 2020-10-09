@@ -335,12 +335,21 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   ber_closure_ptr = BinaryenLocalGet(module, closure_pointer_local_index,
                                      BinaryenTypeInt32());
 
+  Ber fn_call_relay_array_ptr = BinaryenBinary(
+      module, BinaryenAddInt32(),
+      BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()),
+      make_int32(module, get_fn_call_relay_table_offset(wasm, param_count,
+                                                        rest_arg_index)));
+
+  printf("INDEX: %d\n",
+         get_fn_call_relay_table_offset(wasm, param_count, rest_arg_index));
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[6] = {ber_fn_table_index, ber_param_count, ber_has_rest_arg,
-                     ber_closure_ptr,    ber_partials,    ber_partial_count};
+  Ber operands[7] = {ber_fn_table_index,     ber_param_count, ber_has_rest_arg,
+                     ber_closure_ptr,        ber_partials,    ber_partial_count,
+                     fn_call_relay_array_ptr};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 6, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
 
   // Add this call to the lambda block
   lambda_block_children[lambda_block_count++] = make_lval_wasm_lambda_call;
@@ -550,6 +559,7 @@ void compile(Namespace* ns) {
   register_wajure_native_fns(wasm);
 
   if (_strcmp(ns->namespace, config->main) == 0) add_native_fns(wasm);
+  add_fn_call_relay_tables_to_data(wasm);
 
   printf("Processing env =============\n");
   Cell* head = env->kv;
@@ -597,9 +607,13 @@ void compile(Namespace* ns) {
     release(main_fn);
     release(lval_sym);
   }
-
   inter_rewrite_info(wasm);
   add_memory_section(wasm);
+
+  /* int offset = get_fn_call_relay_table_offset(wasm, 20, 1); */
+  /* for (int i = 0; i < 21; i++) { */
+  /*   printf("%d ", *(wasm->data + offset + i)); */
+  /* } */
 
   BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
                            wasm->symbol_table_count);

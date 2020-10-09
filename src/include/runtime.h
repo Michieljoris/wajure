@@ -5,7 +5,7 @@
 
 WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
-                               int partial_count);
+                               int partial_count, char* fn_call_relay);
 
 int get_wval_type(Lval* lval);
 int get_wval_subtype(Lval* lval);

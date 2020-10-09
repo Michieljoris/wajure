@@ -45,6 +45,7 @@
 #define partial_count_offset slot_type_size + 8
 #define closure_offset slot_type_size + 12
 #define partials_offset slot_type_size + 16
+#define fn_call_relay_offset slot_type_size + 20
 /* #define str_offset 4  // 20 */
 
 void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {

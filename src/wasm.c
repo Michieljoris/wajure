@@ -173,7 +173,7 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "print_slot_size", 0, 0},
     // runtime
     {NULL, NULL, "wval_print", 1, 0},
-    {NULL, NULL, "make_lval_wasm_lambda", 6, 1},
+    {NULL, NULL, "make_lval_wasm_lambda", 7, 1},
     {NULL, NULL, "get_wval_type", 1, 1},
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
@@ -184,6 +184,7 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
+    {NULL, NULL, "get_wval_fn_call_relay_array", 1, 1},
     {NULL, NULL, "bundle_rest_args", 3, 0},
     {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},

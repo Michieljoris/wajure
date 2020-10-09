@@ -11,22 +11,25 @@
 
 WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
-                               int partial_count) {
+                               int partial_count, char* fn_call_relay) {
   /* printf("fn_table_index %d, closure: %d, partials %d\n", fn_table_index, */
   /*        closure, partials); */
   /* printf("*closure: %li\n", *(long*)closure); */
   /* Lval* lval = (Lval*)*(long*)closure; */
   /* lval_println(lval); */
   WvalFun* wval = lalloc_type(LVAL);
-  *wval = (WvalFun){.type = WVAL_FUN,
-                    .subtype = -1,
-                    .fn_table_index = fn_table_index,
-                    .param_count = param_count,
-                    .has_rest_arg = has_rest_arg,
-                    .closure = closure,
-                    .partials = partials,
-                    .partial_count = partial_count,
-                    /* .str = "fn_name:TODO" */};
+  *wval = (WvalFun){
+      .type = WVAL_FUN,
+      .subtype = -1,
+      .fn_table_index = fn_table_index,
+      .param_count = param_count,
+      .has_rest_arg = has_rest_arg,
+      .closure = closure,
+      .partials = partials,
+      .partial_count = partial_count,
+      .fn_call_relay_array = fn_call_relay
+      /* .str = "fn_name:TODO" */
+  };
   return wval;
 }
 
@@ -56,39 +59,30 @@ int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
 int get_wval_closure(WvalFun* wval) { return wval->closure; }
 int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
+char* get_wval_fn_call_relay_array(WvalFun* wval) {
+  char* ptr = wval->fn_call_relay_array;
+  for (int i = 0; i < 21; i++) {
+    printf("%d ", *((char*)(ptr + i)));
+  }
+  printf("\n");
+  return wval->fn_call_relay_array;
+}
 
 void bundle_rest_args(WvalFun* wval, Lval** args, int args_count) {
   int has_rest_arg = wval->has_rest_arg;
-  if (wval->has_rest_arg) {  // one based rest arg index
-    int rest_arg_index = has_rest_arg - 1;
-    int rest_arg_length = args_count - rest_arg_index;
-    if (rest_arg_length == 0) {
-      args[rest_arg_index] = make_lval_nil();
-      return;
-    }
-    Lval* lval_list = make_lval_list();
-    Cell* head = NULL;
-    int i = args_count - 1;
-    while (i >= rest_arg_index) head = list_cons(args[i--], head);
-    lval_list->head = head;
-    args[rest_arg_index] = lval_list;
+  int rest_arg_index = has_rest_arg - 1;
+  int rest_arg_length = args_count - rest_arg_index;
+  if (rest_arg_length == 0) {
+    args[rest_arg_index] = make_lval_nil();
+    return;
   }
+  Lval* lval_list = make_lval_list();
+  Cell* head = NULL;
+  int i = args_count - 1;
+  while (i >= rest_arg_index) head = list_cons(args[i--], head);
+  lval_list->head = head;
+  args[rest_arg_index] = lval_list;
 }
-
-/* void bundle_rest_args_old(Lval** lval_array, int rest_arg_length) { */
-/*   /\* printf("Args_count: %d\n", rest_arg_length); *\/ */
-/*   if (rest_arg_length == 0) { */
-/*     lval_array[0] = make_lval_nil(); */
-/*     return; */
-/*   } */
-/*   Lval* lval_list = make_lval_list(); */
-/*   Cell* head = NULL; */
-/*   int i = rest_arg_length - 1; */
-/*   while (i >= 0) head = list_cons(lval_array[i--], head); */
-/*   lval_list->head = head; */
-/*   /\* lval_println(lval_list); *\/ */
-/*   lval_array[0] = lval_list; */
-/* } */
 
 void wval_print(WvalFun* wval) {
   printf("WVAL:\n");
