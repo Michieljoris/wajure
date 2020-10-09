@@ -61,13 +61,18 @@
 
 (defn g [x & y] [x y])
 (defn main [x y]
-  (test-partial)
-    (let [p partial
-        f (fn [x y z] [x y z])
-        fp (p f 1)]
-      ;; (print (fp 2 3))
-    (t (fp 2 3) [1 2 3])
-    )
+  ;; (test-partial)
+  (let [f (fn [x] x)
+        ;; fp (partial f 1)
+        ]
+    (f 123))
+    ;; (let [p partial
+    ;;     f (fn [x y z] [x y z])
+    ;;     fp (p f 1)]
+    ;;   ;; (print (fp 2 3))
+    ;; (t (fp 2 3) [1 2 3])
+    ;; (print (fp 2 3))
+    ;; )
   ;; (let [p partial
   ;;       gp (p g 1)]
   ;;   (print (gp 2 3)))

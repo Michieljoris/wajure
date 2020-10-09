@@ -422,9 +422,6 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     // TODO: don't use struct anymore since we only return lval
     struct resolved_symbol result = eval_symbol(wasm->env, lval_sym);
     Lval* resolved_sym = result.lval;
-    /* int lval_is_external = result.ns && result.ns != get_current_ns() ? 1 :
-     * 0; */
-    /* printf("resolved_sym binding: %s\n", resolved_sym->ns->namespace); */
     // If it's a symbol it has to be known in our compiler env!!!
     if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);

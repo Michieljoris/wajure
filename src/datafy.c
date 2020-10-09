@@ -33,18 +33,19 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 }
 
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
-  printf("DATAFY_NATIVE_FN: %s\n", lval_fn_native->str);
   NativeFn* native_fn =
       alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
   if (!native_fn)
     quit(wasm, "Native function %s not found in runtime", lval_fn_native->str);
 
+  printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->str,
+         native_fn->fn_table_index);
   int fn_table_index =
       0;  // not used since we're dispatching to our native fn by param_count
   int has_rest_arg = 0;  // also not used
   Cell* partials = NULL;
   int* data_lval = make_data_lval_wasm_lambda(
-      wasm, fn_table_index, PARTIAL_FN_INDEX, has_rest_arg, partials);
+      wasm, fn_table_index, native_fn->fn_table_index, has_rest_arg, partials);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};

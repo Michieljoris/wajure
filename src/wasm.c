@@ -6,6 +6,7 @@
 #include "lispy_mempool.h"
 #include "list.h"
 #include "misc_fns.h"
+#include "native.h"
 #include "platform.h"
 #include "print.h"
 #include "printf.h"
@@ -261,19 +262,49 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   wasm->symbol_table_count += line_count;
 }
 
-NativeFn native_fns[] = {{"partial", PARTIAL_FN_INDEX, 2, 0, 1},
-                         {"apply", APPLY_FN_INDEX, 1, 0, 1},
-                         {NULL}};
+/* int comp(const void* elem1, const void* elem2) { */
+/*   NativeFn f = *((NativeFn*)elem1); */
+/*   NativeFn s = *((NativeFn*)elem2); */
+/*   if (f.fn_table_index > s.fn_table_index) return 1; */
+/*   if (f.fn_table_index < s.fn_table_index) return -1; */
+/*   return 0; */
+/* } */
 
-void register_native_fns(Wasm* wasm) {
-  int i = 0;
+NativeFn native_fns[] = {
+    {"rt_error_too_few_args", -1, 0, 0, 0, add_rt_error_too_few_args_fn, NULL},
+    {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
+     NULL},
+    {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
+    {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL},
+    {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
+    {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
+};
 
-  do {
-    char* wajure_fn_name = native_fns[i].wajure_fn_name;
-    if (!wajure_fn_name) break;
+void add_native_fns(Wasm* wasm) {
+  // Since we load config->main ("main") first in nodejs that module will have
+  // offset of 0 for data and fns, so we add the call fns to main and now we
+  // can refer to these call fns by index 0-20 throughout all the modules.
+  add_call_fns(wasm);             // 0-20
+  add_bundle_rest_arg_fns(wasm);  //  21-41
+
+  int fns_count = sizeof(native_fns) / sizeof(*native_fns);
+
+  // We sort so we're sure the constants match the fn table index.
+  /* qsort(native_fns, fns_count, sizeof(*native_fns), comp); */
+  for (int i = 0; i < fns_count; i++) {
+    native_fns[i].add_fn(wasm);
+    native_fns[i].fn_table_index =
+        add_fn_to_table(wasm, native_fns[i].wajure_fn_name);
+    printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name,
+           native_fns[i].fn_table_index);
+  }
+}
+
+void register_wajure_native_fns(Wasm* wasm) {
+  int fns_count = sizeof(native_fns) / sizeof(*native_fns);
+  for (int i = 0; i < fns_count; i++) {
     wasm->wajure_to_native_fn_map =
         alist_prepend(wasm->wajure_to_native_fn_map,
                       native_fns[i].wajure_fn_name, &native_fns[i]);
-    i++;
-  } while (1);
+  };
 }

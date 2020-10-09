@@ -1,74 +1,5 @@
 * TODO compiler
 ** clean up and comment all of code
-** compiled partial
-*** DONE global partial fns from another namespace
-*** DONE namespace wasm fns of wajure fns to prevent clashes with compilter generated fns
-*** DONE make sure that wasm fn f is not created in (def f foo/f)
-*** DONE Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
-*** DONE Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
-*** DONE (partial x 1 2) where we don't don't what x is
-**** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
-**** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
-*** DONE Use copy_and_retain in compile_partial_call, dedup
- Don't call native partial fn in compile_partial_call
-can be more optimized
-*** When referring to LVAL_REF/wval only set to local when it was a fn call.
-So LOCAL and PARAM (don't set to local) vs closure (set to local)
-*** (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
-    So find a way to call native partial fn!!!!, when we just have a pointer to
-    an lval and that's supposed to be the native partial fn:
-
-So we need to have a native fn that does the right thing. And it should receive
-all of its args in an arg block!!! Because why bother putting it all in a list
-like we do for sys fns
-*** And what about (partial partial 1 2) or where either partial is an lval_ref or result of fn call!!!
-*** in native partial fn:
-   TODO: make sure first arg is a wval_fn!!!! Or something that can be turned
-  into a fn, such as {},[],:kw etc
-
-   TODO: if fn is not an function we want to return just the value itself,
-  retained, since at compile time we don't know if it's been a real fn call, so
-  we'll pretend it was, and the result of the whole partial call can then be
-  released when required, but we still want to compile all args, well the fn
-  calls at least.
-*** DONE in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
-*** DONE little problem, duplicate wasm fns
-(defn f [x y z] [x y z])
-(def fp (partial f 1 2))
-We'll get two identical fns, f and fp
-*** DONE (printf fp) gives an refcount error
-trying to release that's not managed by
-** DONE Fatal: Module::addFunction: f already exists
-(defn f [x y z] [x y z])
-(def f2 f)
-(defn f [x] 1)
-
-(defn main [x y]
- (print (f  1 2 3)))
-
-This is because f gets replaced by the second f, but and the second f is already
-processed and added to wasm because it came first in the env (so when compiling
-f2, which still refers to the old f we get the error, because it'll get added as
-f), and that's because we do lenv_put, and not lenv_prepend, which would solve
-this problem. Well, that is, if we check for the function in wasm in
-add_wasm_function and remove it and replace it with the update one when
-compiling.
-** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
-in a lval_wasm_lambda any partials should all be retained, meaning we can release all
-of the partials when releasing the lval_wasm_lambda
-** Release/retain partials, closure and rest args properly
-** get fn name for lval_ref's
-So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
-** multi arity fns!!!
-** fix self recursive calls
-    Since we point the closure of a fn to what it's in the env up to that point
-    when the fn is defined the fn itself is not in the env yet. So (defn foo []
-    (foo)) will not work since foo is not yet defined when we add the foo fn to
-    the env.
-
-    So after we define a fn we need to add it to the closure. This will fix it
-    for the interpreter.
-
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
@@ -94,7 +25,43 @@ last arg is a list (put a check in if it's a lval_compiler)
 3. When datafying the apply fn we don't know anything at compile time and we
    need to rely on a apply fn such as in clojure.core. But we need multiarity
    fns for that first.
+** multi arity fns!!!
+** map, reduce,
+** gensym and #foo in macro
+http://clojure-doc.org/articles/language/macros.html
 ** ----------------
+** fix self recursive calls
+    Since we point the closure of a fn to what it's in the env up to that point
+    when the fn is defined the fn itself is not in the env yet. So (defn foo []
+    (foo)) will not work since foo is not yet defined when we add the foo fn to
+    the env.
+
+    So after we define a fn we need to add it to the closure. This will fix it
+    for the interpreter.
+
+** loop/recur
+** multimethods
+** try/throw/catch
+** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
+** ----------------------------
+** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
+So LOCAL and PARAM (don't set to local) vs closure (set to local)
+** Partial: And what about (partial partial f 2) or where either partial is an lval_ref or result of fn call!!!
+** checks in native partial fn:
+** Partial: make sure first arg is a wval_fn!!!! Or something that can be turned
+  into a fn, such as {},[],:kw etc
+
+** Partial: if fn is not an function we want to return just the value itself,
+  retained, since at compile time we don't know if it's been a real fn call, so
+  we'll pretend it was, and the result of the whole partial call can then be
+  released when required, but we still want to compile all args, well the fn
+  calls at least.
+** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
+in a lval_wasm_lambda any partials should all be retained, meaning we can release all
+of the partials when releasing the lval_wasm_lambda
+** Release/retain partials, closure and rest args properly
+** get fn name for lval_ref's
+So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
 ** release uniquify_name
 ** cleanup memory of namespaces
 so get interpreter to end with all slots free again!
@@ -109,16 +76,11 @@ You should also be able to switch namespace.
 ** review closures in the context of namespaces
 especially:
 Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
-** fix freeing of fn_name ("anon")
+** fix freeing of fn_name
 ** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-** rewrite sys fns to use stack iso c arg_list
-** loop/recur
-** multimethods
-** try/throw/catch
-** implement: quasiquote, doseq, keywords, map, reduce, and, or, xor, doseq, destructering, meta data, atoms
+** rewrite sys fns into native fns to use args block iso c arg_list
 ** benchmark whether internal module calls are faster than calling imported fns or calling imported table fns
-** ----------------------------
 ** ? dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer
 to them statically. Alternatively we could store them in a namespace env and
@@ -156,8 +118,6 @@ Also, clojure allows it.
 * TODO Both interpreter and compiler:
 ** error handling and tracking of line number and pos
 Don't cut off compiling, try to continue, produce list of errors.
-** gensym and #foo in macro
-http://clojure-doc.org/articles/language/macros.html
 ** implement reader macro for #(+ %1 %2)
 ** Two special variables are available inside defmacro for more advanced usages:
 
@@ -179,6 +139,48 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+
+** DONE compiled partial
+*** DONE global partial fns from another namespace
+*** DONE namespace wasm fns of wajure fns to prevent clashes with compilter generated fns
+*** DONE make sure that wasm fn f is not created in (def f foo/f)
+*** DONE Applying partial to sys fn: (def plus (partial + 1)) and using in compiled code
+*** DONE Applying partial to sys fn: (let [plus1 (partial + 1)] (plus1 1))
+*** DONE (partial x 1 2) where we don't don't what x is
+**** (partial (foo x) 1 2) where (foo x) returns a fn (or not)
+**** (partial f 1 2) where f is a LVAL_REF (so local, closure or arg) and is a fn (or not)
+*** DONE Use copy_and_retain in compile_partial_call, dedup
+ Don't call native partial fn in compile_partial_call
+can be more optimized
+*** DONE (let [p partial] (p f 1)) so when the partial fn is a LVAL_REF, we need to be able to datafy the partial fn
+    So find a way to call native partial fn!!!!, when we just have a pointer to
+    an lval and that's supposed to be the native partial fn:
+
+So we need to have a native fn that does the right thing. And it should receive
+all of its args in an arg block!!! Because why bother putting it all in a list
+like we do for sys fns
+*** DONE in (partial f 1 2) where f is a LVAL_FUNCTION add to existing partials!!!!
+*** DONE little problem, duplicate wasm fns
+(defn f [x y z] [x y z])
+(def fp (partial f 1 2))
+We'll get two identical fns, f and fp
+*** DONE (printf fp) gives an refcount error
+trying to release that's not managed by
+** DONE Fatal: Module::addFunction: f already exists
+(defn f [x y z] [x y z])
+(def f2 f)
+(defn f [x] 1)
+
+(defn main [x y]
+ (print (f  1 2 3)))
+
+This is because f gets replaced by the second f, but and the second f is already
+processed and added to wasm because it came first in the env (so when compiling
+f2, which still refers to the old f we get the error, because it'll get added as
+f), and that's because we do lenv_put, and not lenv_prepend, which would solve
+this problem. Well, that is, if we check for the function in wasm in
+add_wasm_function and remove it and replace it with the update one when
+compiling.
 ** DONE Don't export all fns from module!!! Only main
 ** DONE releasing args to sys fn!!!
 ** DONE so when datafying a LVAL_FUNCTION also datafy its partials!!!!

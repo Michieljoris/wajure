@@ -172,13 +172,13 @@ int add_fn_to_table(Wasm* wasm, char* fn_name) {
   return free_fn_slot;
 }
 
-int fn_exists(Wasm* wasm, char* fn_name) {
-  int i = wasm->fns_count;
-  while (i-- > NATIVE_INDEX_COUNT) {
-    if (_strcmp(fn_name, wasm->fn_names[i]) == 0) return i;
-  }
-  return -1;
-}
+/* int fn_exists(Wasm* wasm, char* fn_name) { */
+/*   int i = wasm->fns_count; */
+/*   while (i-- > NATIVE_INDEX_COUNT) { */
+/*     if (_strcmp(fn_name, wasm->fn_names[i]) == 0) return i; */
+/*   } */
+/*   return -1; */
+/* } */
 
 /* Lenv* load_stdlib() { */
 /*   Lenv* root_env = lenv_new(); */

@@ -4,12 +4,6 @@
 
 #include "ltypes.h"
 
-#define VALIDATE_FN_INDEX 21
-#define PARTIAL_FN_INDEX 22
-#define APPLY_FN_INDEX 23
-#define COPY_AND_RETAIN_FN_INDEX 24
-#define NATIVE_INDEX_COUNT 25
-
 #define Ber BinaryenExpressionRef
 
 typedef struct {
@@ -77,14 +71,19 @@ void add_function_table(Wasm* wasm);
 CResult quit(Wasm* wasm, char* fmt, ...);
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
 
-typedef struct {
+typedef struct native_fn NativeFn;
+
+struct native_fn {
   char* wajure_fn_name;
   int fn_table_index;
   int params_count;
   int has_rest_arg;
   int rest_arg_index;
-} NativeFn;
+  void (*add_fn)(Wasm*);
+  CResult (*compile_fn_call)(Wasm*, NativeFn, Cell*);
+};
 
-void register_native_fns(Wasm* wasm);
+void add_native_fns(Wasm* wasm);
+void register_wajure_native_fns(Wasm* wasm);
 
 #endif  // __WASM_INIT_H_

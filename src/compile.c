@@ -546,19 +546,10 @@ void compile(Namespace* ns) {
   Lenv* env = ns->env;
 
   /* env_print(env); */
-  register_native_fns(wasm);
   import_runtime(wasm);
+  register_wajure_native_fns(wasm);
 
-  // Since we load config->main ("main") first in nodejs that module will have
-  // offset of 0 for data and fns, so we add the call fns to main and now we
-  // can refer to these call fns by index 0-20 throughout all the modules.
-  if (_strcmp(ns->namespace, config->main) == 0) {
-    add_call_fns(wasm);            // 0-20
-    add_validate_fn_fn(wasm);      // 21
-    add_partial_fn(wasm);          // 22
-    add_apply_fn(wasm);            // 23
-    add_copy_and_retain_fn(wasm);  // 24
-  }
+  if (_strcmp(ns->namespace, config->main) == 0) add_native_fns(wasm);
 
   printf("Processing env =============\n");
   Cell* head = env->kv;
