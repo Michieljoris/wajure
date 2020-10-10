@@ -176,8 +176,8 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
     if (!ns) {
-      ret.lval =
-          make_lval_err("Can't find namespace to resolve %s", lval_symbol->str);
+      ret.lval = make_lval_err("Can't find namespace to resolve %s",
+                               lval_symbol->data.str);
       return ret;
     }
     scoped char* name = get_name_part(lval_symbol);
@@ -295,7 +295,7 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
       return eval_lambda_call(lval_fun, evalled_arg_list);
     default:
       return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
-                           lval_fun->str);
+                           lval_fun->data.str);
   }
 }
 

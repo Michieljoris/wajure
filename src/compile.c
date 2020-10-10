@@ -128,7 +128,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
   /*     "We've got a LVAL_REF (param, local or closed over binding)!!! "
    */
   /*     "%s\n", */
-  /*     lval_symbol->str); */
+  /*     lval_symbol->data.str); */
   /* lval_println(lval_wasm_ref); */
   /* BinaryenModuleRef module = wasm->module; */
   Context* context = wasm->context->car;
@@ -158,7 +158,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
         lenv_get_or_error(context->function_context->closure, lval_symbol);
     int closure_offset;
     if (closure_lval->type == LVAL_ERR) {
-      Lval* lval_closure_sym = make_lval_sym(lval_symbol->str);
+      Lval* lval_closure_sym = make_lval_sym(lval_symbol->data.str);
       closure_offset = lval_closure_sym->offset =
           context->function_context->closure_count++;
       lenv_put(context->function_context->closure, lval_symbol, lval_ref);
@@ -365,7 +365,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
 CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   /* printf("compile special call!!!!!!!!!!!!!!!\n"); */
-  char* fn_name = lval_fn_sym->str;
+  char* fn_name = lval_fn_sym->data.str;
   if (_strcmp(fn_name, "let") == 0) return compile_let(wasm, args);
   if (_strcmp(fn_name, "if") == 0) return compile_if(wasm, args);
   if (_strcmp(fn_name, "do") == 0) {
@@ -392,16 +392,16 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 }
 
 CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
-  NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
+  NativeFn* native_fn = alist_get(wasm->wajure_to_native_fn_map, is_eq_str,
+                                  lval_fn_native->data.str);
   if (!native_fn)
-    quit(wasm, "Function %s not found in runtime", lval_fn_native->str);
+    quit(wasm, "Function %s not found in runtime", lval_fn_native->data.str);
   return native_fn->compile_fn_call(wasm, *native_fn, args);
 }
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
   char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->str);
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
   if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
@@ -470,7 +470,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
 
       switch (resolved_sym->type) {
         case LVAL_ERR:
-          return quit(wasm, resolved_sym->str);
+          return quit(wasm, resolved_sym->data.str);
         case LVAL_REF:;
           // Symbol has been added to env while compiling, so
           // it's a closure var, param or local (let) var
@@ -482,8 +482,8 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           switch (resolved_sym->subtype) {
             case MACRO:
             case LAMBDA:  // functions in compiler env
-              if (resolved_sym->str == NULL)
-                resolved_sym->str = retain(lval->str);
+              if (resolved_sym->data.str == NULL)
+                resolved_sym->data.str = retain(lval->data.str);
             default:;
           }
         default:
@@ -594,7 +594,7 @@ void compile(Namespace* ns) {
       }
     } else {
       result = datafy_lval(wasm, lval);
-      add_to_symbol_table(wasm, lval_sym->str, lval);
+      add_to_symbol_table(wasm, lval_sym->data.str, lval);
     }
   }
 

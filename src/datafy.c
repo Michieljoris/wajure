@@ -33,12 +33,13 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 }
 
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
-  NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
+  NativeFn* native_fn = alist_get(wasm->wajure_to_native_fn_map, is_eq_str,
+                                  lval_fn_native->data.str);
   if (!native_fn)
-    quit(wasm, "Native function %s not found in runtime", lval_fn_native->str);
+    quit(wasm, "Native function %s not found in runtime",
+         lval_fn_native->data.str);
 
-  printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->str,
+  printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str,
          native_fn->fn_table_index);
   int fn_table_index =
       0;  // not used since we're dispatching to our native fn by param_count
@@ -54,14 +55,14 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
 
 CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
   char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->str);
+      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
   if (!c_fn_name) return datafy_native_fn(wasm, lval_fn_sys);
 
   BinaryenModuleRef module = wasm->module;
 
   scoped char* fn_name = lalloc_size(512);
   _strcpy(fn_name, "sys_");
-  _strcat(fn_name, lval_fn_sys->str);
+  _strcat(fn_name, lval_fn_sys->data.str);
 
   int fn_table_index;
   int wasm_params_count = 2;  // the function's closure and rest args
@@ -231,10 +232,10 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         case SPECIAL:
           return quit(wasm,
                       "ERROR: Can't take value of a special form such as %s",
-                      lval->str);
+                      lval->data.str);
         case MACRO:
           return quit(wasm, "ERROR: Can't take value of a macro such as %s",
-                      global_name ? global_name : lval->str);
+                      global_name ? global_name : lval->data.str);
         default:;
           return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
                       lval->subtype);

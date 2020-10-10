@@ -62,22 +62,23 @@ static const char* mpc_escape_output_c[] = {"\\a", "\\b",  "\\f", "\\n",
 
 int lval_print_str(void (*out)(char character, void* arg), void* arg,
                    Lval* lval) {
-  /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
-  /* _strcpy(escaped, lval->str); */
-  /* char* to_escape = retain(lval->str); */
+  /* char* escaped = lalloc_size(_strlen(lval->data.str) + 1); */
+  /* _strcpy(escaped, lval->data.str); */
+  /* char* to_escape = retain(lval->data.str); */
   /* escaped = mpcf_escape(escaped); */
   scoped char* escaped =
-      mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c);
+      mpcf_escape_new(lval->data.str, mpc_escape_input_c, mpc_escape_output_c);
   return fctprintf(out, arg, "\"%s\"", escaped);
 }
 
 int lval_pr_str(void (*out)(char character, void* arg), void* arg, Lval* lval) {
   /* scoped char* escaped = */
-  /*     mpcf_escape_new(lval->str, mpc_escape_input_c, mpc_escape_output_c); */
+  /*     mpcf_escape_new(lval->data.str, mpc_escape_input_c,
+   * mpc_escape_output_c); */
   /* return fctprintf(out, arg, "%s", escaped); */
-  return fctprintf(out, arg, "%s", lval->str);
-  /* char* escaped = lalloc_size(_strlen(lval->str) + 1); */
-  /* _strcpy(escaped, lval->str); */
+  return fctprintf(out, arg, "%s", lval->data.str);
+  /* char* escaped = lalloc_size(_strlen(lval->data.str) + 1); */
+  /* _strcpy(escaped, lval->data.str); */
   /* escaped = mpcf_escape(escaped); */
   /* printf("%s", escaped); */
   /* release(escaped); */
@@ -114,10 +115,12 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
   int ret = 0;
   switch (lval->subtype) {
     case SYS:
-      ret = fctprintf(out, arg, "<function %s>", lval->str);
+      ret = fctprintf(out, arg, "<function %s>", lval->data.str);
       break;
     case LAMBDA:
     case MACRO:;
+#ifdef WASM
+#else
       char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
       ret += fctprintf(out, arg, "(%s ", fn_name);
       ret += _lval_print(out, arg, lval->params);
@@ -126,9 +129,10 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
       ret += lval_collection_print(out, arg, lval->body, 0, 0);
       out(')', arg);
       ret++;
+#endif
       break;
     case SPECIAL:
-      ret = fctprintf(out, arg, "<function %s>", lval->str);
+      ret = fctprintf(out, arg, "<function %s>", lval->data.str);
       break;
   }
   return ret;
@@ -140,7 +144,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
   /*        lval_type_constant_to_name(lval->type)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      return fctprintf(out, arg, "%s", lval->str);
+      return fctprintf(out, arg, "%s", lval->data.str);
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:
@@ -160,7 +164,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
         case STRING:
           return lval_print_str(out, arg, lval);
         case KEYWORD:
-          return fctprintf(out, arg, ":%s", lval->str);
+          return fctprintf(out, arg, ":%s", lval->data.str);
         case LNIL:
           return fctprintf(out, arg, "nil");
         case LTRUE:
@@ -170,6 +174,8 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
       }
     case LVAL_FUNCTION:
       return lval_fun_print(out, arg, lval);
+#ifdef WASM
+#else
     case LVAL_REF:
       switch (lval->subtype) {
         case PARAM:
@@ -177,11 +183,12 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
         case LOCAL:
           return fctprintf(out, arg, "L%d", lval->offset);
       }
+#endif
     case WVAL_FUN:
       wval_print((WvalFun*)lval);
       return 0;
     case LVAL_ERR:
-      return fctprintf(out, arg, "Error: %s", lval->str);
+      return fctprintf(out, arg, "Error: %s", lval->data.str);
     default:
       return fctprintf(out, arg, "unknown lval type %d, %s\n", lval->type,
                        lval_type_constant_to_name(lval->type));

@@ -42,4 +42,6 @@ typedef struct {
 } SlotCount;
 
 SlotCount get_slot_count();
+
+char* type_to_name(int type);
 #endif  // __LVAL_MEMPOOL_H_

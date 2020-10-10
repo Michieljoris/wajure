@@ -89,7 +89,7 @@ Namespace* get_ns_for_referred_symbol(Lval* lval_symbol) {
   Namespace* current_namespace = get_current_ns();
   // Is symbol refering to a value in another namespace?
   char* namespace_str =
-      alist_get(current_namespace->refer, is_eq_str, lval_symbol->str);
+      alist_get(current_namespace->refer, is_eq_str, lval_symbol->data.str);
   return namespace_str ? get_namespace(namespace_str) : NULL;
 }
 

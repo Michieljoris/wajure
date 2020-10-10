@@ -21,17 +21,15 @@
 #define car_offset 5 * 4
 #define cdr_offset 6 * 4
 
-#define lval_type_size 6 * 4  // type and subtype are in 4 bytes
+#define lval_type_size 4 * 4  // type and subtype are in 4 bytes
 #define wval_size slot_type_size + lval_type_size
 
 // Lval offsets
 #define type_offset 4 * 4
 
-#define num_offset 5 * 4
-#define str_offset 6 * 4
-#define head_offset 7 * 4
-#define d_offset 8 * 4
-#define hash_offset 9 * 4
+#define head_offset 5 * 4
+#define d_offset 6 * 4
+#define hash_offset 7 * 4
 
 #define wval_fun_type_size 6 * 4
 #define wval_fun_size slot_type_size + wval_fun_type_size
@@ -94,14 +92,18 @@ CResult inter_data_cell(Wasm* wasm, int* data_cell) {
 int* make_data_lval(Wasm* wasm, Lval* lval) {
   int* data_lval = calloc(1, wval_size);
   int string_offset = 0;
-  if (lval->str) string_offset = add_string_to_data(wasm, lval->str);
+  if (lval->subtype != NUMBER && lval->data.str)
+    string_offset = add_string_to_data(wasm, lval->data.str);
 
   data_lval[ref_count_offset] = 1;
   data_lval[data_p_offset / 4] =
       wasm->__data_end + wasm->data_offset + slot_type_size;
   data_lval[type_offset / 4] = lval->type | lval->subtype << 8;
-  data_lval[d_offset / 4] = lval->data.num;
-  data_lval[str_offset / 4] = wasm->__data_end + string_offset;
+  if (lval->subtype == NUMBER)
+    data_lval[d_offset / 4] = lval->data.num;
+  else {
+    data_lval[d_offset / 4] = wasm->__data_end + string_offset;
+  }
   data_lval[head_offset / 4] = 0;
   data_lval[hash_offset / 4] = lval->hash;
 
@@ -200,11 +202,11 @@ int inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
 }
 
 int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
-  int* ret = (int*)alist_get(*pool, is_eq_str, lval->str);
+  int* ret = (int*)alist_get(*pool, is_eq_str, lval->data.str);
   if (!ret) {
     ret = malloc(sizeof(CResult));
     *ret = inter_lval(wasm, lval);
-    *pool = alist_prepend(*pool, lval->str, ret);
+    *pool = alist_prepend(*pool, lval->data.str, ret);
   }
   return *ret;
 }

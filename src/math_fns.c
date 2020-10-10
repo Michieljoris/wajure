@@ -102,7 +102,7 @@ int lval_eq(Lval* x, Lval* y) {
 
   switch (x->type) {
     case LVAL_SYMBOL:
-      return (_strcmp(x->str, y->str) == 0);
+      return (_strcmp(x->data.str, y->data.str) == 0);
     case LVAL_COLLECTION:
       if (list_count(x->head) != list_count(y->head)) {
         return 0;
@@ -123,7 +123,7 @@ int lval_eq(Lval* x, Lval* y) {
           return (x->data.num == y->data.num);
         case KEYWORD:
         case STRING:
-          return (_strcmp(x->str, y->str) == 0);
+          return (_strcmp(x->data.str, y->data.str) == 0);
         case LNIL:
         case LTRUE:
         case LFALSE:

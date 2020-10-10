@@ -42,12 +42,9 @@ typedef struct {
 } RuntimeFn;
 
 // TODO: refactor!!!
-struct fun {
-  Lbuiltin fun;
-  Lenv* closure;
-  Lval* params;
-  Lval* body;
-};
+typedef struct context Context;
+
+typedef struct namespace Namespace;
 
 typedef union {
   long num;
@@ -57,48 +54,42 @@ typedef union {
   Cell* head;
 } Data;
 
-// TODO: refactor: Better and more succinct lval
-struct lval2 {
+#ifdef WASM
+
+struct lval {
   char type;     // more like the protocol (collection, function, literal etc)
   char subtype;  // more like the actual type (list, map, vector, lambda, macro
                  // etc)
 
-  // wval_fn
-  short fn_table_index;
-  short partial_count;
-  int closure;
-  int partials;
-
-  // num, str, symbol, keyword or pointer to fun or cell (or persistent map
-  // (hamt) or pvector), or fn_call_relay table
-  void* data;
-  int hash;  // or pointer to compiler data
-};
-
-typedef struct context Context;
-
-typedef struct namespace Namespace;
-
-struct lval {
-  char type;
-  char subtype;
-
   // Number, error, symbol or string
-  long num;
-  char* str; /* Function */
+  /* char* str; /\* Function *\/ */
 
   // List
   Cell* head;
 
   Data data;
 
-  // wval_fn
-  /* short fn_table_index;   */
-  /* short partial_count;    */
-  /* int closure;            */
-  /* int partials;           */
-  /* char* fn_call_relay; */
+  int hash;
+  // fn
+  short fn_table_index;
+  short partial_count;
+  int closure;
+  int partials;
+  int fn_call_relay;
+};
+#else
+struct lval {
+  char type;
+  char subtype;
 
+  // Number, error, symbol or string
+  /* long num; */
+  /* char* str; /\* Function *\/ */
+
+  // List
+  Cell* head;
+
+  Data data;
   int hash;
 
   // Interpreter props
@@ -125,6 +116,7 @@ struct lval {
   // actually need to call in wasm when calling the partial fn derived from it.
   Lval* cfn;
 };
+#endif
 
 // Used in wasm runtime. We stuff info on a wasm lambda into a lval
 struct wval_fn {

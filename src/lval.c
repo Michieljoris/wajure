@@ -78,14 +78,15 @@ int lval_hash(Lval* lval) {
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .str = retain(s)};
+  *lval = (Lval){.type = LVAL_SYMBOL, .subtype = -1, .data.str = retain(s)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_keyword(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = KEYWORD, .str = retain(s)};
+  *lval =
+      (Lval){.type = LVAL_LITERAL, .subtype = KEYWORD, .data.str = retain(s)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -169,7 +170,7 @@ Lval* make_lval_str(char* s) {
   *lval = (Lval){
       .type = LVAL_LITERAL,
       .subtype = STRING,
-      .str = retain(s),
+      .data.str = retain(s),
   };
   lval->hash = lval_hash(lval);
   return lval;
@@ -179,18 +180,25 @@ Lval* make_lval_str(char* s) {
 
 // SYSTEM and SPECIAL
 Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
+#ifdef WASM
+  return NULL;
+#else
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
                  .fun = func,
-                 .str = retain(func_name),
+                 .data.str = retain(func_name),
                  .offset = -1};
   lval->hash = lval_hash(lval);
   return lval;
+#endif
 }
 
 // LAMBDA and MACRO
 Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
+#ifdef WASM
+  return NULL;
+#else
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
@@ -200,6 +208,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
                  .offset = -1};
   lval->hash = lval_hash(lval);
   return lval;
+#endif
 }
 
 /* ERROR */
@@ -207,12 +216,13 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_ERR, .subtype = SYS, .str = lalloc_size(512)};
+  *lval =
+      (Lval){.type = LVAL_ERR, .subtype = SYS, .data.str = lalloc_size(512)};
 
   va_list va;
   va_start(va, fmt);
-  vsnprintf(lval->str, 511, fmt, va);
-  lval->str = lrealloc(lval->str, _strlen(lval->str) + 1);
+  vsnprintf(lval->data.str, 511, fmt, va);
+  lval->data.str = lrealloc(lval->data.str, _strlen(lval->data.str) + 1);
   va_end(va);
   lval->hash = lval_hash(lval);
   return lval;
@@ -329,7 +339,7 @@ char* lval_type_to_name(Lval* lval) {
 }
 
 char* get_namespace_part(Lval* lval_sym) {
-  char* str = lval_sym->str;
+  char* str = lval_sym->data.str;
   char* pos = _strchr(str, '/');
   if (pos > str && pos < str + _strlen(str) - 1) {
     int namespace_len = pos - str;
@@ -342,7 +352,7 @@ char* get_namespace_part(Lval* lval_sym) {
 }
 
 char* get_name_part(Lval* lval_sym) {
-  char* str = lval_sym->str;
+  char* str = lval_sym->data.str;
   char* pos = _strchr(str, '/');
   if (pos > str && pos < str + _strlen(str) - 1) {
     pos++;
@@ -351,5 +361,5 @@ char* get_name_part(Lval* lval_sym) {
     _strcpy(name, pos);
     return name;
   }
-  return retain(lval_sym->str);
+  return retain(lval_sym->data.str);
 }

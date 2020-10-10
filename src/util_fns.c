@@ -86,7 +86,7 @@ Lval* read_string_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("read-string", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
   int pos = 0;
-  return read_expr(arg->str, &pos, '\0');
+  return read_expr(arg->data.str, &pos, '\0');
 }
 
 Lval* str_fn(Lenv* env, Lval* arg_list) {

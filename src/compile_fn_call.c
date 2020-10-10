@@ -152,6 +152,7 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
 
 Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
                                 Cell* args, LocalIndices* li) {
+  printf("????\n");
   BinaryenModuleRef module = wasm->module;
   int param_count = lval_fn->param_count;
   int has_rest_arg = lval_fn->rest_arg_index;
@@ -192,7 +193,10 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // And grab and compile the args
   head = args;
   while (head) {
+    printf("????\n");
+    lval_println(head->car);
     CResult result = lval_compile(wasm, head->car);
+    printf("result ????\n");
     Ber compiled_arg = result.ber;
     if (compiled_args_count < min_param_count) {
       // If the arg is not part of the rest arg we'll release it when we're done
@@ -407,7 +411,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
            "yet)\n");
     case LVAL_ERR:
       quit(wasm, "ERROR compile_list: there was an error in parsing code: %s\n",
-           lval->str);
+           lval->data.str);
     default:
       quit(wasm, "ERROR compile_list: Unknown lval type %d\n", lval->type);
   }
@@ -440,7 +444,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_sym);
-      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s", lval_sym->str);
+      quit(wasm, "ERROR: Can't apply an unknowm symbol: %s",
+           lval_sym->data.str);
     }
 
     switch (resolved_sym->type) {
@@ -508,7 +513,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         break;
       case LVAL_SYMBOL:
         quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
-             resolved_sym->str);
+             resolved_sym->data.str);
       case LVAL_COLLECTION:
         switch (resolved_sym->subtype) {
           case LIST:

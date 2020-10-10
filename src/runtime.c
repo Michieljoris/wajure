@@ -136,7 +136,8 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
         (Lval*)(long)(((int*)lval_offsets_ptr)[i] + data_offset + sizeof(Slot));
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
 
-    if (lval_ptr->str) lval_ptr->str += data_offset;
+    if (lval_ptr->subtype != NUMBER && lval_ptr->data.str)
+      lval_ptr->data.str += data_offset;
     if (lval_ptr->head)
       lval_ptr->head = (Cell*)((char*)lval_ptr->head + data_offset);
   }

@@ -89,7 +89,7 @@ void destroy_lval(void* data) {
   /* lval_println(lval); */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      release(lval->str);
+      release(lval->data.str);
       break;
     case LVAL_COLLECTION:
       /* printf("releasing head\n"); */
@@ -104,7 +104,7 @@ void destroy_lval(void* data) {
           break;
         case KEYWORD:
         case STRING:
-          release(lval->str);
+          release(lval->data.str);
           break;
         case LNIL:
         case LTRUE:
@@ -117,20 +117,15 @@ void destroy_lval(void* data) {
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
         /* free(lval->func_name); */
-        release(lval->str);
+        release(lval->data.str);
       } else {
-        /* if (debug) ddebug("\n freeing params:"); */
+#ifdef WASM
+#else
         release(lval->params);
-        /* if (debug) ddebug("\n freeing body:"); */
         release(lval->body);
         release(lval->partials);
-        /* if (debug) ddebug("\n freeing closure_env:"); */
-        /* if (debug) */
-        /*   debug("ref count for closure_env = %d\n", */
-        /*         get_ref_count(lval->closure_env)); */
         release(lval->closure);
-
-        /* if (debug) ddebug("\n Done freeing lval_fun"); */
+#endif  // WASM
       }
       break;
 
@@ -147,7 +142,7 @@ void destroy_lval(void* data) {
     /*   break; */
     case LVAL_ERR:
       /* free(lval->str); */
-      release(lval->str);
+      release(lval->data.str);
       break;
     default:
       error("Can't delete unknown type: %d\n", lval->type);

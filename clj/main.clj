@@ -9,84 +9,38 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
-;; (def f2 (partial f 1))
 
-
-;; (def v  [5 6 7])
-;; (def l (list 1 2 3))
-
-
-;; (defn f [x y z] (print "in f, executing g") (x) [x y z])
-;; (defn f [x y z]  [x y z])
-;; (def f2 f)
-;; (defn g [] (print "in g") )
-;; (def fp (partial f 1))
-;; (def fpp (partial fp 2))
-;; (def fp2 (partial f 1))
-;; (def f :foo)
-;; (def plus (partial + 1))
-;; (def f "foo")
-;; (def g (partial f 1))
-;; (def f2 f)
-;; (def fg [f])
-;; (defn f [x] 1)
-;; (defn f [x]  x)
-;; (def f3 f)
-;; (def f "foo")
-;; (defn g [] (print "in redefined g"))
-
-
-;; ;; (defn g [x y & z] [x y z])
-
-;; (def f foo/f)
-;; (def fp_main foo/fp)
-;; (def fpp (partial foo/fp 2))
-
-;; (def f foo/f)
-;; (def fp foo/fp)
-;; (def fpp (partial foo/fp 2))
-;; (defn g [x] x)
-;; (def p partial)
-
-;; (defn f [x y z] [x y z])
-;; (def fp (partial f 1))
-;; (def f2 f)
-;; (def foo (f 1 2 3))
-;; (defn f [x] (print "in redefined f") 1)
-
-;; (def plus1 (partial + 1))
-;; (def plus2 (partial plus1 1))
-;; (print "PLUS1: " (plus1 1))
-;; (print "HJELLO: " (+ 1 2) 123)
-
-;; (defn g [x & y] [x y])
+(defn g [x & y] [x y])
 (defn main [x y]
-  ;; (test-partial)
-
-(print 2)
-    (print 1)
+  (test-partial)
+  ;; (print "hello")
+  (print "again")
+  ;; (let [f (fn [x y z] [x y z])]
+  ;;   (print "HEllo")
+  ;;   (print (+ 1 2))
+  ;;   (print (f 1 2 3)))
   ;; (let [f (fn [x y & z] [x y z])
   ;;       ;; g (fn [x y] [x  y])
   ;;       ;; h (fn [& x] [x])
-  ;;       ;; p partial
-  ;;       ;; fp (p f 1)
+  ;;       p partial
+  ;;       fp (p f 1)
   ;;       ]
   ;;   (print [1 2 3])
   ;;   (print "hello")
-  ;;   ;; (print (f 456 999))
-  ;;   ;; (print (fp 456 999))
-  ;;   ;; (print (g 456 999))
+  ;;   (print (f 456 999))
+  ;;   (print (fp 456 999))
+  ;;   (print (g 456 999))
   ;;   ;; (p 1 1)
   ;;   ;; (print fp)
   ;;   ;; (print (fp 2 3))
   ;;   )
-    ;; (let [p partial
-    ;;     f (fn [x y z] [x y z])
-    ;;     fp (p f 1)]
-    ;;   ;; (print (fp 2 3))
-    ;; (t (fp 2 3) [1 2 3])
-    ;; (print (fp 2 3))
-    ;; )
+  ;; (let [p partial
+  ;;     f (fn [x y z] [x y z])
+  ;;     fp (p f 1)]
+  ;;   ;; (print (fp 2 3))
+  ;; (t (fp 2 3) [1 2 3])
+  ;; (print (fp 2 3))
+  ;; )
   ;; (let [p partial
   ;;       gp (p g 1)]
   ;;   (print (gp 2 3)))
@@ -109,8 +63,8 @@
   ;;   (t (fp 2 3) [1 2 3])
   ;;   (t (fpp  3) [1 2 3]))
 
- ;; (print (plus1 1))
- ;; (print (plus2 1))
+  ;; (print (plus1 1))
+  ;; (print (plus2 1))
   ;; (let [fpp (partial fp 2)]
   ;;   (print (fpp 3)))
   ;; (print (foo/f 1))
@@ -130,13 +84,13 @@
   ;; (print (foo/f 1))
   ;; (print (foo/fp  2 3))
   ;; (print (f 1))
- ;; (print (foo/f 1))
- ;; (print (foo/f2 1 2 3))
- ;;  (print foo/foo)
- ;; (print (f  1 2 3))
- ;; (print (fpp   3))
- ;; (print (fp   3))
- ;; (run-tests)
+  ;; (print (foo/f 1))
+  ;; (print (foo/f2 1 2 3))
+  ;;  (print foo/foo)
+  ;; (print (f  1 2 3))
+  ;; (print (fpp   3))
+  ;; (print (fp   3))
+  ;; (run-tests)
   ;; (print foo/f)
   ;; (foo/f 1 2 3)
   ;; (foo/f2 123)
@@ -171,8 +125,8 @@
   ;;   (print (fp 2 3)))
   ;; (let [p partial]
   ;;   (print p))
- ;; (let [fp2 (partial fp 2)]
- ;;   (print (fp2 3)))
+  ;; (let [fp2 (partial fp 2)]
+  ;;   (print (fp2 3)))
   ;; (print foo/f)
   ;; (print (foo/f 1 2 3))
   ;; (print (foo/fp  2 3))
@@ -194,7 +148,7 @@
   ;;   ;; (print (fp  2 3))
   ;;   (print fp)
   ;;   )
-    ;; (print fp)
+  ;; (print fp)
   ;; (let [f2 fp]
   ;;   (print fp)
   ;;   (f2 2 3))
@@ -1045,3 +999,53 @@
 ;; (macroexpand '(foo 123))
 ;; 1
 
+
+;; (def f2 (partial f 1))
+
+
+;; (def v  [5 6 7])
+;; (def l (list 1 2 3))
+
+
+;; (defn f [x y z] (print "in f, executing g") (x) [x y z])
+;; (defn f [x y z]  [x y z])
+;; (def f2 f)
+;; (defn g [] (print "in g") )
+;; (def fp (partial f 1))
+;; (def fpp (partial fp 2))
+;; (def fp2 (partial f 1))
+;; (def f :foo)
+;; (def plus (partial + 1))
+;; (def f "foo")
+;; (def g (partial f 1))
+;; (def f2 f)
+;; (def fg [f])
+;; (defn f [x] 1)
+;; (defn f [x]  x)
+;; (def f3 f)
+;; (def f "foo")
+;; (defn g [] (print "in redefined g"))
+
+
+;; ;; (defn g [x y & z] [x y z])
+
+;; (def f foo/f)
+;; (def fp_main foo/fp)
+;; (def fpp (partial foo/fp 2))
+
+;; (def f foo/f)
+;; (def fp foo/fp)
+;; (def fpp (partial foo/fp 2))
+;; (defn g [x] x)
+;; (def p partial)
+
+;; (defn f [x y z] [x y z])
+;; (def fp (partial f 1))
+;; (def f2 f)
+;; (def foo (f 1 2 3))
+;; (defn f [x] (print "in redefined f") 1)
+
+;; (def plus1 (partial + 1))
+;; (def plus2 (partial plus1 1))
+;; (print "PLUS1: " (plus1 1))
+;; (print "HJELLO: " (+ 1 2) 123)

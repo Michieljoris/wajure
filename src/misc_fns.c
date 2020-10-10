@@ -154,14 +154,14 @@ Lval* load_fn(Lenv* _, Lval* arg_list) {
   ddebug("\nload_fn: ");
   ITER_NEW_N("load", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
-  return load(NULL, arg->str);
+  return load(NULL, arg->data.str);
 }
 
 /* Lval* compile_fn(Lenv* env, Lval* arg_list) { */
 /*   ddebug("\ncompile_fn: "); */
 /*   ITER_NEW_N("compile", 1) */
 /*   ITER_NEXT_TYPE(LVAL_LITERAL, STRING) */
-/*   compile(arg->str); */
+/*   compile(arg->data.str); */
 /*   return make_lval_nil(); */
 /* } */
 
@@ -182,20 +182,21 @@ Lval* in_ns_fn(Lenv* _, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1)
   Lval* lval_symbol = arg;
   ITER_END
-  /* Namespace* ns = alist_get(state->namespaces, is_eq_str, lval_symbol->str);
+  /* Namespace* ns = alist_get(state->namespaces, is_eq_str,
+   * lval_symbol->data.str);
    */
   /* if (!ns) { */
   /*   ns = lalloc_type(NAMESPACE); */
-  /*   *ns = (Namespace){.namespace = retain(lval_symbol->str), .env =
+  /*   *ns = (Namespace){.namespace = retain(lval_symbol->data.str), .env =
    * lenv_new()}; */
-  /*   state->namespaces = alist_prepend(state->namespaces, lval_symbol->str,
-   * ns); */
+  /*   state->namespaces = alist_prepend(state->namespaces,
+   * lval_symbol->data.str, ns); */
   /* } */
 
-  Namespace* ns = make_or_get_namespace(lval_symbol->str);
+  Namespace* ns = make_or_get_namespace(lval_symbol->data.str);
   set_current_ns(ns);
   return make_lval_nil();
-  /* Namespace* ns = make_or_get_namespace(lval_symbol->str); */
+  /* Namespace* ns = make_or_get_namespace(lval_symbol->data.str); */
   /* Lenv* stdlib_env = get_stdlib_env(); */
   /* scoped Lval* lval_ns_symbol = make_lval_ns_symbol(); */
   /* Lval* lval_ns = make_lval_namespace(ns); */
@@ -228,7 +229,7 @@ struct require_info parse_require_vector(Lval* vector) {
     ret.error = make_lval_err("Too many args passed to require (>5)");
     return ret;
   } else if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) {
-    ret.namespace_str = ((Lval*)head->car)->str;
+    ret.namespace_str = ((Lval*)head->car)->data.str;
   } else {
     ret.error = make_lval_err(
         "Expecting namespace symbol as first element of quoted vector passed "
@@ -249,19 +250,19 @@ struct require_info parse_require_vector(Lval* vector) {
     Lval* kw = lval;
     head = head->cdr;
     if (!head) {
-      ret.error =
-          make_lval_err("Expecting arg after keyword :%s in require", kw->str);
+      ret.error = make_lval_err("Expecting arg after keyword :%s in require",
+                                kw->data.str);
       return ret;
     }
     lval = head->car;
-    if (_strcmp(kw->str, "as") == 0) {
+    if (_strcmp(kw->data.str, "as") == 0) {
       if (ret.as) {
         ret.error =
             make_lval_err("Expecting only one :as keyword in require vector");
         return ret;
       }
-      ret.as = lval->str;
-    } else if (_strcmp(kw->str, "refer") == 0) {
+      ret.as = lval->data.str;
+    } else if (_strcmp(kw->data.str, "refer") == 0) {
       if (ret.refer) {
         ret.error = make_lval_err(
             "Expecting only one :refer keyword in require vector");
@@ -272,7 +273,7 @@ struct require_info parse_require_vector(Lval* vector) {
       ret.error = make_lval_err(
           "Expecting only :as and :refer keywords in require vector, "
           "not :%s",
-          kw->str);
+          kw->data.str);
       return ret;
     }
     head = head->cdr;
@@ -345,20 +346,20 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
         return make_lval_err(
             "%s can't refer to %s/%s because it's already bound in the current "
             "namespace",
-            lval_sym->str, required_ns->namespace, lval_sym->str);
+            lval_sym->data.str, required_ns->namespace, lval_sym->data.str);
       }
       char* ns_str =
-          alist_get(current_namespace->refer, is_eq_str, lval_sym->str);
+          alist_get(current_namespace->refer, is_eq_str, lval_sym->data.str);
       if (ns_str) {
-        warn("Symbol %s is referring already to a value in %s\n", lval_sym->str,
-             ns_str);
+        warn("Symbol %s is referring already to a value in %s\n",
+             lval_sym->data.str, ns_str);
       }
       release(lval);
 
       /* printf("REQUIRE: adding %s to current_namespace->refer as %s\n", */
-      /*        lval_sym->str, required_namespace_sym->str); */
+      /*        lval_sym->data.str, required_namespace_sym->data.str); */
       current_namespace->refer =
-          alist_prepend(current_namespace->refer, retain(lval_sym->str),
+          alist_prepend(current_namespace->refer, retain(lval_sym->data.str),
                         retain(info.namespace_str));
       head = head->cdr;
     }
@@ -375,7 +376,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
-        lval_fun->str);
+        lval_fun->data.str);
   int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
   int param_count = lval_fun->param_count;
   int arg_list_count =
@@ -391,7 +392,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   Lval* partial_fn =
       make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
                        retain(lval_fun->body), LAMBDA);
-  partial_fn->str = retain(lval_fun->str);
+  partial_fn->data.str = retain(lval_fun->data.str);
   partial_fn->fun = lval_fun->fun;
   partial_fn->subtype = lval_fun->subtype;
   partial_fn->param_count = lval_fun->param_count;
@@ -412,7 +413,7 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
-        lval_fun->str);
+        lval_fun->data.str);
   ITER_NEXT
   Lval* args = make_lval_list();
   Cell** cdr = &args->head;

@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "io.h"
+#include "lispy_mempool.h"
 #include "ltypes.h"
 #include "lval.h"
 #include "print.h"
@@ -73,12 +74,21 @@ void release(void* data_p) {
     return;
   };
 
-  /* printf("release: %s-%li, ref count is %d\n", type_to_name(slot->type), */
-  /*        (long int)data_p, slot->ref_count); */
+#ifdef WASM
+    /* printf("sizeof lval: %li\n", sizeof(Lval)); */
+    /* printf("release: type %s,slot_p: %li, data_p: %li, ref count is %d", */
+    /*        type_to_name(slot->mempool->type), (long)slot, (long)data_p, */
+    /*        slot->ref_count); */
+    /* if (slot->mempool->type == LVAL) { */
+    /*   printf(": "); */
+    /*   lval_println((Lval*)data_p); */
+    /* } else */
+    /*   printf("\n"); */
+#endif
   if (--slot->ref_count) /* still referenced */ {
     if (slot->ref_count < 0) {
       warn("Warning: ref count for a %s has gone negative: %d\n",
-           lval_type_constant_to_name(slot->mempool->type), slot->ref_count);
+           type_to_name(slot->mempool->type), slot->ref_count);
 
       /* warn( */
       /*     "Warning: ref count for a mempool with type %d has gone negative: "
@@ -162,8 +172,6 @@ void print_slot_size() {
   printf("lval size: %li, type %li\n", sizeof(Lval), offsetof(Lval, type));
   printf("lval size: %li, subtype %li\n", sizeof(Lval),
          offsetof(Lval, subtype));
-  printf("lval size: %li, num %li\n", sizeof(Lval), offsetof(Lval, num));
-  printf("lval size: %li, str %li\n", sizeof(Lval), offsetof(Lval, str));
   printf("lval size: %li, head %li\n", sizeof(Lval), offsetof(Lval, head));
   printf("lval size: %li, data %li\n", sizeof(Lval), offsetof(Lval, data));
   printf("lval size: %li, hash %li\n", sizeof(Lval), offsetof(Lval, hash));

@@ -56,14 +56,14 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   Namespace* ns = get_current_ns();
   if (lenv_is_bound(ns->env, lval_sym)) {
     warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
-         lval_sym->str, ns->namespace, lval_sym->str, ns->namespace);
+         lval_sym->data.str, ns->namespace, lval_sym->data.str, ns->namespace);
   } else {
     if (lenv_is_bound(get_root_env(env), lval_sym)) {
       warn(
           "WARNING: %s already refers to: #'%s/%s in namespace: %s, "
           "being replaced by: #'%s/%s\n",
-          lval_sym->str, config->stdlib, lval_sym->str, config->stdlib,
-          ns->namespace, lval_sym->str);
+          lval_sym->data.str, config->stdlib, lval_sym->data.str,
+          config->stdlib, ns->namespace, lval_sym->data.str);
     }
   }
 
@@ -73,11 +73,11 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     // namespaces in compiled code by imported global.
 
     /* printf("def of lambda: %s/%s\n", get_current_ns()->namespace, */
-    /*        lval_sym->str); */
+    /*        lval_sym->data.str); */
     /* lval_println(lval); */
 
     // Set a unique cname on every lval we add to our environment
-    lval->cname = make_cname(lval_sym->str);
+    lval->cname = make_cname(lval_sym->data.str);
     lval->ns = retain(get_current_ns());
   }
   lenv_put(ns->env, lval_sym, lval);
@@ -131,7 +131,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
       /* return make_lval_err("ERROR: only one rest arg allowed"); */
     }
     Lval* lval_sym = param->car;
-    if (_strcmp(lval_sym->str, "&") == 0) {
+    if (_strcmp(lval_sym->data.str, "&") == 0) {
       rest_arg_index = offset + 1;  // number of params
       param = param->cdr;
       continue;
@@ -186,7 +186,7 @@ int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
       list_count(lval->head) >= min_node_count) {
     lval = lval->head->car;
-    return lval->type == LVAL_SYMBOL && _strcmp(lval->str, sym) == 0;
+    return lval->type == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
   }
   return 0;
 }
@@ -344,7 +344,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
                   "to.");
             };
 
-            Lval* lval_str = make_lval_str(ret->str);
+            Lval* lval_str = make_lval_str(ret->data.str);
 
             Lenv* catch_env = lenv_new();
             catch_env->parent_env = retain(env);
@@ -485,7 +485,7 @@ Lval* eval_throw(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_LITERAL, STRING)
   Lval* lval_str = arg;
   ITER_END
-  Lval* lval_exc = make_lval_exception(lval_str->str);
+  Lval* lval_exc = make_lval_exception(lval_str->data.str);
   return lval_exc;
 }
 

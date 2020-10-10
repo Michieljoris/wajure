@@ -12,7 +12,7 @@ void lenv_add_builtin(Lenv* env, char* name, Lbuiltin func, int type) {
   _strcpy(lname, name);
   Lval* lval_sym = make_lval_sym(lname);
   if (lenv_is_bound(get_root_env(env), lval_sym)) {
-    printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->str);
+    printf("Warning: duplicate builtin fn: '%s'\n", lval_sym->data.str);
   }
   Lval* lval_fun = make_lval_fun(func, lname, type);
   release(lname);

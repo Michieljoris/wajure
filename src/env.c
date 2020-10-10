@@ -24,7 +24,7 @@ void lenv_del(Lenv* e) {
 int is_eq_lval_sym(void* k1, void* k2) {
   Lval* lval_k1 = k1;
   Lval* lval_k2 = k2;
-  return _strcmp(lval_k1->str, lval_k2->str) == 0;
+  return _strcmp(lval_k1->data.str, lval_k2->data.str) == 0;
 }
 
 Lval* lenv_get(Lenv* env, Lval* lval_sym) {
@@ -41,7 +41,7 @@ Lval* lenv_get_or_error(Lenv* env, Lval* lval_sym) {
     return lenv_get_or_error(env->parent_env, lval_sym);
   }
   return ret ? retain(ret)
-             : make_lval_err("unbound symbol '%s'", lval_sym->str);
+             : make_lval_err("unbound symbol '%s'", lval_sym->data.str);
 }
 
 Lenv* get_root_env(Lenv* env) {
