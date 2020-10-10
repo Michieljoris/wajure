@@ -159,7 +159,7 @@ Lval* make_lval_false() {
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .num = x};
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .data.num = x};
   lval->hash = lval_hash(lval);
   return lval;
 }

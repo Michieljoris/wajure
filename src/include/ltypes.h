@@ -49,6 +49,14 @@ struct fun {
   Lval* body;
 };
 
+typedef union {
+  long num;
+  char* str; /* Function */
+
+  // List
+  Cell* head;
+} Data;
+
 // TODO: refactor: Better and more succinct lval
 struct lval2 {
   char type;     // more like the protocol (collection, function, literal etc)
@@ -81,6 +89,8 @@ struct lval {
 
   // List
   Cell* head;
+
+  Data data;
 
   // wval_fn
   /* short fn_table_index;   */

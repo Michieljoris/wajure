@@ -156,7 +156,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case NUMBER:
-          return fctprintf(out, arg, "%li", lval->num);
+          return fctprintf(out, arg, "%li", lval->data.num);
         case STRING:
           return lval_print_str(out, arg, lval);
         case KEYWORD:

@@ -154,8 +154,8 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, -1)
   Lval* coll = arg;
   ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
-  long int index = arg->num;
-  Lval* nth_lval = list_nth(coll->head, arg->num);
+  long int index = arg->data.num;
+  Lval* nth_lval = list_nth(coll->head, arg->data.num);
   ITER_END
   if (!nth_lval) {
     return make_lval_err(

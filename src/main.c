@@ -45,6 +45,7 @@ void make_config(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
+  print_slot_size();
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(3200, 3200, 3200);
 

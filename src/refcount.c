@@ -159,12 +159,14 @@ void print_slot_size() {
   /* struct foo bar = {"hello foo", 1}; */
   printf("slot size: %li\n", sizeof(Slot));
   printf("char size: %li\n", sizeof(char));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, type));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, subtype));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, num));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, str));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, head));
-  printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, hash));
+  printf("lval size: %li, type %li\n", sizeof(Lval), offsetof(Lval, type));
+  printf("lval size: %li, subtype %li\n", sizeof(Lval),
+         offsetof(Lval, subtype));
+  printf("lval size: %li, num %li\n", sizeof(Lval), offsetof(Lval, num));
+  printf("lval size: %li, str %li\n", sizeof(Lval), offsetof(Lval, str));
+  printf("lval size: %li, head %li\n", sizeof(Lval), offsetof(Lval, head));
+  printf("lval size: %li, data %li\n", sizeof(Lval), offsetof(Lval, data));
+  printf("lval size: %li, hash %li\n", sizeof(Lval), offsetof(Lval, hash));
   /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, fun)); */
   /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, closure)); */
   /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, params)); */

@@ -57,25 +57,29 @@
 ;; (def plus1 (partial + 1))
 ;; (def plus2 (partial plus1 1))
 ;; (print "PLUS1: " (plus1 1))
-
+;; (print "HJELLO: " (+ 1 2) 123)
 
 ;; (defn g [x & y] [x y])
 (defn main [x y]
   ;; (test-partial)
-  (let [f (fn [x y & z] [x y z])
-        ;; g (fn [x y] [x  y])
-        ;; h (fn [& x] [x])
-        p partial
-        fp (p f 1)
-        ]
-    (print (fp 2 3))
-    ;; (print (f 456 999))
-    ;; (print (fp 456 999))
-    ;; (print (g 456 999))
-    ;; (p 1 1)
-    ;; (print fp)
-    ;; (print (fp 2 3))
-    )
+
+(print 2)
+    (print 1)
+  ;; (let [f (fn [x y & z] [x y z])
+  ;;       ;; g (fn [x y] [x  y])
+  ;;       ;; h (fn [& x] [x])
+  ;;       ;; p partial
+  ;;       ;; fp (p f 1)
+  ;;       ]
+  ;;   (print [1 2 3])
+  ;;   (print "hello")
+  ;;   ;; (print (f 456 999))
+  ;;   ;; (print (fp 456 999))
+  ;;   ;; (print (g 456 999))
+  ;;   ;; (p 1 1)
+  ;;   ;; (print fp)
+  ;;   ;; (print (fp 2 3))
+  ;;   )
     ;; (let [p partial
     ;;     f (fn [x y z] [x y z])
     ;;     fp (p f 1)]

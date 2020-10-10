@@ -57,7 +57,7 @@ Lval* pr_fn(Lenv* env, Lval* arg_list) {
 Lval* debug_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("debug", 1)
   ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
-  int num = arg->num;
+  int num = arg->data.num;
   ITER_END
   ddebug("debug = %il\n", num);
   set_log_level((int)num);

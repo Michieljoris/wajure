@@ -154,11 +154,12 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   switch (lval->subtype) {
     case NUMBER:;
       /* lval_println(lval); */
-      if (lval->num >= wasm->lval_num_start &&
-          lval->num <= wasm->lval_num_end) {
-        int cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start];
+      if (lval->data.num >= wasm->lval_num_start &&
+          lval->data.num <= wasm->lval_num_end) {
+        int cache =
+            wasm->lval_num_offset[lval->data.num - wasm->lval_num_start];
         if (!cache) {
-          cache = wasm->lval_num_offset[lval->num - wasm->lval_num_start] =
+          cache = wasm->lval_num_offset[lval->data.num - wasm->lval_num_start] =
               inter_lval(wasm, lval);
         }
         return cache;

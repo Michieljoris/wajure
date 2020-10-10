@@ -21,7 +21,7 @@
 #define car_offset 5 * 4
 #define cdr_offset 6 * 4
 
-#define lval_type_size 5 * 4  // type and subtype are in 4 bytes
+#define lval_type_size 6 * 4  // type and subtype are in 4 bytes
 #define wval_size slot_type_size + lval_type_size
 
 // Lval offsets
@@ -30,7 +30,8 @@
 #define num_offset 5 * 4
 #define str_offset 6 * 4
 #define head_offset 7 * 4
-#define hash_offset 8 * 4
+#define d_offset 8 * 4
+#define hash_offset 9 * 4
 
 #define wval_fun_type_size 6 * 4
 #define wval_fun_size slot_type_size + wval_fun_type_size
@@ -99,7 +100,7 @@ int* make_data_lval(Wasm* wasm, Lval* lval) {
   data_lval[data_p_offset / 4] =
       wasm->__data_end + wasm->data_offset + slot_type_size;
   data_lval[type_offset / 4] = lval->type | lval->subtype << 8;
-  data_lval[num_offset / 4] = lval->num;
+  data_lval[d_offset / 4] = lval->data.num;
   data_lval[str_offset / 4] = wasm->__data_end + string_offset;
   data_lval[head_offset / 4] = 0;
   data_lval[hash_offset / 4] = lval->hash;
