@@ -295,8 +295,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   }
   Ber ber_partial_count = make_int32(module, 0);
   Ber ber_partials = make_int32(module, 0);  // NULL
-  Ber ber_param_count = make_int32(module, param_count);
-  Ber ber_has_rest_arg = make_int32(module, rest_arg_index);
+  /* Ber ber_param_count = make_int32(module, param_count); */
+  /* Ber ber_has_rest_arg = make_int32(module, rest_arg_index); */
 
   // Let's create a block in which we prepare the args for and then call
   // make_lval_wasm_lambda
@@ -343,11 +343,12 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[7] = {ber_fn_table_index,     ber_param_count, ber_has_rest_arg,
-                     ber_closure_ptr,        ber_partials,    ber_partial_count,
+  Ber operands[5] = {ber_fn_table_index,
+                     /* ber_param_count, ber_has_rest_arg, */
+                     ber_closure_ptr, ber_partials, ber_partial_count,
                      fn_call_relay_array_ptr};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
 
   // Add this call to the lambda block
   lambda_block_children[lambda_block_count++] = make_lval_wasm_lambda_call;

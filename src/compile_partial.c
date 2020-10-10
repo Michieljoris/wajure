@@ -184,18 +184,19 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
           wasm,
           get_wval_prop(module, local_get_int32(module, wval_local), "closure"))
           .ber;
-  Ber wval_param_count =
-      get_wval_prop(module, local_get_int32(module, wval_local), "param_count");
-  Ber wval_has_rest_arg = get_wval_prop(
-      module, local_get_int32(module, wval_local), "has_rest_arg");
+  /* Ber wval_param_count = */
+  /*     get_wval_prop(module, local_get_int32(module, wval_local),
+   * "param_count"); */
+  /* Ber wval_has_rest_arg = get_wval_prop( */
+  /*     module, local_get_int32(module, wval_local), "has_rest_arg"); */
 
   Ber fn_call_relay_array_ptr = get_wval_prop(
       module, local_get_int32(module, wval_local), "fn_call_relay_array");
 
-  Ber operands[7] = {
+  Ber operands[5] = {
       wval_fn_table_index,
-      wval_param_count,
-      wval_has_rest_arg,
+      /* wval_param_count, */
+      /* wval_has_rest_arg, */
       wval_closure,
       BinaryenLocalGet(module, new_partials_local, BinaryenTypeInt32()),
       BinaryenLocalGet(module, new_partial_count_local, BinaryenTypeInt32()),
@@ -210,7 +211,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
   // TODO: replace with lalloc_type
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
 
   Ber block = BinaryenBlock(module, uniquify_name(wasm, "partial_call"),
@@ -312,15 +313,15 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
       int fn_table_index =
           lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
       Ber ber_fn_table_index;
-      Ber param_count;
-      Ber has_rest_arg;
+      /* Ber param_count; */
+      /* Ber has_rest_arg; */
       Ber fn_call_relay_array_ptr;
       if (lval_fn->subtype == SYS) {
         // Let's get fn_table_index from the datafied sys fn
         ber_fn_table_index =
             get_wval_prop(module, fn_arg.ber, "fn_table_index");
-        param_count = make_int32(module, 1);
-        has_rest_arg = make_int32(module, 1);
+        /* param_count = make_int32(module, 1); */
+        /* has_rest_arg = make_int32(module, 1); */
         fn_call_relay_array_ptr =
             get_wval_prop(module, fn_arg.ber, "fn_call_relay_array");
       } else {
@@ -330,8 +331,8 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         ber_fn_table_index = BinaryenBinary(
             module, BinaryenAddInt32(), ber_fn_table_index,
             BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-        param_count = make_int32(module, lval_fn->param_count);
-        has_rest_arg = make_int32(module, lval_fn->rest_arg_index);
+        /* param_count = make_int32(module, lval_fn->param_count); */
+        /* has_rest_arg = make_int32(module, lval_fn->rest_arg_index); */
 
         fn_call_relay_array_ptr = BinaryenBinary(
             module, BinaryenAddInt32(),
@@ -342,12 +343,13 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
       }
 
       // Call the runtime make_lval_wasm_lambda fn
-      Ber operands[7] = {ber_fn_table_index,     param_count,
-                         has_rest_arg,           closure_ptr,
-                         partials_ptr,           ber_partial_count,
+      Ber operands[5] = {ber_fn_table_index,
+                         /* param_count, */
+                         /* has_rest_arg, */
+                         closure_ptr, partials_ptr, ber_partial_count,
                          fn_call_relay_array_ptr};
       children[children_count++] =
-          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 7,
+          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 5,
                        make_type_int32(1));
 
       // And return a block that does all of the above

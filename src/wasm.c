@@ -22,7 +22,7 @@ NativeFn native_fns[] = {
     {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
      NULL},
     {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
-    {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL},
+    /* {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL}, */
     {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
     {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
 };
@@ -191,7 +191,7 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "print_slot_size", 0, 0},
     // runtime
     {NULL, NULL, "wval_print", 1, 0},
-    {NULL, NULL, "make_lval_wasm_lambda", 7, 1},
+    {NULL, NULL, "make_lval_wasm_lambda", 5, 1},
     {NULL, NULL, "get_wval_type", 1, 1},
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},

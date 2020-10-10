@@ -9,28 +9,34 @@
 #include "lval.h"
 #include "print.h"
 
-WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
-                               int has_rest_arg, int closure, int partials,
-                               int partial_count, int fn_call_relay) {
-  /* printf("fn_table_index %d, closure: %d, partials %d\n", fn_table_index, */
-  /*        closure, partials); */
-  /* printf("*closure: %li\n", *(long*)closure); */
-  /* Lval* lval = (Lval*)*(long*)closure; */
-  /* lval_println(lval); */
-  WvalFun* wval = lalloc_type(LVAL);
-  *wval = (WvalFun){
+Lval* make_lval_wasm_lambda(int fn_table_index,
+                            /* int param_count, */
+                            /* int has_rest_arg, */
+                            int closure, int partials, int partial_count,
+                            int fn_call_relay) {
+/* printf("fn_table_index %d, closure: %d, partials %d\n", fn_table_index, */
+/*        closure, partials); */
+/* printf("*closure: %li\n", *(long*)closure); */
+/* Lval* lval = (Lval*)*(long*)closure; */
+/* lval_println(lval); */
+#ifdef WASM
+  Lval* lval = lalloc_type(LVAL);
+  *lval = (Lval){
       .type = WVAL_FUN,
       .subtype = -1,
       .fn_table_index = fn_table_index,
-      .param_count = param_count,
-      .has_rest_arg = has_rest_arg,
       .closure = closure,
       .partials = partials,
       .partial_count = partial_count,
       .fn_call_relay_array = fn_call_relay
       /* .str = "fn_name:TODO" */
+      /* .param_count = param_count, */
+      /* .has_rest_arg = has_rest_arg, */
   };
   return wval;
+#else
+  return NULL;
+#endif
 }
 
 void dbg(Lval* lval) {
@@ -49,17 +55,18 @@ void dbg(Lval* lval) {
          get_ref_count(lval->head->cdr->cdr->car));
 }
 
+#ifdef WASM
 // Used in runtime of lispy compiler
 int get_wval_type(Lval* lval) { return lval->type; }
 int get_wval_subtype(Lval* lval) { return lval->subtype; }
-int get_wval_fn_table_index(WvalFun* wval) { return wval->fn_table_index; }
-int get_wval_param_count(WvalFun* wval) { return wval->param_count; }
-int get_wval_min_param_count(WvalFun* wval) { return wval->param_count - 1; }
-int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
-int get_wval_closure(WvalFun* wval) { return wval->closure; }
-int get_wval_partials(WvalFun* wval) { return wval->partials; }
-int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
-int get_wval_fn_call_relay_array(WvalFun* wval) {
+int get_wval_fn_table_index(Lval* wval) { return wval->fn_table_index; }
+/* int get_wval_param_count(Lval* wval) { return wval->param_count; } */
+/* int get_wval_min_param_count(Lval* wval) { return wval->param_count - 1; } */
+/* int get_wval_has_rest_arg(Lval* wval) { return wval->has_rest_arg; } */
+int get_wval_closure(Lval* wval) { return wval->closure; }
+int get_wval_partials(Lval* wval) { return wval->partials; }
+int get_wval_partial_count(Lval* wval) { return wval->partial_count; }
+int get_wval_fn_call_relay_array(Lval* wval) {
   /* char* ptr = (char*)wval->fn_call_relay_array; */
   /* for (int i = 0; i < 21; i++) { */
   /*   printf("%d ", *((char*)(ptr + i))); */
@@ -67,8 +74,9 @@ int get_wval_fn_call_relay_array(WvalFun* wval) {
   /* printf("\n"); */
   return wval->fn_call_relay_array;
 }
+#endif
 
-void bundle_rest_args(WvalFun* wval, Lval** args, int args_count) {
+void bundle_rest_args(Lval* wval, Lval** args, int args_count) {
   int has_rest_arg = wval->has_rest_arg;
   int rest_arg_index = has_rest_arg - 1;
   int rest_arg_length = args_count - rest_arg_index;
@@ -84,26 +92,27 @@ void bundle_rest_args(WvalFun* wval, Lval** args, int args_count) {
   args[rest_arg_index] = lval_list;
 }
 
-void wval_print(WvalFun* wval) {
+void wval_print(Lval* wval) {
+#ifdef WASM
   printf("WVAL:\n");
   printf("wval pointer: %li\n", (long)wval);
-  printf("type: %d %lu\n", wval->type, offsetof(WvalFun, type));
-  printf("subtype: %d %lu\n", wval->subtype, offsetof(WvalFun, subtype));
+  printf("type: %d %lu\n", wval->type, offsetof(Lval, type));
+  printf("subtype: %d %lu\n", wval->subtype, offsetof(Lval, subtype));
   printf("fn_table_index: %d %lu\n", wval->fn_table_index,
-         offsetof(WvalFun, fn_table_index));
+         offsetof(Lval, fn_table_index));
   printf("param_count: %d %lu\n", wval->param_count,
-         offsetof(WvalFun, param_count));
+         offsetof(Lval, param_count));
 
   printf("has_rest_arg: %d %lu\n", wval->has_rest_arg,
-         offsetof(WvalFun, has_rest_arg));
+         offsetof(Lval, has_rest_arg));
   printf("partial_count: %d %lu\n", wval->partial_count,
-         offsetof(WvalFun, partial_count));
-  printf("closure: %li %lu\n", (long)wval->closure, offsetof(WvalFun, closure));
-  printf("partials: %li %lu\n", (long)wval->partials,
-         offsetof(WvalFun, partials));
+         offsetof(Lval, partial_count));
+  printf("closure: %li %lu\n", (long)wval->closure, offsetof(Lval, closure));
+  printf("partials: %li %lu\n", (long)wval->partials, offsetof(Lval, partials));
 
   printf("fn_call_relay_array: %li %lu\n", (long)wval->fn_call_relay_array,
-         offsetof(WvalFun, fn_call_relay_array));
+         offsetof(Lval, fn_call_relay_array));
+#endif
 }
 
 int check_args_count(int param_count, int args_count, int has_rest_arg) {
@@ -118,6 +127,7 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
+#ifdef WASM
 void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   /* printf("data_start: %il\n", data_start); */
   /* printf("data_size: %d\n", data_size); */
@@ -178,8 +188,8 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   for (int i = 0; i < wval_fn_offsets_count; i++) {
     Slot* slot_ptr =
         (Slot*)(long)(((int*)wval_fn_offsets_ptr)[i] + data_offset);
-    WvalFun* wval_fn_ptr = (WvalFun*)(long)(((int*)wval_fn_offsets_ptr)[i] +
-                                            data_offset + sizeof(Slot));
+    Lval* wval_fn_ptr = (Lval*)(long)(((int*)wval_fn_offsets_ptr)[i] +
+                                      data_offset + sizeof(Slot));
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
     wval_fn_ptr->fn_table_index += fn_table_offset;
 
@@ -197,6 +207,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
      */
   }
 }
+#endif
 
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */

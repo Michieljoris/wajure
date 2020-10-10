@@ -3,23 +3,25 @@
 
 #include "ltypes.h"
 
-WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
-                               int has_rest_arg, int closure, int partials,
-                               int partial_count, int fn_call_relay);
+Lval* make_lval_wasm_lambda(int fn_table_index,
+                            /* int param_count, */
+                            /* int has_rest_arg, */
+                            int closure, int partials, int partial_count,
+                            int fn_call_relay);
 
 int get_wval_type(Lval* lval);
 int get_wval_subtype(Lval* lval);
-int get_wval_fn_table_index(WvalFun* wval);
-int get_wval_param_count(WvalFun* wval);
-int get_wval_has_rest_arg(WvalFun* wval);
-/* int get_wval_rest_arg_index(WvalFun* wval); */
-int get_wval_closure(WvalFun* wval);
-int get_wval_partials(WvalFun* wval);
-int get_wval_partial_count(WvalFun* wval);
+int get_wval_fn_table_index(Lval* wval);
+int get_wval_param_count(Lval* wval);
+int get_wval_has_rest_arg(Lval* wval);
+/* int get_wval_rest_arg_index(Lval* wval); */
+int get_wval_closure(Lval* wval);
+int get_wval_partials(Lval* wval);
+int get_wval_partial_count(Lval* wval);
 
-void bundle_rest_args(WvalFun* wval, Lval** args, int args_count);
+void bundle_rest_args(Lval* wval, Lval** args, int args_count);
 
-void wval_print(WvalFun* wval);
+void wval_print(Lval* wval);
 
 int check_args_count(int param_count, int args_count, int has_rest_arg);
 

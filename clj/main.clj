@@ -12,13 +12,13 @@
 
 (defn g [x & y] [x y])
 (defn main [x y]
-  (test-partial)
+  ;; (test-partial)
   ;; (print "hello")
   (print "again")
-  ;; (let [f (fn [x y z] [x y z])]
-  ;;   (print "HEllo")
-  ;;   (print (+ 1 2))
-  ;;   (print (f 1 2 3)))
+  (let [f (fn [x y z] [x y z])]
+    (print "HEllo")
+    (print (+ 1 2))
+    (print (f 1 2 3)))
   ;; (let [f (fn [x y & z] [x y z])
   ;;       ;; g (fn [x y] [x  y])
   ;;       ;; h (fn [& x] [x])

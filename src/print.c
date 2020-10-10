@@ -184,9 +184,6 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
           return fctprintf(out, arg, "L%d", lval->offset);
       }
 #endif
-    case WVAL_FUN:
-      wval_print((WvalFun*)lval);
-      return 0;
     case LVAL_ERR:
       return fctprintf(out, arg, "Error: %s", lval->data.str);
     default:
