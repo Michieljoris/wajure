@@ -11,7 +11,7 @@
 
 WvalFun* make_lval_wasm_lambda(int fn_table_index, int param_count,
                                int has_rest_arg, int closure, int partials,
-                               int partial_count, char* fn_call_relay) {
+                               int partial_count, int fn_call_relay) {
   /* printf("fn_table_index %d, closure: %d, partials %d\n", fn_table_index, */
   /*        closure, partials); */
   /* printf("*closure: %li\n", *(long*)closure); */
@@ -59,12 +59,12 @@ int get_wval_has_rest_arg(WvalFun* wval) { return wval->has_rest_arg; }
 int get_wval_closure(WvalFun* wval) { return wval->closure; }
 int get_wval_partials(WvalFun* wval) { return wval->partials; }
 int get_wval_partial_count(WvalFun* wval) { return wval->partial_count; }
-char* get_wval_fn_call_relay_array(WvalFun* wval) {
-  char* ptr = wval->fn_call_relay_array;
-  for (int i = 0; i < 21; i++) {
-    printf("%d ", *((char*)(ptr + i)));
-  }
-  printf("\n");
+int get_wval_fn_call_relay_array(WvalFun* wval) {
+  /* char* ptr = (char*)wval->fn_call_relay_array; */
+  /* for (int i = 0; i < 21; i++) { */
+  /*   printf("%d ", *((char*)(ptr + i))); */
+  /* } */
+  /* printf("\n"); */
   return wval->fn_call_relay_array;
 }
 
@@ -101,6 +101,9 @@ void wval_print(WvalFun* wval) {
   printf("closure: %li %lu\n", (long)wval->closure, offsetof(WvalFun, closure));
   printf("partials: %li %lu\n", (long)wval->partials,
          offsetof(WvalFun, partials));
+
+  printf("fn_call_relay_array: %li %lu\n", (long)wval->fn_call_relay_array,
+         offsetof(WvalFun, fn_call_relay_array));
 }
 
 int check_args_count(int param_count, int args_count, int has_rest_arg) {
@@ -124,6 +127,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
 
   /* int info_section_size = info_section_size_in_bytes / 4; */
 
+  // Rewrite lvals
   char* lval_offsets_ptr = (char*)(long)info_section[0] + data_offset;
   int lval_offsets_count = info_section[1];
   for (int i = 0; i < lval_offsets_count; i++) {
@@ -137,6 +141,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
       lval_ptr->head = (Cell*)((char*)lval_ptr->head + data_offset);
   }
 
+  // Rewrite cells
   char* cell_offsets_ptr = (char*)(long)info_section[2] + data_offset;
   int cell_offsets_count = info_section[3];
   /* printf("cell 0: %li %d %li\n", (long)cell_offsets_ptr, cell_offsets_count,
@@ -158,6 +163,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
       cell_ptr->cdr = (Cell*)((char*)cell_ptr->cdr + data_offset);
   }
 
+  // Rewrite wval_fns
   char* wval_fn_offsets_ptr = (char*)(long)info_section[4];
 
   /* printf("wval_fn_offsets_ptr:  %li\n", (long)wval_fn_offsets_ptr); */
@@ -177,6 +183,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
     wval_fn_ptr->fn_table_index += fn_table_offset;
 
     wval_fn_ptr->partials += data_offset;
+    wval_fn_ptr->fn_call_relay_array += data_offset;
     int* partials = (int*)((long)wval_fn_ptr->partials);
 
     for (int i = 0; i < wval_fn_ptr->partial_count; i++) {

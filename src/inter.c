@@ -32,7 +32,7 @@
 #define head_offset 7 * 4
 #define hash_offset 8 * 4
 
-#define wval_fun_type_size 5 * 4
+#define wval_fun_type_size 6 * 4
 #define wval_fun_size slot_type_size + wval_fun_type_size
 
 //  Wval offsets
@@ -178,6 +178,9 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
       add_bytes_to_data(wasm, (char*)partial_ptrs, 4 * partial_count);
   *(int*)(p + partials_offset) = data_ptr;
   *(int*)(p + partial_count_offset) = partial_count;
+
+  *(int*)(p + fn_call_relay_offset) =
+      get_fn_call_relay_table_offset(wasm, param_count, has_rest_arg);
 
   // We really need to set this pointer at the end since we set the datap_p
   // relative to wasm->data_offset, and we have just done a add_bytes_to_data.

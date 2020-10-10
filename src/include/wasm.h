@@ -54,7 +54,8 @@ typedef struct {
 
   int validate_fn_at_rt;
   Map deps;
-  int fn_relay_table_offset;
+  int* fn_relay_table_offsets;
+  int* fn_relay_table_offsets_has_rest_arg;
 } Wasm;
 
 typedef struct {

@@ -341,8 +341,6 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
       make_int32(module, get_fn_call_relay_table_offset(wasm, param_count,
                                                         rest_arg_index)));
 
-  printf("INDEX: %d\n",
-         get_fn_call_relay_table_offset(wasm, param_count, rest_arg_index));
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
   Ber operands[7] = {ber_fn_table_index,     ber_param_count, ber_has_rest_arg,
@@ -391,6 +389,14 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
     return compile_quasiquote(wasm, args);
   quit(wasm, "ERROR: Unknown special form: %s", fn_name);
   return cnull();
+}
+
+CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
+  NativeFn* native_fn =
+      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, lval_fn_native->str);
+  if (!native_fn)
+    quit(wasm, "Function %s not found in runtime", lval_fn_native->str);
+  return native_fn->compile_fn_call(wasm, *native_fn, args);
 }
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
@@ -559,7 +565,6 @@ void compile(Namespace* ns) {
   register_wajure_native_fns(wasm);
 
   if (_strcmp(ns->namespace, config->main) == 0) add_native_fns(wasm);
-  add_fn_call_relay_tables_to_data(wasm);
 
   printf("Processing env =============\n");
   Cell* head = env->kv;

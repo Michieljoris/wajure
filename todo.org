@@ -1,5 +1,9 @@
 * TODO compiler
 ** clean up and comment all of code
+** make lval as minimal as possible
+** unify wval_fn and lval
+** when args_count > MAX_FN_PARAMS cut off at MAX_FN_PARAMS
+when looking up function index to relay to.
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list

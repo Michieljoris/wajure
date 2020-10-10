@@ -143,8 +143,8 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
       BinaryenLoad(module, 1, 0, 0, 0, BinaryenTypeInt32(), fn_call_relay_ptr);
   /* block_children[(*block_children_count)++] = */
   /*     wasm_log_int(wasm, fn_table_index); */
-  block_children[(*block_children_count)++] =
-      wasm_log_int(wasm, fn_table_index2);
+  /* block_children[(*block_children_count)++] = */
+  /*     wasm_log_int(wasm, fn_table_index2); */
 
   return BinaryenCallIndirect(module, fn_table_index2, call_operands, 3,
                               make_type_int32(3), BinaryenTypeInt32());

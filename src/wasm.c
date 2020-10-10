@@ -2,6 +2,7 @@
 
 #include <binaryen-c.h>
 
+#include "compile_partial.h"
 #include "lib.h"
 #include "lispy_mempool.h"
 #include "list.h"
@@ -14,45 +15,61 @@
 
 /* char* heap_base_str = read_file("__heap_base"); */
 
+// Native fns take same args as call and bundle-args fns, ie wval,
+// args_block_ptr and args_count.
+NativeFn native_fns[] = {
+    {"rt_error_too_few_args", -1, 0, 0, 0, add_rt_error_too_few_args_fn, NULL},
+    {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
+     NULL},
+    {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
+    {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL},
+    {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
+    {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
+};
+
 Wasm* init_wasm() {
   Wasm* wasm = calloc(sizeof(Wasm), 1);
   char* data_end_str = read_file("__data_end");
   int pic = 1;  // position independent code
   int data_end = (int)_strtol(data_end_str, NULL, 10);
   int fn_table_end = 0;
-  *wasm = (Wasm){
-      .module = BinaryenModuleCreate(),
-      .data = malloc(4),
-      .data_offset = 4,  // we don't want any data at 0 (NULL pointer)
-      .fn_names = malloc(1),
-      .fns_count = 0,
-      .lval_true_offset = 0,
-      .lval_false_offset = 0,
-      .lval_nil_offset = 0,
-      .lval_empty_list_offset = 0,
-      .pic = pic,
-      .__data_end = pic ? 0 : data_end,
-      .__fn_table_end = pic ? 0 : fn_table_end,
-      /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
-      // reusing interred lval literal numbers for these common
-      // numbers (-100 till 100):
-      .lval_num_start = -100,
-      .lval_num_end = 100,
-      .lval_num_offset = calloc(sizeof(CResult), 201),
-      .context = malloc(sizeof(Cell)),
-      .validate_fn_at_rt = 1,
-      .symbol_table = malloc(1),
-      .symbol_table_count = 0,
-      .lval_offsets = malloc(100 * sizeof(int)),
-      .lval_offsets_count = 0,
-      .lval_offsets_allocated = 100,
-      .wval_fn_offsets = malloc(100 * sizeof(int)),
-      .wval_fn_offsets_count = 0,
-      .wval_fn_offsets_allocated = 100,
-      .cell_offsets = malloc(100 * sizeof(int)),
-      .cell_offsets_count = 0,
-      .cell_offsets_allocated = 100,
-  };
+  int native_fns_count = sizeof(native_fns) / sizeof(*native_fns);
+  int fn_relay_table_offsets_count = (MAX_FN_PARAMS + 1) * 2 + native_fns_count;
+  *wasm =
+      (Wasm){.module = BinaryenModuleCreate(),
+             .data = malloc(4),
+             .data_offset = 4,  // we don't want any data at 0 (NULL pointer)
+             .fn_names = malloc(1),
+             .fns_count = 0,
+             .lval_true_offset = 0,
+             .lval_false_offset = 0,
+             .lval_nil_offset = 0,
+             .lval_empty_list_offset = 0,
+             .pic = pic,
+             .__data_end = pic ? 0 : data_end,
+             .__fn_table_end = pic ? 0 : fn_table_end,
+             /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
+             // reusing interred lval literal numbers for these common
+             // numbers (-100 till 100):
+             .lval_num_start = -100,
+             .lval_num_end = 100,
+             .lval_num_offset = calloc(sizeof(CResult), 201),
+             .context = malloc(sizeof(Cell)),
+             .validate_fn_at_rt = 1,
+             .symbol_table = malloc(1),
+             .symbol_table_count = 0,
+             .lval_offsets = malloc(100 * sizeof(int)),
+             .lval_offsets_count = 0,
+             .lval_offsets_allocated = 100,
+             .wval_fn_offsets = malloc(100 * sizeof(int)),
+             .wval_fn_offsets_count = 0,
+             .wval_fn_offsets_allocated = 100,
+             .cell_offsets = malloc(100 * sizeof(int)),
+             .cell_offsets_count = 0,
+             .cell_offsets_allocated = 100,
+             .fn_relay_table_offsets =
+                 calloc(fn_relay_table_offsets_count, sizeof(int))};
+
   wasm->data[0] = 15;
   wasm->data[1] = 15;
   wasm->data[2] = 15;
@@ -73,6 +90,7 @@ void free_wasm(Wasm* wasm) {
   free(wasm->lval_num_offset);
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
+  free(wasm->fn_relay_table_offsets);
   free(wasm->context);  // TODO
   // TODO: free string_pool
   free(wasm);
@@ -262,24 +280,6 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   free(line);
   wasm->symbol_table_count += line_count;
 }
-
-/* int comp(const void* elem1, const void* elem2) { */
-/*   NativeFn f = *((NativeFn*)elem1); */
-/*   NativeFn s = *((NativeFn*)elem2); */
-/*   if (f.fn_table_index > s.fn_table_index) return 1; */
-/*   if (f.fn_table_index < s.fn_table_index) return -1; */
-/*   return 0; */
-/* } */
-
-NativeFn native_fns[] = {
-    {"rt_error_too_few_args", -1, 0, 0, 0, add_rt_error_too_few_args_fn, NULL},
-    {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
-     NULL},
-    {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
-    {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL},
-    {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
-    {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
-};
 
 void add_native_fns(Wasm* wasm) {
   // Since we load config->main ("main") first in nodejs that module will have

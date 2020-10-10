@@ -510,12 +510,17 @@ Ber local_get_int32(BinaryenModuleRef module, int index) {
   return BinaryenLocalGet(module, index, BinaryenTypeInt32());
 }
 
-char* make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
-                               int param_count, int has_rest_arg) {
+void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
+                              int param_count, int has_rest_arg) {
+  if (param_count > MAX_FN_PARAMS) {
+    for (int i = 0; i < 21; i++) fn_call_relay_table[i] = param_count;
+    return;
+  }
   NativeFn* rt_error_too_few_args = alist_get(
       wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args");
   NativeFn* rt_error_too_many_args = alist_get(
       wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
+
   if (has_rest_arg)
     for (int i = 0; i < 21; i++) {
       int bundle_args_fn_table_index = 21 + param_count;
@@ -531,28 +536,23 @@ char* make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
     int call_fn_table_index = param_count;
     fn_call_relay_table[param_count] = call_fn_table_index;
   }
-  return fn_call_relay_table;
-}
-
-void add_fn_call_relay_tables_to_data(Wasm* wasm) {
-  char* fn_call_relay_table = malloc(21);
-  wasm->fn_relay_table_offset = wasm->data_offset;
-  for (int i = 0; i < 21; i++) {
-    make_fn_call_relay_table(wasm, fn_call_relay_table, i, 0);
-    add_bytes_to_data(wasm, fn_call_relay_table, 21);
-  }
-
-  for (int i = 0; i < 21; i++) {
-    make_fn_call_relay_table(wasm, fn_call_relay_table, i, 1);
-    add_bytes_to_data(wasm, fn_call_relay_table, 21);
-  }
-  free(fn_call_relay_table);
 }
 
 int get_fn_call_relay_table_offset(Wasm* wasm, int param_count,
                                    int has_rest_arg) {
-  if (has_rest_arg)
-    return wasm->fn_relay_table_offset + 21 * 21 + param_count * 21;
-  else
-    return wasm->fn_relay_table_offset + param_count * 21;
+  int index = param_count > MAX_FN_PARAMS ? 0
+              : has_rest_arg              ? MAX_FN_PARAMS + 1
+                                          : 0;
+  index += param_count;
+  int offset = wasm->fn_relay_table_offsets[index];
+
+  if (!offset) {
+    char* fn_call_relay_table = malloc(21);
+    make_fn_call_relay_table(wasm, fn_call_relay_table, param_count,
+                             has_rest_arg);
+    offset = wasm->fn_relay_table_offsets[index] =
+        add_bytes_to_data(wasm, fn_call_relay_table, 21);
+    free(fn_call_relay_table);
+  }
+  return offset;
 }

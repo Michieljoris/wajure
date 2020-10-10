@@ -127,7 +127,7 @@ struct wval_fn {
   short partial_count;   // 8
   int closure;           // 12
   int partials;          // 16
-  char* fn_call_relay_array;
+  int fn_call_relay_array;
   /* char* str;             // 20 */
 };
 
@@ -197,6 +197,7 @@ enum {
   LVAL_LITERAL,
   LVAL_FUNCTION,
   LVAL_ERR,
+
   /* subtypes */
   // literal subtypes
   LNIL,
