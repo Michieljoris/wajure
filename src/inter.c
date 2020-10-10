@@ -10,41 +10,30 @@
 #include "wasm_util.h"
 
 // Slot offsets
-#define slot_type_size 4 * 4
-#define cell_type_size 3 * 4
 #define ref_count_offset 0
 #define data_p_offset 12  // bytes
+#define slot_type_size data_p_offset + 4
 
 // Cell offsets
 #define wcell_size slot_type_size + cell_type_size
-#define cell_hash_offset 4 * 4
-#define car_offset 5 * 4
-#define cdr_offset 6 * 4
-
-#define lval_type_size 4 * 4  // type and subtype are in 4 bytes
-#define wval_size slot_type_size + lval_type_size
+#define cell_hash_offset slot_type_size + 0
+#define car_offset slot_type_size + 4
+#define cdr_offset slot_type_size + 8
+#define cell_type_size cdr_offset + 4
 
 // Lval offsets
-#define type_offset 4 * 4
+#define type_offset slot_type_size + 0     // char
+#define subtype_offset slot_type_size + 1  // char
+#define head_offset slot_type_size + 4     // int (aligned)
+#define d_offset slot_type_size + 8        // int
+#define hash_offset slot_type_size + 12    // int
 
-#define head_offset 5 * 4
-#define d_offset 6 * 4
-#define hash_offset 7 * 4
-
-#define wval_fun_type_size 6 * 4
-#define wval_fun_size slot_type_size + wval_fun_type_size
-
-//  Wval offsets
-#define wval_type_offset slot_type_size + 0
-#define subtype_offset slot_type_size + 1
-
-#define fn_table_index_offset slot_type_size + 2
-#define param_count_offset slot_type_size + 4
-#define has_rest_arg_offset slot_type_size + 6
-#define partial_count_offset slot_type_size + 8
-#define closure_offset slot_type_size + 12
-#define partials_offset slot_type_size + 16
-#define fn_call_relay_offset slot_type_size + 20
+#define fn_table_index_offset slot_type_size + 16  // short
+#define partial_count_offset slot_type_size + 18   // short
+#define closure_offset slot_type_size + 20         // int
+#define partials_offset slot_type_size + 24        // int
+#define fn_call_relay_offset slot_type_size + 28   // int
+#define lval_type_size fn_call_relay_offset + 4
 /* #define str_offset 4  // 20 */
 
 void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
@@ -89,29 +78,39 @@ CResult inter_data_cell(Wasm* wasm, int* data_cell) {
 /*   return inter_data_cell(wasm, data_cell); */
 /* } */
 
-int* make_data_lval(Wasm* wasm, Lval* lval) {
-  int* data_lval = calloc(1, wval_size);
+char* make_data_lval(Wasm* wasm, Lval* lval) {
   int string_offset = 0;
   if (lval->subtype != NUMBER && lval->data.str)
     string_offset = add_string_to_data(wasm, lval->data.str);
 
-  data_lval[ref_count_offset] = 1;
-  data_lval[data_p_offset / 4] =
-      wasm->__data_end + wasm->data_offset + slot_type_size;
-  data_lval[type_offset / 4] = lval->type | lval->subtype << 8;
+  char* data_lval = calloc(1, lval_type_size);
+  long p = (long)data_lval;
+  /* int string_offset = 0; */
+  /* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); */
+
+  *(int*)(p + ref_count_offset) = 1;
+
+  *(char*)(p + type_offset) = lval->type;
+  *(char*)(p + subtype_offset) = lval->subtype;
+
   if (lval->subtype == NUMBER)
-    data_lval[d_offset / 4] = lval->data.num;
+    *(int*)(p + d_offset) = lval->data.num;
   else {
-    data_lval[d_offset / 4] = wasm->__data_end + string_offset;
+    if (lval->data.str)
+      *(int*)(p + d_offset) = wasm->__data_end + string_offset;
   }
-  data_lval[head_offset / 4] = 0;
-  data_lval[hash_offset / 4] = lval->hash;
+  *(int*)(p + hash_offset) = lval->hash;
+
+  // We really need to set this pointer at the end since we set the datap_p
+  // relative to wasm->data_offset, and we have just done a add_bytes_to_data.
+  *(int*)(p + data_p_offset) =
+      wasm->__data_end + wasm->data_offset + slot_type_size;
 
   return data_lval;
 }
 
-int inter_data_lval(Wasm* wasm, int* data_lval) {
-  int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_size);
+int inter_data_lval(Wasm* wasm, char* data_lval) {
+  int offset = add_bytes_to_data(wasm, data_lval, lval_type_size);
   add_to_offset_list(&wasm->lval_offsets, &wasm->lval_offsets_count,
                      &wasm->lval_offsets_allocated, offset);
   free(data_lval);
@@ -121,7 +120,7 @@ int inter_data_lval(Wasm* wasm, int* data_lval) {
 
 // Primitive types (int, true, false, nil, str)
 int inter_lval(Wasm* wasm, Lval* lval) {
-  int* data_lval = make_data_lval(wasm, lval);
+  char* data_lval = make_data_lval(wasm, lval);
   return inter_data_lval(wasm, data_lval);
 }
 
@@ -145,30 +144,36 @@ int inter_list(Wasm* wasm, Lval* lval) {
     cdr = inter_data_cell(wasm, data_cell).wasm_ptr;
     last_cdr = cdr;
   }
-  int* data_list = make_data_lval(wasm, lval);
-  data_list[head_offset / 4] = cdr;
+  char* data_list = make_data_lval(wasm, lval);
+
+  *(int*)(data_list + head_offset) = cdr;
   int ret = inter_data_lval(wasm, data_list);
   return ret;
 }
 
-int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
-                                int has_rest_arg, Cell* partials) {
-  int* data_lval = calloc(1, wval_fun_size);
+char* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index,
+                                 int param_count, int has_rest_arg,
+                                 Cell* partials) {
+  printf(
+      "make_data_lval_wasm_lambda\ntype: %d, fn_table_index: %d param_count: "
+      "%d "
+      "has_rest_arg: %d\n",
+      WVAL_FUN, fn_table_index, param_count, has_rest_arg);
+  char* data_lval = calloc(1, lval_type_size);
   long p = (long)data_lval;
   /* int string_offset = 0; */
   /* if (lval->str) string_offset = add_string_to_data(wasm, lval->str); */
 
-  *(int*)(p + ref_count_offset * 4) = 1;
+  *(int*)(p + ref_count_offset) = 1;
 
-  *(char*)(p + wval_type_offset) = WVAL_FUN;
+  *(char*)(p + type_offset) = WVAL_FUN;
   *(char*)(p + subtype_offset) = -1;
   *(short*)(p + fn_table_index_offset) = fn_table_index;
-  *(short*)(p + param_count_offset) = param_count;
-  *(short*)(p + has_rest_arg_offset) = has_rest_arg;
+  int partial_count = list_count(partials);
+  *(short*)(p + partial_count_offset) = partial_count;
   *(int*)(p + closure_offset) = 0;
 
   Cell* head = partials;
-  int partial_count = list_count(partials);
   int partial_ptrs[partial_count];
   int i = 0;
   while (head) {
@@ -177,10 +182,11 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
     partial_ptrs[i++] = result.wasm_ptr;
     head = head->cdr;
   }
-  int data_ptr =
-      add_bytes_to_data(wasm, (char*)partial_ptrs, 4 * partial_count);
-  *(int*)(p + partials_offset) = data_ptr;
-  *(int*)(p + partial_count_offset) = partial_count;
+  if (partial_count) {
+    int data_ptr =
+        add_bytes_to_data(wasm, (char*)partial_ptrs, 4 * partial_count);
+    *(int*)(p + partials_offset) = data_ptr;
+  }
 
   *(int*)(p + fn_call_relay_offset) =
       get_fn_call_relay_table_offset(wasm, param_count, has_rest_arg);
@@ -190,14 +196,15 @@ int* make_data_lval_wasm_lambda(Wasm* wasm, int fn_table_index, int param_count,
   *(int*)(p + data_p_offset) =
       wasm->__data_end + wasm->data_offset + slot_type_size;
 
-  return (int*)data_lval;
+  return data_lval;
 }
 
-int inter_data_lval_wasm_lambda(Wasm* wasm, int* data_lval) {
-  int offset = add_bytes_to_data(wasm, (char*)data_lval, wval_fun_size);
+int inter_data_lval_wasm_lambda(Wasm* wasm, char* data_lval) {
+  int offset = add_bytes_to_data(wasm, data_lval, lval_type_size);
   add_to_offset_list(&wasm->wval_fn_offsets, &wasm->wval_fn_offsets_count,
                      &wasm->wval_fn_offsets_allocated, offset);
   int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  printf("interred wasm_lambda: wval_ptr = %d\n", wval_ptr);
   return wval_ptr;
 }
 

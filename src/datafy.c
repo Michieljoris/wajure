@@ -45,7 +45,7 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
       0;  // not used since we're dispatching to our native fn by param_count
   int has_rest_arg = 0;  // also not used
   Cell* partials = NULL;
-  int* data_lval = make_data_lval_wasm_lambda(
+  char* data_lval = make_data_lval_wasm_lambda(
       wasm, fn_table_index, native_fn->fn_table_index, has_rest_arg, partials);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
@@ -90,7 +90,7 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
                       locals_count, body);
 
   fn_table_index = add_fn_to_table(wasm, fn_name);
-  int* data_lval = make_data_lval_wasm_lambda(
+  char* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + fn_table_index, 1, 1, NULL);
   int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
 
@@ -116,7 +116,7 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
     offset = lval_fn->offset;
   }
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
-  int* data_lval = make_data_lval_wasm_lambda(
+  char* data_lval = make_data_lval_wasm_lambda(
       wasm, wasm->__fn_table_end + offset, lval_fn->param_count,
       lval_fn->rest_arg_index, partials);
 

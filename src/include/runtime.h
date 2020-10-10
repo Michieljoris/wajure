@@ -12,14 +12,14 @@ Lval* make_lval_wasm_lambda(int fn_table_index,
 int get_wval_type(Lval* lval);
 int get_wval_subtype(Lval* lval);
 int get_wval_fn_table_index(Lval* wval);
-int get_wval_param_count(Lval* wval);
-int get_wval_has_rest_arg(Lval* wval);
+/* int get_wval_param_count(Lval* wval); */
+/* int get_wval_has_rest_arg(Lval* wval); */
 /* int get_wval_rest_arg_index(Lval* wval); */
 int get_wval_closure(Lval* wval);
 int get_wval_partials(Lval* wval);
 int get_wval_partial_count(Lval* wval);
 
-void bundle_rest_args(Lval* wval, Lval** args, int args_count);
+void bundle_rest_args(int rest_arg_index, Lval** args, int args_count);
 
 void wval_print(Lval* wval);
 

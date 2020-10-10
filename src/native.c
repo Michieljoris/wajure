@@ -110,8 +110,8 @@ void add_bundle_rest_arg_fn(Wasm* wasm, int n) {
   int body_children_count = 0;
   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ?????
 
-  // If there is a rest arg, bundle it into the last arg
-  Ber bundle_operands[] = {local_get_int32(module, wval_param),
+  // We know the rest arg index (n-1), let's bundle any excess args
+  Ber bundle_operands[] = {make_int32(module, n - 1),
                            local_get_int32(module, args_block_ptr_param),
                            local_get_int32(module, args_count_param)};
   body_children[body_children_count++] = BinaryenCall(

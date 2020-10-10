@@ -61,31 +61,24 @@ struct lval {
   char subtype;  // more like the actual type (list, map, vector, lambda, macro
                  // etc)
 
-  // Number, error, symbol or string
-  /* char* str; /\* Function *\/ */
-
   // List
   Cell* head;
 
   Data data;
 
   int hash;
+
   // fn
   short fn_table_index;
   short partial_count;
   int closure;
   int partials;
-  int fn_call_relay;
-  /* int rest_arg_index ??*/
+  int fn_call_relay_array;
 };
 #else
 struct lval {
   char type;
   char subtype;
-
-  // Number, error, symbol or string
-  /* long num; */
-  /* char* str; /\* Function *\/ */
 
   // List
   Cell* head;

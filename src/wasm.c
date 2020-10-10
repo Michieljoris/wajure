@@ -195,9 +195,9 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "get_wval_type", 1, 1},
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
-    {NULL, NULL, "get_wval_param_count", 1, 1},
-    {NULL, NULL, "get_wval_min_param_count", 1, 1},
-    {NULL, NULL, "get_wval_has_rest_arg", 1, 1},
+    /* {NULL, NULL, "get_wval_param_count", 1, 1}, */
+    /* {NULL, NULL, "get_wval_min_param_count", 1, 1}, */
+    /* {NULL, NULL, "get_wval_has_rest_arg", 1, 1}, */
     /* {NULL, NULL, "get_wval_rest_arg_index", 1, 1}, */
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
