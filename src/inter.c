@@ -132,7 +132,7 @@ int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
 
 char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
                      int param_count, int has_rest_arg) {
-  int type = lval ? lval->type : WVAL_FUN;
+  int type = lval ? lval->type : LVAL_FUNCTION;
   printf(
       "make_data_lval type: %s, fn_table_index: %d param_count: "
       "%d "
@@ -162,8 +162,8 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
     }
     *(int*)(p + hash_offset) = lval->hash;
   } else {
-    *(char*)(p + type_offset) = WVAL_FUN;
-    *(char*)(p + subtype_offset) = -1;
+    *(char*)(p + type_offset) = LVAL_FUNCTION;
+    *(char*)(p + subtype_offset) = LAMBDA;
   }
 
   *(short*)(p + fn_table_index_offset) = fn_table_index;

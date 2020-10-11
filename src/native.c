@@ -25,18 +25,19 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
-Ber validate_as_fn(Wasm* wasm, Ber wval) {
-  BinaryenModuleRef module = wasm->module;
-  Ber wval_type = get_wval_prop(module, wval, "type");
-  Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(),
-                                       wval_type, make_int32(module, WVAL_FUN));
-  char* error_msg = "not a fn";
-  scoped char* str = lalloc_size(_strlen(error_msg));
-  sprintf(str, "%s", error_msg);
-  Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber;
-  Ber all_ok = BinaryenNop(module);
-  return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok);
-}
+/* Ber validate_as_fn(Wasm* wasm, Ber wval) { */
+/*   BinaryenModuleRef module = wasm->module; */
+/*   Ber wval_type = get_wval_prop(module, wval, "type"); */
+/*   Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(), */
+/*                                        wval_type, make_int32(module,
+ * WVAL_FUN)); */
+/*   char* error_msg = "not a fn"; */
+/*   scoped char* str = lalloc_size(_strlen(error_msg)); */
+/*   sprintf(str, "%s", error_msg); */
+/*   Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber; */
+/*   Ber all_ok = BinaryenNop(module); */
+/*   return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok); */
+/* } */
 
 void add_call_fn(Wasm* wasm, int n) {
   BinaryenModuleRef module = wasm->module;
@@ -51,11 +52,11 @@ void add_call_fn(Wasm* wasm, int n) {
   int body_children_count = 0;
   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ????
 
-  // Validate the fn as fn and number of args
-  if (wasm->validate_fn_at_rt) {
-    body_children[body_children_count++] =
-        validate_as_fn(wasm, local_get_int32(module, wval_param));
-  }
+  // Validate the fn as fn
+  /* if (wasm->validate_fn_at_rt) { */
+  /*   body_children[body_children_count++] = */
+  /*       validate_as_fn(wasm, local_get_int32(module, wval_param)); */
+  /* } */
 
   // Load args into operands of call to fn
   Ber closure_pointer =

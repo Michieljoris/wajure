@@ -91,29 +91,32 @@ void bundle_rest_args(int rest_arg_index, Lval** args, int args_count) {
   args[rest_arg_index] = lval_list;
 }
 
-void wval_print(Lval* wval) {
+void wval_print(Lval* lval) {
 /* lval_println(wval); */
 #ifdef WASM
   printf("WVAL---------------------:\n");
-  printf("wval pointer: %li\n", (long)wval);
-  printf("type: %d %s %lu\n", wval->type,
-         lval_type_constant_to_name(wval->type), offsetof(Lval, type));
-  printf("subtype: %d %s %lu\n", wval->subtype,
-         lval_type_constant_to_name(wval->subtype), offsetof(Lval, subtype));
+  printf("wval pointer: %li\n", (long)lval);
+  printf("type: %d %s %lu\n", lval->type,
+         lval_type_constant_to_name(lval->type), offsetof(Lval, type));
+  printf("subtype: %d %s %lu\n", lval->subtype,
+         lval_type_constant_to_name(lval->subtype), offsetof(Lval, subtype));
 
-  printf("head: %li \n", (long)wval->head);
-  /* printf("fn_table_index: %d %lu\n", wval->fn_table_index, */
-  /*        offsetof(Lval, fn_table_index)); */
-  /* printf("partial_count: %d %lu\n", wval->partial_count, */
-  /*        offsetof(Lval, partial_count)); */
-  /* printf("closure: %li %lu\n", (long)wval->closure, offsetof(Lval, closure));
-   */
-  /* printf("partials: %li %lu\n", (long)wval->partials, offsetof(Lval,
-   * partials)); */
+  printf("head: %d \n", lval->head);
+  printf("fn_table_index: %d %lu\n", lval->fn_table_index,
+         offsetof(Lval, fn_table_index));
+  printf("partial_count: %d %lu\n", lval->partial_count,
+         offsetof(Lval, partial_count));
+  printf("closure: %d %lu\n", lval->closure, offsetof(Lval, closure));
+  printf("partials: %d %lu\n", lval->partials, offsetof(Lval, partials));
 
-  /* printf("fn_call_relay_array: %li %lu\n", (long)wval->fn_call_relay_array,
-   */
-  /*        offsetof(Lval, fn_call_relay_array)); */
+  printf("fn_call_relay_array: %d %lu\n", lval->fn_call_relay_array,
+         offsetof(Lval, fn_call_relay_array));
+
+  char* array = (char*)lval->fn_call_relay_array;
+  for (int i = 0; i < 21; i++) {
+    printf("%d ", array[i]);
+  }
+  /* printf("\n"); */
 #endif
 }
 

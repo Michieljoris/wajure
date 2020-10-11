@@ -129,10 +129,6 @@ void destroy_lval(void* data) {
       }
       break;
 
-    case WVAL_FUN:
-      // TODO wasm: release partials and closure memory
-      break;
-
     case LVAL_REF:
       break;
     /* case LVAL_NAMESPACE: */

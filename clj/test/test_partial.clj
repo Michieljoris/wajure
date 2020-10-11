@@ -28,7 +28,7 @@
 
 
 (defn test-partial []
-
+  (print "test-partial")
   (let [f (fn [x y z] [x y z])
         g (fn [x] x)]
     (t (f 2 (g 1) 3) [2 1 3] "pass results of fn to fns"))
@@ -53,18 +53,18 @@
   (t (gp 3 4 5 6) [1 2 (3 4 5 6)])
 
   ;; Partial of a global fn with no partials is just the global fn
-  (let [fp (partial f)]
-    (t (fp 1 2 3) [1 2 3])
-    ;; Partials of non fn is identity fn
-    (t (partial 1) 1)
-    (t (partial "abc") "abc")
-    )
+  ;; (let [fp (partial f)]
+  ;;   (t (fp 1 2 3) [1 2 3])
+  ;;   ;; Partials of non fn is identity fn
+  ;;   (t (partial 1) 1)
+  ;;   (t (partial "abc") "abc")
+  ;;   )
 
   ;; Datafying of a global partial fn should still work
-  (let [f2 fp]
-    (t (f2 2 3) [1 2 3]))
-  (let [f3 fp2]
-    (t (f3 3) [1 2 3]))
+  ;; (let [f2 fp]
+  ;;   (t (f2 2 3) [1 2 3]))
+  ;; (let [f3 fp2]
+  ;;   (t (f3 3) [1 2 3]))
 
   ;; Partial of a partial of a global fn
   (t (fp2 3) [1 2 3])
@@ -78,8 +78,8 @@
   (t (hp 2 3) [1 2 3])
 
   ;; Test partials from other namespace, with redefinition of fn used in partial
-  ;; (t (p/f 1) 1)
-  ;; (t (p/fp 2 3) [1 2 3])
+  (t (p/f 1) 1)
+  (t (p/fp 2 3) [1 2 3])
 
   ;; Partials of sys fns
  (t (plus1 1) 2)
@@ -107,3 +107,4 @@
   (pr "Partial tests have run.")
 
   )
+

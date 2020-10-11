@@ -262,16 +262,18 @@ char* lval_type_constant_to_name(int t) {
     case LVAL_FUNCTION:
       return "Function";
     case STRING:
-      return "String";
+      return "string";
     case LIST:
-      return "List";
+      return "list";
     case VECTOR:
-      return "Vector";
+      return "vector";
     case MAP:
-      return "Map";
+      return "map";
+    case SET:
+      return "set";
 
     case KEYWORD:
-      return "Keyword";
+      return "keyword";
 
     case LTRUE:
       return "true";
@@ -281,8 +283,22 @@ char* lval_type_constant_to_name(int t) {
       return "nil";
     case LVAL_REF:
       return "Local ref";
-    case WVAL_FUN:
-      return "lval wasm lambda";
+    case REGEX:
+      return "regex";
+    case SYS:
+      return "sys";
+    case LAMBDA:
+      return "lambda";
+    case MACRO:
+      return "macro";
+    case SPECIAL:
+      return "special";
+    case LVAL_EXTERNAL:
+      return "External";
+    case PARAM:
+      return "param";
+    case LOCAL:
+      return "local";
     default:
       return "Unknown";
   }

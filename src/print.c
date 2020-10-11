@@ -139,8 +139,8 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
 }
 
 int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
-  if (!lval) return fctprintf(out, arg, "<Trying to print null lval>");
-  /* printf("in lval print %d %s\n", lval->type, */
+  if (!lval) return fctprintf(out, arg, "<Trying to print a null pointer!!>");
+  /* printf("Trying to print: type:%d %s\n", lval->type, */
   /*        lval_type_constant_to_name(lval->type)); */
   switch (lval->type) {
     case LVAL_SYMBOL:
@@ -172,8 +172,14 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
         case LFALSE:
           return fctprintf(out, arg, "false");
       }
+#ifdef WASM
+    case LVAL_FUNCTION:
+      wval_print(lval);
+      return 0;
+#else
     case LVAL_FUNCTION:
       return lval_fun_print(out, arg, lval);
+#endif
 #ifdef WASM
 #else
     case LVAL_REF:

@@ -221,10 +221,8 @@ enum {
   LVAL_EXTERNAL,  // a required symbol
   // local ref subtypes
   PARAM,
-  LOCAL,
+  LOCAL
 
-  // wajure runtime lval fn type
-  WVAL_FUN
 };
 
 // Compiler

@@ -10,11 +10,23 @@
 ;; (require '[bar.core :as bar :refer [bar]])
 
 
-(def l (list 1 2 3))
+;; (def l (list 1 2 3))
 ;; (def s "foo")
 ;; (defn g [x & y] [x y])
+
+(defn f [x y z] [x y z])
 (defn main [x y]
-  (print 1 l)
+
+  (let [fp (partial f)]
+    (print f fp)
+    (print (fp 1 2 3))
+    (print "Done")
+    ;; (t (fp 1 2 3) [1 2 3])
+    ;; Partials of non fn is identity fn
+    ;; (t (partial 1) 1)
+    ;; (t (partial "abc") "abc")
+    )
+  ;; (print 1 l)
   ;; (test-partial)
   ;; (print "hello")
   ;; (print "again")
