@@ -28,7 +28,7 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
-typedef struct wval_fn WvalFun;
+/* typedef struct wval_fn WvalFun; */
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
@@ -48,9 +48,7 @@ typedef struct namespace Namespace;
 
 typedef union {
   long num;
-  char* str; /* Function */
-
-  // List
+  char* str;
   Cell* head;
 } Data;
 
@@ -60,34 +58,21 @@ struct lval {
   char type;     // more like the protocol (collection, function, literal etc)
   char subtype;  // more like the actual type (list, map, vector, lambda, macro
                  // etc)
-
-  // Number, error, symbol or string
-  /* char* str; /\* Function *\/ */
-
-  // List
-  Cell* head;
-
   Data data;
 
   int hash;
+
   // fn
   short fn_table_index;
   short partial_count;
   int closure;
   int partials;
-  int fn_call_relay;
+  int fn_call_relay_array;
 };
 #else
 struct lval {
   char type;
   char subtype;
-
-  // Number, error, symbol or string
-  /* long num; */
-  /* char* str; /\* Function *\/ */
-
-  // List
-  Cell* head;
 
   Data data;
   int hash;
@@ -117,21 +102,6 @@ struct lval {
   Lval* cfn;
 };
 #endif
-
-// Used in wasm runtime. We stuff info on a wasm lambda into a lval
-struct wval_fn {
-  char type;     // wasm offset: 0
-  char subtype;  // 1
-
-  short fn_table_index;  // 2
-  short param_count;     // 4
-  short has_rest_arg;    // 6
-  short partial_count;   // 8
-  int closure;           // 12
-  int partials;          // 16
-  int fn_call_relay_array;
-  /* char* str;             // 20 */
-};
 
 struct lenv {
   int is_ns_env;
@@ -227,10 +197,8 @@ enum {
   LVAL_EXTERNAL,  // a required symbol
   // local ref subtypes
   PARAM,
-  LOCAL,
+  LOCAL
 
-  // lispy runtime lval fn type
-  WVAL_FUN
 };
 
 // Compiler

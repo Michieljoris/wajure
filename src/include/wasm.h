@@ -48,9 +48,9 @@ typedef struct {
   int* cell_offsets;
   int cell_offsets_count;
   int cell_offsets_allocated;
-  int* wval_fn_offsets;
-  int wval_fn_offsets_count;
-  int wval_fn_offsets_allocated;
+  /* int* wval_fn_offsets; */
+  /* int wval_fn_offsets_count; */
+  /* int wval_fn_offsets_allocated; */
 
   int validate_fn_at_rt;
   Map deps;
@@ -78,9 +78,6 @@ typedef struct native_fn NativeFn;
 struct native_fn {
   char* wajure_fn_name;
   int fn_table_index;
-  int params_count;
-  int has_rest_arg;
-  int rest_arg_index;
   void (*add_fn)(Wasm*);
   CResult (*compile_fn_call)(Wasm*, NativeFn, Cell*);
 };

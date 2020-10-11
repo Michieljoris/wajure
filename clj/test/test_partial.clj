@@ -16,19 +16,31 @@
 (def plus2 (partial plus1 1))
 
 ;; (defn test-partial []
-;;   ;; (print (fp 2 3))
 
-;;   (let [f2 fp]
-;;     (print"hello"  (f2 2 3))))
+;;   (let [f (fn [x y z] [x y z])
+;;         g (fn [] f)
+;;         fp (partial (g) 1)
+;;         fpp (partial fp 2)]
+;;     (t (f 1 2 3) [1 2 3])
+;;     (t (fp 2 3) [1 2 3])
+;;     (t (fpp 3) [1 2 3]))
+
+
+;;   (let [p partial
+;;         f (fn [x y z] [x y z])
+;;         fp (p f 1)]
+;;     (t (fp 2 3) [1 2 3]))
+
+;; )
 ;; 
   
-;; (defn test-partial []
-;;   (f 1 2 3)
-;;   )
+(defn test-partial []
+  (f 1 2 3)
+  )
 
 
 (defn test-partial []
-
+  (print "test-partial")
   (let [f (fn [x y z] [x y z])
         g (fn [x] x)]
     (t (f 2 (g 1) 3) [2 1 3] "pass results of fn to fns"))
@@ -78,32 +90,32 @@
   (t (hp 2 3) [1 2 3])
 
   ;; Test partials from other namespace, with redefinition of fn used in partial
-  ;; (t (p/f 1) 1)
-  ;; (t (p/fp 2 3) [1 2 3])
+  (t (p/f 1) 1)
+  (t (p/fp 2 3) [1 2 3])
 
   ;; Partials of sys fns
  (t (plus1 1) 2)
  (t (plus2 1) 3)
 
   ;; Partials of local fns
-  ;; (let [f (fn [x y z] [x y z])
-  ;;       g (fn [] f)
-  ;;       fp (partial (g) 1)
-  ;;       fpp (partial fp 2)]
-  ;;   (t (f 1 2 3) [1 2 3])
-  ;;   (t (fp 2 3) [1 2 3])
-  ;;   (t (fpp 3) [1 2 3]))
+  (let [f (fn [x y z] [x y z])
+        g (fn [] f)
+        fp (partial (g) 1)
+        fpp (partial fp 2)]
+    (t (f 1 2 3) [1 2 3])
+    (t (fp 2 3) [1 2 3])
+    (t (fpp 3) [1 2 3]))
 
   ;; Make partials from sys fns
   (let [plus (partial + 1 1)]
    (t (plus 1) 3))
 
   ;; Native fns (such as partial) can be used as first class fns
-  ;; (let [p partial
-  ;;       f (fn [x y z] [x y z])
-  ;;       fp (p f 1)]
-  ;;   (t (fp 2 3) [1 2 3]))
- 
+  (let [p partial
+        f (fn [x y z] [x y z])
+        fp (p f 1)]
+    (t (fp 2 3) [1 2 3]))
+
   (pr "Partial tests have run.")
 
   )

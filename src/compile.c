@@ -49,7 +49,8 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
   /* printf("COMPILE_DO_LIST!!!!\n"); */
   /* lval_println(lval_list); */
   BinaryenModuleRef module = wasm->module;
-  int do_list_count = list_count(lval_list->head) + 2;  // room for extra bers
+  int do_list_count =
+      list_count(lval_list->data.head) + 2;  // room for extra bers
 
   LocalIndices* li = li_init();
 
@@ -60,7 +61,7 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
 
   Ber do_result = NULL;
 
-  Cell* list = lval_list->head;
+  Cell* list = lval_list->data.head;
   if (list) {
     do {
       CResult result = lval_compile(wasm, list->car);
@@ -198,7 +199,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
 
   int i = 0;
-  Cell* param = lval_fun->params->head;
+  Cell* param = lval_fun->params->data.head;
   while (i < min_param_count) {
     Lval* lval_ref = make_lval_ref(context, PARAM, i + wajure_params_count);
     Lval* lval_sym = param->car;
@@ -295,8 +296,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   }
   Ber ber_partial_count = make_int32(module, 0);
   Ber ber_partials = make_int32(module, 0);  // NULL
-  Ber ber_param_count = make_int32(module, param_count);
-  Ber ber_has_rest_arg = make_int32(module, rest_arg_index);
+  /* Ber ber_param_count = make_int32(module, param_count); */
+  /* Ber ber_has_rest_arg = make_int32(module, rest_arg_index); */
 
   // Let's create a block in which we prepare the args for and then call
   // make_lval_wasm_lambda
@@ -343,11 +344,12 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[7] = {ber_fn_table_index,     ber_param_count, ber_has_rest_arg,
-                     ber_closure_ptr,        ber_partials,    ber_partial_count,
+  Ber operands[5] = {ber_fn_table_index,
+                     /* ber_param_count, ber_has_rest_arg, */
+                     ber_closure_ptr, ber_partials, ber_partial_count,
                      fn_call_relay_array_ptr};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
 
   // Add this call to the lambda block
   lambda_block_children[lambda_block_count++] = make_lval_wasm_lambda_call;
@@ -370,7 +372,7 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   if (_strcmp(fn_name, "if") == 0) return compile_if(wasm, args);
   if (_strcmp(fn_name, "do") == 0) {
     Lval* do_list = make_lval_list();
-    do_list->head = retain(args);
+    do_list->data.head = retain(args);
     CResult result = compile_do_list(wasm, do_list);
     release(do_list);
     result.is_fn_call = 1;
@@ -436,7 +438,7 @@ CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
 }
 
 CResult compile_vector(Wasm* wasm, Lval* lval) {
-  Ber arg_list_head = compile_list(wasm, lval->head).ber;
+  Ber arg_list_head = compile_list(wasm, lval->data.head).ber;
 
   Ber lval_vector_operands[1] = {arg_list_head};
   Ber wasm_lval_vector =

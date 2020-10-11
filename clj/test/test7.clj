@@ -1,5 +1,6 @@
 (in-ns 'test.test7)
 
+
 (def a (list 2 3))
 
 (def a2 (list 1 2))
@@ -186,3 +187,5 @@
   ;;    [1 1 "b" "d" 3])
   
   )
+
+

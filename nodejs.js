@@ -357,18 +357,18 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        // console.log(util.inspect(env.modules, null, Infinity, true));
+        console.log(util.inspect(env.modules, null, Infinity, true));
 
         const main_module = env.modules[env.config.main];
 
-        console.log("Running main/test(arg1, arg2, ..) ------------------------------");
+        console.log("Running main/main(arg1, arg2, ..)\n------------------------------");
        
         run_wajure_fn(env, main_module, "main", 888, 777);
 
         env.runtime.exports.free_lispy_mempools();
         env.runtime.exports. free_malloc();
 
-        console.log("End ------------------------------");
+        console.log("------------------------------\nEnd");
     } catch (e) {
         console.log(e);
     }

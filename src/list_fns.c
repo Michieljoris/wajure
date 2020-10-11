@@ -17,22 +17,24 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list = arg;
   ITER_END
   Lval* lval_list2 = make_lval_list();
-  lval_list2->head = list_cons(x, lval_list->head);
-  /* lval_list2->hash = lval_list2->head->hash = */
-  /*     calc_list_hash(lval_list2->head, lval_list->head); */
+  lval_list2->data.head = list_cons(x, lval_list->data.head);
+  /* lval_list2->hash = lval_list2->data.head->hash = */
+  /*     calc_list_hash(lval_list2->data.head, lval_list->data.head); */
 
   /* Lval* lval = lval_list2; */
   /* printf("result of cons (cons_fn):\n"); */
   /* printf("lval_list: %d\n", get_ref_count(lval)); */
-  /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
-  /* printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car)); */
-  /* printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr)); */
-  /* printf("lval_list->head->cdr-car: %d\n",
-   * get_ref_count(lval->head->cdr->car)); */
-  /* printf("lval_list->head->cdr->cdr: %d\n", */
-  /*        get_ref_count(lval->head->cdr->cdr)); */
-  /* printf("lval_list->head->cdr-->cdr->car: %d\n", */
-  /*        get_ref_count(lval->head->cdr->cdr->car)); */
+  /* printf("lval_list->data.head: %d\n", get_ref_count(lval->data.head)); */
+  /* printf("lval_list->data.head->car: %d\n",
+   * get_ref_count(lval->data.head->car)); */
+  /* printf("lval_list->data.head->cdr: %d\n",
+   * get_ref_count(lval->data.head->cdr)); */
+  /* printf("lval_list->data.head->cdr-car: %d\n",
+   * get_ref_count(lval->data.head->cdr->car)); */
+  /* printf("lval_list->data.head->cdr->cdr: %d\n", */
+  /*        get_ref_count(lval->data.head->cdr->cdr)); */
+  /* printf("lval_list->data.head->cdr-->cdr->car: %d\n", */
+  /*        get_ref_count(lval->data.head->cdr->cdr->car)); */
   return lval_list2;
 }
 
@@ -44,7 +46,7 @@ Lval* first_fn(Lenv* env, Lval* arg_list) {
   LASSERT_TYPE("first", arg_list, 1, LVAL_COLLECTION, -1, arg)
   Lval* lval_list = arg;
   ITER_END
-  Lval* lval = list_first(lval_list->head);
+  Lval* lval = list_first(lval_list->data.head);
   ITER_END
   return lval ? lval : make_lval_nil();
 }
@@ -55,9 +57,10 @@ Lval* rest_fn(Lenv* env, Lval* arg_list) {
   Lval* lval_list = arg;
   ITER_END
   Lval* lval_list2 = make_lval_list();
-  lval_list2->head = list_rest(lval_list->head);
-  /* printf("lval_list2->head->hash %d \n", lval_list->head->hash); */
-  /* if (lval_list2->head) lval_list2->hash = lval_list2->head->hash; */
+  lval_list2->data.head = list_rest(lval_list->data.head);
+  /* printf("lval_list2->data.head->hash %d \n", lval_list->data.head->hash); */
+  /* if (lval_list2->data.head) lval_list2->hash = lval_list2->data.head->hash;
+   */
   return lval_list2;
 }
 
@@ -65,7 +68,7 @@ Lval* list_fn(Lenv* env, Lval* arg_list) {
   scoped_iter Cell* i = iter_new(arg_list);
   Lval* arg = iter_next(i);
   Lval* lval_list = make_lval_list();
-  Cell** lp = &(lval_list->head);
+  Cell** lp = &(lval_list->data.head);
   while (arg) {
     Cell* next_cell = make_cell();
     next_cell->car = arg;
@@ -87,13 +90,14 @@ Lval* concat_fn(Lenv* env, Lval* arg_list) {
 
   Lval* lval_list = NIL;
   lval_list = make_lval_list();
-  lval_list->head = list_concat(lval_list1->head, lval_list2->head);
+  lval_list->data.head =
+      list_concat(lval_list1->data.head, lval_list2->data.head);
   return lval_list;
 }
 
 Lval* foo_fn(Lenv* env, Lval* arg_list) {
   printf("in foo fn arg_list: %li\n", (long)arg_list);
-  Cell* head = arg_list->head;
+  Cell* head = arg_list->data.head;
   printf("head: %li\n", (long)head);
   while (head) {
     printf("head->car: %li\n", (long)head->car);
@@ -102,14 +106,14 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
     printf("type of arg: %s\n", lval_type_constant_to_name(arg->type));
     head = head->cdr;
 
-    Cell* h = arg->head;
+    Cell* h = arg->data.head;
     while (h) {
       printf("h->car: %li\n", (long)h->car);
       printf("h->cdr: %li\n", (long)h->cdr);
       h = h->cdr;
     }
   }
-  /* lval_println((Lval*)arg_list->head->car); */
+  /* lval_println((Lval*)arg_list->data.head->car); */
   /* printf("in foo fn nil: %li\n", (long)make_lval_nil()); */
   return make_lval_nil();
 }
@@ -120,7 +124,7 @@ Lval* count_fn(Lenv* env, Lval* arg_list) {
   if (arg->type == LVAL_LITERAL && arg->subtype == LNIL)
     return make_lval_num(0);
   LASSERT_TYPE("count", arg_list, 1, LVAL_COLLECTION, -1, arg)
-  int count = list_count(arg->head);
+  int count = list_count(arg->data.head);
   ITER_END
   return make_lval_num(count);
 }
@@ -155,13 +159,13 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   Lval* coll = arg;
   ITER_NEXT_TYPE(LVAL_LITERAL, NUMBER)
   long int index = arg->data.num;
-  Lval* nth_lval = list_nth(coll->head, arg->data.num);
+  Lval* nth_lval = list_nth(coll->data.head, arg->data.num);
   ITER_END
   if (!nth_lval) {
     return make_lval_err(
         "Index out of bounds for nth function for index %li, length of "
         "collection is %d",
-        index, list_count(coll->head));
+        index, list_count(coll->data.head));
   }
   return nth_lval;
 }

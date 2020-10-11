@@ -21,14 +21,15 @@ int is_lval_type(Lval* lval, int type, int subtype) {
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
-  if (is_lval_type(lval, LVAL_COLLECTION, LIST) && list_count(lval->head) > 0 &&
-      ((Lval*)(lval->head->car))->type == LVAL_SYMBOL) {
+  if (is_lval_type(lval, LVAL_COLLECTION, LIST) &&
+      list_count(lval->data.head) > 0 &&
+      ((Lval*)(lval->data.head->car))->type == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
-    scoped Lval* lval_fun = lenv_get_or_error(env, lval->head->car);
+    scoped Lval* lval_fun = lenv_get_or_error(env, lval->data.head->car);
     /* If it's a macro then eval it with the lval args */
     if (is_lval_type(lval_fun, LVAL_FUNCTION, MACRO)) {
       scoped Lval* arg_list = make_lval_list();
-      arg_list->head = retain(lval->head->cdr);
+      arg_list->data.head = retain(lval->data.head->cdr);
       /* Bind the macro with its args */
       Lval* bound_macro = expand_macro(lval_fun, arg_list);
       /* info("\nbound_macro *******************************************\n"); */
@@ -224,8 +225,8 @@ struct require_info {
 struct require_info parse_require_vector(Lval* vector) {
   struct require_info ret = {};
 
-  Cell* head = vector->head;
-  if (list_count(vector->head) > 5) {
+  Cell* head = vector->data.head;
+  if (list_count(vector->data.head) > 5) {
     ret.error = make_lval_err("Too many args passed to require (>5)");
     return ret;
   } else if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) {
@@ -334,7 +335,7 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
 
   // Add the referred symbols to the refer env of the current namespace
   if (info.refer) {
-    Cell* head = info.refer->head;
+    Cell* head = info.refer->data.head;
     while (head) {
       Lval* lval_sym = head->car;
       Lval* lval = lenv_get_or_error(required_ns->env, lval_sym);
@@ -380,7 +381,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
   int param_count = lval_fun->param_count;
   int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->head) - 1;
+      list_count(lval_fun->partials) + list_count(arg_list->data.head) - 1;
   if (!rest_arg_index && lval_fun->subtype != SYS &&
       arg_list_count > param_count)
     return make_lval_err("Too many args, expected not more than %i, got %i.",
@@ -397,7 +398,8 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   partial_fn->subtype = lval_fun->subtype;
   partial_fn->param_count = lval_fun->param_count;
   partial_fn->rest_arg_index = lval_fun->rest_arg_index;
-  partial_fn->partials = list_concat(lval_fun->partials, arg_list->head->cdr);
+  partial_fn->partials =
+      list_concat(lval_fun->partials, arg_list->data.head->cdr);
 
   // For compiler purposes so we know what the fn is that this partial is
   // derived from.
@@ -416,7 +418,7 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
         lval_fun->data.str);
   ITER_NEXT
   Lval* args = make_lval_list();
-  Cell** cdr = &args->head;
+  Cell** cdr = &args->data.head;
   Cell* head = iter_current_cell(i);
   while (head) {
     arg = head->car;
@@ -425,7 +427,7 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
         case LNIL:
           break;
         case LIST:;
-          head = arg->head;
+          head = arg->data.head;
           while (head) {
             arg = head->car;
             Cell* c = make_cell();

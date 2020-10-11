@@ -152,7 +152,6 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
 
 Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
                                 Cell* args, LocalIndices* li) {
-  printf("????\n");
   BinaryenModuleRef module = wasm->module;
   int param_count = lval_fn->param_count;
   int has_rest_arg = lval_fn->rest_arg_index;
@@ -193,10 +192,8 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // And grab and compile the args
   head = args;
   while (head) {
-    printf("????\n");
     lval_println(head->car);
     CResult result = lval_compile(wasm, head->car);
-    printf("result ????\n");
     Ber compiled_arg = result.ber;
     if (compiled_args_count < min_param_count) {
       // If the arg is not part of the rest arg we'll release it when we're done
@@ -426,10 +423,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   /* lval_println(lval_list); */
 
   // Empty list
-  if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
+  if (lval_list->data.head == NIL) return datafy_empty_list(wasm, lval_list);
 
-  Lval* lval_applicator = lval_list->head->car;
-  Cell* args = lval_list->head->cdr;
+  Lval* lval_applicator = lval_list->data.head->car;
+  Cell* args = lval_list->data.head->cdr;
   CResult fn_call = cnull();
 
   // Fn call > (symbol args ...)
@@ -484,7 +481,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             break;
           case MACRO:;
             Lval* arg_list = make_lval_list();
-            arg_list->head = retain(args);
+            arg_list->data.head = retain(args);
             Lval* bound_macro = expand_macro(resolved_sym, arg_list);
             release(arg_list);
             CResult result = lval_compile(wasm, bound_macro);

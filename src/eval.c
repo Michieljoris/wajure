@@ -22,7 +22,7 @@ Lval* map_eval(Lenv* env, Lval* lval_list) {
   Lval* new_list = make_lval_list();
   scoped_iter Cell* i = iter_new(lval_list);
   Lval* lval = iter_next(i);
-  Cell** lp = &(new_list->head);
+  Cell** lp = &(new_list->data.head);
   while (lval) {
     Lval* x = lval_eval(env, lval);
     if (x->type == LVAL_ERR) {
@@ -70,7 +70,7 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
   Lval* rest_args;
   if (args) {
     rest_args = make_lval_list();
-    rest_args->head = retain(args);
+    rest_args->data.head = retain(args);
   } else
     rest_args = make_lval_nil();
   return rest_args;
@@ -87,7 +87,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   int param_count = lval_fun->param_count;
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
   int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->head);
+      list_count(lval_fun->partials) + list_count(arg_list->data.head);
   if (arg_list_count < min_param_count)
     return make_lval_err("Not enough args passed, expected %d, got %d.",
                          min_param_count, arg_list_count);
@@ -100,7 +100,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   scoped_iter Cell* p = iter_new(lval_fun->params);
   Lval* param = iter_next(p);
 
-  scoped Cell* head = list_concat(lval_fun->partials, arg_list->head);
+  scoped Cell* head = list_concat(lval_fun->partials, arg_list->data.head);
 
   int i = 0;
   while (i < min_param_count) {
@@ -115,7 +115,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   if (rest_arg_index) {
     param = iter_next(p);
     scoped Lval* rest_arg = make_lval_list();
-    Cell** cdr = &rest_arg->head;
+    Cell** cdr = &rest_arg->data.head;
     while (head) {
       Lval* arg = head->car;
       Cell* c = make_cell();
@@ -124,7 +124,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
       cdr = &c->cdr;
       head = head->cdr;
     }
-    if (!rest_arg->head) {
+    if (!rest_arg->data.head) {
       rest_arg->type = LVAL_LITERAL;
       rest_arg->subtype = LNIL;
     }
@@ -244,10 +244,10 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
   /* printf("evalling fn call: \n"); */
   /* lval_println(lval_list); */
 
-  if (lval_list->head == NIL) {
+  if (lval_list->data.head == NIL) {
     return make_lval_list();  // empty;
   }
-  Lval* lval_first = lval_list->head->car;
+  Lval* lval_first = lval_list->data.head->car;
   scoped Lval* lval_fun = lval_eval(env, lval_first);
 
   if (lval_fun->type == LVAL_ERR) return retain(lval_fun);
@@ -260,7 +260,7 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
 
   Lval* ret = NIL;
   scoped Lval* arg_list = make_lval_list();
-  arg_list->head = list_rest(lval_list->head);
+  arg_list->data.head = list_rest(lval_list->data.head);
   scoped Lval* evalled_arg_list = NIL;
   switch (lval_fun->subtype) {
     case SYS:
@@ -271,9 +271,9 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
   }
   switch (lval_fun->subtype) {
     case SYS:;
-      Cell* head = list_concat(lval_fun->partials, evalled_arg_list->head);
+      Cell* head = list_concat(lval_fun->partials, evalled_arg_list->data.head);
       Lval* rest_arg = make_lval_list();
-      Cell** cdr = &rest_arg->head;
+      Cell** cdr = &rest_arg->data.head;
       while (head) {
         Lval* arg = head->car;
         Cell* c = make_cell();

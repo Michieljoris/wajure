@@ -37,32 +37,13 @@ void make_config(int argc, char** argv) {
   if (_strcmp(argv[1], "-c") == 0) {
     config->do_compile = 1;
     config->main = "main";
-    /* config->main = "test-compile.test2-eval"; */
-    /* config->main = "foo.core"; */
-    /* config->main = "foo.core2"; */
-    /* config->main = "bar.core"; */
   }
 }
 
 int main(int argc, char** argv) {
-  print_slot_size();
   init_malloc(1, 10, 64 * 1024);
   init_lispy_mempools(3200, 3200, 3200);
 
-  /* char* s = lalloc_size(100); */
-  /* sprintf(s, "hello there!!!!"); */
-  /* Lval* lval = make_lval_str(s); */
-  /* char* str = lalloc_size(MAX_CHAR_SIZE); */
-  /* int len = lval_snprint(str, MAX_CHAR_SIZE, lval); */
-  /* str = lrealloc(str, len + 1); */
-  /* printf("str: %s:, len : %d, %d\n", str, len, _strlen(str)); */
-  /* release(str); */
-  /* s = malloc(3); */
-  /* printf("%d\n", snprintf(s, 3, "abcdef")); */
-  /* printf("%d\n", str[0]); */
-  /* printf("%d\n", str[1]); */
-  /* printf("%d\n", str[2]); */
-  /* return 1; */
   config = malloc(sizeof(Config));
   make_config(argc, argv);
   state = malloc(sizeof(State));
@@ -70,14 +51,12 @@ int main(int argc, char** argv) {
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
       printf("COMPILING!!!\n");
-      /* compile(config->main); */
       compile_main();
     } else {
       printf("INTERPRETING!!!\n");
       run();
     }
   }
-  /* make_bmodule(); */
   printf("Back in main\n");
   free(state);
   free(config);

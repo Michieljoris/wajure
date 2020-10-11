@@ -61,4 +61,3 @@
 ;; ;; Testing vector evaluation
 (t (let [a 5 b 6] [3 4 a [b 7] 8])
    [3 4 5 [6 7] 8])
-

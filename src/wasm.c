@@ -15,16 +15,15 @@
 
 /* char* heap_base_str = read_file("__heap_base"); */
 
+// TODO: set fn_table_indices dynamically!!!!
 // Native fns take same args as call and bundle-args fns, ie wval,
 // args_block_ptr and args_count.
 NativeFn native_fns[] = {
-    {"rt_error_too_few_args", -1, 0, 0, 0, add_rt_error_too_few_args_fn, NULL},
-    {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
-     NULL},
-    {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
-    {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL},
-    {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
-    {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
+    {"rt_error_too_few_args", 42, add_rt_error_too_few_args_fn, NULL},
+    {"rt_error_too_many_args", 43, add_rt_error_too_many_args_fn, NULL},
+    {"copy_and_retain", 44, add_copy_and_retain_fn, NULL},
+    {"partial", 45, add_partial_fn, compile_partial_call},
+    {"apply", 46, add_apply_fn, compile_partial_call},
 };
 
 Wasm* init_wasm() {
@@ -61,9 +60,9 @@ Wasm* init_wasm() {
              .lval_offsets = malloc(100 * sizeof(int)),
              .lval_offsets_count = 0,
              .lval_offsets_allocated = 100,
-             .wval_fn_offsets = malloc(100 * sizeof(int)),
-             .wval_fn_offsets_count = 0,
-             .wval_fn_offsets_allocated = 100,
+             /* .wval_fn_offsets = malloc(100 * sizeof(int)), */
+             /* .wval_fn_offsets_count = 0, */
+             /* .wval_fn_offsets_allocated = 100, */
              .cell_offsets = malloc(100 * sizeof(int)),
              .cell_offsets_count = 0,
              .cell_offsets_allocated = 100,
@@ -191,20 +190,15 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "print_slot_size", 0, 0},
     // runtime
     {NULL, NULL, "wval_print", 1, 0},
-    {NULL, NULL, "make_lval_wasm_lambda", 7, 1},
+    {NULL, NULL, "make_lval_wasm_lambda", 5, 1},
     {NULL, NULL, "get_wval_type", 1, 1},
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
-    {NULL, NULL, "get_wval_param_count", 1, 1},
-    {NULL, NULL, "get_wval_min_param_count", 1, 1},
-    {NULL, NULL, "get_wval_has_rest_arg", 1, 1},
-    /* {NULL, NULL, "get_wval_rest_arg_index", 1, 1}, */
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
     {NULL, NULL, "get_wval_fn_call_relay_array", 1, 1},
     {NULL, NULL, "bundle_rest_args", 3, 0},
-    {NULL, NULL, "check_args_count", 3, 1},
     {NULL, NULL, "rewrite_pointers", 3, 0},
     {NULL, NULL, "new_cell", 2, 1},
     {NULL, NULL, "dbg", 1, 0},

@@ -41,13 +41,13 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
 
   printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str,
          native_fn->fn_table_index);
+  lval_println(lval_fn_native);
   int fn_table_index =
       0;  // not used since we're dispatching to our native fn by param_count
   int has_rest_arg = 0;  // also not used
-  Cell* partials = NULL;
-  int* data_lval = make_data_lval_wasm_lambda(
-      wasm, fn_table_index, native_fn->fn_table_index, has_rest_arg, partials);
-  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
+  char* data_lval = make_data_lval(wasm, NULL, fn_table_index,
+                                   native_fn->fn_table_index, has_rest_arg);
+  int lval_ptr = inter_data_lval(wasm, data_lval);
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;
@@ -90,9 +90,9 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
                       locals_count, body);
 
   fn_table_index = add_fn_to_table(wasm, fn_name);
-  int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + fn_table_index, 1, 1, NULL);
-  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
+  char* data_lval =
+      make_data_lval(wasm, NULL, wasm->__fn_table_end + fn_table_index, 1, 1);
+  int lval_ptr = inter_data_lval(wasm, data_lval);
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
   return ret;
@@ -101,9 +101,9 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
   int offset;
-  Cell* partials = NULL;
+  /* Cell* partials = NULL; */
   if (cfn) {
-    partials = lval_fn->partials;
+    /* partials = lval_fn->partials; */
     // Add the canonical fn for this partial if we haven't already
     if (cfn->offset == -1) {
       add_wasm_function(wasm, cfn->closure, cfn->cname, cfn);
@@ -116,11 +116,11 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
     offset = lval_fn->offset;
   }
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
-  int* data_lval = make_data_lval_wasm_lambda(
-      wasm, wasm->__fn_table_end + offset, lval_fn->param_count,
-      lval_fn->rest_arg_index, partials);
+  char* data_lval =
+      make_data_lval(wasm, lval_fn, wasm->__fn_table_end + offset,
+                     lval_fn->param_count, lval_fn->rest_arg_index);
 
-  int lval_ptr = inter_data_lval_wasm_lambda(wasm, data_lval);
+  int lval_ptr = inter_data_lval(wasm, data_lval);
 
   // And return a wasm pointer so that it can be attached to the lval for future
   // reference

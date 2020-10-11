@@ -1,6 +1,6 @@
 (in-ns 'main)
-;; (require '[test.run :refer [run-tests]])
-(require '[test.test-partial :refer [test-partial]])
+(require '[test.run :refer [run-tests]])
+;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
@@ -9,16 +9,43 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
+;; (def l (list 1 2 3))
+;; (def s "foo")
+;; (defn g [x & y] [x y])
 
-(defn g [x & y] [x y])
+;; (defn f [x y z] [x y z])
 (defn main [x y]
-  (test-partial)
+  (print "main")
   ;; (print "hello")
-  (print "again")
-  ;; (let [f (fn [x y z] [x y z])]
-  ;;   (print "HEllo")
-  ;;   (print (+ 1 2))
-  ;;   (print (f 1 2 3)))
+  (run-tests)
+
+  ;; (test-partial)
+  ;; (let [p partial
+  ;;       f (fn [x y z] [x y z])
+  ;;       fp (p f 1)]
+  ;;   (t (fp 2 3) [1 2 3]))
+  ;; (print l)
+  ;; (let [fp (partial f)]
+  ;;   (print f fp)
+  ;;   (print (fp 1 2 3))
+  ;;   (print "Done")
+  ;;   ;; (t (fp 1 2 3) [1 2 3])
+  ;;   ;; Partials of non fn is identity fn
+  ;;   ;; (t (partial 1) 1)
+  ;;   ;; (t (partial "abc") "abc")
+  ;;   )
+  ;; (print 1 l)
+  ;; (print "hello")
+  ;; (print "again")
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       fp (partial f 1)
+  ;;       p partial]
+  ;;   ;; (print "HEllo")
+  ;;   ;; (print (+ 1 2))
+  ;;   (print (f 1 2 3) l s)
+  ;;   (print (g 1 2 3))
+  ;;   (print (fp  2 3))
+  ;;   )
   ;; (let [f (fn [x y & z] [x y z])
   ;;       ;; g (fn [x y] [x  y])
   ;;       ;; h (fn [& x] [x])
@@ -90,7 +117,6 @@
   ;; (print (f  1 2 3))
   ;; (print (fpp   3))
   ;; (print (fp   3))
-  ;; (run-tests)
   ;; (print foo/f)
   ;; (foo/f 1 2 3)
   ;; (foo/f2 123)

@@ -25,18 +25,19 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
-Ber validate_as_fn(Wasm* wasm, Ber wval) {
-  BinaryenModuleRef module = wasm->module;
-  Ber wval_type = get_wval_prop(module, wval, "type");
-  Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(),
-                                       wval_type, make_int32(module, WVAL_FUN));
-  char* error_msg = "not a fn";
-  scoped char* str = lalloc_size(_strlen(error_msg));
-  sprintf(str, "%s", error_msg);
-  Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber;
-  Ber all_ok = BinaryenNop(module);
-  return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok);
-}
+/* Ber validate_as_fn(Wasm* wasm, Ber wval) { */
+/*   BinaryenModuleRef module = wasm->module; */
+/*   Ber wval_type = get_wval_prop(module, wval, "type"); */
+/*   Ber is_not_wval_fun = BinaryenBinary(wasm->module, BinaryenNeInt32(), */
+/*                                        wval_type, make_int32(module,
+ * WVAL_FUN)); */
+/*   char* error_msg = "not a fn"; */
+/*   scoped char* str = lalloc_size(_strlen(error_msg)); */
+/*   sprintf(str, "%s", error_msg); */
+/*   Ber not_a_fn_rt_error = wasm_runtime_error(wasm, RT_NOT_A_FN, str).ber; */
+/*   Ber all_ok = BinaryenNop(module); */
+/*   return BinaryenIf(module, is_not_wval_fun, not_a_fn_rt_error, all_ok); */
+/* } */
 
 void add_call_fn(Wasm* wasm, int n) {
   BinaryenModuleRef module = wasm->module;
@@ -51,11 +52,11 @@ void add_call_fn(Wasm* wasm, int n) {
   int body_children_count = 0;
   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ????
 
-  // Validate the fn as fn and number of args
-  if (wasm->validate_fn_at_rt) {
-    body_children[body_children_count++] =
-        validate_as_fn(wasm, local_get_int32(module, wval_param));
-  }
+  // Validate the fn as fn
+  /* if (wasm->validate_fn_at_rt) { */
+  /*   body_children[body_children_count++] = */
+  /*       validate_as_fn(wasm, local_get_int32(module, wval_param)); */
+  /* } */
 
   // Load args into operands of call to fn
   Ber closure_pointer =
@@ -110,8 +111,8 @@ void add_bundle_rest_arg_fn(Wasm* wasm, int n) {
   int body_children_count = 0;
   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ?????
 
-  // If there is a rest arg, bundle it into the last arg
-  Ber bundle_operands[] = {local_get_int32(module, wval_param),
+  // We know the rest arg index (n-1), let's bundle any excess args
+  Ber bundle_operands[] = {make_int32(module, n - 1),
                            local_get_int32(module, args_block_ptr_param),
                            local_get_int32(module, args_count_param)};
   body_children[body_children_count++] = BinaryenCall(
@@ -190,83 +191,6 @@ void add_rt_error_too_many_args_fn(Wasm* wasm) {
   BinaryenType fn_results_type = make_type_int32(1);
   BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
                       body);
-}
-
-// Wasm fn that receives ptr to wval_fn in local 0, and args count in local 1
-// and throws runtime error when args count is invalid for  the wval_fn
-Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) {
-  BinaryenModuleRef module = wasm->module;
-  /* Context* context = wasm->context->car; */
-  /* char* fn_name = context->function_context->fn_name; */
-  char* error_msg = "fn_name???";
-  scoped char* rt_error_msg = lalloc_size(_strlen(error_msg));
-  sprintf(rt_error_msg, "%s", error_msg);
-
-  // Put the param count of the wval_fn in local 2
-  Ber wval_param_count = get_wval_prop(module, wval, "param_count");
-  Ber param_count_tee =
-      BinaryenLocalTee(module, 2, wval_param_count, BinaryenTypeInt32());
-  Ber get_param_count = BinaryenLocalGet(module, 2, BinaryenTypeInt32());
-
-  // has_rest_arg
-  Ber has_rest_arg = get_wval_prop(module, wval, "has_rest_arg");
-  // min param_count
-  Ber min_param_count = get_wval_prop(module, wval, "min_param_count");
-
-  // Check if args count is less than min param count (so param count minus any
-  // rest param)
-  Ber args_count_lt_min_param_count =
-      BinaryenBinary(module, BinaryenLtUInt32(), args_count, min_param_count);
-  Ber all_ok = BinaryenNop(module);
-  Ber too_few_rt_error =
-      wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber;
-  Ber if_args_count_lt_min_param_count = BinaryenIf(
-      module, args_count_lt_min_param_count, too_few_rt_error, all_ok);
-
-  // Check if args count is less than param count (in case there's no rest
-  // param)
-  Ber args_count_lt_param_count =
-      BinaryenBinary(module, BinaryenLtUInt32(), args_count, get_param_count);
-  Ber if_args_count_lt_param_count = BinaryenIf(
-      module, args_count_lt_param_count,
-      wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber, all_ok);
-
-  // if args count > param count throw rt_error else check if less than param
-  // count
-  Ber args_count_gt_param_count =
-      BinaryenBinary(module, BinaryenGtUInt32(), args_count, param_count_tee);
-  Ber if_args_count_gt_param_count =
-      BinaryenIf(module, args_count_gt_param_count,
-                 wasm_runtime_error(wasm, RT_TOO_MANY_ARGS, rt_error_msg).ber,
-                 if_args_count_lt_param_count);
-  // Result is as this pseudo code:
-  /* if (has_rest_arg) { */
-  /*   if (args_count < min_param_count) rt_error */
-  /*   } else { */
-  /*   if (args_count > param_count) throw rt_error */
-  /*   else if (args_count < param_count) throw rt_error */
-  /* } */
-  Ber if_has_rest_arg =
-      BinaryenIf(module, has_rest_arg, if_args_count_lt_min_param_count,
-                 if_args_count_gt_param_count);
-
-  Ber ret = if_has_rest_arg;
-  return ret;
-}
-
-void add_validate_fn_fn(Wasm* wasm) {
-  BinaryenModuleRef module = wasm->module;
-
-  Ber children[] = {
-      validate_as_fn(wasm, BinaryenLocalGet(module, 0, BinaryenTypeInt32())),
-      validate_args_count(wasm,
-                          BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
-                          BinaryenLocalGet(module, 1, BinaryenTypeInt32()))};
-  Ber body = BinaryenBlock(module, NULL, children, 2, BinaryenTypeNone());
-
-  BinaryenType* local_types = make_type_int32_array(1);
-  BinaryenAddFunction(module, "validate_fn", make_type_int32(2),
-                      BinaryenTypeNone(), local_types, 1, body);
 }
 
 void add_copy_and_retain_fn(Wasm* wasm) {
@@ -438,25 +362,25 @@ void add_partial_fn(Wasm* wasm) {
           wasm,
           get_wval_prop(module, local_get_int32(module, wval_local), "closure"))
           .ber;
-  Ber wval_param_count =
-      get_wval_prop(module, local_get_int32(module, wval_local), "param_count");
-  Ber wval_has_rest_arg = get_wval_prop(
-      module, local_get_int32(module, wval_local), "has_rest_arg");
+  /* Ber wval_param_count = */
+  /*     get_wval_prop(module, local_get_int32(module, wval_local),
+   * "param_count"); */
+  /* Ber wval_has_rest_arg = get_wval_prop( */
+  /*     module, local_get_int32(module, wval_local), "has_rest_arg"); */
 
   Ber fn_call_relay_array_ptr = get_wval_prop(
       module, local_get_int32(module, wval_local), "fn_call_relay_array");
 
-  Ber operands[7] = {wval_fn_table_index,
-                     wval_param_count,
-                     wval_has_rest_arg,
-                     wval_closure,
-                     local_get_int32(module, partials_local),
+  Ber operands[5] = {wval_fn_table_index,
+                     /* wval_param_count, */
+                     /* wval_has_rest_arg, */
+                     wval_closure, local_get_int32(module, partials_local),
                      local_get_int32(module, total_partial_count_local),
                      fn_call_relay_array_ptr};
 
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 7, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
   Ber block = BinaryenBlock(module, NULL, children, children_count,
                             BinaryenTypeInt32());
@@ -482,3 +406,90 @@ void add_apply_fn(Wasm* wasm) {
   BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
                       body);
 }
+
+// Wasm fn that receives ptr to wval_fn in local 0, and args count in local 1
+// and throws runtime error when args count is invalid for  the wval_fn
+/* Ber validate_args_count(Wasm* wasm, Ber wval, Ber args_count) { */
+/*   BinaryenModuleRef module = wasm->module; */
+/*   /\* Context* context = wasm->context->car; *\/ */
+/*   /\* char* fn_name = context->function_context->fn_name; *\/ */
+/*   char* error_msg = "fn_name???"; */
+/*   scoped char* rt_error_msg = lalloc_size(_strlen(error_msg)); */
+/*   sprintf(rt_error_msg, "%s", error_msg); */
+
+/*   // Put the param count of the wval_fn in local 2 */
+/*   Ber wval_param_count = get_wval_prop(module, wval, "param_count"); */
+/*   Ber param_count_tee = */
+/*       BinaryenLocalTee(module, 2, wval_param_count, BinaryenTypeInt32()); */
+/*   Ber get_param_count = BinaryenLocalGet(module, 2, BinaryenTypeInt32()); */
+
+/*   // has_rest_arg */
+/*   Ber has_rest_arg = get_wval_prop(module, wval, "has_rest_arg"); */
+/*   // min param_count */
+/*   Ber min_param_count = get_wval_prop(module, wval, "min_param_count"); */
+
+/*   // Check if args count is less than min param count (so param count minus
+ * any */
+/*   // rest param) */
+/*   Ber args_count_lt_min_param_count = */
+/*       BinaryenBinary(module, BinaryenLtUInt32(), args_count,
+ * min_param_count); */
+/*   Ber all_ok = BinaryenNop(module); */
+/*   Ber too_few_rt_error = */
+/*       wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber; */
+/*   Ber if_args_count_lt_min_param_count = BinaryenIf( */
+/*       module, args_count_lt_min_param_count, too_few_rt_error, all_ok); */
+
+/*   // Check if args count is less than param count (in case there's no rest */
+/*   // param) */
+/*   Ber args_count_lt_param_count = */
+/*       BinaryenBinary(module, BinaryenLtUInt32(), args_count,
+ * get_param_count); */
+/*   Ber if_args_count_lt_param_count = BinaryenIf( */
+/*       module, args_count_lt_param_count, */
+/*       wasm_runtime_error(wasm, RT_TOO_FEW_ARGS, rt_error_msg).ber, all_ok);
+ */
+
+/*   // if args count > param count throw rt_error else check if less than param
+ */
+/*   // count */
+/*   Ber args_count_gt_param_count = */
+/*       BinaryenBinary(module, BinaryenGtUInt32(), args_count,
+ * param_count_tee); */
+/*   Ber if_args_count_gt_param_count = */
+/*       BinaryenIf(module, args_count_gt_param_count, */
+/*                  wasm_runtime_error(wasm, RT_TOO_MANY_ARGS,
+ * rt_error_msg).ber, */
+/*                  if_args_count_lt_param_count); */
+/*   // Result is as this pseudo code: */
+/*   /\* if (has_rest_arg) { *\/ */
+/*   /\*   if (args_count < min_param_count) rt_error *\/ */
+/*   /\*   } else { *\/ */
+/*   /\*   if (args_count > param_count) throw rt_error *\/ */
+/*   /\*   else if (args_count < param_count) throw rt_error *\/ */
+/*   /\* } *\/ */
+/*   Ber if_has_rest_arg = */
+/*       BinaryenIf(module, has_rest_arg, if_args_count_lt_min_param_count, */
+/*                  if_args_count_gt_param_count); */
+
+/*   Ber ret = if_has_rest_arg; */
+/*   return ret; */
+/* } */
+
+/* void add_validate_fn_fn(Wasm* wasm) { */
+/*   BinaryenModuleRef module = wasm->module; */
+
+/*   Ber children[] = { */
+/*       validate_as_fn(wasm, BinaryenLocalGet(module, 0, BinaryenTypeInt32())),
+ */
+/*       validate_args_count(wasm, */
+/*                           BinaryenLocalGet(module, 0, BinaryenTypeInt32()),
+ */
+/*                           BinaryenLocalGet(module, 1, BinaryenTypeInt32()))};
+ */
+/*   Ber body = BinaryenBlock(module, NULL, children, 2, BinaryenTypeNone()); */
+
+/*   BinaryenType* local_types = make_type_int32_array(1); */
+/*   BinaryenAddFunction(module, "validate_fn", make_type_int32(2), */
+/*                       BinaryenTypeNone(), local_types, 1, body); */
+/* } */
