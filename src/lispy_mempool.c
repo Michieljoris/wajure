@@ -96,13 +96,14 @@ void destroy_lval(void* data) {
       /* printf("head rc %d\n", get_ref_count(lval->head)); */
       /* printf("head-car rc %d\n", get_ref_count(lval->head->car)); */
       /* printf("head-cdr rc %d\n", get_ref_count(lval->head->cdr)); */
-      release(lval->head);
+      release(lval->data.head);
       break;
     case LVAL_LITERAL:
       switch (lval->subtype) {
         case NUMBER:
           break;
         case KEYWORD:
+        case REGEX:
         case STRING:
           release(lval->data.str);
           break;
@@ -116,7 +117,6 @@ void destroy_lval(void* data) {
       break;
     case LVAL_FUNCTION:
       if (lval->subtype == SYS || lval->subtype == SPECIAL) {
-        /* free(lval->func_name); */
         release(lval->data.str);
       } else {
 #ifdef WASM

@@ -172,7 +172,6 @@ void print_slot_size() {
   printf("lval size: %li, type %li\n", sizeof(Lval), offsetof(Lval, type));
   printf("lval size: %li, subtype %li\n", sizeof(Lval),
          offsetof(Lval, subtype));
-  printf("lval size: %li, head %li\n", sizeof(Lval), offsetof(Lval, head));
   printf("lval size: %li, data %li\n", sizeof(Lval), offsetof(Lval, data));
   printf("lval size: %li, hash %li\n", sizeof(Lval), offsetof(Lval, hash));
   /* printf("lval size: %li, %li\n", sizeof(Lval), offsetof(Lval, fun)); */

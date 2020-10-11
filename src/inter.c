@@ -24,15 +24,14 @@
 // Lval offsets
 #define type_offset slot_type_size + 0     // char
 #define subtype_offset slot_type_size + 1  // char
-#define head_offset slot_type_size + 4     // int (aligned)
-#define d_offset slot_type_size + 8        // int
-#define hash_offset slot_type_size + 12    // int
+#define d_offset slot_type_size + 4        // int
+#define hash_offset slot_type_size + 8     // int
 
-#define fn_table_index_offset slot_type_size + 16  // short
-#define partial_count_offset slot_type_size + 18   // short
-#define closure_offset slot_type_size + 20         // int
-#define partials_offset slot_type_size + 24        // int
-#define fn_call_relay_offset slot_type_size + 28   // int
+#define fn_table_index_offset slot_type_size + 12  // short
+#define partial_count_offset slot_type_size + 14   // short
+#define closure_offset slot_type_size + 16         // int
+#define partials_offset slot_type_size + 20        // int
+#define fn_call_relay_offset slot_type_size + 24   // int
 #define lval_type_size fn_call_relay_offset + 4
 /* #define str_offset 4  // 20 */
 
@@ -93,7 +92,7 @@ int inter_lval(Wasm* wasm, Lval* lval) {
 }
 
 int inter_list(Wasm* wasm, Lval* lval) {
-  Cell* head = lval->head;
+  Cell* head = lval->data.head;
   int count = list_count(head);
   char* data_cells[count];
   int i = 0;
@@ -114,7 +113,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   }
   char* data_list = make_data_lval(wasm, lval, 0, 0, 0);
 
-  *(int*)(data_list + head_offset) = cdr;
+  *(int*)(data_list + d_offset) = cdr;
   printf("cdr: %d\n", cdr);
   int ret = inter_data_lval(wasm, data_list);
   return ret;
@@ -146,20 +145,20 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
 
   *(int*)(p + ref_count_offset) = 1;
 
-  int string_offset = 0;
   if (lval) {
     *(char*)(p + type_offset) = lval->type;
     *(char*)(p + subtype_offset) = lval->subtype;
 
-    if (lval->subtype != NUMBER && lval->data.str)
-      string_offset = add_string_to_data(wasm, lval->data.str);
-
     if (lval->subtype == NUMBER)
       *(int*)(p + d_offset) = lval->data.num;
-    else {
-      if (lval->data.str)
-        *(int*)(p + d_offset) = wasm->__data_end + string_offset;
+    else if (lval->type == LVAL_COLLECTION)
+      *(Cell**)(p + d_offset) = lval->data.head;
+    else if (lval->data.str) {
+      // string, symbol, keyword, fn_name or regex
+      int string_offset = add_string_to_data(wasm, lval->data.str);
+      *(int*)(p + d_offset) = wasm->__data_end + string_offset;
     }
+
     *(int*)(p + hash_offset) = lval->hash;
   } else {
     *(char*)(p + type_offset) = LVAL_FUNCTION;

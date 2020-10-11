@@ -23,8 +23,6 @@ void bundle_rest_args(int rest_arg_index, Lval** args, int args_count);
 
 void wval_print(Lval* wval);
 
-int check_args_count(int param_count, int args_count, int has_rest_arg);
-
 void rewrite_pointers(int data_start, int data_size, int fn_table_offset);
 
 void dbg(Lval* lval);

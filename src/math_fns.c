@@ -104,11 +104,11 @@ int lval_eq(Lval* x, Lval* y) {
     case LVAL_SYMBOL:
       return (_strcmp(x->data.str, y->data.str) == 0);
     case LVAL_COLLECTION:
-      if (list_count(x->head) != list_count(y->head)) {
+      if (list_count(x->data.head) != list_count(y->data.head)) {
         return 0;
       }
-      Cell* xl = x->head;
-      Cell* yl = y->head;
+      Cell* xl = x->data.head;
+      Cell* yl = y->data.head;
       while (xl) {
         if (!lval_eq(xl->car, yl->car)) {
           return 0;

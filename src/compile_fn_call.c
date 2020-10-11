@@ -423,10 +423,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   /* lval_println(lval_list); */
 
   // Empty list
-  if (lval_list->head == NIL) return datafy_empty_list(wasm, lval_list);
+  if (lval_list->data.head == NIL) return datafy_empty_list(wasm, lval_list);
 
-  Lval* lval_applicator = lval_list->head->car;
-  Cell* args = lval_list->head->cdr;
+  Lval* lval_applicator = lval_list->data.head->car;
+  Cell* args = lval_list->data.head->cdr;
   CResult fn_call = cnull();
 
   // Fn call > (symbol args ...)
@@ -481,7 +481,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             break;
           case MACRO:;
             Lval* arg_list = make_lval_list();
-            arg_list->head = retain(args);
+            arg_list->data.head = retain(args);
             Lval* bound_macro = expand_macro(resolved_sym, arg_list);
             release(arg_list);
             CResult result = lval_compile(wasm, bound_macro);

@@ -23,8 +23,8 @@ Lval* make_lval_wasm_lambda(int fn_table_index,
 #ifdef WASM
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){
-      .type = WVAL_FUN,
-      .subtype = -1,
+      .type = LVAL_FUNCTION,
+      .subtype = LAMBDA,
       .fn_table_index = fn_table_index,
       .closure = closure,
       .partials = partials,
@@ -46,14 +46,17 @@ void dbg(Lval* lval) {
 
   printf("releasing:\n");
   printf("lval_list: %d\n", get_ref_count(lval));
-  printf("lval_list->head: %d\n", get_ref_count(lval->head));
-  printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car));
-  printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr));
-  printf("lval_list->head->cdr-car: %d\n", get_ref_count(lval->head->cdr->car));
-  printf("lval_list->head->cdr->cdr: %d\n",
-         get_ref_count(lval->head->cdr->cdr));
-  printf("lval_list->head->cdr-->cdr->car: %d\n",
-         get_ref_count(lval->head->cdr->cdr->car));
+  printf("lval_list->data.head: %d\n", get_ref_count(lval->data.head));
+  printf("lval_list->data.head->car: %d\n",
+         get_ref_count(lval->data.head->car));
+  printf("lval_list->data.head->cdr: %d\n",
+         get_ref_count(lval->data.head->cdr));
+  printf("lval_list->data.head->cdr-car: %d\n",
+         get_ref_count(lval->data.head->cdr->car));
+  printf("lval_list->data.head->cdr->cdr: %d\n",
+         get_ref_count(lval->data.head->cdr->cdr));
+  printf("lval_list->data.head->cdr-->cdr->car: %d\n",
+         get_ref_count(lval->data.head->cdr->cdr->car));
 }
 
 #ifdef WASM
@@ -87,7 +90,7 @@ void bundle_rest_args(int rest_arg_index, Lval** args, int args_count) {
   Cell* head = NULL;
   int i = args_count - 1;
   while (i >= rest_arg_index) head = list_cons(args[i--], head);
-  lval_list->head = head;
+  lval_list->data.head = head;
   args[rest_arg_index] = lval_list;
 }
 
@@ -101,7 +104,7 @@ void wval_print(Lval* lval) {
   printf("subtype: %d %s %lu\n", lval->subtype,
          lval_type_constant_to_name(lval->subtype), offsetof(Lval, subtype));
 
-  printf("head: %d \n", lval->head);
+  printf("head: %d \n", lval->data.head);
   printf("fn_table_index: %d %lu\n", lval->fn_table_index,
          offsetof(Lval, fn_table_index));
   printf("partial_count: %d %lu\n", lval->partial_count,
@@ -120,25 +123,9 @@ void wval_print(Lval* lval) {
 #endif
 }
 
-int check_args_count(int param_count, int args_count, int has_rest_arg) {
-  if (has_rest_arg != 1) {
-    if (!has_rest_arg) {
-      if (args_count < param_count) return TOO_FEW_ARGS;
-      if (args_count > param_count) return TOO_MANY_ARGS;
-    } else {
-      if (args_count < param_count - 1) return TOO_FEW_ARGS;
-    }
-  }
-  return ARGS_MATCH_PARAMS;
-}
-
 Slot* get_slot_pointer(int* ptr, int i, int data_offset) {
   return (Slot*)(long)(ptr[i] + data_offset);
 }
-
-/* Slot* slot_ptr = (Slot*)(long)(((int*)lval_offsets_ptr)[i] +
- * data_offset); */
-/* (Lval*)(long)(lval_offsets_ptr[i] + data_offset + sizeof(Slot)); */
 
 void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   /* printf("data_start: %il\n", data_start); */
@@ -166,10 +153,12 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
     /* wval_print(lval_ptr); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
 
-    if (lval_ptr->subtype != NUMBER && lval_ptr->data.str)
+    if (lval_ptr->subtype != NUMBER &&
+        lval_ptr->data.str)  // this also adds offset to data.head, as it should
       lval_ptr->data.str += data_offset;
-    if (lval_ptr->head)
-      lval_ptr->head = (Cell*)((char*)lval_ptr->head + data_offset);
+      /* if (lval_ptr->data.head) */
+      /*   lval_ptr->data.head = (Cell*)((char*)lval_ptr->data.head +
+       * data_offset); */
 
 #ifdef WASM
     lval_ptr->fn_table_index += fn_table_offset;
@@ -269,3 +258,15 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
 /* } */
 
 /* Lval** get_wval_closure(WvalFun* wval) { return wval->closure; } */
+
+/* int check_args_count(int param_count, int args_count, int has_rest_arg) { */
+/*   if (has_rest_arg != 1) { */
+/*     if (!has_rest_arg) { */
+/*       if (args_count < param_count) return TOO_FEW_ARGS; */
+/*       if (args_count > param_count) return TOO_MANY_ARGS; */
+/*     } else { */
+/*       if (args_count < param_count - 1) return TOO_FEW_ARGS; */
+/*     } */
+/*   } */
+/*   return ARGS_MATCH_PARAMS; */
+/* } */

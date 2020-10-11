@@ -26,7 +26,7 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
     quit(wasm, "Error: Expected vector as first arg to let, got %s ",
          lval_type_to_name(bindings));
 
-  int bindings_count = list_count(bindings->head);
+  int bindings_count = list_count(bindings->data.head);
   if (bindings_count % 2 != 0)
     quit(wasm, "Error: Binding vector for let has odd number of forms");
 

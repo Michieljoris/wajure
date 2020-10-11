@@ -9,14 +9,13 @@
 ;;            ])
 ;; (require '[bar.core :as bar :refer [bar]])
 
-
-;; (def l (list 1 2 3))
+(def l (list 1 2 3))
 ;; (def s "foo")
 ;; (defn g [x & y] [x y])
 
 (defn f [x y z] [x y z])
 (defn main [x y]
-
+  (print l)
   (let [fp (partial f)]
     (print f fp)
     (print (fp 1 2 3))

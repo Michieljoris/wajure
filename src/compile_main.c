@@ -98,7 +98,7 @@ void reset_lval(Lval* lval) {
       switch (lval->subtype) {
         case LIST:
         case VECTOR:;
-          Cell* cell = lval->head;
+          Cell* cell = lval->data.head;
           while (cell) {
             lval = (Lval*)cell->car;
             reset_lval(lval);

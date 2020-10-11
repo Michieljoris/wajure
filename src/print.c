@@ -94,7 +94,7 @@ int lval_collection_print(void (*out)(char character, void* arg), void* arg,
     out(open, arg);
     ret++;
   }
-  Cell* cell = lval->head;
+  Cell* cell = lval->data.head;
   while (cell) {
     ret += _lval_print(out, arg, cell->car);
     cell = cell->cdr;

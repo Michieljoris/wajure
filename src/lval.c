@@ -102,7 +102,7 @@ Lval* make_lval_list(void) {
 
 Lval* new_lval_list(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST, .head = head};
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST, .data.head = head};
   /* printf("arg list to cons (new_lval_list):\n"); */
   /* printf("lval_list: %d\n", get_ref_count(lval)); */
   /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
@@ -116,7 +116,7 @@ Lval* new_lval_list(void* head) {
 
 Lval* new_lval_vector(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, .head = head};
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, .data.head = head};
   lval->hash = lval_hash(lval);
   return lval;
 }

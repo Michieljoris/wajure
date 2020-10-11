@@ -112,7 +112,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
   Lval* lval_params = arg;
 
-  Cell* param = lval_params->head;
+  Cell* param = lval_params->data.head;
 
   // Includes any rest arg, so [a & b] has param_count = 2
   int param_count = 0;
@@ -157,7 +157,7 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   // Creates lambda lval and sets the parent_env of its env field (bindings)
   // to the passed in env
   Lval* lval_body = make_lval_list();
-  lval_body->head = list_rest(arg_list->head);
+  lval_body->data.head = list_rest(arg_list->data.head);
   Lenv* closure_env = lenv_new();
   /* closure_env->parent_env = retain(env); */
   closure_env->parent_env = retain(env->parent_env);
@@ -184,21 +184,21 @@ Lval* eval_macro(Lenv* env, Lval* arg_list) {
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-      list_count(lval->head) >= min_node_count) {
-    lval = lval->head->car;
+      list_count(lval->data.head) >= min_node_count) {
+    lval = lval->data.head->car;
     return lval->type == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
   }
   return 0;
 }
 
 Lval* eval_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "unquote");
-  return lval_eval(env, lval->head->cdr->car);
+  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "unquote");
+  return lval_eval(env, lval->data.head->cdr->car);
 }
 
 Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->head->cdr, 1, "splice-unquote");
-  Lval* ret = lval_eval(env, lval->head->cdr->car);
+  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "splice-unquote");
+  Lval* ret = lval_eval(env, lval->data.head->cdr->car);
   if (ret->type == LVAL_ERR) return ret;
   if (ret->subtype == LNIL) return ret;
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
@@ -212,7 +212,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
   /* a place to store processed cells */
   Lval* evalled_list = make_lval_list();
   Cell** lp;
-  lp = &evalled_list->head;
+  lp = &evalled_list->data.head;
   Cell* new_cell;
   while (arg) {
     /* Take the first of the remaining nodes*/
@@ -238,9 +238,9 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
         return splice_unquoted_eval;
       }
       /* And concat to processed nodes */
-      *lp = retain(splice_unquoted_eval->head);
+      *lp = retain(splice_unquoted_eval->data.head);
       release(splice_unquoted_eval);
-      Cell* last_cell = list_last(splice_unquoted_eval->head);
+      Cell* last_cell = list_last(splice_unquoted_eval->data.head);
       release(last_cell);  //???????
       lp = &(last_cell->cdr);
     } else {
@@ -289,7 +289,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
                   "Trying to splice unquote a %s. Can only use splice "
                   "unquote in a "
                   "quasiquoted list",
-                  lval_type_to_name(qq_arg->head->cdr->car));
+                  lval_type_to_name(qq_arg->data.head->cdr->car));
           ret = eval_quasiquote_nodes(env, qq_arg);
           break;
         case VECTOR:
@@ -328,13 +328,14 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           debug("from EXPR, found catch\n");
           mode = CATCH;
           if (ret->type == LVAL_ERR) {
-            if (list_count(node->head) < 4) {
+            if (list_count(node->data.head) < 4) {
               release(ret);
               return make_lval_err(
                   "catch clause should have at least an exception type and "
                   "binding to it");
             }
-            Lval* lval_sym = list_nth(node->head, 2); /* sym to bind msg to */
+            Lval* lval_sym =
+                list_nth(node->data.head, 2); /* sym to bind msg to */
 
             if (lval_sym->type != LVAL_SYMBOL) {
               release(lval_sym);
@@ -352,7 +353,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             release(lval_sym);
             release(lval_str);
             Lval* catch_body = make_lval_list();  // 86
-            catch_body->head = retain(node->head->cdr->cdr->cdr);
+            catch_body->data.head = retain(node->data.head->cdr->cdr->cdr);
 
             release(ret);
             ret = do_list(catch_env, catch_body, RETURN_ON_ERROR);
@@ -369,7 +370,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           ddebug("from EXPR, found finally\n");
           mode = FINALLY;
           Lval* body = make_lval_list();
-          body->head = list_rest(node->head);
+          body->data.head = list_rest(node->data.head);
           Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
           release(body);
           if (finally_ret->type == LVAL_ERR) {
@@ -403,7 +404,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           ddebug("from CATCH, found finally\n");
           mode = FINALLY;
           scoped Lval* body = make_lval_list();
-          body->head = list_rest(node->head);
+          body->data.head = list_rest(node->data.head);
           Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
 
           if (finally_ret->type == LVAL_ERR) {
@@ -436,12 +437,12 @@ Lval* eval_do(Lenv* env, Lval* body) {
 Lval* eval_let(Lenv* env, Lval* arg_list) {
   ddebug("ENV IN LET:");
   /* lenv_print(env); */
-  LASSERT(arg_list, list_count(arg_list->head) >= 1,
+  LASSERT(arg_list, list_count(arg_list->data.head) >= 1,
           "Error: let needs at least binding vector")
   scoped_iter Cell* a = iter_new(arg_list);
   Lval* bindings = iter_next(a);
   LASSERT_TYPE("let", arg_list, 0, LVAL_COLLECTION, VECTOR, bindings);
-  LASSERT(arg_list, list_count(bindings->head) % 2 == 0,
+  LASSERT(arg_list, list_count(bindings->data.head) % 2 == 0,
           "Binding vector for let has odd number of forms");
 
   Lenv* let_env = lenv_new();
@@ -473,7 +474,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
   }
 
   scoped Lval* body = make_lval_list();
-  body->head = retain(iter_cell(a));
+  body->data.head = retain(iter_cell(a));
   Lval* ret = do_list(let_env, body, RETURN_ON_ERROR);
   release(let_env);
   return ret;

@@ -289,12 +289,12 @@ Lval* lval_read_list(char* s, int* i, char end) {
       x = make_lval_list();
   }
   lval_err = NULL;
-  x->head = read_cell(s, i, end);
+  x->data.head = read_cell(s, i, end);
   if (lval_err) {
     release(x);
     return lval_err;
   }
-  x->hash = x->head ? x->head->hash : x->hash;
+  x->hash = x->data.head ? x->data.head->hash : x->hash;
   /* Move past end character */
   (*i)++;
   return x;
@@ -314,7 +314,7 @@ Lval* lval_read_list(char* s, int* i, char end) {
 /*       x = make_lval_list(); */
 /*   } */
 /*   Cell** lp; */
-/*   lp = &x->head; */
+/*   lp = &x->data.head; */
 
 /*   /\* While not at end character keep reading lvals *\/ */
 /*   while (s[*i] != end) { */
@@ -354,7 +354,7 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   if (next_expression->type == LVAL_ERR) return next_expression;
   Lval* lval = make_lval_list();
   Cell* cell = make_cell();
-  lval->head = cell;
+  lval->data.head = cell;
   cell->car = make_lval_sym(lsym);
   release(lsym);
   cell->cdr = make_cell();
