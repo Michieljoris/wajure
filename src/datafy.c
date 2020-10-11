@@ -39,9 +39,9 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
     quit(wasm, "Native function %s not found in runtime",
          lval_fn_native->data.str);
 
-  printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str,
-         native_fn->fn_table_index);
-  lval_println(lval_fn_native);
+  /* printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str, */
+  /*        native_fn->fn_table_index); */
+  /* lval_println(lval_fn_native); */
   int fn_table_index =
       0;  // not used since we're dispatching to our native fn by param_count
   int has_rest_arg = 0;  // also not used

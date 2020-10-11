@@ -114,7 +114,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   char* data_list = make_data_lval(wasm, lval, 0, 0, 0);
 
   *(int*)(data_list + d_offset) = cdr;
-  printf("cdr: %d\n", cdr);
+  /* printf("cdr: %d\n", cdr); */
   int ret = inter_data_lval(wasm, data_list);
   return ret;
 }
@@ -131,13 +131,13 @@ int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
 
 char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
                      int param_count, int has_rest_arg) {
-  int type = lval ? lval->type : LVAL_FUNCTION;
-  printf(
-      "make_data_lval type: %s, fn_table_index: %d param_count: "
-      "%d "
-      "has_rest_arg: %d\n",
-      lval_type_constant_to_name(type), fn_table_index, param_count,
-      has_rest_arg);
+  /* int type = lval ? lval->type : LVAL_FUNCTION; */
+  /* printf( */
+  /*     "make_data_lval type: %s, fn_table_index: %d param_count: " */
+  /*     "%d " */
+  /*     "has_rest_arg: %d\n", */
+  /*     lval_type_constant_to_name(type), fn_table_index, param_count, */
+  /*     has_rest_arg); */
   char* data_lval = calloc(1, lval_type_size);
   long p = (long)data_lval;
   /* int string_offset = 0; */

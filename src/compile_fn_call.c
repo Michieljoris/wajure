@@ -192,7 +192,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   // And grab and compile the args
   head = args;
   while (head) {
-    lval_println(head->car);
+    /* lval_println(head->car); */
     CResult result = lval_compile(wasm, head->car);
     Ber compiled_arg = result.ber;
     if (compiled_args_count < min_param_count) {
@@ -260,7 +260,7 @@ Ber* compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
 
 Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fn, Cell* args,
                     LocalIndices* li) {
-  printf("call_fn_by_name %s\n", fn_name);
+  /* printf("call_fn_by_name %s\n", fn_name); */
   Ber* call_operands =
       compile_args_into_operands(wasm, fn_name, lval_fn, args, li);
   int param_count = 1 + lval_fn->param_count;  // closure_ptr + args
@@ -272,7 +272,7 @@ Ber call_fn_by_name(Wasm* wasm, char* fn_name, Lval* lval_fn, Cell* args,
 
 Ber call_indirect(Wasm* wasm, Ber fn_table_index, Lval* lval_fun, Cell* args,
                   LocalIndices* li) {
-  printf("call_indirect (external or partial fn or both)\n");
+  /* printf("call_indirect (external or partial fn or both)\n"); */
   Ber* call_operands =
       compile_args_into_operands(wasm, lval_fun->cname, lval_fun, args, li);
   int param_count = 1 + lval_fun->param_count;  // closure_ptr + args

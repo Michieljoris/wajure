@@ -14,9 +14,10 @@ Lval* make_lval_wasm_lambda(int fn_table_index,
                             /* int has_rest_arg, */
                             int closure, int partials, int partial_count,
                             int fn_call_relay_array) {
-  printf(
-      "fn_table_index %d, closure: %d, partials %d, fn_call_relay_array %d\n",
-      fn_table_index, closure, partials, fn_call_relay_array);
+  /* printf( */
+  /*     "fn_table_index %d, closure: %d, partials %d, fn_call_relay_array
+   * %d\n", */
+  /*     fn_table_index, closure, partials, fn_call_relay_array); */
 /* printf("*closure: %li\n", *(long*)closure); */
 /* Lval* lval = (Lval*)*(long*)closure; */
 /* lval_println(lval); */

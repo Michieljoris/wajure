@@ -3,5 +3,7 @@
 out/lispy -c clj/compile.clj;
 ## get status ##
 status=$?
+echo "NODE VERSION:"
+node -v
 ## take some decision ##
 [ $status -eq 0 ] && ~/bin/node nodejs.js  || echo "Compilation failed"

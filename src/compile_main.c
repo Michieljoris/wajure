@@ -82,7 +82,7 @@ int walk_namespaces(void f(Namespace*)) {
 }
 
 void p_info(Namespace* ns) {
-  printf("%d %s: ", ns->compile, ns->namespace);
+  /* printf("%d %s: ", ns->compile, ns->namespace); */
   print_alist(ns->dependants);
   if (list_count(ns->dependants) == 0) printf("\n");
 }
@@ -124,7 +124,7 @@ void reset_lval(Lval* lval) {
 
 void maybe_compile(Namespace* ns) {
   /* ns->compile = 1; */
-  if (ns->compile) {
+  if (1 || ns->compile) {
     compile(ns);
     /* printf("maybe compile\n"); */
     // Reset any values set on lvals.

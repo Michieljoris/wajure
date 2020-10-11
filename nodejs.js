@@ -171,7 +171,7 @@ async function instantiate_runtime(env) {
                     // throw "Error: can't allocate memory beyond max\n";
                     return 0;
                 }
-                // console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
+                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
                 memory = runtime.exports.memory.grow(1);
                 return 1;
             },
@@ -357,7 +357,7 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        console.log(util.inspect(env.modules, null, Infinity, true));
+        // console.log(util.inspect(env.modules, null, Infinity, true));
 
         const main_module = env.modules[env.config.main];
 

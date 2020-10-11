@@ -1234,7 +1234,7 @@
   (i32.const 0)
  )
  (func $copy_and_retain (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (loop $copy_and_retain_1 (result i32)
+  (loop $copy_and_retain_3701 (result i32)
    (if (result i32)
     (local.get $1)
     (block
@@ -1264,7 +1264,7 @@
        (i32.const 4)
       )
      )
-     (br $copy_and_retain_1)
+     (br $copy_and_retain_3701)
     )
     (local.get $2)
    )
@@ -1347,9 +1347,9 @@
   (local $5 i32)
   (local $6 i32)
   (local $7 i32)
-  (block $do_6 (result i32)
+  (block $do_3706 (result i32)
    (local.set $5
-    (block $sys_call_2 (result i32)
+    (block $sys_call_3702 (result i32)
      (local.set $4
       (call $print_fn
        (i32.const 0)
@@ -1374,9 +1374,9 @@
      (local.get $4)
     )
    )
-   (block $do_body_result_5 (result i32)
+   (block $do_body_result_3705 (result i32)
     (local.set $7
-     (block $lambda_call_3 (result i32)
+     (block $lambda_call_3703 (result i32)
       (local.set $6
        (call_indirect (type $i32_=>_i32)
         (i32.const 0)
@@ -1386,7 +1386,7 @@
       (local.get $6)
      )
     )
-    (block $release_locals_for_do_4
+    (block $release_locals_for_do_3704
      (call $release
       (local.get $5)
      )

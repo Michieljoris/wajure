@@ -290,8 +290,8 @@ void add_native_fns(Wasm* wasm) {
     native_fns[i].add_fn(wasm);
     native_fns[i].fn_table_index =
         add_fn_to_table(wasm, native_fns[i].wajure_fn_name);
-    printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name,
-           native_fns[i].fn_table_index);
+    /* printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name, */
+    /*        native_fns[i].fn_table_index); */
   }
 }
 

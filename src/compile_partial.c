@@ -223,7 +223,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
 }
 
 CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
-  printf("COMPILE_PARTIAL_CALL\n");
+  /* printf("COMPILE_PARTIAL_CALL\n"); */
   BinaryenModuleRef module = wasm->module;
   int args_count = list_count(args);
   if (args_count == 0) quit(wasm, "Need at last one argument for partial");
@@ -237,11 +237,9 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   }
 
   if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
-    printf("COMPILE_PARTIAL_CALL 2\n");
     /* return test_native_partial_fn(wasm, fn_arg, head, list_count(args)); */
     return compile_rt_partial_call(wasm, fn_arg, head, list_count(args));
   }
-  printf("COMPILE_PARTIAL_CALL 3\n");
 
   switch (fn_arg.lval->type) {
     case LVAL_FUNCTION: {
