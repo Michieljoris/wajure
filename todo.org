@@ -1,7 +1,10 @@
 * TODO compiler
 ** clean up and comment all of code
-** make lval as minimal as possible
-** unify wval_fn and lval
+** DONE make lval as minimal as possible
+** DONE unify wval_fn and lval
+** somehow put native fns in their own module
+And export/ record the fns table indices somehow.
+No need to compile the native fns every time we compile main.clj
 ** when args_count > MAX_FN_PARAMS cut off at MAX_FN_PARAMS
 when looking up function index to relay to.
 ** apply

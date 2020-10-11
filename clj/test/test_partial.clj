@@ -16,15 +16,27 @@
 (def plus2 (partial plus1 1))
 
 ;; (defn test-partial []
-;;   ;; (print (fp 2 3))
 
-;;   (let [f2 fp]
-;;     (print"hello"  (f2 2 3))))
+;;   (let [f (fn [x y z] [x y z])
+;;         g (fn [] f)
+;;         fp (partial (g) 1)
+;;         fpp (partial fp 2)]
+;;     (t (f 1 2 3) [1 2 3])
+;;     (t (fp 2 3) [1 2 3])
+;;     (t (fpp 3) [1 2 3]))
+
+
+;;   (let [p partial
+;;         f (fn [x y z] [x y z])
+;;         fp (p f 1)]
+;;     (t (fp 2 3) [1 2 3]))
+
+;; )
 ;; 
   
-;; (defn test-partial []
-;;   (f 1 2 3)
-;;   )
+(defn test-partial []
+  (f 1 2 3)
+  )
 
 
 (defn test-partial []
@@ -53,18 +65,18 @@
   (t (gp 3 4 5 6) [1 2 (3 4 5 6)])
 
   ;; Partial of a global fn with no partials is just the global fn
-  ;; (let [fp (partial f)]
-  ;;   (t (fp 1 2 3) [1 2 3])
-  ;;   ;; Partials of non fn is identity fn
-  ;;   (t (partial 1) 1)
-  ;;   (t (partial "abc") "abc")
-  ;;   )
+  (let [fp (partial f)]
+    (t (fp 1 2 3) [1 2 3])
+    ;; Partials of non fn is identity fn
+    (t (partial 1) 1)
+    (t (partial "abc") "abc")
+    )
 
   ;; Datafying of a global partial fn should still work
-  ;; (let [f2 fp]
-  ;;   (t (f2 2 3) [1 2 3]))
-  ;; (let [f3 fp2]
-  ;;   (t (f3 3) [1 2 3]))
+  (let [f2 fp]
+    (t (f2 2 3) [1 2 3]))
+  (let [f3 fp2]
+    (t (f3 3) [1 2 3]))
 
   ;; Partial of a partial of a global fn
   (t (fp2 3) [1 2 3])
@@ -86,25 +98,24 @@
  (t (plus2 1) 3)
 
   ;; Partials of local fns
-  ;; (let [f (fn [x y z] [x y z])
-  ;;       g (fn [] f)
-  ;;       fp (partial (g) 1)
-  ;;       fpp (partial fp 2)]
-  ;;   (t (f 1 2 3) [1 2 3])
-  ;;   (t (fp 2 3) [1 2 3])
-  ;;   (t (fpp 3) [1 2 3]))
+  (let [f (fn [x y z] [x y z])
+        g (fn [] f)
+        fp (partial (g) 1)
+        fpp (partial fp 2)]
+    (t (f 1 2 3) [1 2 3])
+    (t (fp 2 3) [1 2 3])
+    (t (fpp 3) [1 2 3]))
 
   ;; Make partials from sys fns
   (let [plus (partial + 1 1)]
    (t (plus 1) 3))
 
   ;; Native fns (such as partial) can be used as first class fns
-  ;; (let [p partial
-  ;;       f (fn [x y z] [x y z])
-  ;;       fp (p f 1)]
-  ;;   (t (fp 2 3) [1 2 3]))
- 
+  (let [p partial
+        f (fn [x y z] [x y z])
+        fp (p f 1)]
+    (t (fp 2 3) [1 2 3]))
+
   (pr "Partial tests have run.")
 
   )
-
