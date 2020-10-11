@@ -10,17 +10,23 @@
 ;; (require '[bar.core :as bar :refer [bar]])
 
 
-(defn g [x & y] [x y])
+(def l (list 1 2 3))
+;; (def s "foo")
+;; (defn g [x & y] [x y])
 (defn main [x y]
+  (print 1 l)
   ;; (test-partial)
   ;; (print "hello")
   ;; (print "again")
-  (let [f (fn [x y z] [x y z])]
-    ;; (print "HEllo")
-    ;; (print (+ 1 2))
-    (print (f 1 2 3))
-    (print (g 1 2 3))
-    )
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       fp (partial f 1)
+  ;;       p partial]
+  ;;   ;; (print "HEllo")
+  ;;   ;; (print (+ 1 2))
+  ;;   (print (f 1 2 3) l s)
+  ;;   (print (g 1 2 3))
+  ;;   (print (fp  2 3))
+  ;;   )
   ;; (let [f (fn [x y & z] [x y z])
   ;;       ;; g (fn [x y] [x  y])
   ;;       ;; h (fn [& x] [x])

@@ -92,25 +92,28 @@ void bundle_rest_args(int rest_arg_index, Lval** args, int args_count) {
 }
 
 void wval_print(Lval* wval) {
+/* lval_println(wval); */
 #ifdef WASM
-  printf("WVAL:\n");
+  printf("WVAL---------------------:\n");
   printf("wval pointer: %li\n", (long)wval);
-  printf("type: %d %lu\n", wval->type, offsetof(Lval, type));
-  printf("subtype: %d %lu\n", wval->subtype, offsetof(Lval, subtype));
-  printf("fn_table_index: %d %lu\n", wval->fn_table_index,
-         offsetof(Lval, fn_table_index));
-  /* printf("param_count: %d %lu\n", wval->param_count, */
-  /*        offsetof(Lval, param_count)); */
+  printf("type: %d %s %lu\n", wval->type,
+         lval_type_constant_to_name(wval->type), offsetof(Lval, type));
+  printf("subtype: %d %s %lu\n", wval->subtype,
+         lval_type_constant_to_name(wval->subtype), offsetof(Lval, subtype));
 
-  /* printf("has_rest_arg: %d %lu\n", wval->has_rest_arg, */
-  /*        offsetof(Lval, has_rest_arg)); */
-  printf("partial_count: %d %lu\n", wval->partial_count,
-         offsetof(Lval, partial_count));
-  printf("closure: %li %lu\n", (long)wval->closure, offsetof(Lval, closure));
-  printf("partials: %li %lu\n", (long)wval->partials, offsetof(Lval, partials));
+  printf("head: %li \n", (long)wval->head);
+  /* printf("fn_table_index: %d %lu\n", wval->fn_table_index, */
+  /*        offsetof(Lval, fn_table_index)); */
+  /* printf("partial_count: %d %lu\n", wval->partial_count, */
+  /*        offsetof(Lval, partial_count)); */
+  /* printf("closure: %li %lu\n", (long)wval->closure, offsetof(Lval, closure));
+   */
+  /* printf("partials: %li %lu\n", (long)wval->partials, offsetof(Lval,
+   * partials)); */
 
-  printf("fn_call_relay_array: %li %lu\n", (long)wval->fn_call_relay_array,
-         offsetof(Lval, fn_call_relay_array));
+  /* printf("fn_call_relay_array: %li %lu\n", (long)wval->fn_call_relay_array,
+   */
+  /*        offsetof(Lval, fn_call_relay_array)); */
 #endif
 }
 
@@ -126,7 +129,14 @@ int check_args_count(int param_count, int args_count, int has_rest_arg) {
   return ARGS_MATCH_PARAMS;
 }
 
-#ifdef WASM
+Slot* get_slot_pointer(int* ptr, int i, int data_offset) {
+  return (Slot*)(long)(ptr[i] + data_offset);
+}
+
+/* Slot* slot_ptr = (Slot*)(long)(((int*)lval_offsets_ptr)[i] +
+ * data_offset); */
+/* (Lval*)(long)(lval_offsets_ptr[i] + data_offset + sizeof(Slot)); */
+
 void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   /* printf("data_start: %il\n", data_start); */
   /* printf("data_size: %d\n", data_size); */
@@ -134,84 +144,122 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   int* info_section =
       (int*)((long)data_offset + (data_size - info_section_size_in_bytes - 4));
 
-  /* int info_section_size = info_section_size_in_bytes / 4; */
-
   // Rewrite lvals
-  char* lval_offsets_ptr = (char*)(long)info_section[0] + data_offset;
+  int* lval_offsets_ptr = (int*)((long)info_section[0] + data_offset);
   int lval_offsets_count = info_section[1];
+
+  /* printf("rewriting lvals:\nlval_offsets_ptr: %li (%li),count: %d\n", */
+  /*        (long)info_section[0], (long)lval_offsets_ptr, lval_offsets_count);
+   */
+
+  /* for (int i = 0; i < lval_offsets_count; i++) { */
+  /*   printf("%d, ", lval_offsets_ptr[i]); */
+  /* } */
+  /* printf("\n"); */
   for (int i = 0; i < lval_offsets_count; i++) {
-    Slot* slot_ptr = (Slot*)(long)(((int*)lval_offsets_ptr)[i] + data_offset);
-    Lval* lval_ptr =
-        (Lval*)(long)(((int*)lval_offsets_ptr)[i] + data_offset + sizeof(Slot));
+    Slot* slot_ptr = get_slot_pointer(lval_offsets_ptr, i, data_offset);
+    Lval* lval_ptr = (Lval*)((long)slot_ptr + sizeof(Slot));
+    /* printf("lval_ptr: %li\n", (long)lval_ptr - data_offset); */
+    /* wval_print(lval_ptr); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
 
     if (lval_ptr->subtype != NUMBER && lval_ptr->data.str)
       lval_ptr->data.str += data_offset;
     if (lval_ptr->head)
       lval_ptr->head = (Cell*)((char*)lval_ptr->head + data_offset);
+
+#ifdef WASM
+    lval_ptr->fn_table_index += fn_table_offset;
+#endif
+
+    if (lval_ptr->closure) lval_ptr->closure += data_offset;
+    if (lval_ptr->partials) lval_ptr->partials += data_offset;
+#ifdef WASM
+    lval_ptr->fn_call_relay_array += data_offset;
+#endif
+
+#ifdef WASM
+    int* partials = (int*)((long)lval_ptr->partials);
+    for (int i = 0; i < lval_ptr->partial_count; i++) {
+      partials[i] += data_offset;
+    }
+#endif
+
+    /* wval_print(lval_ptr); */
   }
 
   // Rewrite cells
-  char* cell_offsets_ptr = (char*)(long)info_section[2] + data_offset;
+  int* cell_offsets_ptr = (int*)((long)info_section[2] + data_offset);
   int cell_offsets_count = info_section[3];
-  /* printf("cell 0: %li %d %li\n", (long)cell_offsets_ptr, cell_offsets_count,
+
+  /* printf("rewriting cells:\ncell_offsets_ptr: %li (%li),count: %d\n", */
+  /*        (long)info_section[2], (long)cell_offsets_ptr, cell_offsets_count);
    */
-  /*        (long)((int*)cell_offsets_ptr)[0]); */
 
   for (int i = 0; i < cell_offsets_count; i++) {
     /* printf("slot_ptr %li\n", (long)((int*)cell_offsets_ptr)[i]); */
-    Slot* slot_ptr = (Slot*)(long)(((int*)cell_offsets_ptr)[i] + data_offset);
-    Cell* cell_ptr =
-        (Cell*)(long)(((int*)cell_offsets_ptr)[i] + data_offset + sizeof(Slot));
-    /* printf("rewriting: slot: %li cell: %li: \n", (long)slot_ptr, */
-    /*        (long)cell_ptr); */
+    Slot* slot_ptr = get_slot_pointer(cell_offsets_ptr, i, data_offset);
+    Cell* cell_ptr = (Cell*)((long)slot_ptr + sizeof(Slot));
+    /* printf("rewriting: slot: %li cell: %li: \n", (long)slot_ptr -
+     * data_offset, */
+    /*        (long)cell_ptr - data_offset); */
+    /* printf("car: %li, cdr: %li\n", (long)cell_ptr->car, (long)cell_ptr->cdr);
+     */
     /* printf("slot_ptr->data_p %li\n", (long)slot_ptr->data_p); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
-    /* printf("slot_ptr->data_p %li\n", (long)slot_ptr->data_p); */
     if (cell_ptr->car) cell_ptr->car += data_offset;
     if (cell_ptr->cdr)
       cell_ptr->cdr = (Cell*)((char*)cell_ptr->cdr + data_offset);
+
+    /* printf("car: %li, cdr: %li\n", (long)cell_ptr->car, (long)cell_ptr->cdr);
+     */
   }
 
   // Rewrite wval_fns
-  char* wval_fn_offsets_ptr = (char*)(long)info_section[4];
+  /*   char* wval_fn_offsets_ptr = (char*)(long)info_section[4]; */
 
-  /* printf("wval_fn_offsets_ptr:  %li\n", (long)wval_fn_offsets_ptr); */
-  wval_fn_offsets_ptr += data_offset;
-  int wval_fn_offsets_count = info_section[5];
+  /*   /\* printf("wval_fn_offsets_ptr:  %li\n", (long)wval_fn_offsets_ptr); *\/
+   */
+  /*   wval_fn_offsets_ptr += data_offset; */
+  /*   int wval_fn_offsets_count = info_section[5]; */
 
-  printf("rewriting wval_fn:\nwval_fn_offsets_ptr: %li\ncount: %d %d\n",
-         (long)wval_fn_offsets_ptr, wval_fn_offsets_count,
-         wval_fn_offsets_ptr[0]);
+  /*   printf("rewriting wval_fn:\nwval_fn_offsets_ptr: %li\ncount: %d %d\n", */
+  /*          (long)wval_fn_offsets_ptr, wval_fn_offsets_count, */
+  /*          wval_fn_offsets_ptr[0]); */
 
-  for (int i = 0; i < wval_fn_offsets_count; i++) {
-    Slot* slot_ptr =
-        (Slot*)(long)(((int*)wval_fn_offsets_ptr)[i] + data_offset);
-    Lval* wval_fn_ptr = (Lval*)(long)(((int*)wval_fn_offsets_ptr)[i] +
-                                      data_offset + sizeof(Slot));
+  /*   for (int i = 0; i < wval_fn_offsets_count; i++) { */
+  /*     Slot* slot_ptr = */
+  /*         (Slot*)(long)(((int*)wval_fn_offsets_ptr)[i] + data_offset); */
+  /*     Lval* wval_fn_ptr = (Lval*)(long)(((int*)wval_fn_offsets_ptr)[i] + */
+  /*                                       data_offset + sizeof(Slot)); */
 
-    wval_print(wval_fn_ptr);
-    slot_ptr->data_p = slot_ptr->data_p + data_offset;
-    wval_fn_ptr->fn_table_index += fn_table_offset;
+  /*     wval_print(wval_fn_ptr); */
+  /*     slot_ptr->data_p = slot_ptr->data_p + data_offset; */
+  /* #ifdef WASM */
+  /*     wval_fn_ptr->fn_table_index += fn_table_offset; */
+  /* #endif */
 
-    if (wval_fn_ptr->closure) wval_fn_ptr->closure += data_offset;
-    if (wval_fn_ptr->partials) wval_fn_ptr->partials += data_offset;
-    wval_fn_ptr->fn_call_relay_array += data_offset;
-    int* partials = (int*)((long)wval_fn_ptr->partials);
+  /*     if (wval_fn_ptr->closure) wval_fn_ptr->closure += data_offset; */
+  /*     if (wval_fn_ptr->partials) wval_fn_ptr->partials += data_offset; */
+  /* #ifdef WASM */
+  /*     wval_fn_ptr->fn_call_relay_array += data_offset; */
+  /* #endif */
 
-    for (int i = 0; i < wval_fn_ptr->partial_count; i++) {
-      partials[i] += data_offset;
-      /* printf("partial[%d] = %d\n", i, partials[i]); */
-    }
+  /* #ifdef WASM */
+  /*     int* partials = (int*)((long)wval_fn_ptr->partials); */
+  /*     for (int i = 0; i < wval_fn_ptr->partial_count; i++) { */
+  /*       partials[i] += data_offset; */
+  /*       /\* printf("partial[%d] = %d\n", i, partials[i]); *\/ */
+  /*     } */
+  /* #endif */
 
-    wval_print(wval_fn_ptr);
-    /* printf("wval_fn->partials %d\n", wval_fn_ptr->partials); */
-    /* printf("wval_fn->partial_count %d\n", wval_fn_ptr->partial_count); */
-    /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);
-     */
-  }
+  /*     wval_print(wval_fn_ptr); */
+  /* printf("wval_fn->partials %d\n", wval_fn_ptr->partials); */
+  /* printf("wval_fn->partial_count %d\n", wval_fn_ptr->partial_count); */
+  /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);
+   */
+  /* } */
 }
-#endif
 
 /* int is_falsy(Lval* lval) { */
 /*   return lval->subtype == LFALSE || lval->subtype == LNIL; */

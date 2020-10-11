@@ -18,13 +18,12 @@
 // Native fns take same args as call and bundle-args fns, ie wval,
 // args_block_ptr and args_count.
 NativeFn native_fns[] = {
-    {"rt_error_too_few_args", -1, 0, 0, 0, add_rt_error_too_few_args_fn, NULL},
-    {"rt_error_too_many_args", -1, 0, 0, 0, add_rt_error_too_many_args_fn,
-     NULL},
-    {"copy_and_retain", -1, 0, 0, 0, add_copy_and_retain_fn, NULL},
+    {"rt_error_too_few_args", -1, add_rt_error_too_few_args_fn, NULL},
+    {"rt_error_too_many_args", -1, add_rt_error_too_many_args_fn, NULL},
+    {"copy_and_retain", -1, add_copy_and_retain_fn, NULL},
     /* {"validate_fn", -1, 0, 0, 0, add_validate_fn_fn, NULL}, */
-    {"partial", -1, 2, 0, 1, add_partial_fn, compile_partial_call},
-    {"apply", -1, 1, 0, 1, add_apply_fn, compile_partial_call},
+    {"partial", -1, add_partial_fn, compile_partial_call},
+    {"apply", -1, add_apply_fn, compile_partial_call},
 };
 
 Wasm* init_wasm() {
@@ -61,9 +60,9 @@ Wasm* init_wasm() {
              .lval_offsets = malloc(100 * sizeof(int)),
              .lval_offsets_count = 0,
              .lval_offsets_allocated = 100,
-             .wval_fn_offsets = malloc(100 * sizeof(int)),
-             .wval_fn_offsets_count = 0,
-             .wval_fn_offsets_allocated = 100,
+             /* .wval_fn_offsets = malloc(100 * sizeof(int)), */
+             /* .wval_fn_offsets_count = 0, */
+             /* .wval_fn_offsets_allocated = 100, */
              .cell_offsets = malloc(100 * sizeof(int)),
              .cell_offsets_count = 0,
              .cell_offsets_allocated = 100,
