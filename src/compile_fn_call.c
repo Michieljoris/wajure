@@ -31,28 +31,35 @@ Ber compile_args_into_block(Wasm* wasm, int wval_local, int partial_count_local,
 
   // Copy partials to start of args_block
   int size_local = li_new(wasm);
-  /* Ber partial_count = get_wval_prop(module, local_get_int32(module,
-   * wval_local), */
-  /*                                   "partial_count"); */
+
   // if partial_count != 0 then copy partials of wval to where args_block_ptr
   // points
-  children[children_count++] = BinaryenIf(
-      module, local_get_int32(module, partial_count_local),
-      BinaryenMemoryCopy(
-          module, local_get_int32(module, args_block_ptr_local),
-          get_wval_prop(module, local_get_int32(module, wval_local),
-                        "partials"),
-          BinaryenLocalTee(module, size_local, size, BinaryenTypeInt32())),
-      BinaryenNop(module));
 
-  // Add size of partials to arg block ptr
-  int args_block_plus_partials_ptr_local = li_new(wasm);
-  children[children_count++] = BinaryenLocalSet(
-      module, args_block_plus_partials_ptr_local,
-      BinaryenBinary(module, BinaryenAddInt32(),
-                     local_get_int32(module, args_block_ptr_local),
-                     local_get_int32(module, size_local)));
+  Ber mem_copy = BinaryenMemoryCopy(
+      module, local_get_int32(module, args_block_ptr_local),
+      get_wval_prop(module, local_get_int32(module, wval_local), "partials"),
+      BinaryenLocalTee(module, size_local, size, BinaryenTypeInt32()));
 
+  int args_block_plus_partials_ptr_local;
+  if (!args_count) {
+    children[children_count++] =
+        BinaryenIf(module, local_get_int32(module, partial_count_local),
+                   mem_copy, BinaryenNop(module));
+  } else {
+    // Add size of partials to arg block ptr
+    Ber add_size = BinaryenBinary(module, BinaryenAddInt32(),
+                                  local_get_int32(module, args_block_ptr_local),
+                                  local_get_int32(module, size_local));
+    Ber children2[] = {mem_copy, add_size};
+    Ber block = BinaryenBlock(module, NULL, children2, 2, BinaryenTypeInt32());
+    Ber if_partials =
+        BinaryenIf(module, local_get_int32(module, partial_count_local), block,
+                   local_get_int32(module, args_block_ptr_local));
+
+    args_block_plus_partials_ptr_local = li_new(wasm);
+    children[children_count++] = BinaryenLocalSet(
+        module, args_block_plus_partials_ptr_local, if_partials);
+  }
   int offset = 0;
   // Put args on block ====================================================
   while (args) {
@@ -120,33 +127,28 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
       compile_args_into_block(wasm, wval_local, partial_count_local, args,
                               args_count, args_block_ptr_local, li);
   block_children[(*block_children_count)++] = args_block;
-
-  Ber call_operands[] = {local_get_int32(module, wval_local),
-                         /* wval_closure, wval_fn_index, */
-                         local_get_int32(module, args_block_ptr_local),
-                         local_get_int32(module, total_args_count_local)};
+  Ber gt_20 = BinaryenBinary(module, BinaryenGtUInt32(),
+                             local_get_int32(module, total_args_count_local),
+                             make_int32(module, 20));
+  Ber call_operands[] = {
+      local_get_int32(module, wval_local),
+      local_get_int32(module, args_block_ptr_local),
+      // if total_args_count > 20 ? 20 : total_args_count;
+      BinaryenIf(module, gt_20, make_int32(module, 20),
+                 local_get_int32(module, total_args_count_local))};
 
   // The first MAX_FN_PARAMS (20) fns in the global fn table redirect to the
   // real fn with index wval_fn_index, loading the right number of args from the
   // args block.
-  /* Ber wval_param_count = */
-  /*     get_wval_prop(module, local_get_int32(module, wval_local),
-   * "param_count"); */
-  /* Ber fn_table_index = wval_param_count; */
   Ber fn_call_relay_array = get_wval_prop(
       module, local_get_int32(module, wval_local), "fn_call_relay_array");
-  // TODO: if total_args_count > 20 ? 20 : total_args_count;
   Ber fn_call_relay_ptr =
       BinaryenBinary(module, BinaryenAddInt32(), fn_call_relay_array,
                      local_get_int32(module, total_args_count_local));
-  Ber fn_table_index2 =
+  Ber fn_table_index =
       BinaryenLoad(module, 1, 0, 0, 0, BinaryenTypeInt32(), fn_call_relay_ptr);
-  /* block_children[(*block_children_count)++] = */
-  /*     wasm_log_int(wasm, fn_table_index); */
-  /* block_children[(*block_children_count)++] = */
-  /*     wasm_log_int(wasm, fn_table_index2); */
 
-  return BinaryenCallIndirect(module, fn_table_index2, call_operands, 3,
+  return BinaryenCallIndirect(module, fn_table_index, call_operands, 3,
                               make_type_int32(3), BinaryenTypeInt32());
 }
 

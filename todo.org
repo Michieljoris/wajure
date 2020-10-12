@@ -8,7 +8,7 @@ runtime stacksize, runtime data_end, wajure data_end, heap_base
 get_memory()
 nodejs: initial_page_count, max_page_count
 makefile:  initial-memory and stack size
-** Calling a fn can be better:
+** DONE Calling a fn can be better:
 
              (block $args_4
               (if
@@ -53,31 +53,11 @@ makefile:  initial-memory and stack size
                (local.get $5) //only if ther args, otherwise nop
               )
              )
-** when macros return a function (when called from within another fn), are they deduplicated, no!
-(defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn main [x y]
-  (let [f (foo 0)
-        f2 (foo 0)]
-    (print (f))
-    (print (f2))))
-This will create a wasm fn for (fn [] 1) twice.
-    See add_wasm_function:
-  // TODO: compare lval_fn with other fns added so far. If a match don't create
-  // the wasm fn again but retrieve its fn-table_index and set that on lval_fun
-  // This can happen when macros return a fn for instance.
 ** sort out offset prop on lval
 It's used for multiple purposes:
 - fn_table_index
 - closure local
 - param local (lval_ref)
-** separate compiler props from lval
-Don't record compiler data on them like data_offset, Context and offset.
-It's just asking for trouble.
-But alternative is using a hashtable for lookup of lvals to get their compiler data.
-We're already efficiently wiping compiler data from root lvals (as found in env of namespace).
-When we use macros in fns we can encounter literals that have their compiler data set already.
-This is ok unless compiler data is set when compiling another namespace, the data_offset is not applicable then. So we check if the lval is from this namespace or not. See logic and comments in datafy.c/datafy_lval
-So the trouble seems managable so far....
 ** somehow put native fns in their own module
 And export/ record the fns table indices somehow.
 No need to compile the native fns every time we compile main.clj
@@ -129,6 +109,26 @@ http://clojure-doc.org/articles/language/macros.html
 ** try/throw/catch
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
 ** ----------------------------
+** when macros return a function (when called from within another fn), are they deduplicated, no!
+(defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
+(defn main [x y]
+  (let [f (foo 0)
+        f2 (foo 0)]
+    (print (f))
+    (print (f2))))
+This will create a wasm fn for (fn [] 1) twice.
+    See add_wasm_function:
+  // TODO: compare lval_fn with other fns added so far. If a match don't create
+  // the wasm fn again but retrieve its fn-table_index and set that on lval_fun
+  // This can happen when macros return a fn for instance.
+** separate compiler props from lval
+Don't record compiler data on them like data_offset, Context and offset.
+It's just asking for trouble.
+But alternative is using a hashtable for lookup of lvals to get their compiler data.
+We're already efficiently wiping compiler data from root lvals (as found in env of namespace).
+When we use macros in fns we can encounter literals that have their compiler data set already.
+This is ok unless compiler data is set when compiling another namespace, the data_offset is not applicable then. So we check if the lval is from this namespace or not. See logic and comments in datafy.c/datafy_lval
+So the trouble seems managable so far....
 ** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
 So LOCAL and PARAM (don't set to local, since we just retrieve a local for these
 ones) vs closure (set to local because its a computed value, and we don't want

@@ -14,14 +14,17 @@
 ;; (defn g [x & y] [x y])
 
 ;; (defn f [x y z] [x y z])
-(defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
+;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
 (defn main [x y]
-  (run-tests)
-  (let [f (foo 0)
-        f2 (foo 0)]
-    (print (f))
-    (print (f2))
+  (let [f (fn [] 1)]
+    (f )
     )
+  (run-tests)
+  ;; (let [f (foo 0)
+  ;;       f2 (foo 0)]
+  ;;   (print (f))
+  ;;   (print (f2))
+  ;;   )
   )
   ;; (let [f (partial f 1 2 4 5 6 )]
   ;;   (print (f 3   )))
