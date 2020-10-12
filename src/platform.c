@@ -4,11 +4,14 @@
 
 #include "printf.h"
 
-extern char __heap_base;
-char* heap_pointer = &__heap_base;
+/* extern char __heap_base; */
+/* char* heap_pointer = &__heap_base; */
 
-int data_size = 5 * 64 * 1024;
-char* get_memory() { return heap_pointer + data_size; }
+/* int data_size = 5 * 64 * 1024; */
+/* char* get_memory() { */
+/*   printf("GET MEMORY!!!!\n"); */
+/*   return heap_pointer + data_size; */
+/* } */
 
 void free_memory() { /* No implementation possible in wasm */
 }

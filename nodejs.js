@@ -1,15 +1,10 @@
 // const util = require('util');
 const fs = require('fs');
 
-// var str = "";
-
-// var memory;
-// var runtime;
-
+var initial_page_count = 10;
 var page_size = 64 * 1024;
 var max_page_count = 100;
-// var max_size = page_size * max_page_count;
-var initial_page_count = 10 //see runtime.wat for what this value should be
+var initial_memory_size = initial_page_count * page_size;
 var page_count = initial_page_count;
 
 function makeLogString(memory, offset) {
@@ -153,20 +148,29 @@ async function instantiate_runtime(env) {
     let { config } = env;
     let buf = fs.readFileSync(config.runtime_wasm);
     let  runtime;
+    console.log("Creating wasm memory: " + (initial_page_count * page_size / 1024) + "kb")
+    env.memory = new WebAssembly.Memory({initial:initial_page_count, maximum:max_page_count});
     let importObject = {
         env: {
+            memory: env.memory,
             _putchar: arg => {
                 process.stdout.write(String.fromCharCode(arg));
             } ,
+            get_memory: () => {
+                return env.heap_base;
+            },
             grow_memory: () => {
-                if (++page_count > max_page_count) {
+                if (page_count + 1 > max_page_count) {
                     console.log("Error: can't allocate memory beyond max (nodejs) of " +
                                 max_page_count * page_size / 1024 + "kb\n");
                     // throw "Error: can't allocate memory beyond max\n";
                     return 0;
                 }
-                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ", ((page_count+1) * page_size)/1024 , "kb");
-                memory = runtime.exports.memory.grow(1);
+                console.log("Grow_memory from ", (page_count * page_size)/1024, "kb to ",
+                            ((page_count+1) * page_size)/1024 , "kb");
+                page_count++;
+                // memory = runtime.exports.memory.grow(1);
+                env.memory.grow(1);
                 return 1;
             },
             get_mem_end: () => page_count * page_size
@@ -175,14 +179,17 @@ async function instantiate_runtime(env) {
     runtime = await WebAssembly.instantiate(new Uint8Array(buf), importObject).
         then(res => res.instance);
 
-    runtime.exports.init_malloc();
-
-    runtime.exports.init_lispy_mempools(3200, 3200, 3200);
     env.runtime = runtime;
     env.data_start = env.runtime.exports.__data_end.value;
+    if (env.data_start !== env.runtime.exports.__heap_base.value) {
+        //Memory layout should be: runtime stack|runtime data|wajure data|wajure heap
+        throw("Error: runtime uses wrong memory layout, __data_end should equal __heap_base."+
+              "Probably --stack-first flag is not set for linker.");
+    }
     env.fn_table_start = 0;
 
-    env.runtime_error_fn = make_runtime_error_fn(env.runtime.exports.memory);
+    // env.runtime_error_fn = make_runtime_error_fn(env.runtime.exports.memory);
+    env.runtime_error_fn = make_runtime_error_fn(env.memory);
     //TODO: we can't set maximum as optional with BinaryenSetFunctionTable as we
     //can with the js call, so we just set it to 1 million, but ideally we would
     //like to set both max and initial to the number of fns in all module and/or
@@ -210,17 +217,18 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
     // console.log("DATA_OFFSET: ", data_offset, globals.data_offset.value);
     let module_import_object = {
         env: Object.assign(
-            {},
-            wasm_globals,
-            {   fn_table: env.fn_table,
+            {   memory: env.memory,
+                fn_table: env.fn_table,
                 runtime_error: env.runtime_error_fn,
                 data_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, data_offset),
                 fn_table_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, fn_table_offset),
 
-                log_string: makeLogString(env.runtime.memory),
+                log_string: makeLogString(env.memory),
                 log_int: arg => console.log(arg),
-                log_string_n: makeLogStringN(env.runtime.memory),
+                log_string_n: makeLogStringN(env.memory),
+                
             },
+            wasm_globals,
             env.runtime.exports) };
 
 
@@ -335,11 +343,25 @@ async function start() {
         await instantiate_runtime(env);
 
         console.log("data_end =", env.runtime.exports.__data_end.value);
-        console.log("heap_base =", env.runtime.exports.__heap_base.value);
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
-        console.log("final data_end: ", env.data_start + env.data_offset);
+        env.heap_base = env.data_start + env.data_offset;
+
+        if (env.heap_base >= initial_memory_size) {
+            let new_page_count = Math.ceil(env.heap_base / page_size)
+            console.log("NOTE: Inital memory (" + page_count * page_size / 1024  +
+                        "kb, " + page_count +" pages) is set too low, there's not enough " +
+                  "memory for the runtime stack +" + " runtime data + wajure data (total: "
+                        + Math.ceil(env.heap_base / 1024) + "kb, "  + env.heap_base + " bytes).\nAdjust initial_page_count " +
+                  "in this nodejs.js file to at least " + new_page_count + " pages, growing memory for now...");
+            let extra_page_count = new_page_count - page_count;
+            env.memory.grow(extra_page_count);
+            page_count = new_page_count;
+            console.log("New wasm memory size: " + (page_count * page_size / 1024) + "kb")
+
+        }
+        console.log("heap_base =", env.heap_base);
 
         console.log("Link modules  ----------------------------------------");
         // console.log(util.inspect(env.modules, null, Infinity, true));
@@ -352,7 +374,9 @@ async function start() {
         const main_module = env.modules[env.config.main];
 
         console.log("Running main/main(arg1, arg2, ..)\n------------------------------");
-       
+
+        env.runtime.exports.init_malloc();
+        env.runtime.exports.init_lispy_mempools(3200, 3200, 3200);
         run_wajure_fn(env, main_module, "main", 888, 777);
 
         env.runtime.exports.free_lispy_mempools();

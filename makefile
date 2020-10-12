@@ -1,3 +1,5 @@
+# initial_page_count = 10
+
 ifeq ($(PLATFORM),wasm)
 src = src/platform.c src/malloc.c src/refcount.c src/mempool.c src/printf.c src/lispy_mempool.c  src/lib.c  src/io.c src/print.c src/list.c src/cell.c  src/lval.c src/util_fns.c src/iter.c src/math_fns.c src/list_fns.c src/runtime.c src/read.c
 tmp = $(subst src,out_wasm,$(src))
@@ -26,8 +28,9 @@ WASMLDFLAGS = -Lout -Wl,--no-entry \
 -Wl,--allow-undefined  \
 -Wl,--lto-O3 \
 -Wl,--stack-first \
--Wl,--initial-memory=$$(( 10 * 64 * 1024 ))
-# -Wl,-z,stack-size=4194304  # Set maximum stack size to 4MiB
+-Wl,--import-memory
+# -Wl,--initial-memory=$$(( $(initial_page_count) * 64 * 1024 ))
+# -Wl,-z,stack-size=$$(( 4 * 1024 * 1024 ))  # Set maximum stack size to 4MiB
 # ,-allow-undefined-file wasm.syms
 #,--export-dynamic  \
 

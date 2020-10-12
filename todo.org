@@ -2,9 +2,69 @@
 ** clean up and comment all of code
 ** DONE make lval as minimal as possible
 ** DONE unify wval_fn and lval
-** reset uniquify counter between compiles!!
-** when macros return a function (when called from within another fn), do they deduplicated?
-Since we're compiling the the expanded macro as if it's code in place do we know that the wasm fn might already exist?
+** DONE reset uniquify counter between compiles!!
+** DONE fix memory layout:
+runtime stacksize, runtime data_end, wajure data_end, heap_base
+get_memory()
+nodejs: initial_page_count, max_page_count
+makefile:  initial-memory and stack size
+** Calling a fn can be better:
+
+             (block $args_4
+              (if
+               (local.get $7)
+               (memory.copy
+                (local.get $5)
+                (call $get_wval_partials
+                 (local.get $6)
+                )
+                (local.tee $9
+                 (i32.mul
+                  (local.get $7)
+                  (i32.const 4)
+                 )
+                )
+               )
+               (nop)
+              )
+              (local.set $10
+               (i32.add
+                (local.get $5)
+                (local.get $9))))
+
+             (block $args_4
+             (local.set $10 //only if there are args to the fn
+              (if (result i32)
+               (local.get $7)
+               (block (result i32)
+               (memory.copy
+                (local.get $5)
+                (call $get_wval_partials
+                 (local.get $6))
+                (local.tee $9
+                 (i32.mul
+                  (local.get $7)
+                  (i32.const 4))))
+               (i32.add // only if there are args to the fn
+                (local.get $5)
+                (local.get $9))
+
+               )
+               (local.get $5) //only if ther args, otherwise nop
+              )
+             )
+** when macros return a function (when called from within another fn), are they deduplicated, no!
+(defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
+(defn main [x y]
+  (let [f (foo 0)
+        f2 (foo 0)]
+    (print (f))
+    (print (f2))))
+This will create a wasm fn for (fn [] 1) twice.
+    See add_wasm_function:
+  // TODO: compare lval_fn with other fns added so far. If a match don't create
+  // the wasm fn again but retrieve its fn-table_index and set that on lval_fun
+  // This can happen when macros return a fn for instance.
 ** sort out offset prop on lval
 It's used for multiple purposes:
 - fn_table_index
@@ -13,16 +73,18 @@ It's used for multiple purposes:
 ** separate compiler props from lval
 Don't record compiler data on them like data_offset, Context and offset.
 It's just asking for trouble.
-** fix memory layout:
-runtime stacksize, runtime data_end, wajure data_end, heap_base
-get_memory()
-nodejs: initial_page_count, max_page_count
-makefile:  initial-memory and stack size
+But alternative is using a hashtable for lookup of lvals to get their compiler data.
+We're already efficiently wiping compiler data from root lvals (as found in env of namespace).
+When we use macros in fns we can encounter literals that have their compiler data set already.
+This is ok unless compiler data is set when compiling another namespace, the data_offset is not applicable then. So we check if the lval is from this namespace or not. See logic and comments in datafy.c/datafy_lval
+So the trouble seems managable so far....
 ** somehow put native fns in their own module
 And export/ record the fns table indices somehow.
 No need to compile the native fns every time we compile main.clj
 ** when args_count > MAX_FN_PARAMS cut off at MAX_FN_PARAMS
 when looking up function index to relay to.
+** write fns to dispatch to when first arg of list is a kw, map, set, vector.
+And set the fn_call_relay_array properly on on all lvals!!!!
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
@@ -68,11 +130,13 @@ http://clojure-doc.org/articles/language/macros.html
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
 ** ----------------------------
 ** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
-So LOCAL and PARAM (don't set to local) vs closure (set to local)
+So LOCAL and PARAM (don't set to local, since we just retrieve a local for these
+ones) vs closure (set to local because its a computed value, and we don't want
+to insert it every time we refer to it)
 ** Partial: And what about (partial partial f 2) or where either partial is an lval_ref or result of fn call!!!
-** checks in native partial fn:
-** Partial: make sure first arg is a wval_fn!!!! Or something that can be turned
+** DONE Partial: make sure first arg is a wval_fn!!!! Or something that can be turned
   into a fn, such as {},[],:kw etc
+  Not needed with our fn_call_relay_array. We can just add the partials.
 
 ** Partial: if fn is not an function we want to return just the value itself,
   retained, since at compile time we don't know if it's been a real fn call, so
@@ -85,7 +149,8 @@ of the partials when releasing the lval_wasm_lambda
 ** Release/retain partials, closure and rest args properly
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
-** release uniquify_name
+** fix freeing of fn_name
+** DONE release uniquify_name
 ** cleanup memory of namespaces
 so get interpreter to end with all slots free again!
 ** add repl and watch options to config
@@ -99,7 +164,6 @@ You should also be able to switch namespace.
 ** review closures in the context of namespaces
 especially:
 Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
-** fix freeing of fn_name
 ** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
 ** rewrite sys fns into native fns to use args block iso c arg_list
@@ -122,6 +186,9 @@ Currently only ints work
 Also, clojure allows it.
 ** add and implement maps and sets and vectors with permanent data structures
  hamt
+** compare by hash!!!
+But our algorhitm to compute a hash needs 64bits operations, so we need to
+rewrite it or find another c algorhitm
 ** implement lazy seqs
 ** max str size, elide with warning or abort
 ** check for max closure size (currently 128 vars (CHAR512 mempool type))

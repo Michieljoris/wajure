@@ -165,7 +165,6 @@ CResult is_truthy(Wasm* wasm, Ber wval) {
 
 CResult compile_if(Wasm* wasm, Cell* args) {
   BinaryenModuleRef module = wasm->module;
-  /* printf("Compiling if!!!!\n"); */
   if (!args) quit(wasm, "Too few arguments to if");
   Lval* lval_cond = args->car;
   args = args->cdr;
@@ -210,11 +209,9 @@ CResult compile_if(Wasm* wasm, Cell* args) {
     Ber get_if_result =
         BinaryenLocalGet(module, if_result_index, BinaryenTypeInt32());
 
-    char* block_name = uniquify_name(wasm, "if_block");
     Ber children[] = {store_if_result, release_cond, get_if_result};
     Ber block = BinaryenBlock(module, uniquify_name(wasm, "if_block"), children,
                               3, BinaryenTypeInt32());
-    free(block_name);
 
     CResult ret = {.ber = block, .is_fn_call = 1};
     return ret;

@@ -181,7 +181,9 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
 
 FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
                                Lval* lval_fun) {
-  printf(">>>>>>>> add_wasm_function %s\n", fn_name);
+  printf(">>>>>>>> add_wasm_function %s offset: %d\n", fn_name,
+         lval_fun->offset);
+
   int param_count = lval_fun->param_count;
   int wajure_params_count = 1;
   int wasm_params_count =
@@ -219,14 +221,23 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
 
   // Compile body
   Ber body = compile_do_list(wasm, lval_fun->body).ber;
+  // Compile body
 
   // Post compile
   leave_env(wasm);
 
+  // TODO: compare lval_fn with other fns added so far. If a match don't create
+  // the wasm fn again but retrieve its fn-table_index and set that on lval_fun
+  // This can happen when macros return a fn for instance.
+  int fn_table_index;
+  /* int found = find_wasm_fn(lval_fun); */
+  /* if (found) { */
+  /*   fn_table_index = found; */
+  /* } else { */
   int locals_count = context->function_context->local_count - wasm_params_count;
 
-  int fn_table_index = add_fn_to_table(wasm, fn_name);
-  lval_fun->offset = fn_table_index;
+  // TODO: not sure what to do about fn_name....
+  fn_table_index = add_fn_to_table(wasm, fn_name);
 
   BinaryenModuleRef module = wasm->module;
 
@@ -238,6 +249,9 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Add fn to wasm
   BinaryenAddFunction(module, fn_name, params_type, results_type, local_types,
                       locals_count, body);
+  /* } */
+
+  lval_fun->offset = fn_table_index;
   FunctionData function_data = {retain(context->function_context->closure),
                                 context->function_context->closure_count};
 
@@ -255,6 +269,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
 // lval at runtime a closure data block that holds values of the free vars
 // found in the fn.
 CResult compile_local_lambda(Wasm* wasm, Cell* args) {
+  printf("compile local lambda!!!\n");
   BinaryenModuleRef module = wasm->module;
 
   Context* context = wasm->context->car;
@@ -262,9 +277,10 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   // Eval the lambda form to get info on params and body
   Lval* arg_list = new_lval_list(retain(args));
   Lval* lval_fn = eval_lambda_form(wasm->env, arg_list, LAMBDA);
+  lval_println(lval_fn);
   release(arg_list);
+  if (lval_fn->type == LVAL_ERR) quit(wasm, "Error evalling lambda form");
 
-  // Create an actual wasm fn
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
   FunctionData function_data =
       add_wasm_function(wasm, wasm->env, lambda_name, lval_fn);
@@ -296,8 +312,6 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   }
   Ber ber_partial_count = make_int32(module, 0);
   Ber ber_partials = make_int32(module, 0);  // NULL
-  /* Ber ber_param_count = make_int32(module, param_count); */
-  /* Ber ber_has_rest_arg = make_int32(module, rest_arg_index); */
 
   // Let's create a block in which we prepare the args for and then call
   // make_lval_wasm_lambda
@@ -344,10 +358,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[5] = {ber_fn_table_index,
-                     /* ber_param_count, ber_has_rest_arg, */
-                     ber_closure_ptr, ber_partials, ber_partial_count,
-                     fn_call_relay_array_ptr};
+  Ber operands[5] = {ber_fn_table_index, ber_closure_ptr, ber_partials,
+                     ber_partial_count, fn_call_relay_array_ptr};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
       wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
 

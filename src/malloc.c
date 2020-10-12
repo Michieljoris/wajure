@@ -1,12 +1,10 @@
 #include "platform.h"
 
-char* mem;
 char* free_p;
 
 export_wasm void init_malloc() {
-  mem = get_memory();
-  printf("init_malloc %li\n", (long)mem);
-  free_p = mem;
+  free_p = get_memory();
+  printf("init_malloc, heap_base = %li\n", (long)free_p);
 }
 
 export_wasm void free_malloc() { free_memory(); }

@@ -20,7 +20,7 @@ typedef struct {
   char** fn_names;
   int fns_count;
   Lenv* env;
-  int pic;
+  int pic;  // position independent code
   int __data_end;
   int __fn_table_end;
   /* int __heap_base; */
@@ -48,14 +48,13 @@ typedef struct {
   int* cell_offsets;
   int cell_offsets_count;
   int cell_offsets_allocated;
-  /* int* wval_fn_offsets; */
-  /* int wval_fn_offsets_count; */
-  /* int wval_fn_offsets_allocated; */
 
   int validate_fn_at_rt;
   Map deps;
   int* fn_relay_table_offsets;
   int* fn_relay_table_offsets_has_rest_arg;
+  int id;
+  char* buf;
 } Wasm;
 
 typedef struct {

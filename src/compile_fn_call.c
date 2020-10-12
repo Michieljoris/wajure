@@ -484,6 +484,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             arg_list->data.head = retain(args);
             Lval* bound_macro = expand_macro(resolved_sym, arg_list);
             release(arg_list);
+            if (bound_macro->type == LVAL_ERR)
+              quit(wasm, "Error in expanding macro");
             CResult result = lval_compile(wasm, bound_macro);
             release(bound_macro);
             return result;

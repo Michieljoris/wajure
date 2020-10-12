@@ -67,7 +67,9 @@ Wasm* init_wasm() {
              .cell_offsets_count = 0,
              .cell_offsets_allocated = 100,
              .fn_relay_table_offsets =
-                 calloc(fn_relay_table_offsets_count, sizeof(int))};
+                 calloc(fn_relay_table_offsets_count, sizeof(int)),
+             .id = 1,
+             .buf = malloc(1024)};
 
   wasm->data[0] = 15;
   wasm->data[1] = 15;
@@ -90,6 +92,7 @@ void free_wasm(Wasm* wasm) {
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
   free(wasm->fn_relay_table_offsets);
+  free(wasm->buf);
   free(wasm->context);  // TODO
   // TODO: free string_pool
   free(wasm);

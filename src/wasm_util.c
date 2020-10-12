@@ -328,13 +328,10 @@ Lval* make_lval_ref(Context* context, int subtype, int offset) {
 int id = 1;
 
 char* uniquify_name(Wasm* wasm, char* name) {
-  char* str = malloc(1024);
   if (_strlen(name) > 512)
     quit(wasm, "ERROR: Can't uniquify names longer than 512 chars");
-  _strcpy(str, name);
-  _strcat(str, "_");
-  itostr(str + _strlen(str), id++);
-  return str;
+  sprintf(wasm->buf, "%s_%d", name, wasm->id++);
+  return wasm->buf;
 }
 
 #define MAX_LOCAL_INDICES 128
