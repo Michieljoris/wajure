@@ -68,6 +68,10 @@ void release(void* data_p) {
         "Warning: trying to release data that's not managed by ref_count "
         "(data_p: %li, slot->data_p: %li).\n",
         (long)data_p, (long)(slot->data_p));
+    /* if (slot->mempool) { */
+    /*   printf("mempool type: %d, %s\n", slot->mempool->type, */
+    /*          type_to_name(slot->mempool->type)); */
+    /* } */
 #ifndef WASM
     exit(1);
 #endif

@@ -100,8 +100,8 @@ void add_memory_section(Wasm* wasm) {
   BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
                           BinaryenTypeInt32(), 0);
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
-  BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer",
-                          BinaryenTypeInt32(), 1);
+  /* BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer", */
+  /*                         BinaryenTypeInt32(), 1); */
   BinaryenAddGlobalImport(module, "data_offset", "env", "data_offset",
                           BinaryenTypeInt32(), 0);
   BinaryenAddGlobalImport(module, "fn_table_offset", "env", "fn_table_offset",
@@ -109,7 +109,7 @@ void add_memory_section(Wasm* wasm) {
 
   /* BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1, */
   /*                   make_int32(module, wasm->__heap_base)); */
-  BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer");
+  /* BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer"); */
   const int num_segments = 1;
   const char* segments[1] = {wasm->data};
   BinaryenIndex segmentSizes[] = {wasm->data_offset};
@@ -259,7 +259,7 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int ptr_len = 10;
   int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
   char* line = malloc(max_len);
-  int offset = lval->wval_ptr;
+  int offset = lval->data_offset;
   if (lval->type == LVAL_FUNCTION) {
     int fn_table_index =
         lval->cfn ? lval->cfn->offset : lval->offset;  // partials

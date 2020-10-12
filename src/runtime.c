@@ -129,8 +129,10 @@ Slot* get_slot_pointer(int* ptr, int i, int data_offset) {
 }
 
 void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
-  /* printf("data_start: %il\n", data_start); */
-  /* printf("data_size: %d\n", data_size); */
+  /* printf("Rewriting pointers: "); */
+  /* printf("data_offset: %d ", data_offset); */
+  /* printf("data_size: %d ", data_size); */
+  /* printf("fn_table_offsete: %d\n", fn_table_offset); */
   int info_section_size_in_bytes = *(int*)((long)data_offset + data_size - 4);
   int* info_section =
       (int*)((long)data_offset + (data_size - info_section_size_in_bytes - 4));
@@ -150,7 +152,6 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
   for (int i = 0; i < lval_offsets_count; i++) {
     Slot* slot_ptr = get_slot_pointer(lval_offsets_ptr, i, data_offset);
     Lval* lval_ptr = (Lval*)((long)slot_ptr + sizeof(Slot));
-    /* printf("lval_ptr: %li\n", (long)lval_ptr - data_offset); */
     /* wval_print(lval_ptr); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
 
@@ -200,6 +201,8 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
      */
     /* printf("slot_ptr->data_p %li\n", (long)slot_ptr->data_p); */
     slot_ptr->data_p = slot_ptr->data_p + data_offset;
+    /* printf("rewritten cell: slot_ptr->data_p %li, lval_ptr: %li\n", */
+    /*        (long)slot_ptr->data_p, (long)cell_ptr); */
     if (cell_ptr->car) cell_ptr->car += data_offset;
     if (cell_ptr->cdr)
       cell_ptr->cdr = (Cell*)((char*)cell_ptr->cdr + data_offset);

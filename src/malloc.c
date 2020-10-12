@@ -4,9 +4,8 @@ char* mem;
 char* free_p;
 
 export_wasm void init_malloc() {
-  /* printf("abc %li", (long)0xfffffffff); */
-  /* printf("init_malloc\n"); */
   mem = get_memory();
+  printf("init_malloc %li\n", (long)mem);
   free_p = mem;
 }
 
@@ -15,9 +14,10 @@ export_wasm void free_malloc() { free_memory(); }
 export_wasm void* _malloc(int size) {
   char* next_free_p =
       free_p + (size + 4 - size % 4);  // align to dword (32 bits)
-  /* printf("_malloc %d, memory %li, next_free_p %li, mem_end %li\n", size, */
-  /*        (long)get_memory(), (long)(next_free_p - get_memory()), */
-  /*        (long)(get_mem_end() - get_memory())); */
+  /* printf("_malloc: mem start %li, allocate: %d, next_free_p %li, mem_end
+   * %li\n", */
+  /*        (long)get_memory(), size, (long)(next_free_p),
+   * (long)(get_mem_end())); */
   while (next_free_p >= get_mem_end()) {
     if (!grow_memory()) {
       printf("Error: malloc failed\n");

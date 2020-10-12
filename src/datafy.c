@@ -49,7 +49,7 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
                                    native_fn->fn_table_index, has_rest_arg);
   int lval_ptr = inter_data_lval(wasm, data_lval);
 
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
   return ret;
 }
 
@@ -71,11 +71,6 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
   BinaryenType results_type = make_type_int32(results_count);
   int locals_count = 0;
 
-  Ber stack_pointer =
-      BinaryenGlobalGet(wasm->module, "stack_pointer", BinaryenTypeInt32());
-  int sp_adjustment = 1 * 4;
-  stack_pointer = BinaryenBinary(module, BinaryenSubInt32(), stack_pointer,
-                                 make_int32(module, sp_adjustment));
   Ber rest_arg = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
   Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
 
@@ -94,7 +89,7 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
       make_data_lval(wasm, NULL, wasm->__fn_table_end + fn_table_index, 1, 1);
   int lval_ptr = inter_data_lval(wasm, data_lval);
 
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
   return ret;
 }
 
@@ -124,7 +119,7 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
 
   // And return a wasm pointer so that it can be attached to the lval for future
   // reference
-  CResult ret = {.wasm_ptr = lval_ptr};
+  CResult ret = {.data_offset = lval_ptr};
   return ret;
 }
 
@@ -136,7 +131,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
     case LIST:
     case VECTOR:;
       int lval_ptr = inter_list(wasm, lval);
-      CResult ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+      CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
       return ret;
     case MAP:;
     case SET:;
@@ -191,21 +186,40 @@ int inter_literal(Wasm* wasm, Lval* lval) {
 CResult datafy_lval(Wasm* wasm, Lval* lval) {
   scoped char* global_name = NULL;
 
-  int lval_is_external = lval->ns && lval->ns != get_current_ns() ? 1 : 0;
+  /* if (lval->subtype == LTRUE) { */
+  /*   printf("datafy ======================= wval_ptr: %d, ",
+   * lval->data_offset); */
+  /*   printf("%s ", lval->ns->namespace); */
+  /*   lval_println(lval); */
+  /* } */
+
+  // Every lval when it is created has its ns prop set to the namespace it was
+  // found in.
+  int lval_is_external = lval->ns && lval->ns != get_current_ns();
 
   if (lval_is_external) {
-    global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
-    add_dep(wasm, global_name);
+    if (lval->cname) {  // we can refer to it by name!!!
+      global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
+      add_dep(wasm, global_name);
+    } else {
+      // This is from a macro, which we're compiling as if it's in this
+      // namespace.
+
+      // Alternatively we map lvals to their data offsets (and other compile
+      // time info such as Context and offset) in a hash table, and lookup if we
+      // datafied the lval already. And wipe this hash table every time we start
+      // compiling a new namespace. We wouldn't have to record the ns on every
+      // lval we make.
+      lval->ns = get_current_ns();
+    }
   }
-  /* printf("datafy ======================= (global name: %s)\n", global_name);
-   */
-  /* lval_println(lval); */
 
   CResult ret = {};
-  if (!global_name && lval->wval_ptr > 0) {
-    int lval_ptr = lval->wval_ptr;
-    CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
-    /* printf("returing pre computed wval_ptr\n"); */
+  // A data offset in another module is of no use.
+  if (!lval_is_external && lval->data_offset > 0) {
+    int data_offset = lval->data_offset;
+    CResult _ret = {.ber = make_ptr(wasm, data_offset),
+                    .data_offset = data_offset};
     return _ret;
   }
   switch (lval->type) {
@@ -247,12 +261,13 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         ret.ber =
             BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
       else {
-        int lval_ptr = inter_literal(wasm, lval);
-        CResult _ret = {.ber = make_ptr(wasm, lval_ptr), .wasm_ptr = lval_ptr};
+        int data_offset = inter_literal(wasm, lval);
+        CResult _ret = {.ber = make_ptr(wasm, data_offset),
+                        .data_offset = data_offset};
         ret = _ret;
       }
   }
-  lval->wval_ptr = ret.wasm_ptr;
+  lval->data_offset = ret.data_offset;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */
   return ret;

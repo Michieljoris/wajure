@@ -7,7 +7,8 @@
 extern char __heap_base;
 char* heap_pointer = &__heap_base;
 
-char* get_memory() { return heap_pointer; }
+int data_size = 5 * 64 * 1024;
+char* get_memory() { return heap_pointer + data_size; }
 
 void free_memory() { /* No implementation possible in wasm */
 }

@@ -8,7 +8,7 @@
 
 typedef struct {
   Ber ber;
-  int wasm_ptr;
+  int data_offset;
   int is_fn_call;
   Lval* lval;
 } CResult;

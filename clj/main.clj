@@ -15,9 +15,15 @@
 
 ;; (defn f [x y z] [x y z])
 (defn main [x y]
-  (print "main")
+  ;; (print "main")
   ;; (print "hello")
-  (run-tests)
+
+  (print (not false))
+  (print (not false))
+  (print (not false))
+  (print (not false))
+  ;; (print (if false true false))
+  ;; (run-tests)
 
   ;; (test-partial)
   ;; (let [p partial

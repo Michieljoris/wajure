@@ -1,19 +1,16 @@
-const util = require('util');
+// const util = require('util');
 const fs = require('fs');
 
-var str = "";
+// var str = "";
 
-var memory;
-var runtime;
+// var memory;
+// var runtime;
 
 var page_size = 64 * 1024;
 var max_page_count = 100;
-var max_size = page_size * max_page_count;
-var initial_page_count = 2
+// var max_size = page_size * max_page_count;
+var initial_page_count = 10 //see runtime.wat for what this value should be
 var page_count = initial_page_count;
-
-// var i8, i16, i32;
-
 
 function makeLogString(memory, offset) {
     return function(offset) {
@@ -61,9 +58,6 @@ function makeLogStringN(memory, offset, length) {
 }
 
 async function run_wajure_fn(env, module, fn_name, ...args) {
-    let stack_pointer = env.stack_pointer_global.value;
-    // console.log("stack_pointer: ", stack_pointer);
-
     let args_count = args.length;
     let wajure_args = [];
     for (i = 0;  i < args_count; i++) {
@@ -182,11 +176,8 @@ async function instantiate_runtime(env) {
         then(res => res.instance);
 
     runtime.exports.init_malloc();
-    let stack_pointer = runtime.exports._malloc(config.stack_size); //8MB stack
 
     runtime.exports.init_lispy_mempools(3200, 3200, 3200);
-    env.stack_pointer = stack_pointer;
-    env.stack_pointer_global = new WebAssembly.Global({ value: 'i32', mutable: true }, stack_pointer);
     env.runtime = runtime;
     env.data_start = env.runtime.exports.__data_end.value;
     env.fn_table_start = 0;
@@ -223,7 +214,6 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
             wasm_globals,
             {   fn_table: env.fn_table,
                 runtime_error: env.runtime_error_fn,
-                stack_pointer: env.stack_pointer_global,
                 data_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, data_offset),
                 fn_table_offset: new WebAssembly.Global({ value: 'i32', mutable: false }, fn_table_offset),
 
@@ -285,6 +275,7 @@ async function load_modules(env, module) {
     module.data_offset = env.data_offset;
     module.fn_table_offset = env.fn_table_offset;
     env.data_offset += parseInt(module.data_size);
+
     env.fn_table_offset += parseInt(module.fn_table_size);
 
     for (const [namespace, value] of Object.entries(module.deps)) {
@@ -337,19 +328,18 @@ async function start() {
             fn_table_offset: 0,
             config: {runtime_wasm: './out_wasm/runtime.wasm',
                      main: "main",
-                     out: "./clj",
-                     stack_size: 8 * 1024 }
+                     out: "./clj"}
         }
 
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
 
         console.log("data_end =", env.runtime.exports.__data_end.value);
-        console.log("env.stack_pointer:", env.stack_pointer);
         console.log("heap_base =", env.runtime.exports.__heap_base.value);
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
+        console.log("final data_end: ", env.data_start + env.data_offset);
 
         console.log("Link modules  ----------------------------------------");
         // console.log(util.inspect(env.modules, null, Infinity, true));

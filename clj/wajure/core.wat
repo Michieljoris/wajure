@@ -11,7 +11,6 @@
  (data (global.get $data_offset) "\0f\0f\0f\0f\04\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (import "env" "__data_end" (global $__data_end i32))
- (import "env" "stack_pointer" (global $stack_pointer (mut i32)))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
  (import "env" "log_int" (func $log_int (param i32)))
@@ -77,7 +76,6 @@
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
- (export "stack_pointer" (global $stack_pointer))
  (export "mem" (memory $0))
  ;; custom section "symbol_table", size 0, contents: ""
  ;; custom section "deps", size 0, contents: ""

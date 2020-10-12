@@ -28,7 +28,6 @@ struct lval;
 typedef struct lenv Lenv;
 
 typedef struct lval Lval;
-/* typedef struct wval_fn WvalFun; */
 
 typedef Lval* (*Lbuiltin)(Lenv*, Lval*);
 
@@ -92,14 +91,14 @@ struct lval {
   char* cname;  // final_binding, or wasm_name, or canonical name, or actual
                 // name rather than an alias
 
-  // Compiler to wasm data
-  int wval_ptr;
-  Context* context;
-  int offset;
-
   // Ptr to canonical fn for partial fns, the fn that has the cname prop that we
   // actually need to call in wasm when calling the partial fn derived from it.
   Lval* cfn;
+
+  // Compiler to wasm data
+  int data_offset;  // offset of datafied lval relative to module's data offset
+  Context* context;
+  int offset;
 };
 #endif
 

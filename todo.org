@@ -2,6 +2,22 @@
 ** clean up and comment all of code
 ** DONE make lval as minimal as possible
 ** DONE unify wval_fn and lval
+** reset uniquify counter between compiles!!
+** when macros return a function (when called from within another fn), do they deduplicated?
+Since we're compiling the the expanded macro as if it's code in place do we know that the wasm fn might already exist?
+** sort out offset prop on lval
+It's used for multiple purposes:
+- fn_table_index
+- closure local
+- param local (lval_ref)
+** separate compiler props from lval
+Don't record compiler data on them like data_offset, Context and offset.
+It's just asking for trouble.
+** fix memory layout:
+runtime stacksize, runtime data_end, wajure data_end, heap_base
+get_memory()
+nodejs: initial_page_count, max_page_count
+makefile:  initial-memory and stack size
 ** somehow put native fns in their own module
 And export/ record the fns table indices somehow.
 No need to compile the native fns every time we compile main.clj

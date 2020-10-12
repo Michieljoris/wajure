@@ -213,7 +213,7 @@
   (t (= "" (list))
      false)
 
-  ;; ;; Testing variable length arguments
+  ;; Testing variable length arguments
 
   (t ( (fn [& more] (count more)) 1 2 3)
      3)
@@ -232,17 +232,17 @@
   (t ( (fn [a & more] (list? more)) 1)
      false)
 
-  ;; ;; ;; Testing language defined not function
-  (t (not false)
-     true)
-  (t (not nil)
-     true)
-  (t (not true)
-     false)
-  (t (not "a")
-     false)
-  (t (not 0)
-     false)
+  ;; Testing language defined not function
+  ;; (t (not false)
+  ;;    true)
+  ;; (t (not nil)
+  ;;    true)
+  ;; (t (not true)
+  ;;    false)
+  ;; (t (not "a")
+  ;;    false)
+  ;; (t (not 0)
+  ;;    false)
   )
 
 
@@ -482,4 +482,6 @@
   (t (= [1 2 (list 3 4 [5 6])] (list 1 2 [3 4 (list 5 6)]))
      true))
 ;; "done"
+
+
 

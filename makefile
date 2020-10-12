@@ -24,7 +24,10 @@ WASMFLAGS = $(CFLAGS_COMMON) --target=wasm32 -O3  -flto -nostdlib -D WASM
 WASMLDFLAGS = -Lout -Wl,--no-entry \
 -Wl,--export-all \
 -Wl,--allow-undefined  \
--Wl,--lto-O3
+-Wl,--lto-O3 \
+-Wl,--stack-first \
+-Wl,--initial-memory=$$(( 10 * 64 * 1024 ))
+# -Wl,-z,stack-size=4194304  # Set maximum stack size to 4MiB
 # ,-allow-undefined-file wasm.syms
 #,--export-dynamic  \
 
