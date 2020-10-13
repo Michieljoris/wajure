@@ -124,7 +124,7 @@ void reset_lval(Lval* lval) {
 
 void maybe_compile(Namespace* ns) {
   /* ns->compile = 1; */
-  if (1 || ns->compile) {
+  if (ns->compile) {
     compile(ns);
     /* printf("maybe compile\n"); */
     // Reset any values set on lvals.

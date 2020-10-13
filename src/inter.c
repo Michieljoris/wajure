@@ -195,7 +195,6 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
 void inter_rewrite_info(Wasm* wasm) {
   int lval_offsets_ptr = add_bytes_to_data(wasm, (char*)wasm->lval_offsets,
                                            wasm->lval_offsets_count * 4);
-  /* printf("inter_rewrite_info\n"); */
   /* printf("lval_offset_ptr %d, count: %d\n", lval_offsets_ptr, */
   /*        wasm->lval_offsets_count); */
 

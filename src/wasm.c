@@ -279,16 +279,16 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
 }
 
 void add_native_fns(Wasm* wasm) {
-  // Since we load config->main ("main") first in nodejs that module will have
-  // offset of 0 for data and fns, so we add the call fns to main and now we
-  // can refer to these call fns by index 0-20 throughout all the modules.
+  // Since we load config->stdlib ("wajure.core") first in nodejs that module
+  // will have offset of 0 for data and fns, so we add the call fns to
+  // wajure.core and now we can refer to these call fns by index 0-20 throughout
+  // all the modules.
   add_call_fns(wasm);             // 0-20
   add_bundle_rest_arg_fns(wasm);  //  21-41
 
   int fns_count = sizeof(native_fns) / sizeof(*native_fns);
 
-  // We sort so we're sure the constants match the fn table index.
-  /* qsort(native_fns, fns_count, sizeof(*native_fns), comp); */
+  // 42 - (42 + fns_count)
   for (int i = 0; i < fns_count; i++) {
     native_fns[i].add_fn(wasm);
     native_fns[i].fn_table_index =

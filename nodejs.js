@@ -1,4 +1,4 @@
-// const util = require('util');
+const util = require('util');
 const fs = require('fs');
 
 var initial_page_count = 10;
@@ -141,7 +141,8 @@ function parse_custom_sections(module) {
     let fn_table_size = get_custom_section(module, "fn_table_size");
     if (fn_table_size == undefined) return { error: "Missing fn_table_size"};
 
-    return { symbol_table, deps, data_size, fn_table_size };
+    return { symbol_table, deps,
+             data_size: parseInt(data_size), fn_table_size: parseInt(fn_table_size) };
 }
 
 async function instantiate_runtime(env) {
@@ -271,6 +272,20 @@ async function load_module(env, module) {
     return module;
 }
 
+async function load_stdlib(env) {
+    let module = { namespace: env.config.stdlib};
+    await load_module(env, module);
+
+    module.data_offset = 0;
+    module.fn_table_offset = 0;
+
+    env.data_offset = module.data_size;
+    env.fn_table_offset = module.fn_table_size;
+
+    //Instantiate this module before any other
+    env.modules[module.namespace] = module;
+    // console.log(module);
+}
 
 async function load_modules(env, module) {
 
@@ -282,9 +297,9 @@ async function load_modules(env, module) {
 
     module.data_offset = env.data_offset;
     module.fn_table_offset = env.fn_table_offset;
-    env.data_offset += parseInt(module.data_size);
 
-    env.fn_table_offset += parseInt(module.fn_table_size);
+    env.data_offset += module.data_size;
+    env.fn_table_offset += module.fn_table_size;
 
     for (const [namespace, value] of Object.entries(module.deps)) {
         if (env.trace.includes(namespace)) {
@@ -292,7 +307,8 @@ async function load_modules(env, module) {
                          " to " + namespace);
             break;
         }
-        await load_modules(env, { namespace: namespace });
+        if (namespace != env.config.stdlib) //already loaded.
+            await load_modules(env, { namespace: namespace });
     }
 
     env.modules[module.namespace] = module;
@@ -307,19 +323,17 @@ function link_modules(env, modules) {
 
         for (const [namespace_dep, symbols] of Object.entries(module.deps)) {
             const module = env.modules[namespace_dep];
+            if (!module) throw("Linking error in " + namespace + ": " + namespace_dep + " is not available");
             for (const symbol of symbols) {
-                if (!module) throw("Linking error in " + namespace + ": " + namespace_dep + " is not available");
                 const symbol_info = module.symbol_table[symbol.name];
                 if (!symbol_info) throw("Linking error in " + namespace + ": " + symbol.name +
                                         " does not exist in " + namespace_dep);
-                const offset_type = symbol_info[symbol.offset_type];
-                if (!offset_type) throw("Linking error in " + namespace + ": " +
-                                        " Can't find offset type of " + symbol.offset_type +
-                                        " in symbol info of " + symbol.name + " in namespace " + namespace_dep);
-                globals[symbol.global] = parseInt(
-                    symbol_info[symbol.offset_type]) +
-                    module[symbol.offset] +
-                    env[symbol.start];
+                const offset = symbol_info[symbol.offset_type];
+                if (!offset) throw("Linking error in " + namespace + ": " +
+                                   " Can't find offset type of " + symbol.offset_type +
+                                   " in symbol info of " + symbol.name + " in namespace " + namespace_dep);
+                globals[symbol.global] = parseInt(offset) + module[symbol.offset] + env[symbol.start];
+
             }
         }
         // console.log("GLOBALS: ", globals);
@@ -336,13 +350,15 @@ async function start() {
             fn_table_offset: 0,
             config: {runtime_wasm: './out_wasm/runtime.wasm',
                      main: "main",
+                     stdlib: "wajure.core",
                      out: "./clj"}
         }
 
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
-
+        await load_stdlib(env);
         console.log("data_end =", env.runtime.exports.__data_end.value);
+
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
@@ -370,13 +386,13 @@ async function start() {
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
         // console.log(util.inspect(env.modules, null, Infinity, true));
-
         const main_module = env.modules[env.config.main];
 
-        console.log("Running main/main(arg1, arg2, ..)\n------------------------------");
-
+        console.log("Init runtime  ----------------------------------------");
         env.runtime.exports.init_malloc();
         env.runtime.exports.init_lispy_mempools(3200, 3200, 3200);
+       
+        console.log("Running main/main(arg1, arg2, ..) ------------------------------");
         run_wajure_fn(env, main_module, "main", 888, 777);
 
         env.runtime.exports.free_lispy_mempools();

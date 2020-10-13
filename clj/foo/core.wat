@@ -202,26 +202,28 @@
          )
         )
         (block $args_2
-         (if
-          (local.get $5)
-          (memory.copy
-           (local.get $3)
-           (call $get_wval_partials
-            (local.get $4)
-           )
-           (local.tee $7
-            (i32.mul
-             (local.get $5)
-             (i32.const 4)
+         (local.set $8
+          (if (result i32)
+           (local.get $5)
+           (block (result i32)
+            (memory.copy
+             (local.get $3)
+             (call $get_wval_partials
+              (local.get $4)
+             )
+             (local.tee $7
+              (i32.mul
+               (local.get $5)
+               (i32.const 4)
+              )
+             )
+            )
+            (i32.add
+             (local.get $3)
+             (local.get $7)
             )
            )
-          )
-          (nop)
-         )
-         (local.set $8
-          (i32.add
            (local.get $3)
-           (local.get $7)
           )
          )
          (i32.store align=2
@@ -236,7 +238,14 @@
          (call_indirect (type $i32_i32_i32_=>_i32)
           (local.get $4)
           (local.get $3)
-          (local.get $6)
+          (if (result i32)
+           (i32.gt_u
+            (local.get $6)
+            (i32.const 20)
+           )
+           (i32.const 20)
+           (local.get $6)
+          )
           (i32.load8_u
            (i32.add
             (call $get_wval_fn_call_relay_array
@@ -425,26 +434,28 @@
                        )
                       )
                       (block $args_8
-                       (if
-                        (local.get $25)
-                        (memory.copy
-                         (local.get $23)
-                         (call $get_wval_partials
-                          (local.get $24)
-                         )
-                         (local.tee $27
-                          (i32.mul
-                           (local.get $25)
-                           (i32.const 4)
+                       (local.set $28
+                        (if (result i32)
+                         (local.get $25)
+                         (block (result i32)
+                          (memory.copy
+                           (local.get $23)
+                           (call $get_wval_partials
+                            (local.get $24)
+                           )
+                           (local.tee $27
+                            (i32.mul
+                             (local.get $25)
+                             (i32.const 4)
+                            )
+                           )
+                          )
+                          (i32.add
+                           (local.get $23)
+                           (local.get $27)
                           )
                          )
-                        )
-                        (nop)
-                       )
-                       (local.set $28
-                        (i32.add
                          (local.get $23)
-                         (local.get $27)
                         )
                        )
                        (i32.store align=2
@@ -459,7 +470,14 @@
                        (call_indirect (type $i32_i32_i32_=>_i32)
                         (local.get $24)
                         (local.get $23)
-                        (local.get $26)
+                        (if (result i32)
+                         (i32.gt_u
+                          (local.get $26)
+                          (i32.const 20)
+                         )
+                         (i32.const 20)
+                         (local.get $26)
+                        )
                         (i32.load8_u
                          (i32.add
                           (call $get_wval_fn_call_relay_array
@@ -556,26 +574,28 @@
               )
              )
              (block $args_18
-              (if
-               (local.get $38)
-               (memory.copy
-                (local.get $36)
-                (call $get_wval_partials
-                 (local.get $37)
-                )
-                (local.tee $40
-                 (i32.mul
-                  (local.get $38)
-                  (i32.const 4)
+              (local.set $41
+               (if (result i32)
+                (local.get $38)
+                (block (result i32)
+                 (memory.copy
+                  (local.get $36)
+                  (call $get_wval_partials
+                   (local.get $37)
+                  )
+                  (local.tee $40
+                   (i32.mul
+                    (local.get $38)
+                    (i32.const 4)
+                   )
+                  )
+                 )
+                 (i32.add
+                  (local.get $36)
+                  (local.get $40)
                  )
                 )
-               )
-               (nop)
-              )
-              (local.set $41
-               (i32.add
                 (local.get $36)
-                (local.get $40)
                )
               )
               (i32.store align=2
@@ -590,7 +610,14 @@
               (call_indirect (type $i32_i32_i32_=>_i32)
                (local.get $37)
                (local.get $36)
-               (local.get $39)
+               (if (result i32)
+                (i32.gt_u
+                 (local.get $39)
+                 (i32.const 20)
+                )
+                (i32.const 20)
+                (local.get $39)
+               )
                (i32.load8_u
                 (i32.add
                  (call $get_wval_fn_call_relay_array

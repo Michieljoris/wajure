@@ -563,7 +563,6 @@ void add_deps_custom_section(Wasm* wasm, char* custom_section_name,
 
 void compile(Namespace* ns) {
   printf("->>>>>>>>>>>> Compiling %s <<<<<<<<<<<<<<<<<< \n", ns->namespace);
-  /* scoped char* file_name = ns_to_src(ns->namespace); */
   set_log_level(LOG_LEVEL_INFO);
 
   /* printf("FILE_NAME: %s\n", file_name); */
@@ -578,7 +577,7 @@ void compile(Namespace* ns) {
   import_runtime(wasm);
   register_wajure_native_fns(wasm);
 
-  if (_strcmp(ns->namespace, config->main) == 0) add_native_fns(wasm);
+  if (_strcmp(ns->namespace, config->stdlib) == 0) add_native_fns(wasm);
 
   printf("Processing env =============\n");
   Cell* head = env->kv;
