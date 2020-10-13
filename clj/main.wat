@@ -9,13 +9,12 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f**\02++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00)\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\00\19\00\00\00E\00\00\00\01\00\00\00I\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\00++++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00)\00\00\00\02\05\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\00**\02++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00j\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00E\00\00\00\19\00\00\00Z\00\00\00\86\00\00\00\02\00\00\00\8e\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $main_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "fn:test.run/run-tests_0" (global $fn:test.run/run-tests_0 i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -82,21 +81,17 @@
  (export "main" (func $main_0))
  (export "mem" (memory $0))
  (func $main_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (local $3 i32)
-  (block $do_2 (result i32)
-   (block $lambda_call_1 (result i32)
-    (local.set $3
-     (call_indirect (type $i32_=>_i32)
-      (i32.const 0)
-      (global.get $fn:test.run/run-tests_0)
-     )
+  (block $do_1 (result i32)
+   (call $retain
+    (i32.add
+     (global.get $data_offset)
+     (i32.const 41)
     )
-    (local.get $3)
    )
   )
  )
- ;; custom section "symbol_table", size 25
- ;; custom section "deps", size 24
- ;; custom section "data_size", size 2, contents: "93"
+ ;; custom section "symbol_table", size 26
+ ;; custom section "deps", size 0, contents: ""
+ ;; custom section "data_size", size 3, contents: "162"
  ;; custom section "fn_table_size", size 1, contents: "1"
 )

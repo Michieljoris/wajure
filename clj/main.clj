@@ -1,5 +1,6 @@
 (in-ns 'main)
-;; (require '[wajure.core]) ;; uncomment and call a wajure.core fn to compile the namespace
+;; uncomment and call a wajure.core fn to compile the namespace
+(require '[wajure.core])
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
@@ -17,8 +18,9 @@
 ;; (defn f [x y z] [x y z])
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
 (defn main [x y]
+  ;; (test-wajure 1)
   ;; (let [f (fn [] 1)]
-  ;;   (f )
+  ;;   (print (f 1))
   ;;   )
   ;; (run-tests)
   ;; (let [f (foo 0)

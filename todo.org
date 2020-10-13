@@ -5,11 +5,13 @@ It's used for multiple purposes:
 - fn_table_index
 - closure local
 - param local (lval_ref)
-** somehow put native fns in their own module
-And export/ record the fns table indices somehow.
-No need to compile the native fns every time we compile main.clj
-** write fns to dispatch to when first arg of list is a kw, map, set, vector.
-And set the fn_call_relay_array properly on on all lvals!!!!
+** put native fns in their own module
+- DONE export/record the fns table indices somehow, so we can use them when compiling other modules
+- add fn_call_relay_arrays to wajure.core data for and export the pointers to use in make_lval and in datafy
+ 1-4 {}, #{}, [], :kw
+ 5. Not a fn runtime error.
+- write fns to dispatch to when first arg of list is a kw, map, set, vector.
+- And set the fn_call_relay_array properly on on all lvals!!!!
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list

@@ -513,27 +513,23 @@ void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
     for (int i = 0; i < 21; i++) fn_call_relay_table[i] = param_count;
     return;
   }
-  /* NativeFn* rt_error_too_few_args = alist_get( */
-  /*     wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args"); */
-  /* NativeFn* rt_error_too_many_args = alist_get( */
-  /*     wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args"); */
-
-  // TODO!!!!!: get native fns indices from somewhere
-  NativeFn rt_error_too_few_args = {.fn_table_index = 42};
-  NativeFn rt_error_too_many_args = {.fn_table_index = 43};
+  NativeFn* rt_error_too_few_args = alist_get(
+      wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args");
+  NativeFn* rt_error_too_many_args = alist_get(
+      wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
 
   if (has_rest_arg)
     for (int i = 0; i < 21; i++) {
       int bundle_args_fn_table_index = 21 + param_count;
       fn_call_relay_table[i] = i < param_count - 1
-                                   ? rt_error_too_few_args.fn_table_index
+                                   ? rt_error_too_few_args->fn_table_index
                                    : bundle_args_fn_table_index;
     }
   else {
     for (int i = 0; i < 21; i++)
       fn_call_relay_table[i] = i < param_count
-                                   ? rt_error_too_few_args.fn_table_index
-                                   : rt_error_too_many_args.fn_table_index;
+                                   ? rt_error_too_few_args->fn_table_index
+                                   : rt_error_too_many_args->fn_table_index;
     int call_fn_table_index = param_count;
     fn_call_relay_table[param_count] = call_fn_table_index;
   }

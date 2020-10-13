@@ -55,6 +55,7 @@ typedef struct {
   int* fn_relay_table_offsets_has_rest_arg;
   int id;
   char* buf;
+  char* native_symbols;
 } Wasm;
 
 typedef struct {
@@ -75,13 +76,13 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
 typedef struct native_fn NativeFn;
 
 struct native_fn {
-  char* wajure_fn_name;
+  char* wasm_fn_name;
   int fn_table_index;
-  void (*add_fn)(Wasm*);
+  void (*add_fn)(Wasm*, char*);
   CResult (*compile_fn_call)(Wasm*, NativeFn, Cell*);
 };
 
 void add_native_fns(Wasm* wasm);
 void register_wajure_native_fns(Wasm* wasm);
-
+void assign_fn_table_index_to_native_fns(Wasm* wasm);
 #endif  // __WASM_INIT_H_

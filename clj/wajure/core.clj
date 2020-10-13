@@ -38,3 +38,4 @@
              form)
            form)))
 
+(defn test-wajure [x] (print "foo Hello from wajure.core!!! " x x x))

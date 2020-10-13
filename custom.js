@@ -11,15 +11,15 @@ function get_custom_section(module, section) {
     };
 
 }
-
-async function print_custom_section() {
-    let buf = fs.readFileSync("clj/main.wasm");
+// "clj/main.wasm"
+async function print_custom_section(filename, section_name) {
+    let buf = fs.readFileSync(filename);
     module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
 
-    let deps = get_custom_section(module, "deps");
+    let deps = get_custom_section(module, section_name);
     // if (deps == undefined) return "Missing deps";
     // console.log(deps);
     console.log(deps);
 }
 
-print_custom_section(process.argv[2]);
+print_custom_section(process.argv[2], process.argv[3]);

@@ -7,23 +7,31 @@
 #include "lispy_mempool.h"
 #include "list.h"
 #include "misc_fns.h"
+#include "namespace.h"
 #include "native.h"
 #include "platform.h"
 #include "print.h"
 #include "printf.h"
+#include "state.h"
 #include "wasm_util.h"
 
-/* char* heap_base_str = read_file("__heap_base"); */
-
-// TODO: set fn_table_indices dynamically!!!!
 // Native fns take same args as call and bundle-args fns, ie wval,
 // args_block_ptr and args_count.
 NativeFn native_fns[] = {
-    {"rt_error_too_few_args", 42, add_rt_error_too_few_args_fn, NULL},
-    {"rt_error_too_many_args", 43, add_rt_error_too_many_args_fn, NULL},
-    {"copy_and_retain", 44, add_copy_and_retain_fn, NULL},
-    {"partial", 45, add_partial_fn, compile_partial_call},
-    {"apply", 46, add_apply_fn, compile_partial_call},
+    {"rt_error_too_few_args", -1, add_rt_error_too_few_args_fn, NULL},
+    {"rt_error_too_many_args", -1, add_rt_error_too_many_args_fn, NULL},
+    {"rt_error_not_a_fn", -1, add_fn_rt_error_not_a_fn, NULL},
+    {"copy_and_retain", -1, add_copy_and_retain_fn, NULL},
+    {"partial", -1, add_partial_fn, compile_partial_call},
+    {"apply", -1, add_apply_fn, NULL},
+    {"keyword2", -1, add_keyword2_fn, NULL},
+    {"keyword3", -1, add_keyword3_fn, NULL},
+    {"symbol2", -1, add_symbol2_fn, NULL},
+    {"symbol3", -1, add_symbol3_fn, NULL},
+    {"map2", -1, add_map2_fn, NULL},
+    {"map3", -1, add_map3_fn, NULL},
+    {"vector", -1, add_vector_fn, NULL},
+    {"set", -1, add_set_fn, NULL},
 };
 
 Wasm* init_wasm() {
@@ -34,42 +42,40 @@ Wasm* init_wasm() {
   int fn_table_end = 0;
   int native_fns_count = sizeof(native_fns) / sizeof(*native_fns);
   int fn_relay_table_offsets_count = (MAX_FN_PARAMS + 1) * 2 + native_fns_count;
-  *wasm =
-      (Wasm){.module = BinaryenModuleCreate(),
-             .data = malloc(4),
-             .data_offset = 4,  // we don't want any data at 0 (NULL pointer)
-             .fn_names = malloc(1),
-             .fns_count = 0,
-             .lval_true_offset = 0,
-             .lval_false_offset = 0,
-             .lval_nil_offset = 0,
-             .lval_empty_list_offset = 0,
-             .pic = pic,
-             .__data_end = pic ? 0 : data_end,
-             .__fn_table_end = pic ? 0 : fn_table_end,
-             /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
-             // reusing interred lval literal numbers for these common
-             // numbers (-100 till 100):
-             .lval_num_start = -100,
-             .lval_num_end = 100,
-             .lval_num_offset = calloc(sizeof(CResult), 201),
-             .context = malloc(sizeof(Cell)),
-             .validate_fn_at_rt = 1,
-             .symbol_table = malloc(1),
-             .symbol_table_count = 0,
-             .lval_offsets = malloc(100 * sizeof(int)),
-             .lval_offsets_count = 0,
-             .lval_offsets_allocated = 100,
-             /* .wval_fn_offsets = malloc(100 * sizeof(int)), */
-             /* .wval_fn_offsets_count = 0, */
-             /* .wval_fn_offsets_allocated = 100, */
-             .cell_offsets = malloc(100 * sizeof(int)),
-             .cell_offsets_count = 0,
-             .cell_offsets_allocated = 100,
-             .fn_relay_table_offsets =
-                 calloc(fn_relay_table_offsets_count, sizeof(int)),
-             .id = 1,
-             .buf = malloc(1024)};
+  *wasm = (Wasm){
+      .module = BinaryenModuleCreate(),
+      .data = malloc(4),
+      .data_offset = 4,  // we don't want any data at 0 (NULL pointer)
+      .fn_names = malloc(1),
+      .fns_count = 0,
+      .lval_true_offset = 0,
+      .lval_false_offset = 0,
+      .lval_nil_offset = 0,
+      .lval_empty_list_offset = 0,
+      .pic = pic,
+      .__data_end = pic ? 0 : data_end,
+      .__fn_table_end = pic ? 0 : fn_table_end,
+      /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
+      // reusing interred lval literal numbers for these common
+      // numbers (-100 till 100):
+      .lval_num_start = -100,
+      .lval_num_end = 100,
+      .lval_num_offset = calloc(sizeof(CResult), 201),
+      .context = malloc(sizeof(Cell)),
+      .validate_fn_at_rt = 1,
+      .symbol_table = malloc(1),
+      .symbol_table_count = 0,
+      .lval_offsets = malloc(100 * sizeof(int)),
+      .lval_offsets_count = 0,
+      .lval_offsets_allocated = 100,
+      .cell_offsets = malloc(100 * sizeof(int)),
+      .cell_offsets_count = 0,
+      .cell_offsets_allocated = 100,
+      .fn_relay_table_offsets =
+          calloc(fn_relay_table_offsets_count, sizeof(int)),
+      .id = 1,
+      .buf = malloc(1024),
+  };
 
   wasm->data[0] = 15;
   wasm->data[1] = 15;
@@ -103,22 +109,15 @@ void add_memory_section(Wasm* wasm) {
   BinaryenAddGlobalImport(module, "__data_end", "env", "__data_end",
                           BinaryenTypeInt32(), 0);
   BinaryenAddMemoryImport(module, "memory", "env", "memory", 0);
-  /* BinaryenAddGlobalImport(module, "stack_pointer", "env", "stack_pointer", */
-  /*                         BinaryenTypeInt32(), 1); */
   BinaryenAddGlobalImport(module, "data_offset", "env", "data_offset",
                           BinaryenTypeInt32(), 0);
   BinaryenAddGlobalImport(module, "fn_table_offset", "env", "fn_table_offset",
                           BinaryenTypeInt32(), 0);
 
-  /* BinaryenAddGlobal(module, "stack_pointer", BinaryenTypeInt32(), 1, */
-  /*                   make_int32(module, wasm->__heap_base)); */
-  /* BinaryenAddGlobalExport(module, "stack_pointer", "stack_pointer"); */
   const int num_segments = 1;
   const char* segments[1] = {wasm->data};
   BinaryenIndex segmentSizes[] = {wasm->data_offset};
 
-  /* BinaryenExpressionRef __data_end = */
-  /*     BinaryenGlobalGet(module, "__data_end", BinaryenTypeInt32()); */
   Ber data_offset =
       wasm->pic ? BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32())
                 : make_int32(module, wasm->__data_end);
@@ -259,8 +258,9 @@ CResult quit(Wasm* wasm, char* fmt, ...) {
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   /* printf("-- ADD TO SYMBOL TABLE\n"); */
   char* type_str = lval_type_to_name(lval);
-  int ptr_len = 10;
-  int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10;
+  /* int ptr_len = 10; */
+  /* int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10; */
+  int max_len = 1024;
   char* line = malloc(max_len);
   int offset = lval->data_offset;
   if (lval->type == LVAL_FUNCTION) {
@@ -290,19 +290,66 @@ void add_native_fns(Wasm* wasm) {
 
   // 42 - (42 + fns_count)
   for (int i = 0; i < fns_count; i++) {
-    native_fns[i].add_fn(wasm);
+    native_fns[i].add_fn(wasm, native_fns[i].wasm_fn_name);
     native_fns[i].fn_table_index =
-        add_fn_to_table(wasm, native_fns[i].wajure_fn_name);
+        add_fn_to_table(wasm, native_fns[i].wasm_fn_name);
+    char* fn_name = native_fns[i].wasm_fn_name;
+    char* type_str = "Function";
+    int max_len = 1024;
+    char* line = malloc(max_len);
+    snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", fn_name, type_str, -1,
+             native_fns[i].fn_table_index, 1, 1);
+
+    int line_count = _strlen(line);
+    wasm->symbol_table =
+        realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
+    _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
+    free(line);
+    wasm->symbol_table_count += line_count;
     /* printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name, */
     /*        native_fns[i].fn_table_index); */
   }
+}
+
+void assign_fn_table_index_to_native_fns(Wasm* wasm) {
+  // We read the symbol table custom section of stdlib (wajure.core)
+  FILE* fp;
+  char command[1000];
+  sprintf(command, "node custom.js %s symbol_table\n",
+          ns_to_wasm(config->stdlib));
+  fp = popen(command, "r");
+
+  char fn_name[1000];
+  int data_offset, fn_table_index, param_count, has_rest_arg;
+  // Line by line
+  do {
+    char line[1000];
+    int ret = fscanf(fp, "%s", line);
+    if (ret > 0) {
+      strsubst(line, ',', ' ');
+      char type[100];
+      sscanf(line, "%s %s %d %d %d %d", fn_name, type, &data_offset,
+             &fn_table_index, &param_count, &has_rest_arg);
+
+      // See if it's one of our native fns
+      NativeFn* native_fn = (NativeFn*)alist_get(wasm->wajure_to_native_fn_map,
+                                                 is_eq_str, fn_name);
+      // If so set its fn_table_index
+      if (native_fn) {
+        /* printf("assigning %d to %s\n", fn_table_index, fn_name); */
+        native_fn->fn_table_index = fn_table_index;
+      }
+    } else
+      break;
+  } while (1);
+  fclose(fp);
 }
 
 void register_wajure_native_fns(Wasm* wasm) {
   int fns_count = sizeof(native_fns) / sizeof(*native_fns);
   for (int i = 0; i < fns_count; i++) {
     wasm->wajure_to_native_fn_map =
-        alist_prepend(wasm->wajure_to_native_fn_map,
-                      native_fns[i].wajure_fn_name, &native_fns[i]);
+        alist_prepend(wasm->wajure_to_native_fn_map, native_fns[i].wasm_fn_name,
+                      &native_fns[i]);
   };
 }

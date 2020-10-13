@@ -577,7 +577,11 @@ void compile(Namespace* ns) {
   import_runtime(wasm);
   register_wajure_native_fns(wasm);
 
-  if (_strcmp(ns->namespace, config->stdlib) == 0) add_native_fns(wasm);
+  if (_strcmp(ns->namespace, config->stdlib) == 0) {
+    add_native_fns(wasm);
+    add_native_call_relay_table_arrays(wasm);
+  } else
+    assign_fn_table_index_to_native_fns(wasm);
 
   printf("Processing env =============\n");
   Cell* head = env->kv;

@@ -14,6 +14,7 @@ CResult wasm_release(Wasm* wasm, Ber wval);
 Ber make_int32(BinaryenModuleRef module, int x);
 void write_wat(Wasm* wasm, char* file_name);
 
+void write_string(char* file_name, char* str);
 void write_wasm(Wasm* wasm, char* file_name);
 void add_test_fn(Wasm* wasm);
 
@@ -111,6 +112,8 @@ Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop);
 
 Ber local_get_int32(BinaryenModuleRef module, int index);
 
+void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
+                              int param_count, int has_rest_arg);
 int get_fn_call_relay_table_offset(Wasm* wasm, int param_count,
                                    int has_rest_arg);
 

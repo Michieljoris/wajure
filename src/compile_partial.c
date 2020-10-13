@@ -207,8 +207,6 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
   // call, so we'll pretend it was, and the result of the whole partial call
   // can then be released when required
 
-  // Reserve space for the fn_call_relay array
-  // TODO: replace with lalloc_type
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
       wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
@@ -344,11 +342,8 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
       }
 
       // Call the runtime make_lval_wasm_lambda fn
-      Ber operands[5] = {ber_fn_table_index,
-                         /* param_count, */
-                         /* has_rest_arg, */
-                         closure_ptr, partials_ptr, ber_partial_count,
-                         fn_call_relay_array_ptr};
+      Ber operands[5] = {ber_fn_table_index, closure_ptr, partials_ptr,
+                         ber_partial_count, fn_call_relay_array_ptr};
       children[children_count++] =
           BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 5,
                        make_type_int32(1));
