@@ -61,4 +61,5 @@ int is_eq_str(void *k1, void *k2);
 
 char *strsubst(char *s, char c1, char c2);
 
+int number_len(int n);
 #endif  // __LIB_H_

@@ -385,7 +385,7 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        // console.log(util.inspect(env.modules, null, Infinity, true));
+        console.log(util.inspect(env.modules, null, Infinity, true));
         const main_module = env.modules[env.config.main];
 
         console.log("Init runtime  ----------------------------------------");

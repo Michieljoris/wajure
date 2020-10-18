@@ -31,8 +31,6 @@ typedef struct {
   int lval_num_start;
   int lval_num_end;
   int* lval_num_offset;
-  Cell* wajure_to_c_fn_map;
-  Cell* wajure_to_native_fn_map;
   Cell* string_pool;
   Cell* lval_str_pool;
   Cell* lval_symbol_pool;
@@ -55,7 +53,6 @@ typedef struct {
   int* fn_relay_table_offsets_has_rest_arg;
   int id;
   char* buf;
-  char* native_symbols;
 } Wasm;
 
 typedef struct {
@@ -66,7 +63,8 @@ typedef struct {
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 
-void import_runtime(Wasm* wasm);
+void import_runtime_fns(Wasm* wasm);
+void register_runtime_fns();
 void add_memory_section(Wasm* wasm);
 void add_function_table(Wasm* wasm);
 
@@ -83,6 +81,7 @@ struct native_fn {
 };
 
 void add_native_fns(Wasm* wasm);
-void register_wajure_native_fns(Wasm* wasm);
+void register_native_fns();
+void register_native_relay_arrays();
 void assign_fn_table_index_to_native_fns(Wasm* wasm);
 #endif  // __WASM_INIT_H_

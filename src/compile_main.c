@@ -177,6 +177,7 @@ char** get_module_deps(char* namespace_str) {
   int size = _strlen(wasm_file_name) + _strlen(node_command);
   char* command = malloc(size);
   sprintf(command, "%s %s", node_command, wasm_file_name);
+  release(wasm_file_name);
   FILE* f = popen(command, "r");
   int line_size = 1028;
   int dep_lines_allocated = 100;

@@ -323,15 +323,16 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fn,
           wasm->module, fn_table_index_external, BinaryenTypeInt32());
       result = call_indirect(wasm, fn_table_index, lval_fn, args, li);
     } break;
-
-    case INDIRECT_LOCAL: {
-      Ber fn_table_index = make_int32(wasm->module, fn_ref.fn_table_index);
-      fn_table_index =
-          BinaryenBinary(wasm->module, BinaryenAddInt32(), fn_table_index,
-                         BinaryenGlobalGet(wasm->module, "fn_table_offset",
-                                           BinaryenTypeInt32()));
-      result = call_indirect(wasm, fn_table_index, lval_fn, args, li);
-    } break;
+    /* case INDIRECT_LOCAL: { */
+    /*   Ber fn_table_index = make_int32(wasm->module, fn_ref.fn_table_index);
+     */
+    /*   fn_table_index = */
+    /*       BinaryenBinary(wasm->module, BinaryenAddInt32(), fn_table_index, */
+    /*                      BinaryenGlobalGet(wasm->module, "fn_table_offset",
+     */
+    /*                                        BinaryenTypeInt32())); */
+    /*   result = call_indirect(wasm, fn_table_index, lval_fn, args, li); */
+    /* } break; */
     default:
       quit(wasm, "Unknown fn_ref_type %d", fn_ref_type);
   }
@@ -465,8 +466,13 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             Lval* cfn = resolved_sym->cfn;
             if (cfn &&
                 cfn->ns == get_current_ns()) {  // Partial fn, derived from cfn
-              union FnRef fn_ref = {.fn_table_index = cfn->offset};
-              fn_call = apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym, args);
+              printf("HELLO %s\n", cfn->cname);
+              /* union FnRef fn_ref = {.fn_table_index = cfn->offset}; */
+              /* fn_call = apply(wasm, INDIRECT_LOCAL, fn_ref, resolved_sym,
+               * args); */
+
+              union FnRef fn_ref = {.fn_name = cfn->cname};
+              fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);
             } else if (lval_is_external) {  // required from another namespace
               char* global_name = make_global_name(
                   "fn:", resolved_sym->ns->namespace, resolved_sym->cname);
@@ -658,3 +664,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
 /*   return BinaryenCall(module, "bundle_rest_args", operands, 2, */
 /*                       BinaryenTypeNone()); */
 /* } */
+
+/* const char* names[2] = {"foo", "bar"}; */
+/* block_children[block_children_count++] = */
+/*     BinaryenSwitch(module, names, 2, "default", make_int32(module, 0), */
+/*                    make_int32(module, 1)); */

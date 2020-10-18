@@ -12,6 +12,7 @@
 #include "print.h"
 #include "repl.h"
 #include "state.h"
+#include "wasm.h"
 
 void init_wajure() {
   set_log_level(LOG_LEVEL_INFO);
@@ -19,6 +20,8 @@ void init_wajure() {
   Namespace* user_ns = install_ns(config->user);
   set_current_ns(user_ns);
   install_stdlib();
+  register_runtime_fns();
+  register_native_fns();
 }
 
 void destroy_wajure() {

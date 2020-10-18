@@ -155,6 +155,10 @@ typedef struct {
   Map namespaces;
   /* {"namespace.name": Namespace* ns} */
   int mark_deps;
+
+  Cell* wajure_to_c_fn_map;
+  Cell* wajure_to_native_fn_map;
+  Cell* native_call_to_relay_array_map;
 } State;
 
 struct resolved_symbol {

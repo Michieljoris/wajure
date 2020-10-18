@@ -26,7 +26,7 @@
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fHELLOfn\00\00foo Hello from wajure.core!!! \00\00++++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00Q\00\00\00\02\t\00\00\0d\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00,\00\00\00*\01+++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00\92\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff8\00\00\00\00\00\00\00\00\00\00\00m\00\00\00A\00\00\00\82\00\00\00\ae\00\00\00\02\00\00\00\b6\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0ffn\00\00,,,,,,,,,,,,,,,,,,,,,foo Hello from wajure.core!!! \00\01\00\00\00\00\00\00\00\00\00\00\00L\00\00\00\02\t\00\00\1d\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00*\01+++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00\8d\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff8\00\00\00\00\00\00\00\00\00\00\00h\00\00\00<\00\00\00}\00\00\00\a9\00\00\00\02\00\00\00\b1\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $call#0 $call#1 $call#2 $call#3 $call#4 $call#5 $call#6 $call#7 $call#8 $call#9 $call#10 $call#11 $call#12 $call#13 $call#14 $call#15 $call#16 $call#17 $call#18 $call#19 $call#20 $bundle_rest_arg#21 $bundle_rest_arg#22 $bundle_rest_arg#23 $bundle_rest_arg#24 $bundle_rest_arg#25 $bundle_rest_arg#26 $bundle_rest_arg#27 $bundle_rest_arg#28 $bundle_rest_arg#29 $bundle_rest_arg#30 $bundle_rest_arg#31 $bundle_rest_arg#32 $bundle_rest_arg#33 $bundle_rest_arg#34 $bundle_rest_arg#35 $bundle_rest_arg#36 $bundle_rest_arg#37 $bundle_rest_arg#38 $bundle_rest_arg#39 $bundle_rest_arg#40 $bundle_rest_arg#41 $rt_error_too_few_args $rt_error_too_many_args $rt_error_not_a_fn $copy_and_retain $partial $apply $keyword2 $keyword3 $symbol2 $symbol3 $map2 $map3 $vector $set $test-wajure_7)
  (import "env" "__data_end" (global $__data_end i32))
@@ -1214,7 +1214,7 @@
    (i32.const 0)
    (i32.add
     (global.get $data_offset)
-    (i32.const 9)
+    (i32.const 4)
    )
   )
   (i32.const 0)
@@ -1224,7 +1224,7 @@
    (i32.const 2)
    (i32.add
     (global.get $data_offset)
-    (i32.const 12)
+    (i32.const 7)
    )
   )
   (i32.const 0)
@@ -1234,7 +1234,7 @@
    (i32.const 1)
    (i32.add
     (global.get $data_offset)
-    (i32.const 9)
+    (i32.const 4)
    )
   )
   (i32.const 0)
@@ -1385,7 +1385,7 @@
          (call $retain
           (i32.add
            (global.get $data_offset)
-           (i32.const 81)
+           (i32.const 76)
           )
          )
          (call $prefix_list
@@ -1416,8 +1416,9 @@
    )
   )
  )
+ ;; custom section "call_relay_arrays", size 19, contents: "rt_error_not_a_fn,8"
  ;; custom section "symbol_table", size 448
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "202"
+ ;; custom section "data_size", size 3, contents: "197"
  ;; custom section "fn_table_size", size 2, contents: "57"
 )

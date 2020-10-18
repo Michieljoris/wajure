@@ -353,7 +353,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   Ber fn_call_relay_array_ptr = BinaryenBinary(
       module, BinaryenAddInt32(),
       BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()),
-      make_int32(module, get_fn_call_relay_table_offset(wasm, param_count,
+      make_int32(module, get_fn_call_relay_array_offset(wasm, param_count,
                                                         rest_arg_index)));
 
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
@@ -406,7 +406,7 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 }
 
 CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
-  NativeFn* native_fn = alist_get(wasm->wajure_to_native_fn_map, is_eq_str,
+  NativeFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
                                   lval_fn_native->data.str);
   if (!native_fn)
     quit(wasm, "Function %s not found in runtime", lval_fn_native->data.str);
@@ -415,7 +415,7 @@ CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
   char* c_fn_name =
-      alist_get(wasm->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
+      alist_get(state->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
   if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
@@ -569,19 +569,20 @@ void compile(Namespace* ns) {
   Wasm* wasm = init_wasm();
 
   set_current_ns(ns);
-  /* Namespace* foo_ns = get_namespace("foo.core"); */
-  /* printf("foo.core: %s", foo_ns->namespace); */
   Lenv* env = ns->env;
 
   /* env_print(env); */
-  import_runtime(wasm);
-  register_wajure_native_fns(wasm);
+
+  import_runtime_fns(wasm);
 
   if (_strcmp(ns->namespace, config->stdlib) == 0) {
     add_native_fns(wasm);
-    add_native_call_relay_table_arrays(wasm);
-  } else
+    add_native_call_relay_arrays(wasm);
+  } else {
+    // TODO: move to init_wajure
     assign_fn_table_index_to_native_fns(wasm);
+    register_native_relay_arrays();
+  }
 
   printf("Processing env =============\n");
   Cell* head = env->kv;
@@ -652,8 +653,12 @@ void compile(Namespace* ns) {
   free(size_str);
 
   printf("writing wat and wasm!!!! %s\n", ns_to_wat(ns->namespace));
-  write_wat(wasm, ns_to_wat(ns->namespace));
-  write_wasm(wasm, ns_to_wasm(ns->namespace));
+  char* file_name = ns_to_wat(ns->namespace);
+  write_wat(wasm, file_name);
+  release(file_name);
+  file_name = ns_to_wasm(ns->namespace);
+  write_wasm(wasm, file_name);
+  release(file_name);
 
   printf("Validating %s\n", ns_to_wasm(ns->namespace));
   int validate_result = BinaryenModuleValidate(wasm->module);

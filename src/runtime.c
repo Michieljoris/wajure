@@ -210,51 +210,6 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
     /* printf("car: %li, cdr: %li\n", (long)cell_ptr->car, (long)cell_ptr->cdr);
      */
   }
-
-  // Rewrite wval_fns
-  /*   char* wval_fn_offsets_ptr = (char*)(long)info_section[4]; */
-
-  /*   /\* printf("wval_fn_offsets_ptr:  %li\n", (long)wval_fn_offsets_ptr); *\/
-   */
-  /*   wval_fn_offsets_ptr += data_offset; */
-  /*   int wval_fn_offsets_count = info_section[5]; */
-
-  /*   printf("rewriting wval_fn:\nwval_fn_offsets_ptr: %li\ncount: %d %d\n", */
-  /*          (long)wval_fn_offsets_ptr, wval_fn_offsets_count, */
-  /*          wval_fn_offsets_ptr[0]); */
-
-  /*   for (int i = 0; i < wval_fn_offsets_count; i++) { */
-  /*     Slot* slot_ptr = */
-  /*         (Slot*)(long)(((int*)wval_fn_offsets_ptr)[i] + data_offset); */
-  /*     Lval* wval_fn_ptr = (Lval*)(long)(((int*)wval_fn_offsets_ptr)[i] + */
-  /*                                       data_offset + sizeof(Slot)); */
-
-  /*     wval_print(wval_fn_ptr); */
-  /*     slot_ptr->data_p = slot_ptr->data_p + data_offset; */
-  /* #ifdef WASM */
-  /*     wval_fn_ptr->fn_table_index += fn_table_offset; */
-  /* #endif */
-
-  /*     if (wval_fn_ptr->closure) wval_fn_ptr->closure += data_offset; */
-  /*     if (wval_fn_ptr->partials) wval_fn_ptr->partials += data_offset; */
-  /* #ifdef WASM */
-  /*     wval_fn_ptr->fn_call_relay_array += data_offset; */
-  /* #endif */
-
-  /* #ifdef WASM */
-  /*     int* partials = (int*)((long)wval_fn_ptr->partials); */
-  /*     for (int i = 0; i < wval_fn_ptr->partial_count; i++) { */
-  /*       partials[i] += data_offset; */
-  /*       /\* printf("partial[%d] = %d\n", i, partials[i]); *\/ */
-  /*     } */
-  /* #endif */
-
-  /*     wval_print(wval_fn_ptr); */
-  /* printf("wval_fn->partials %d\n", wval_fn_ptr->partials); */
-  /* printf("wval_fn->partial_count %d\n", wval_fn_ptr->partial_count); */
-  /* printf("wval_fn_ptr->fn_table_index: %d\n", wval_fn_ptr->fn_table_index);
-   */
-  /* } */
 }
 
 /* int is_falsy(Lval* lval) { */

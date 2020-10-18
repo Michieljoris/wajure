@@ -13,6 +13,7 @@
 #include "misc_fns.h"
 #include "platform.h"
 #include "print.h"
+#include "state.h"
 #include "wasm.h"
 
 CResult wasm_retain(Wasm* wasm, Ber wval) {
@@ -514,9 +515,9 @@ void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
     return;
   }
   NativeFn* rt_error_too_few_args = alist_get(
-      wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args");
+      state->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args");
   NativeFn* rt_error_too_many_args = alist_get(
-      wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
+      state->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
 
   if (has_rest_arg)
     for (int i = 0; i < 21; i++) {
@@ -535,7 +536,7 @@ void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
   }
 }
 
-int get_fn_call_relay_table_offset(Wasm* wasm, int param_count,
+int get_fn_call_relay_array_offset(Wasm* wasm, int param_count,
                                    int has_rest_arg) {
   int index = param_count > MAX_FN_PARAMS ? 0
               : has_rest_arg              ? MAX_FN_PARAMS + 1

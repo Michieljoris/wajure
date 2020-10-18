@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
   config = malloc(sizeof(Config));
   make_config(argc, argv);
-  state = malloc(sizeof(State));
+  state = calloc(1, sizeof(State));
 
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {

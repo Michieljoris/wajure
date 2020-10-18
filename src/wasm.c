@@ -210,31 +210,51 @@ extern RuntimeFn list_builtin_fns[];
 extern RuntimeFn math_builtin_fns[];
 extern RuntimeFn util_builtin_fns[];
 
-void runtime_add_fns(Wasm* wasm, RuntimeFn lispy_fns[]) {
+void add_runtime_fn_imports(Wasm* wasm, RuntimeFn runtime_fns[]) {
   BinaryenModuleRef module = wasm->module;
   int i = 0;
   char* c_fn_name;
   int params_count, results_count;
   do {
-    c_fn_name = lispy_fns[i].c_fn_name;
-    if (!c_fn_name) break;
-    params_count = lispy_fns[i].params_count;
-    results_count = lispy_fns[i].results_count;
+    c_fn_name = runtime_fns[i].c_fn_name;
+    if (!c_fn_name) break;  // end of list
+    params_count = runtime_fns[i].params_count;
+    results_count = runtime_fns[i].results_count;
     BinaryenAddFunctionImport(module, c_fn_name, "env", c_fn_name,
                               make_type_int32(params_count),
                               make_type_int32(results_count));
-    if (lispy_fns[i].wajure_fn_name)
-      wasm->wajure_to_c_fn_map = alist_prepend(
-          wasm->wajure_to_c_fn_map, lispy_fns[i].wajure_fn_name, c_fn_name);
+    if (runtime_fns[i].wajure_fn_name)
+      state->wajure_to_c_fn_map = alist_prepend(
+          state->wajure_to_c_fn_map, runtime_fns[i].wajure_fn_name, c_fn_name);
     i++;
-  } while (c_fn_name);
+  } while (1);
 }
 
-void import_runtime(Wasm* wasm) {
-  runtime_add_fns(wasm, runtime_fns);
-  runtime_add_fns(wasm, math_builtin_fns);
-  runtime_add_fns(wasm, list_builtin_fns);
-  runtime_add_fns(wasm, util_builtin_fns);
+void register_fns(RuntimeFn runtime_fns[]) {
+  int i = 0;
+  char* c_fn_name;
+  do {
+    c_fn_name = runtime_fns[i].c_fn_name;
+    if (!c_fn_name) break;  // end of list
+    if (runtime_fns[i].wajure_fn_name)
+      state->wajure_to_c_fn_map = alist_prepend(
+          state->wajure_to_c_fn_map, runtime_fns[i].wajure_fn_name, c_fn_name);
+    i++;
+  } while (1);
+}
+
+void import_runtime_fns(Wasm* wasm) {
+  add_runtime_fn_imports(wasm, runtime_fns);
+  add_runtime_fn_imports(wasm, math_builtin_fns);
+  add_runtime_fn_imports(wasm, list_builtin_fns);
+  add_runtime_fn_imports(wasm, util_builtin_fns);
+}
+
+void register_runtime_fns() {
+  register_fns(runtime_fns);
+  register_fns(math_builtin_fns);
+  register_fns(list_builtin_fns);
+  register_fns(util_builtin_fns);
 }
 
 CResult quit(Wasm* wasm, char* fmt, ...) {
@@ -311,12 +331,40 @@ void add_native_fns(Wasm* wasm) {
   }
 }
 
+void register_native_relay_arrays() {
+  // We read the symbol table custom section of stdlib (wajure.core)
+  FILE* fp;
+  char command[1000];
+  char* file_name = ns_to_wasm(config->stdlib);
+  sprintf(command, "node custom.js %s call_relay_arrays\n", file_name);
+  release(file_name);
+  fp = popen(command, "r");
+
+  char fn_name[1000];
+  // Line by line
+  do {
+    char line[1000];
+    int ret = fscanf(fp, "%s", line);
+    if (ret > 0) {
+      strsubst(line, ',', ' ');
+      int* data_offset = malloc(sizeof(int));
+      sscanf(line, "%s %d", fn_name, data_offset);
+      state->native_call_to_relay_array_map = alist_prepend(
+          state->native_call_to_relay_array_map, fn_name, data_offset);
+      /* printf("Register: %s %d\n", fn_name, *data_offset); */
+    } else
+      break;
+  } while (1);
+  fclose(fp);
+}
+
 void assign_fn_table_index_to_native_fns(Wasm* wasm) {
   // We read the symbol table custom section of stdlib (wajure.core)
   FILE* fp;
   char command[1000];
-  sprintf(command, "node custom.js %s symbol_table\n",
-          ns_to_wasm(config->stdlib));
+  char* file_name = ns_to_wasm(config->stdlib);
+  sprintf(command, "node custom.js %s symbol_table\n", file_name);
+  release(file_name);
   fp = popen(command, "r");
 
   char fn_name[1000];
@@ -332,7 +380,7 @@ void assign_fn_table_index_to_native_fns(Wasm* wasm) {
              &fn_table_index, &param_count, &has_rest_arg);
 
       // See if it's one of our native fns
-      NativeFn* native_fn = (NativeFn*)alist_get(wasm->wajure_to_native_fn_map,
+      NativeFn* native_fn = (NativeFn*)alist_get(state->wajure_to_native_fn_map,
                                                  is_eq_str, fn_name);
       // If so set its fn_table_index
       if (native_fn) {
@@ -345,11 +393,11 @@ void assign_fn_table_index_to_native_fns(Wasm* wasm) {
   fclose(fp);
 }
 
-void register_wajure_native_fns(Wasm* wasm) {
+void register_native_fns() {
   int fns_count = sizeof(native_fns) / sizeof(*native_fns);
   for (int i = 0; i < fns_count; i++) {
-    wasm->wajure_to_native_fn_map =
-        alist_prepend(wasm->wajure_to_native_fn_map, native_fns[i].wasm_fn_name,
-                      &native_fns[i]);
+    state->wajure_to_native_fn_map =
+        alist_prepend(state->wajure_to_native_fn_map,
+                      native_fns[i].wasm_fn_name, &native_fns[i]);
   };
 }

@@ -114,7 +114,7 @@ Ber local_get_int32(BinaryenModuleRef module, int index);
 
 void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
                               int param_count, int has_rest_arg);
-int get_fn_call_relay_table_offset(Wasm* wasm, int param_count,
+int get_fn_call_relay_array_offset(Wasm* wasm, int param_count,
                                    int has_rest_arg);
 
 #endif  // __WASM_UTIL_H_

@@ -4,6 +4,7 @@
 
 #include "cell.h"
 #include "namespace.h"
+#include "native.h"
 
 /* #include "hash.h" */
 #include "env.h"
@@ -11,10 +12,14 @@
 #include "lib.h"
 #include "lispy_mempool.h"
 
+extern char __heap_base;
+char* heap_pointer = &__heap_base;
+
 #ifdef WASM
-#define SET_NS
+#define INIT(fcra_type) \
+  .fn_call_relay_array = (int)heap_pointer + fcra_type * 21
 #else
-#define SET_NS .ns = get_current_ns()
+#define INIT(type) .ns = get_current_ns()
 #endif
 
 /* SYMBOL */
@@ -85,16 +90,20 @@ int lval_hash(Lval* lval) {
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval =
-      (Lval){.type = LVAL_SYMBOL, .subtype = -1, .data.str = retain(s), SET_NS};
+  *lval = (Lval){.type = LVAL_SYMBOL,
+                 .subtype = -1,
+                 .data.str = retain(s),
+                 INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_keyword(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){
-      .type = LVAL_LITERAL, .subtype = KEYWORD, .data.str = retain(s), SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL,
+                 .subtype = KEYWORD,
+                 .data.str = retain(s),
+                 INIT(FCRA_KEYWORD)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -103,15 +112,17 @@ Lval* make_lval_keyword(char* s) {
 
 Lval* make_lval_list(void) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST};
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = LIST, INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* new_lval_list(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){
-      .type = LVAL_COLLECTION, .subtype = LIST, .data.head = head, SET_NS};
+  *lval = (Lval){.type = LVAL_COLLECTION,
+                 .subtype = LIST,
+                 .data.head = head,
+                 INIT(FCRA_NOT_A_FN)};
   /* printf("arg list to cons (new_lval_list):\n"); */
   /* printf("lval_list: %d\n", get_ref_count(lval)); */
   /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
@@ -125,22 +136,24 @@ Lval* new_lval_list(void* head) {
 
 Lval* new_lval_vector(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){
-      .type = LVAL_COLLECTION, .subtype = VECTOR, .data.head = head, SET_NS};
+  *lval = (Lval){.type = LVAL_COLLECTION,
+                 .subtype = VECTOR,
+                 .data.head = head,
+                 INIT(FCRA_VECTOR)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, SET_NS};
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, INIT(FCRA_VECTOR)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP, SET_NS};
+  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP, INIT(FCRA_MAP)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -149,37 +162,41 @@ Lval* make_lval_map(void) {
 
 Lval* make_lval_nil() {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LNIL, SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LNIL, INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_true() {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LTRUE, SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LTRUE, INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_false() {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LFALSE, SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LFALSE, INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc_type(LVAL);
-  *lval =
-      (Lval){.type = LVAL_LITERAL, .subtype = NUMBER, .data.num = x, SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL,
+                 .subtype = NUMBER,
+                 .data.num = x,
+                 INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){
-      .type = LVAL_LITERAL, .subtype = STRING, .data.str = retain(s), SET_NS};
+  *lval = (Lval){.type = LVAL_LITERAL,
+                 .subtype = STRING,
+                 .data.str = retain(s),
+                 INIT(FCRA_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -197,7 +214,7 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
                  .fun = func,
                  .data.str = retain(func_name),
                  .offset = -1,
-                 SET_NS};
+                 INIT(-1)};
   lval->hash = lval_hash(lval);
   return lval;
 #endif
@@ -215,7 +232,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
                  .params = params,
                  .body = body,
                  .offset = -1,
-                 SET_NS};
+                 INIT(-1)};
   lval->hash = lval_hash(lval);
   return lval;
 #endif
@@ -226,8 +243,10 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){
-      .type = LVAL_ERR, .subtype = SYS, .data.str = lalloc_size(512), SET_NS};
+  *lval = (Lval){.type = LVAL_ERR,
+                 .subtype = SYS,
+                 .data.str = lalloc_size(512),
+                 INIT(FCRA_NOT_A_FN)};
 
   va_list va;
   va_start(va, fmt);

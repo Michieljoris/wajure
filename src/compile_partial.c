@@ -71,7 +71,7 @@ CResult test_native_partial_fn(Wasm* wasm, CResult fn_arg, Cell* args,
   }
 
   NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, "partial");
+      alist_get(state->wajure_to_native_fn_map, is_eq_str, "partial");
   Ber partial_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber ber_args_count = make_int32(module, args_count);
   args_block_ptr = local_get_int32(module, args_block_ptr_local);
@@ -145,7 +145,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
                       new_partials_local)};  // ptr to partials of new fn
 
   NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
+      alist_get(state->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
   Ber copy_and_retain_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber copy_wval_partials = BinaryenCallIndirect(
       module, copy_and_retain_fn_index, copy_and_retain_operands, 3,
@@ -312,15 +312,28 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
       int fn_table_index =
           lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
       Ber ber_fn_table_index;
-      /* Ber param_count; */
-      /* Ber has_rest_arg; */
       Ber fn_call_relay_array_ptr;
       if (lval_fn->subtype == SYS) {
+        printf("SYS: %s, %d\n", fn_arg.lval->cname, fn_arg.lval->offset);
         // Let's get fn_table_index from the datafied sys fn
-        ber_fn_table_index =
-            get_wval_prop(module, fn_arg.ber, "fn_table_index");
-        /* param_count = make_int32(module, 1); */
-        /* has_rest_arg = make_int32(module, 1); */
+        /* int wval_fn_local = li_new(wasm); */
+        /* Ber wval_fn = BinaryenLocalTee(module, wval_fn_local, fn_arg.ber, */
+        /*                                BinaryenTypeInt32()); */
+        /* ber_fn_table_index = get_wval_prop(module, wval_fn,
+         * "fn_table_index"); */
+        ber_fn_table_index = BinaryenBinary(
+            module, BinaryenAddInt32(), make_int32(module, fn_arg.lval->offset),
+            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
+        /* fn_call_relay_array_ptr = */
+        /*     get_wval_prop(module, local_get_int32(module, wval_fn_local), */
+        /*                   "fn_call_relay_array"); */
+
+        /* fn_call_relay_array_ptr = BinaryenBinary( */
+        /*     module, BinaryenAddInt32(), make_int32(module,
+         * fn_arg.lval->offset), */
+        /*     BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));
+         */
+
         fn_call_relay_array_ptr =
             get_wval_prop(module, fn_arg.ber, "fn_call_relay_array");
       } else {
@@ -330,13 +343,11 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
         ber_fn_table_index = BinaryenBinary(
             module, BinaryenAddInt32(), ber_fn_table_index,
             BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-        /* param_count = make_int32(module, lval_fn->param_count); */
-        /* has_rest_arg = make_int32(module, lval_fn->rest_arg_index); */
 
         fn_call_relay_array_ptr = BinaryenBinary(
             module, BinaryenAddInt32(),
             BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()),
-            make_int32(module, get_fn_call_relay_table_offset(
+            make_int32(module, get_fn_call_relay_array_offset(
                                    wasm, lval_fn->param_count,
                                    lval_fn->rest_arg_index)));
       }

@@ -303,7 +303,7 @@ void add_partial_fn(Wasm* wasm, char* fn_name) {
       local_get_int32(module, partials_local)};  // ptr to partials of new fn
 
   NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
+      alist_get(state->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
   Ber copy_and_retain_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber copy_wval_partials = BinaryenCallIndirect(
       module, copy_and_retain_fn_index, copy_and_retain_operands, 3,
@@ -449,25 +449,56 @@ void add_set_fn(Wasm* wasm, char* fn_name) {
 
 int get_fn_table_index(Wasm* wasm, char* fn_name) {
   NativeFn* native_fn =
-      alist_get(wasm->wajure_to_native_fn_map, is_eq_str, fn_name);
+      alist_get(state->wajure_to_native_fn_map, is_eq_str, fn_name);
   return native_fn->fn_table_index;
 }
 
-void make_keyword_call_relay_table_arrays(Wasm* wasm) {
-  /* int array[21]; */
+void add_not_a_fn_fcra(Wasm* wasm) {
+  char fn_call_relay_array[21];
+  char* fn_name = "rt_error_not_a_fn";
+  int fn_table_index = get_fn_table_index(wasm, fn_name);
+  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
+  add_bytes_to_data(wasm, fn_call_relay_array, 21);
+}
 
-  /* NativeFn* rt_error_too_few_args = alist_get( */
-  /*     wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args"); */
-  /* NativeFn* rt_error_too_many_args = alist_get( */
-  /*     wasm->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args"); */
-  /* NativeFn* rt_error_not_a_fn = */
-  /*     alist_get(wasm->wajure_to_native_fn_map, is_eq_str,
-   * "rt_error_not_a_fn"); */
+void add_partial_fcra(Wasm* wasm) {
+  char fn_call_relay_array[21];
+  char* fn_name = "apply";
+  int fn_table_index = get_fn_table_index(wasm, fn_name);
+  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
+  fn_call_relay_array[0] = get_fn_table_index(wasm, "rt_error_too_few_args");
+  add_bytes_to_data(wasm, fn_call_relay_array, 21);
+}
 
-  char* fn_call_relay_table = malloc(21);
-  make_fn_call_relay_table(wasm, fn_call_relay_table, 1, 0);
-  fn_call_relay_table[2] = get_fn_table_index(wasm, "keyword2");
-  fn_call_relay_table[3] = get_fn_table_index(wasm, "keyword3");
-  /* for (int i = 0; i < 21; i++) array[21] = rt_error_not_a_fn->fn_table_index;
-   */
+struct fcra {
+  int index;
+  void (*add_function_call_relay_array)(Wasm*);
+};
+
+typedef struct fcra Fcra;
+
+Fcra function_call_relay_arrays[] = {
+    {FCRA_NOT_A_FN, add_not_a_fn_fcra}, {FCRA_PARTIAL, add_not_a_fn_fcra},
+    {FCRA_APPLY, add_not_a_fn_fcra},    {FCRA_KEYWORD, add_not_a_fn_fcra},
+    {FCRA_SYMBOL, add_not_a_fn_fcra},   {FCRA_MAP, add_not_a_fn_fcra},
+    {FCRA_VECTOR, add_not_a_fn_fcra},   {FCRA_SET, add_not_a_fn_fcra}};
+
+// Store these in the data section of stdlib, somehow export their offsets and
+// use them when compiling other namespaces
+void add_native_call_relay_arrays(Wasm* wasm) {
+  char* custom_section = malloc(1);
+  int custom_section_count = 0;
+  char* fn_call_relay_array = malloc(21);
+  char* fn_name = "rt_error_not_a_fn";
+  int fn_table_index = get_fn_table_index(wasm, fn_name);
+  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
+  int data_offset = add_bytes_to_data(wasm, fn_call_relay_array, 21);
+  custom_section =
+      realloc(custom_section, (long)custom_section + custom_section_count);
+  int line_count = _strlen(fn_name) + number_len(data_offset) + 1;
+  sprintf(custom_section, "%s,%d\n", fn_name, data_offset);
+  custom_section_count += line_count;
+
+  BinaryenAddCustomSection(wasm->module, "call_relay_arrays", custom_section,
+                           custom_section_count);
 }

@@ -23,17 +23,6 @@ Lval* eval_quote(Lenv* env, Lval* arg_list) {
   return ret;
 }
 
-int number_len(int n) {
-  int len = 1;
-  while (1) {
-    n = n / 10;
-    if (n)
-      len++;
-    else
-      return len;
-  }
-}
-
 char* make_cname(char* name) {
   int uid = get_current_ns()->uid_counter++;
   int uid_length = number_len(uid);

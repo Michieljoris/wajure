@@ -10,7 +10,7 @@ int inter_lval(Wasm* wasm, Lval* lval);
 int inter_list(Wasm* wasm, Lval* lval);
 
 char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
-                     int param_count, int has_rest_arg);
+                     int fcra_offset);
 int inter_data_lval(Wasm* wasm, char* data_lval);
 
 int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval);
