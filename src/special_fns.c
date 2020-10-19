@@ -43,19 +43,19 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
   Namespace* ns = get_current_ns();
-  if (lenv_is_bound(ns->env, lval_sym)) {
-    warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
-         lval_sym->data.str, ns->namespace, lval_sym->data.str, ns->namespace);
-  } else {
-    if (lenv_is_bound(get_root_env(env), lval_sym)) {
-      warn(
-          "WARNING: %s already refers to: #'%s/%s in namespace: %s, "
-          "being replaced by: #'%s/%s\n",
-          lval_sym->data.str, config->stdlib, lval_sym->data.str,
-          config->stdlib, ns->namespace, lval_sym->data.str);
-    }
+  Lval* bound_symbol = eval_symbol(ns->env, lval_sym);
+  /* printf("bound_symbol:"); */
+  /* lval_println(bound_symbol); */
+  if (bound_symbol->type != LVAL_ERR) {
+    if (bound_symbol->subtype == SYS) {
+      warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
+      lval_println(bound_symbol);
+    } else
+      warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
+           lval_sym->data.str, bound_symbol->ns->namespace, lval_sym->data.str,
+           bound_symbol->ns->namespace);
+    release(bound_symbol);
   }
-
   if (!lval->cname) {
     // We need to keep track of in which namespace a fn is actually defined and
     // under which name so we can refer to its fn_table_index from other

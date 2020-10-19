@@ -1,5 +1,6 @@
 #include "datafy.h"
 
+#include "builtin.h"
 #include "compile.h"
 #include "inter.h"
 #include "lib.h"

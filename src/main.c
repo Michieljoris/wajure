@@ -32,6 +32,8 @@
 void make_config(int argc, char** argv) {
   config->src = "clj";
   config->main = "run-main";
+  config->out_wasm = "out_wasm";
+  config->builtin = "builtin";
   config->stdlib = "wajure.core";
   config->user = "user";
   config->do_compile = 0;
@@ -50,10 +52,9 @@ int main(int argc, char** argv) {
   state = calloc(1, sizeof(State));
 
   printf("making builtin module\n");
-  register_native_fns();
-  make_builtin_module("out_wasm");
+  make_builtin_module(config->out_wasm, config->builtin);
   printf("DONE making builtin module\n");
-
+  return 1;
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
       printf("COMPILING!!!\n");

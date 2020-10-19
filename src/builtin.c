@@ -23,7 +23,57 @@
 /* int results_count; */
 /* int fn_table_index; */
 /* int data_offset; */
-extern CFn c_fns[];
+
+CFn c_fns[] = {
+    // from js
+    {NULL, NULL, "log_int", 1, 0},
+    {NULL, NULL, "log_string", 1, 0},
+    {NULL, NULL, "log_string_n", 2, 0},
+    {NULL, NULL, "runtime_error", 2, 0},
+    // print
+    {NULL, NULL, "lval_print", 1, 0},
+    {NULL, NULL, "lval_println", 1, 0},
+    // printf
+    {NULL, NULL, "printf_", 2, 1},
+    // lval
+    {NULL, NULL, "make_lval_num", 1, 1},
+    {NULL, NULL, "make_lval_nil", 0, 1},
+    {NULL, NULL, "make_lval_true", 0, 1},
+    {NULL, NULL, "make_lval_false", 0, 1},
+    {NULL, NULL, "make_lval_str", 1, 1},
+    {NULL, NULL, "make_lval_list", 0, 1},
+    {NULL, NULL, "new_lval_list", 1, 1},
+    {NULL, NULL, "make_lval_sym", 1, 1},
+    {NULL, NULL, "new_lval_vector", 1, 1},
+    // lispy_mempool
+    {NULL, NULL, "lalloc_size", 1, 1},
+    {NULL, NULL, "lalloc_type", 1, 1},
+    // refcount
+    {NULL, NULL, "retain", 1, 1},
+    {NULL, NULL, "release", 1, 0},
+
+    // list
+    {NULL, NULL, "prefix_list", 2, 1},
+
+    // lib
+    {NULL, NULL, "_strcpy", 2, 1},
+    {NULL, NULL, "print_slot_size", 0, 0},
+    // runtime
+    {NULL, NULL, "wval_print", 1, 0},
+    {NULL, NULL, "make_lval_wasm_lambda", 4, 1},
+    {NULL, NULL, "get_wval_type", 1, 1},
+    {NULL, NULL, "get_wval_subtype", 1, 1},
+    {NULL, NULL, "get_wval_fn_table_index", 1, 1},
+    {NULL, NULL, "get_wval_closure", 1, 1},
+    {NULL, NULL, "get_wval_partials", 1, 1},
+    {NULL, NULL, "get_wval_partial_count", 1, 1},
+    {NULL, NULL, "listify_args", 2, 1},
+    {NULL, NULL, "bundle_rest_args", 3, 0},
+    {NULL, NULL, "rewrite_pointers", 3, 0},
+    {NULL, NULL, "new_cell", 2, 1},
+    {NULL, NULL, "dbg", 1, 0},
+    {NULL}};
+
 extern CFn list_c_fns[];
 extern CFn math_c_fns[];
 extern CFn util_c_fns[];
@@ -49,9 +99,22 @@ WasmFn wasm_fns[] = {
     {"set_as_fn", FTI_SET, add_set_fn, NULL},
     {"symbol_as_fn", FTI_SYMBOL, add_symbol_fn, NULL},
     {"map_as_fn", FTI_MAP, add_map_fn, NULL},
-};
+    {NULL}};
 
-void add_c_fn_imports2(Wasm* wasm, CFn c_fns[]) {
+void _register_c_fns(CFn c_fns[]) {
+  int i = 0;
+  char* c_fn_name;
+  do {
+    c_fn_name = c_fns[i].c_fn_name;
+    if (!c_fn_name) break;  // end of list
+    if (c_fns[i].wajure_fn_name)
+      state->wajure_to_c_fn_map = alist_prepend(
+          state->wajure_to_c_fn_map, c_fns[i].wajure_fn_name, &c_fns[i]);
+    i++;
+  } while (1);
+}
+
+void add_c_fn_imports(Wasm* wasm, CFn c_fns[]) {
   BinaryenModuleRef module = wasm->module;
   int i = 0;
   char* c_fn_name;
@@ -64,9 +127,9 @@ void add_c_fn_imports2(Wasm* wasm, CFn c_fns[]) {
     BinaryenAddFunctionImport(module, c_fn_name, "env", c_fn_name,
                               make_type_int32(params_count),
                               make_type_int32(results_count));
-    if (c_fns[i].wajure_fn_name)
-      state->wajure_to_c_fn_map = alist_prepend(
-          state->wajure_to_c_fn_map, c_fns[i].wajure_fn_name, c_fn_name);
+    /* if (c_fns[i].wajure_fn_name) */
+    /*   state->wajure_to_c_fn_map = alist_prepend( */
+    /*       state->wajure_to_c_fn_map, c_fns[i].wajure_fn_name, &c_fns[i]); */
     i++;
   } while (1);
 }
@@ -90,8 +153,6 @@ void add_c_fn_wrapper(Wasm* wasm, CFn c_fn) {
 
   BinaryenType params_type = make_type_int32(3);
   BinaryenType results_type = make_type_int32(1);
-  /* char* wasm_fn_name = malloc(_strlen(c_fn.wajure_fn_name) + 3); */
-  /* sprintf(wasm_fn_name, "%s", c_fn.wajure_fn_name); */
   Ber body = call_c_fn;
   int locals_count = 0;
   BinaryenAddFunction(module, c_fn.wajure_fn_name, params_type, results_type,
@@ -99,11 +160,12 @@ void add_c_fn_wrapper(Wasm* wasm, CFn c_fn) {
 
   c_fn.fn_table_index = add_fn_to_table(wasm, c_fn.wajure_fn_name);
 
-  /* free(wasm_fn_name); */
-
   char* data_lval = make_data_lval(wasm, NULL, c_fn.fn_table_index);
   c_fn.data_offset =
       inter_data_lval(wasm, data_lval) + wasm->builtins_data_start;
+
+  write_symbol_table_line(wasm, LVAL_FUNCTION, c_fn.wajure_fn_name,
+                          c_fn.data_offset, c_fn.fn_table_index, 1, 1);
 }
 
 void add_c_fn_wrappers(Wasm* wasm, CFn c_fns[]) {
@@ -111,6 +173,7 @@ void add_c_fn_wrappers(Wasm* wasm, CFn c_fns[]) {
   do {
     char* c_fn_name = c_fns[i].c_fn_name;
     if (!c_fn_name) break;  // end of list
+    printf("foo %s\n", c_fn_name);
     add_c_fn_wrapper(wasm, c_fns[i]);
     i++;
   } while (1);
@@ -123,7 +186,8 @@ void add_native_fn_to_table(Wasm* wasm, char* fn_name, int index) {
 }
 
 void add_wasm_fns(Wasm* wasm) {
-  int fns_count = sizeof(wasm_fns) / sizeof(*wasm_fns);
+  int fns_count = 0;
+  while (wasm_fns[fns_count].wasm_fn_name) fns_count++;
   wasm->fns_count += fns_count;
   wasm->fn_names = calloc(fns_count, sizeof(char*));
 
@@ -135,43 +199,101 @@ void add_wasm_fns(Wasm* wasm) {
     wasm_fn.data_offset =
         inter_data_lval(wasm, data_lval) + wasm->builtins_data_start;
     char* fn_name = wasm_fn.wasm_fn_name;
-    char* type_str = "Function";
-    int max_len = 1024;
-    char* line = malloc(max_len);
-    snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", fn_name, type_str,
-             wasm_fn.data_offset, wasm_fn.fn_table_index, -1, -1);
-
-    int line_count = _strlen(line);
-    wasm->symbol_table =
-        realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
-    _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
-    free(line);
-    wasm->symbol_table_count += line_count;
-    /* printf("wasm_fn name: %s index: %d data_offset: %d\n",
-     * wasm_fn.wasm_fn_name, */
-    /*        wasm_fn.fn_table_index, wasm_fn.data_offset); */
+    write_symbol_table_line(wasm, LVAL_FUNCTION, fn_name, wasm_fn.data_offset,
+                            wasm_fn.fn_table_index, -1, -1);
+    printf("wasm_fn name: %s index: %d data_offset: %d\n", wasm_fn.wasm_fn_name,
+           wasm_fn.fn_table_index, wasm_fn.data_offset);
   }
 }
 
-char* builtin_to_wat(char* path) {
+void assign_offsets_to_builtins() {
+  // We read the symbol table custom section of builtin
+  FILE* fp;
+  char command[1000];
+
+  char* wasm_file_name = builtin_to_wasm(config->out_wasm, config->builtin);
+  sprintf(command, "node custom.js %s symbol_table\n", wasm_file_name);
+  release(wasm_file_name);
+  fp = popen(command, "r");
+
+  char fn_name[1000];
+  int data_offset, fn_table_index, param_count, has_rest_arg;
+  // Line by line
+  do {
+    char line[1000];
+    int ret = fscanf(fp, "%s", line);
+    if (ret > 0) {
+      strsubst(line, ',', ' ');
+      char type[100];
+      sscanf(line, "%s %s %d %d %d %d", fn_name, type, &data_offset,
+             &fn_table_index, &param_count, &has_rest_arg);
+
+      CFn* c_fn =
+          (CFn*)alist_get(state->wajure_to_c_fn_map, is_eq_str, fn_name);
+      if (c_fn) {
+        printf("assigning %d to %s\n", data_offset, fn_name);
+        c_fn->fn_table_index = fn_table_index;
+        c_fn->data_offset = data_offset;
+      } else {
+        // See if it's one of our native fns
+        WasmFn* native_fn = (WasmFn*)alist_get(state->wajure_to_native_fn_map,
+                                               is_eq_str, fn_name);
+
+        // If so set its fn_table_index
+        if (native_fn) {
+          /* native_fn->fn_table_index = fn_table_index; */
+          native_fn->data_offset = data_offset;
+        }
+      }
+    } else
+      break;
+  } while (1);
+  fclose(fp);
+}
+
+void register_native_fns() {
+  int fns_count = 0;
+  while (wasm_fns[fns_count].wasm_fn_name) fns_count++;
+  for (int i = 0; i < fns_count; i++) {
+    /* printf("%s %d %d\n", wasm_fns[i].wasm_fn_name,
+     * wasm_fns[i].fn_table_index, */
+    /*        wasm_fns[i].data_offset); */
+    state->wajure_to_native_fn_map = alist_prepend(
+        state->wajure_to_native_fn_map, wasm_fns[i].wasm_fn_name, &wasm_fns[i]);
+  };
+}
+
+char* builtin_to_wat(char* path, char* name) {
   char* file_name = lalloc_size(_strlen(path) + _strlen("/builtin.wat") + 1);
-  sprintf(file_name, "%s/builtin.wat", path);
+  sprintf(file_name, "%s/%s.wat", path, name);
   return file_name;
 }
 
-char* builtin_to_wasm(char* path) {
+char* builtin_to_wasm(char* path, char* name) {
   char* file_name = lalloc_size(_strlen(path) + _strlen("/builtin.wasm") + 1);
-  sprintf(file_name, "%s/builtin.wasm", path);
+  sprintf(file_name, "%s/%s.wasm", path, name);
   return file_name;
 }
 
-void make_builtin_module(char* path) {
+void import_c_fns(Wasm* wasm) {
+  add_c_fn_imports(wasm, c_fns);
+  add_c_fn_imports(wasm, math_c_fns);
+  add_c_fn_imports(wasm, list_c_fns);
+  add_c_fn_imports(wasm, util_c_fns);
+}
+
+void register_c_fns() {
+  _register_c_fns(c_fns);
+  _register_c_fns(math_c_fns);
+  _register_c_fns(list_c_fns);
+  _register_c_fns(util_c_fns);
+}
+
+void make_builtin_module(char* path, char* name) {
   Wasm* wasm = init_wasm();
+  register_native_fns();
   add_wasm_fns(wasm);
-  add_c_fn_imports2(wasm, c_fns);
-  add_c_fn_imports2(wasm, list_c_fns);
-  add_c_fn_imports2(wasm, math_c_fns);
-  add_c_fn_imports2(wasm, util_c_fns);
+  import_c_fns(wasm);
 
   add_c_fn_wrappers(wasm, list_c_fns);
   add_c_fn_wrappers(wasm, math_c_fns);
@@ -179,6 +301,10 @@ void make_builtin_module(char* path) {
 
   add_function_table(wasm);
   add_memory_section(wasm);
+
+  BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
+                           wasm->symbol_table_count);
+  add_deps_custom_section(wasm, "deps", wasm->deps);
 
   char* size_str = malloc(100);
   sprintf(size_str, "%d", wasm->data_offset);
@@ -188,11 +314,19 @@ void make_builtin_module(char* path) {
   BinaryenAddCustomSection(wasm->module, "fn_table_size", size_str,
                            _strlen(size_str));
   free(size_str);
+  // No rewriting necessary:
+  // fn_table_offset is 0 by design
+  // partials and closure pointers are not used for native fns.
+  // we're not interring any lvals in the builtin module
+  wasm->lval_offsets_count = 0;
+  wasm->cell_offsets_count = 0;
+  // But we do need to go through the motions
+  inter_rewrite_info(wasm);
 
-  printf("writing wat and wasm!!!! %s\n", path);
-  char* wat_file_name = builtin_to_wat(path);
+  printf("writing wat and wasm!!!! %s/%s\n", path, name);
+  char* wat_file_name = builtin_to_wat(path, name);
   write_wat(wasm, wat_file_name);
-  char* wasm_file_name = builtin_to_wasm(path);
+  char* wasm_file_name = builtin_to_wasm(path, name);
   write_wasm(wasm, wasm_file_name);
 
   printf("Validating %s\n", wasm_file_name);

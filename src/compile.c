@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#include "builtin.h"
 #include "compile_fn_call.h"
 #include "compile_special.h"
 #include "datafy.h"
@@ -19,7 +20,6 @@
 #include "lval.h"
 #include "misc_fns.h"
 #include "namespace.h"
-#include "native.h"
 #include "print.h"
 #include "read.h"
 #include "refcount.h"
@@ -408,8 +408,9 @@ CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
 }
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
-  char* c_fn_name =
+  CFn* c_fn =
       alist_get(state->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
+  char* c_fn_name = c_fn->c_fn_name;
   if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
@@ -472,9 +473,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       // no notion of environments or symbols that resolve to other lvalues.
       // Symbols at runtime are just that, a literal similar to strings,
       // numbers etc.
-      struct resolved_symbol result = eval_symbol(wasm->env, lval);
-
-      resolved_sym = result.lval;
+      Lval* resolved_sym = eval_symbol(wasm->env, lval);
 
       switch (resolved_sym->type) {
         case LVAL_ERR:
@@ -617,11 +616,6 @@ void compile(Namespace* ns) {
   }
   inter_rewrite_info(wasm);
   add_memory_section(wasm);
-
-  /* int offset = get_fn_call_relay_table_offset(wasm, 20, 1); */
-  /* for (int i = 0; i < 21; i++) { */
-  /*   printf("%d ", *(wasm->data + offset + i)); */
-  /* } */
 
   BinaryenAddCustomSection(wasm->module, "symbol_table", wasm->symbol_table,
                            wasm->symbol_table_count);

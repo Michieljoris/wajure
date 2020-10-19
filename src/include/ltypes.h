@@ -4,11 +4,13 @@
 #define MAX_FN_PARAMS 20
 
 typedef struct {
-  char* src;     // root dir of src files
-  char* main;    // namespace containing main fn
-  char* stdlib;  // stdlib namespace
-  char* user;    // user ns, dummy namespace
-  char* out;     // dir of compiled wasm files
+  char* src;   // root dir of src files
+  char* main;  // namespace containing main fn
+  char* stdlib;
+  char* out_wasm;
+  char* builtin;
+  char* user;  // user ns, dummy namespace
+  char* out;   // dir of compiled wasm files
   int do_compile;
 } Config;
 
@@ -159,12 +161,7 @@ typedef struct {
 
   Cell* wajure_to_c_fn_map;
   Cell* wajure_to_native_fn_map;
-  Cell* native_call_to_relay_array_map;
 } State;
-
-struct resolved_symbol {
-  Lval* lval;
-};
 
 /* lval types */
 enum {

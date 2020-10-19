@@ -165,8 +165,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
-struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
-  struct resolved_symbol ret = {};
+Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   Namespace* current_ns = get_current_ns();
@@ -176,34 +175,30 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
     if (!ns) {
-      ret.lval = make_lval_err("Can't find namespace to resolve %s",
-                               lval_symbol->data.str);
-      return ret;
+      return make_lval_err("Can't find namespace to resolve %s",
+                           lval_symbol->data.str);
     }
     scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
-    ret.lval =
+    Lval* lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
     if (state->mark_deps)
       ns->dependants = alist_put(ns->dependants, is_eq_str,
                                  retain(current_ns->namespace), current_ns);
-    /* ret.lval->ns = ns; */
-    return ret;
+    return lval;
   }
 
   // From the current namespace
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
-    ret.lval = lval_resolved_sym;  // resolved in symbols lexical env
-    /* ret.lval->ns = current_ns; */
-    return ret;
+    return lval_resolved_sym;  // resolved in symbols lexical env
   }
 
   // From a required namespace
   Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
   if (ns) {
-    ret.lval =
+    Lval* lval =
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
 
@@ -212,7 +207,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
                                  retain(current_ns->namespace), current_ns);
 
     /* ret.lval->ns = ns; */
-    return ret;
+    return lval;
   }
 
   // From stdlib
@@ -220,16 +215,14 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   if (ns) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
     if (lval_resolved_sym) {
-      ret.lval = lval_resolved_sym;  // resolved in stdlib env
-      return ret;
+      return lval_resolved_sym;  // resolved in stdlib env
     }
   }
 
   // From builtins
   Lenv* builtins_env = state->builtins_env;
-  ret.lval = lenv_get_or_error(builtins_env,
-                               lval_symbol);  // resolved in builtins env
-  return ret;
+  return lenv_get_or_error(builtins_env,
+                           lval_symbol);  // resolved in builtins env
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
@@ -306,7 +299,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   /* Lval* ret = NIL; */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      return eval_symbol(env, lval).lval;
+      return eval_symbol(env, lval);
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:

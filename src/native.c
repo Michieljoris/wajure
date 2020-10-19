@@ -1,5 +1,6 @@
 #include "native.h"
 
+#include "builtin.h"
 #include "compile.h"
 #include "compile_fn_call.h"
 #include "compile_special.h"
@@ -416,57 +417,3 @@ int get_fn_table_index(Wasm* wasm, char* fn_name) {
       alist_get(state->wajure_to_native_fn_map, is_eq_str, fn_name);
   return native_fn->fn_table_index;
 }
-
-/* void add_not_a_fn_fcra(Wasm* wasm) { */
-/*   char fn_call_relay_array[21]; */
-/*   char* fn_name = "rt_error_not_a_fn"; */
-/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
-/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
-/*   add_bytes_to_data(wasm, fn_call_relay_array, 21); */
-/* } */
-
-/* void add_partial_fcra(Wasm* wasm) { */
-/*   char fn_call_relay_array[21]; */
-/*   char* fn_name = "apply"; */
-/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
-/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
-/*   fn_call_relay_array[0] = get_fn_table_index(wasm, "rt_error_too_few_args");
- */
-/*   add_bytes_to_data(wasm, fn_call_relay_array, 21); */
-/* } */
-
-/* struct fcra { */
-/*   int index; */
-/*   void (*add_function_call_relay_array)(Wasm*); */
-/* }; */
-
-/* typedef struct fcra Fcra; */
-
-/* Fcra function_call_relay_arrays[] = { */
-/*     {FCRA_NOT_A_FN, add_not_a_fn_fcra}, {FCRA_PARTIAL, add_not_a_fn_fcra}, */
-/*     {FCRA_APPLY, add_not_a_fn_fcra},    {FCRA_KEYWORD, add_not_a_fn_fcra}, */
-/*     {FCRA_SYMBOL, add_not_a_fn_fcra},   {FCRA_MAP, add_not_a_fn_fcra}, */
-/*     {FCRA_VECTOR, add_not_a_fn_fcra},   {FCRA_SET, add_not_a_fn_fcra}}; */
-
-/* // Store these in the data section of stdlib, somehow export their offsets
- * and */
-/* // use them when compiling other namespaces */
-/* void add_native_call_relay_arrays(Wasm* wasm) { */
-/*   char* custom_section = malloc(1); */
-/*   int custom_section_count = 0; */
-/*   char* fn_call_relay_array = malloc(21); */
-/*   char* fn_name = "rt_error_not_a_fn"; */
-/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
-/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
-/*   int data_offset = add_bytes_to_data(wasm, fn_call_relay_array, 21); */
-/*   custom_section = */
-/*       realloc(custom_section, (long)custom_section + custom_section_count);
- */
-/*   int line_count = _strlen(fn_name) + number_len(data_offset) + 1; */
-/*   sprintf(custom_section, "%s,%d\n", fn_name, data_offset); */
-/*   custom_section_count += line_count; */
-
-/*   BinaryenAddCustomSection(wasm->module, "call_relay_arrays", custom_section,
- */
-/*                            custom_section_count); */
-/* } */

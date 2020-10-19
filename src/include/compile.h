@@ -21,6 +21,7 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref);
 CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args);
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args);
 CResult compile_native_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args);
+void add_deps_custom_section(Wasm* wasm, char* custom_section_name, Cell* deps);
 
 int compile_main();
 #endif  // __COMPILE_H_

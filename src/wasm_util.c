@@ -173,57 +173,6 @@ int add_fn_to_table(Wasm* wasm, char* fn_name) {
   return free_fn_slot;
 }
 
-/* int fn_exists(Wasm* wasm, char* fn_name) { */
-/*   int i = wasm->fns_count; */
-/*   while (i-- > NATIVE_INDEX_COUNT) { */
-/*     if (_strcmp(fn_name, wasm->fn_names[i]) == 0) return i; */
-/*   } */
-/*   return -1; */
-/* } */
-
-/* Lenv* load_stdlib() { */
-/*   Lenv* root_env = lenv_new(); */
-/*   lenv_add_builtin_fns(root_env); */
-
-/*   Lenv* stdlib_env = lenv_new(); */
-/*   stdlib_env->parent_env = retain(root_env); */
-
-/*   stdlib_env->is_ns_env = 1; */
-/*   Lval* result = load(stdlib_env, "clj/stdlib.lispy"); */
-/*   if (result->type == LVAL_ERR) { */
-/*     lval_println(result); */
-/*     exit(1); */
-/*   } */
-
-/*   stdlib_env->is_ns_env = 0; */
-/*   return stdlib_env; */
-/* } */
-
-/* Lenv* interprete_file(char* file_name) { */
-/*   Lenv* stdlib_env = load_stdlib(); */
-/*   Lenv* user_env = lenv_new(); */
-/*   user_env->parent_env = retain(stdlib_env); */
-/*   stdlib_env->is_ns_env = 0; */
-/*   user_env->is_ns_env = 1; */
-/*   printf("load user env\n"); */
-/*   Lval* result = load(user_env, file_name); */
-/*   printf("load user env2\n"); */
-/*   if (result->type == LVAL_ERR) { */
-/*     lval_println(result); */
-/*     exit(1); */
-/*   } */
-/*   release(result); */
-/*   return user_env; */
-/* } */
-
-/* void release_env(Lenv* env) { */
-/*   release(env->kv); */
-/*   env->kv = NIL; */
-/*   Lenv* parent_env = env->parent_env; */
-/*   release(env); */
-/*   if (parent_env) release_env(parent_env); */
-/* } */
-
 BinaryenType* make_type_int32_array(int count) {
   BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
   while (count--) types[count] = BinaryenTypeInt32();

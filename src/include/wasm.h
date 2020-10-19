@@ -62,24 +62,14 @@ typedef struct {
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 
-void import_c_fns(Wasm* wasm);
-void register_c_fns();
 void add_memory_section(Wasm* wasm);
 void add_function_table(Wasm* wasm);
 
 CResult quit(Wasm* wasm, char* fmt, ...);
+
+void write_symbol_table_line(Wasm* wasm, int type, char* fn_name,
+                             int data_offset, int fn_table_index,
+                             int param_count, int has_rest_arg);
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
 
-typedef struct wasm_fn WasmFn;
-
-struct wasm_fn {
-  char* wasm_fn_name;
-  int fn_table_index;
-  void (*add_fn)(Wasm*, char*);
-  CResult (*compile_builtin_call)(Wasm*, WasmFn, Cell*);
-  int data_offset;
-};
-
-void register_native_fns();
-/* void assign_fn_table_index_to_native_fns(); */
 #endif  // __WASM_INIT_H_

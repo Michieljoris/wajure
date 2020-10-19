@@ -437,9 +437,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
     Lval* lval_sym = lval_applicator;
     // Let's see if the symbol refers to something we know how to compile
     // already
-    // TODO: don't use struct anymore since we only return lval
-    struct resolved_symbol result = eval_symbol(wasm->env, lval_sym);
-    Lval* resolved_sym = result.lval;
+    Lval* resolved_sym = eval_symbol(wasm->env, lval_sym);
     // If it's a symbol it has to be known in our compiler env!!!
     if (resolved_sym->type == LVAL_ERR) {
       lval_println(lval_list);

@@ -204,7 +204,7 @@ async function instantiate_runtime(env) {
 }
 
 async function instantiate_module(env, { compiled_module, data_offset, data_size, fn_table_offset,
-                                         namespace, globals}) {
+                                         namespace, file_name,  globals}) {
     data_offset += env.data_start;
     fn_table_offset += env.fn_table_start;
 
@@ -236,11 +236,10 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
 
     // console.log("From nodejs.js: data_offset: ", data_offset, " data_size: ",
     //             data_size, " data_end: ", data_offset + data_size, " fn_table_offset: ", fn_table_offset);
-    console.log("Instantiating " + namespace);
+    console.log("Instantiating " + (namespace || file_name));
     const instance =  await WebAssembly.instantiate(compiled_module, module_import_object).
         then(instance => instance);
     env.runtime.exports.rewrite_pointers(data_offset, data_size, fn_table_offset);
-    env.modules[namespace].instance = instance;
     return instance;
 }
 
@@ -251,13 +250,11 @@ async function instantiate_modules(env, modules) {
 }
 
 async function load_module(env, module) {
-    console.log("Loading namespace: ", module.namespace);
-    module.file_name =
-        env.config.out + "/" +
-        module.namespace
-              .replace(/\./g,"/")
-              .replace(/-/g, "_") +
-        ".wasm";
+    if (module.namespace)
+        console.log("Loading namespace: ", module.namespace);
+    else
+        console.log("Loading file: ", module.file_name);
+   
     let buf = fs.readFileSync(module.file_name);
 
     module.compiled_module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
@@ -273,8 +270,8 @@ async function load_module(env, module) {
     return module;
 }
 
-async function load_stdlib(env) {
-    let module = { namespace: env.config.stdlib};
+async function instantiate_builtin(env) {
+    let module = { file_name: env.config.builtin_wasm};
     await load_module(env, module);
 
     module.data_offset = 0;
@@ -283,8 +280,8 @@ async function load_stdlib(env) {
     env.data_offset = module.data_size;
     env.fn_table_offset = module.fn_table_size;
 
-    //Instantiate this module before any other
-    env.modules[module.namespace] = module;
+    module.globals = {};
+    module.instance = await instantiate_module(env, module);
     // console.log(module);
 }
 
@@ -293,6 +290,13 @@ async function load_modules(env, module) {
     env.trace.push(module.namespace);
     let loaded_module = env.modules[module.namespace];
     if (loaded_module) return loaded_module;
+
+    module.file_name =
+        env.config.out + "/" +
+        module.namespace
+              .replace(/\./g,"/")
+              .replace(/-/g, "_") +
+        ".wasm";
 
     module = await load_module(env, module);
 
@@ -308,8 +312,7 @@ async function load_modules(env, module) {
                          " to " + namespace);
             break;
         }
-        if (namespace != env.config.stdlib) //already loaded.
-            await load_modules(env, { namespace: namespace });
+        await load_modules(env, { namespace: namespace });
     }
 
     env.modules[module.namespace] = module;
@@ -352,15 +355,13 @@ async function start() {
             config: {runtime_wasm: './out_wasm/runtime.wasm',
                      builtin_wasm: './out_wasm/builtin.wasm',
                      main: "main",
-                     stdlib: "wajure.core",
                      out: "./clj"}
         }
 
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
-        // await instantiate_builtin(env); //iso load_stdlib
-        await load_stdlib(env);
-        console.log("data_end =", env.runtime.exports.__data_end.value);
+        await instantiate_builtin(env);
+        // console.log("data_end =", env.runtime.exports.__data_end.value);
 
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
