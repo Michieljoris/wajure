@@ -17,31 +17,23 @@
 
 // Native fns take same args as call and bundle-args fns, ie wval,
 // args_block_ptr and args_count.
-NativeFn native_fns[] = {
+WasmFn native_fns[] = {
     {"rt_error_too_few_args", -1, add_rt_error_too_few_args_fn, NULL},
     {"rt_error_too_many_args", -1, add_rt_error_too_many_args_fn, NULL},
     {"rt_error_not_a_fn", -1, add_fn_rt_error_not_a_fn, NULL},
     {"copy_and_retain", -1, add_copy_and_retain_fn, NULL},
     {"partial", -1, add_partial_fn, compile_partial_call},
     {"apply", -1, add_apply_fn, NULL},
-    {"keyword2", -1, add_keyword2_fn, NULL},
-    {"keyword3", -1, add_keyword3_fn, NULL},
-    {"symbol2", -1, add_symbol2_fn, NULL},
-    {"symbol3", -1, add_symbol3_fn, NULL},
-    {"map2", -1, add_map2_fn, NULL},
-    {"map3", -1, add_map3_fn, NULL},
     {"vector", -1, add_vector_fn, NULL},
     {"set", -1, add_set_fn, NULL},
 };
 
 Wasm* init_wasm() {
   Wasm* wasm = calloc(sizeof(Wasm), 1);
-  char* data_end_str = read_file("__data_end");
+  char* runtime_data_end_str = read_file("__data_end");
   int pic = 1;  // position independent code
-  int data_end = (int)_strtol(data_end_str, NULL, 10);
+  int builtin_data_start = (int)_strtol(runtime_data_end_str, NULL, 10);
   int fn_table_end = 0;
-  int native_fns_count = sizeof(native_fns) / sizeof(*native_fns);
-  int fn_relay_table_offsets_count = (MAX_FN_PARAMS + 1) * 2 + native_fns_count;
   *wasm = (Wasm){
       .module = BinaryenModuleCreate(),
       .data = malloc(4),
@@ -53,9 +45,10 @@ Wasm* init_wasm() {
       .lval_nil_offset = 0,
       .lval_empty_list_offset = 0,
       .pic = pic,
-      .__data_end = pic ? 0 : data_end,
+      .__data_end = pic ? 0 : builtin_data_start,
       .__fn_table_end = pic ? 0 : fn_table_end,
-      /* .__heap_base = (int)_strtol(heap_base_str, NULL, 10), */
+      .builtins_data_start = builtin_data_start,
+      /* .data_start = (int)_strtol(data_end_str, NULL, 10), */
       // reusing interred lval literal numbers for these common
       // numbers (-100 till 100):
       .lval_num_start = -100,
@@ -71,8 +64,6 @@ Wasm* init_wasm() {
       .cell_offsets = malloc(100 * sizeof(int)),
       .cell_offsets_count = 0,
       .cell_offsets_allocated = 100,
-      .fn_relay_table_offsets =
-          calloc(fn_relay_table_offsets_count, sizeof(int)),
       .id = 1,
       .buf = malloc(1024),
   };
@@ -97,7 +88,6 @@ void free_wasm(Wasm* wasm) {
   free(wasm->lval_num_offset);
   while (wasm->fns_count--) free(wasm->fn_names[wasm->fns_count]);
   free(wasm->fn_names);
-  free(wasm->fn_relay_table_offsets);
   free(wasm->buf);
   free(wasm->context);  // TODO
   // TODO: free string_pool
@@ -156,7 +146,7 @@ void add_function_table(Wasm* wasm) {
                            fn_table_offset);
 }
 
-RuntimeFn runtime_fns[] = {
+CFn c_fns[] = {
     // from js
     {NULL, NULL, "log_int", 1, 0},
     {NULL, NULL, "log_string", 1, 0},
@@ -192,25 +182,24 @@ RuntimeFn runtime_fns[] = {
     {NULL, NULL, "print_slot_size", 0, 0},
     // runtime
     {NULL, NULL, "wval_print", 1, 0},
-    {NULL, NULL, "make_lval_wasm_lambda", 5, 1},
+    {NULL, NULL, "make_lval_wasm_lambda", 4, 1},
     {NULL, NULL, "get_wval_type", 1, 1},
     {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
-    {NULL, NULL, "get_wval_fn_call_relay_array", 1, 1},
     {NULL, NULL, "bundle_rest_args", 3, 0},
     {NULL, NULL, "rewrite_pointers", 3, 0},
     {NULL, NULL, "new_cell", 2, 1},
     {NULL, NULL, "dbg", 1, 0},
     {NULL}};
 
-extern RuntimeFn list_builtin_fns[];
-extern RuntimeFn math_builtin_fns[];
-extern RuntimeFn util_builtin_fns[];
+extern CFn list_c_fns[];
+extern CFn math_c_fns[];
+extern CFn util_c_fns[];
 
-void add_runtime_fn_imports(Wasm* wasm, RuntimeFn runtime_fns[]) {
+void add_c_fn_imports(Wasm* wasm, CFn runtime_fns[]) {
   BinaryenModuleRef module = wasm->module;
   int i = 0;
   char* c_fn_name;
@@ -230,7 +219,7 @@ void add_runtime_fn_imports(Wasm* wasm, RuntimeFn runtime_fns[]) {
   } while (1);
 }
 
-void register_fns(RuntimeFn runtime_fns[]) {
+void register_fns(CFn runtime_fns[]) {
   int i = 0;
   char* c_fn_name;
   do {
@@ -243,18 +232,18 @@ void register_fns(RuntimeFn runtime_fns[]) {
   } while (1);
 }
 
-void import_runtime_fns(Wasm* wasm) {
-  add_runtime_fn_imports(wasm, runtime_fns);
-  add_runtime_fn_imports(wasm, math_builtin_fns);
-  add_runtime_fn_imports(wasm, list_builtin_fns);
-  add_runtime_fn_imports(wasm, util_builtin_fns);
+void import_c_fns(Wasm* wasm) {
+  add_c_fn_imports(wasm, c_fns);
+  add_c_fn_imports(wasm, math_c_fns);
+  add_c_fn_imports(wasm, list_c_fns);
+  add_c_fn_imports(wasm, util_c_fns);
 }
 
-void register_runtime_fns() {
-  register_fns(runtime_fns);
-  register_fns(math_builtin_fns);
-  register_fns(list_builtin_fns);
-  register_fns(util_builtin_fns);
+void register_c_fns() {
+  register_fns(c_fns);
+  register_fns(math_c_fns);
+  register_fns(list_c_fns);
+  register_fns(util_c_fns);
 }
 
 CResult quit(Wasm* wasm, char* fmt, ...) {
@@ -380,8 +369,8 @@ void assign_fn_table_index_to_native_fns(Wasm* wasm) {
              &fn_table_index, &param_count, &has_rest_arg);
 
       // See if it's one of our native fns
-      NativeFn* native_fn = (NativeFn*)alist_get(state->wajure_to_native_fn_map,
-                                                 is_eq_str, fn_name);
+      WasmFn* native_fn = (WasmFn*)alist_get(state->wajure_to_native_fn_map,
+                                             is_eq_str, fn_name);
       // If so set its fn_table_index
       if (native_fn) {
         /* printf("assigning %d to %s\n", fn_table_index, fn_name); */

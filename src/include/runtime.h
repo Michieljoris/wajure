@@ -3,11 +3,8 @@
 
 #include "ltypes.h"
 
-Lval* make_lval_wasm_lambda(int fn_table_index,
-                            /* int param_count, */
-                            /* int has_rest_arg, */
-                            int closure, int partials, int partial_count,
-                            int fn_call_relay);
+Lval* make_lval_wasm_lambda(int fn_table_index, int closure, int partials,
+                            int partial_count);
 
 int get_wval_type(Lval* lval);
 int get_wval_subtype(Lval* lval);
@@ -20,6 +17,7 @@ int get_wval_partials(Lval* wval);
 int get_wval_partial_count(Lval* wval);
 
 void bundle_rest_args(int rest_arg_index, Lval** args, int args_count);
+Lval* listify_args(Lval** args, int args_count);
 
 void wval_print(Lval* wval);
 

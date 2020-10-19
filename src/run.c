@@ -20,7 +20,7 @@ void init_wajure() {
   Namespace* user_ns = install_ns(config->user);
   set_current_ns(user_ns);
   install_stdlib();
-  register_runtime_fns();
+  register_c_fns();
   register_native_fns();
 }
 

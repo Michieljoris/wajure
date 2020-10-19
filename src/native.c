@@ -302,7 +302,7 @@ void add_partial_fn(Wasm* wasm, char* fn_name) {
       local_get_int32(module, wval_partial_count_local),  // old partial count
       local_get_int32(module, partials_local)};  // ptr to partials of new fn
 
-  NativeFn* native_fn =
+  WasmFn* native_fn =
       alist_get(state->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
   Ber copy_and_retain_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber copy_wval_partials = BinaryenCallIndirect(
@@ -332,25 +332,17 @@ void add_partial_fn(Wasm* wasm, char* fn_name) {
           wasm,
           get_wval_prop(module, local_get_int32(module, wval_local), "closure"))
           .ber;
-  /* Ber wval_param_count = */
-  /*     get_wval_prop(module, local_get_int32(module, wval_local),
-   * "param_count"); */
-  /* Ber wval_has_rest_arg = get_wval_prop( */
-  /*     module, local_get_int32(module, wval_local), "has_rest_arg"); */
 
-  Ber fn_call_relay_array_ptr = get_wval_prop(
-      module, local_get_int32(module, wval_local), "fn_call_relay_array");
-
-  Ber operands[5] = {wval_fn_table_index,
-                     /* wval_param_count, */
-                     /* wval_has_rest_arg, */
-                     wval_closure, local_get_int32(module, partials_local),
-                     local_get_int32(module, total_partial_count_local),
-                     fn_call_relay_array_ptr};
+  Ber operands[4] = {
+      wval_fn_table_index,
+      wval_closure,
+      local_get_int32(module, partials_local),
+      local_get_int32(module, total_partial_count_local),
+  };
 
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 4, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
   Ber block = BinaryenBlock(module, NULL, children, children_count,
                             BinaryenTypeInt32());
@@ -375,7 +367,7 @@ void add_apply_fn(Wasm* wasm, char* fn_name) {
                       body);
 }
 
-void add_keyword2_fn(Wasm* wasm, char* fn_name) {
+void add_symbol_fn(Wasm* wasm, char* fn_name) {
   BinaryenModuleRef module = wasm->module;
   BinaryenType params_type = make_type_int32(3);
   BinaryenType results_type = make_type_int32(0);
@@ -384,43 +376,7 @@ void add_keyword2_fn(Wasm* wasm, char* fn_name) {
                       body);
 }
 
-void add_keyword3_fn(Wasm* wasm, char* fn_name) {
-  BinaryenModuleRef module = wasm->module;
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_symbol2_fn(Wasm* wasm, char* fn_name) {
-  BinaryenModuleRef module = wasm->module;
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_symbol3_fn(Wasm* wasm, char* fn_name) {
-  BinaryenModuleRef module = wasm->module;
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_map2_fn(Wasm* wasm, char* fn_name) {
-  BinaryenModuleRef module = wasm->module;
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(0);
-  Ber body = BinaryenNop(module);
-  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
-                      body);
-}
-
-void add_map3_fn(Wasm* wasm, char* fn_name) {
+void add_map_fn(Wasm* wasm, char* fn_name) {
   BinaryenModuleRef module = wasm->module;
   BinaryenType params_type = make_type_int32(3);
   BinaryenType results_type = make_type_int32(0);
@@ -448,57 +404,61 @@ void add_set_fn(Wasm* wasm, char* fn_name) {
 }
 
 int get_fn_table_index(Wasm* wasm, char* fn_name) {
-  NativeFn* native_fn =
+  WasmFn* native_fn =
       alist_get(state->wajure_to_native_fn_map, is_eq_str, fn_name);
   return native_fn->fn_table_index;
 }
 
-void add_not_a_fn_fcra(Wasm* wasm) {
-  char fn_call_relay_array[21];
-  char* fn_name = "rt_error_not_a_fn";
-  int fn_table_index = get_fn_table_index(wasm, fn_name);
-  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
-  add_bytes_to_data(wasm, fn_call_relay_array, 21);
-}
+/* void add_not_a_fn_fcra(Wasm* wasm) { */
+/*   char fn_call_relay_array[21]; */
+/*   char* fn_name = "rt_error_not_a_fn"; */
+/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
+/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
+/*   add_bytes_to_data(wasm, fn_call_relay_array, 21); */
+/* } */
 
-void add_partial_fcra(Wasm* wasm) {
-  char fn_call_relay_array[21];
-  char* fn_name = "apply";
-  int fn_table_index = get_fn_table_index(wasm, fn_name);
-  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
-  fn_call_relay_array[0] = get_fn_table_index(wasm, "rt_error_too_few_args");
-  add_bytes_to_data(wasm, fn_call_relay_array, 21);
-}
+/* void add_partial_fcra(Wasm* wasm) { */
+/*   char fn_call_relay_array[21]; */
+/*   char* fn_name = "apply"; */
+/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
+/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
+/*   fn_call_relay_array[0] = get_fn_table_index(wasm, "rt_error_too_few_args");
+ */
+/*   add_bytes_to_data(wasm, fn_call_relay_array, 21); */
+/* } */
 
-struct fcra {
-  int index;
-  void (*add_function_call_relay_array)(Wasm*);
-};
+/* struct fcra { */
+/*   int index; */
+/*   void (*add_function_call_relay_array)(Wasm*); */
+/* }; */
 
-typedef struct fcra Fcra;
+/* typedef struct fcra Fcra; */
 
-Fcra function_call_relay_arrays[] = {
-    {FCRA_NOT_A_FN, add_not_a_fn_fcra}, {FCRA_PARTIAL, add_not_a_fn_fcra},
-    {FCRA_APPLY, add_not_a_fn_fcra},    {FCRA_KEYWORD, add_not_a_fn_fcra},
-    {FCRA_SYMBOL, add_not_a_fn_fcra},   {FCRA_MAP, add_not_a_fn_fcra},
-    {FCRA_VECTOR, add_not_a_fn_fcra},   {FCRA_SET, add_not_a_fn_fcra}};
+/* Fcra function_call_relay_arrays[] = { */
+/*     {FCRA_NOT_A_FN, add_not_a_fn_fcra}, {FCRA_PARTIAL, add_not_a_fn_fcra}, */
+/*     {FCRA_APPLY, add_not_a_fn_fcra},    {FCRA_KEYWORD, add_not_a_fn_fcra}, */
+/*     {FCRA_SYMBOL, add_not_a_fn_fcra},   {FCRA_MAP, add_not_a_fn_fcra}, */
+/*     {FCRA_VECTOR, add_not_a_fn_fcra},   {FCRA_SET, add_not_a_fn_fcra}}; */
 
-// Store these in the data section of stdlib, somehow export their offsets and
-// use them when compiling other namespaces
-void add_native_call_relay_arrays(Wasm* wasm) {
-  char* custom_section = malloc(1);
-  int custom_section_count = 0;
-  char* fn_call_relay_array = malloc(21);
-  char* fn_name = "rt_error_not_a_fn";
-  int fn_table_index = get_fn_table_index(wasm, fn_name);
-  for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index;
-  int data_offset = add_bytes_to_data(wasm, fn_call_relay_array, 21);
-  custom_section =
-      realloc(custom_section, (long)custom_section + custom_section_count);
-  int line_count = _strlen(fn_name) + number_len(data_offset) + 1;
-  sprintf(custom_section, "%s,%d\n", fn_name, data_offset);
-  custom_section_count += line_count;
+/* // Store these in the data section of stdlib, somehow export their offsets
+ * and */
+/* // use them when compiling other namespaces */
+/* void add_native_call_relay_arrays(Wasm* wasm) { */
+/*   char* custom_section = malloc(1); */
+/*   int custom_section_count = 0; */
+/*   char* fn_call_relay_array = malloc(21); */
+/*   char* fn_name = "rt_error_not_a_fn"; */
+/*   int fn_table_index = get_fn_table_index(wasm, fn_name); */
+/*   for (int i = 0; i < 21; i++) fn_call_relay_array[i] = fn_table_index; */
+/*   int data_offset = add_bytes_to_data(wasm, fn_call_relay_array, 21); */
+/*   custom_section = */
+/*       realloc(custom_section, (long)custom_section + custom_section_count);
+ */
+/*   int line_count = _strlen(fn_name) + number_len(data_offset) + 1; */
+/*   sprintf(custom_section, "%s,%d\n", fn_name, data_offset); */
+/*   custom_section_count += line_count; */
 
-  BinaryenAddCustomSection(wasm->module, "call_relay_arrays", custom_section,
-                           custom_section_count);
-}
+/*   BinaryenAddCustomSection(wasm->module, "call_relay_arrays", custom_section,
+ */
+/*                            custom_section_count); */
+/* } */

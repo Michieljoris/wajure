@@ -88,7 +88,7 @@ int inter_data_lval(Wasm* wasm, char* data_lval) {
 
 // Primitive types (int, true, false, nil, str)
 int inter_lval(Wasm* wasm, Lval* lval) {
-  char* data_lval = make_data_lval(wasm, lval, 0, FCRA_NOT_A_FN_OFFSET);
+  char* data_lval = make_data_lval(wasm, lval, FTI_RTE_NOT_A_FN);
   return inter_data_lval(wasm, data_lval);
 }
 
@@ -112,7 +112,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
     cdr = inter_data_cell(wasm, (char*)data_cell).data_offset;
     last_cdr = cdr;
   }
-  char* data_list = make_data_lval(wasm, lval, 0, FCRA_NOT_A_FN_OFFSET);
+  char* data_list = make_data_lval(wasm, lval, FTI_RTE_NOT_A_FN);
 
   *(int*)(data_list + d_offset) = cdr;
   /* printf("cdr: %d\n", cdr); */
@@ -130,8 +130,7 @@ int inter_lval_str_type(Wasm* wasm, Cell** pool, Lval* lval) {
   return *ret;
 }
 
-char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
-                     int fcra_offset) {
+char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
   /* int type = lval ? lval->type : LVAL_FUNCTION; */
   /* printf( */
   /*     "make_data_lval type: %s, fn_table_index: %d param_count: " */
@@ -166,7 +165,6 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
     *(char*)(p + subtype_offset) = LAMBDA;
   }
 
-  // TODO: obsolete?, using fcra!!!
   *(short*)(p + fn_table_index_offset) = fn_table_index;
 
   if (lval) {
@@ -188,7 +186,6 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index,
       *(int*)(p + partials_offset) = data_ptr;
     }
   }
-  *(int*)(p + fn_call_relay_offset) = fcra_offset;
 
   return data_lval;
 }

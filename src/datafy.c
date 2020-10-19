@@ -33,65 +33,68 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 }
 
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
-  NativeFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
-                                  lval_fn_native->data.str);
-  if (!native_fn)
-    quit(wasm, "Native function %s not found in runtime",
-         lval_fn_native->data.str);
+  WasmFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
+                                lval_fn_native->data.str);
+  /* if (!native_fn) */
+  /*   quit(wasm, "Native function %s not found in runtime", */
+  /*        lval_fn_native->data.str); */
 
-  /* printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str, */
-  /*        native_fn->fn_table_index); */
-  /* lval_println(lval_fn_native); */
-  int fn_table_index =
-      0;  // not used since we're dispatching to our native fn by param_count
-  int has_rest_arg = 0;  // also not used
-  int fcra_offset = get_fn_call_relay_array_offset(
-      wasm, native_fn->fn_table_index, has_rest_arg);
-  char* data_lval = make_data_lval(wasm, NULL, fn_table_index, fcra_offset);
-  int lval_ptr = inter_data_lval(wasm, data_lval);
+  /* /\* printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str, *\/ */
+  /* /\*        native_fn->fn_table_index); *\/ */
+  /* /\* lval_println(lval_fn_native); *\/ */
+  /* int fn_table_index = */
+  /*     0;  // not used since we're dispatching to our native fn by param_count
+   */
+  /* /\* int has_rest_arg = 0;  // also not used *\/ */
+  /* char* data_lval = make_data_lval(wasm, NULL, fn_table_index); */
+  /* int lval_ptr = inter_data_lval(wasm, data_lval); */
 
+  int lval_ptr = native_fn->data_offset;
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
   return ret;
 }
 
 CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
-  char* c_fn_name =
+  CFn* c_fn =
       alist_get(state->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
-  if (!c_fn_name) return datafy_native_fn(wasm, lval_fn_sys);
+  if (!c_fn) return datafy_native_fn(wasm, lval_fn_sys);
 
-  BinaryenModuleRef module = wasm->module;
+  /* BinaryenModuleRef module = wasm->module; */
 
-  scoped char* fn_name = lalloc_size(512);
-  _strcpy(fn_name, "sys_");
-  _strcat(fn_name, lval_fn_sys->data.str);
+  /* scoped char* fn_name = lalloc_size(512); */
+  /* _strcpy(fn_name, "sys_"); */
+  /* _strcat(fn_name, lval_fn_sys->data.str); */
 
-  int fn_table_index;
-  int wasm_params_count = 2;  // the function's closure and rest args
-  int results_count = 1;
-  BinaryenType params_type = make_type_int32(wasm_params_count);
-  BinaryenType results_type = make_type_int32(results_count);
-  int locals_count = 0;
+  /* int fn_table_index; */
+  /* int wasm_params_count = 2;  // the function's closure and rest args */
+  /* int results_count = 1; */
+  /* BinaryenType params_type = make_type_int32(wasm_params_count); */
+  /* BinaryenType results_type = make_type_int32(results_count); */
+  /* int locals_count = 0; */
 
-  Ber rest_arg = BinaryenLocalGet(module, 1, BinaryenTypeInt32());
-  Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg};
+  /* Ber rest_arg = BinaryenLocalGet(module, 1, BinaryenTypeInt32()); */
+  /* Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg}; */
 
-  // We pretend this fn has 1 param, namely a rest param, so any args past
-  // into this fn will be wrapped in a list, ready to be passed to our sys fn.
-  // Actually call this sys fn with the rest args
-  Ber call_sys_fn =
-      BinaryenCall(module, c_fn_name, sys_fn_operands, 2, make_type_int32(1));
-  Ber body = call_sys_fn;
-  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL,
-                      locals_count, body);
+  /* // We pretend this fn has 1 param, namely a rest param, so any args past */
+  /* // into this fn will be wrapped in a list, ready to be passed to our sys
+   * fn. */
+  /* // Actually call this sys fn with the rest args */
+  /* Ber call_sys_fn = */
+  /*     BinaryenCall(module, c_fn_name, sys_fn_operands, 2,
+   * make_type_int32(1)); */
+  /* Ber body = call_sys_fn; */
+  /* BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, */
+  /*                     locals_count, body); */
 
-  fn_table_index = add_fn_to_table(wasm, fn_name);
-  lval_fn_sys->offset = fn_table_index;
-  lval_fn_sys->cname = retain(fn_name);
+  /* fn_table_index = add_fn_to_table(wasm, fn_name); */
+  /* lval_fn_sys->offset = fn_table_index; */
+  /* lval_fn_sys->cname = retain(fn_name); */
 
-  int fcra_offset = get_fn_call_relay_array_offset(wasm, 1, 1);
-  char* data_lval = make_data_lval(
-      wasm, NULL, wasm->__fn_table_end + fn_table_index, fcra_offset);
-  int lval_ptr = inter_data_lval(wasm, data_lval);
+  /* int fcra_offset = get_fn_call_relay_array_offset(wasm, 1, 1); */
+  /* char* data_lval = make_data_lval( */
+  /*     wasm, NULL, wasm->__fn_table_end + fn_table_index, fcra_offset); */
+  /* int lval_ptr = inter_data_lval(wasm, data_lval); */
+  int lval_ptr = c_fn->data_offset;
 
   CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
   return ret;
@@ -116,10 +119,8 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   }
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
 
-  int fcra_offset = get_fn_call_relay_array_offset(wasm, lval_fn->param_count,
-                                                   lval_fn->rest_arg_index);
   char* data_lval =
-      make_data_lval(wasm, lval_fn, wasm->__fn_table_end + offset, fcra_offset);
+      make_data_lval(wasm, lval_fn, wasm->__fn_table_end + offset);
 
   int lval_ptr = inter_data_lval(wasm, data_lval);
 

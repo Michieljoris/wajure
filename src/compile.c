@@ -292,8 +292,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   int closure_count = function_data.closure_count;
 
   // We get param info from lval_fn
-  int param_count = lval_fn->param_count;
-  int rest_arg_index = lval_fn->rest_arg_index;
+  /* int param_count = lval_fn->param_count; */
+  /* int rest_arg_index = lval_fn->rest_arg_index; */
 
   // We're done with with lval_fn
   release(lval_fn);
@@ -350,18 +350,12 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   ber_closure_ptr = BinaryenLocalGet(module, closure_pointer_local_index,
                                      BinaryenTypeInt32());
 
-  Ber fn_call_relay_array_ptr = BinaryenBinary(
-      module, BinaryenAddInt32(),
-      BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()),
-      make_int32(module, get_fn_call_relay_array_offset(wasm, param_count,
-                                                        rest_arg_index)));
-
   // Make a lval_wasm_lambda with info on fn table index, param count, pointer
   // to closure etc.
-  Ber operands[5] = {ber_fn_table_index, ber_closure_ptr, ber_partials,
-                     ber_partial_count, fn_call_relay_array_ptr};
+  Ber operands[4] = {ber_fn_table_index, ber_closure_ptr, ber_partials,
+                     ber_partial_count};
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 4, make_type_int32(1));
 
   // Add this call to the lambda block
   lambda_block_children[lambda_block_count++] = make_lval_wasm_lambda_call;
@@ -406,11 +400,11 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
 }
 
 CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
-  NativeFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
-                                  lval_fn_native->data.str);
-  if (!native_fn)
+  WasmFn* builtin_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
+                                 lval_fn_native->data.str);
+  if (!builtin_fn || !builtin_fn->compile_builtin_call)
     quit(wasm, "Function %s not found in runtime", lval_fn_native->data.str);
-  return native_fn->compile_fn_call(wasm, *native_fn, args);
+  return builtin_fn->compile_builtin_call(wasm, *builtin_fn, args);
 }
 
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
@@ -573,11 +567,10 @@ void compile(Namespace* ns) {
 
   /* env_print(env); */
 
-  import_runtime_fns(wasm);
+  import_c_fns(wasm);
 
   if (_strcmp(ns->namespace, config->stdlib) == 0) {
     add_native_fns(wasm);
-    add_native_call_relay_arrays(wasm);
   } else {
     // TODO: move to init_wajure
     assign_fn_table_index_to_native_fns(wasm);

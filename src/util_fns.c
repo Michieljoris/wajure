@@ -111,14 +111,13 @@ Lval* str_fn(Lenv* env, Lval* arg_list) {
   return make_lval_str(str);
 }
 
-RuntimeFn util_builtin_fns[] = {
-    {"print", print_fn, "print_fn", 2, 1},
-    {"pr", pr_fn, "pr_fn", 2, 1},
-    {"debug", debug_fn, "debug_fn", 2, 1},
-    {"boolean", boolean_fn, "boolean_fn", 2, 1},
-    {"hash", hash_fn, "hash_fn", 2, 1},
-    {"str", str_fn, "str_fn", 2, 1},
-    {"read-string", read_string_fn, "read_string_fn", 2, 1},
-    {NIL}
+CFn util_c_fns[] = {{"print", print_fn, "print_fn", 2, 1},
+                    {"pr", pr_fn, "pr_fn", 2, 1},
+                    {"debug", debug_fn, "debug_fn", 2, 1},
+                    {"boolean", boolean_fn, "boolean_fn", 2, 1},
+                    {"hash", hash_fn, "hash_fn", 2, 1},
+                    {"str", str_fn, "str_fn", 2, 1},
+                    {"read-string", read_string_fn, "read_string_fn", 2, 1},
+                    {NIL}
 
 };

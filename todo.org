@@ -494,3 +494,15 @@ Adapt the builtin function head to work on strings.
 Adapt the builtin function tail to work on strings.
 Create a builtin function show that can print the contents of strings as it is (unescaped).
 Add functions to wrap all of C's file handling functions such as fopen and fgets.
+
+* scratch
+load wval_ptr + fn_table_index
+indirect call
+br_table args_count
+(indirect call)
+
+load wval_ptr + call_table_index
+limit args_count
+add call_table  args_count
+load fn_table_index from call_table
+indirect call

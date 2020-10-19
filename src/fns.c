@@ -21,23 +21,23 @@ void lenv_add_builtin(Lenv* env, char* name, Lbuiltin func, int type) {
   release(lval_fun);
 }
 
-void lenv_add_builtins(Lenv* env, RuntimeFn builtins[], int type) {
+void lenv_add_builtins(Lenv* env, CFn builtins[], int type) {
   for (int i = 0; builtins[i].wajure_fn_name; i++) {
     lenv_add_builtin(env, builtins[i].wajure_fn_name, builtins[i].fun, type);
   }
 }
 
-extern RuntimeFn misc_builtins[];
-extern RuntimeFn list_builtin_fns[];
-extern RuntimeFn math_builtin_fns[];
-extern RuntimeFn special_builtins[];
-extern RuntimeFn util_builtin_fns[];
+extern CFn misc_builtins[];
+extern CFn list_c_fns[];
+extern CFn math_c_fns[];
+extern CFn special_builtins[];
+extern CFn util_c_fns[];
 
 void lenv_add_builtin_fns(Lenv* env) {
   printf("adding builtins\n");
-  lenv_add_builtins(env, math_builtin_fns, SYS);
-  lenv_add_builtins(env, list_builtin_fns, SYS);
+  lenv_add_builtins(env, math_c_fns, SYS);
+  lenv_add_builtins(env, list_c_fns, SYS);
   lenv_add_builtins(env, misc_builtins, SYS);
   lenv_add_builtins(env, special_builtins, SPECIAL);
-  lenv_add_builtins(env, util_builtin_fns, SYS);
+  lenv_add_builtins(env, util_c_fns, SYS);
 }

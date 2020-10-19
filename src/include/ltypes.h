@@ -38,7 +38,9 @@ typedef struct {
   char* c_fn_name;
   int params_count;
   int results_count;
-} RuntimeFn;
+  int fn_table_index;
+  int data_offset;
+} CFn;
 
 // TODO: refactor!!!
 typedef struct context Context;
@@ -62,11 +64,10 @@ struct lval {
   int hash;
 
   // fn
-  short fn_table_index;
+  short fn_table_index;  // TODO: max of 65000 fns, possible make int?
   short partial_count;
   int closure;
   int partials;
-  int fn_call_relay_array;
 };
 #else
 struct lval {
@@ -202,6 +203,21 @@ enum {
   PARAM,
   LOCAL
 
+};
+
+// FTI = Function Table Index
+enum {
+  FTI_RTE_NOT_A_FN,
+  FTI_RTE_TOO_FEW_ARGS,
+  FTI_RTE_TOO_MANY_ARGS,
+  FTI_COPY_AND_RETAIN,
+  FTI_PARTIAL,
+  FTI_APPLY,
+  FTI_KEYWORD,
+  FTI_SYMBOL,
+  FTI_MAP,
+  FTI_VECTOR,
+  FTI_SET
 };
 
 // Compiler

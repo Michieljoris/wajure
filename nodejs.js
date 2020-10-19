@@ -181,12 +181,13 @@ async function instantiate_runtime(env) {
         then(res => res.instance);
 
     env.runtime = runtime;
-    env.data_start = env.runtime.exports.__data_end.value;
-    if (env.data_start !== env.runtime.exports.__heap_base.value) {
+    env.data_start = runtime.exports.__data_end.value;
+    if (env.data_start !== runtime.exports.__heap_base.value) {
         //Memory layout should be: runtime stack|runtime data|wajure data|wajure heap
         throw("Error: runtime uses wrong memory layout, __data_end should equal __heap_base."+
               "Probably --stack-first flag is not set for linker.");
     }
+
     env.fn_table_start = 0;
 
     // env.runtime_error_fn = make_runtime_error_fn(env.runtime.exports.memory);
@@ -349,6 +350,7 @@ async function start() {
             data_offset: 0,
             fn_table_offset: 0,
             config: {runtime_wasm: './out_wasm/runtime.wasm',
+                     builtin_wasm: './out_wasm/builtin.wasm',
                      main: "main",
                      stdlib: "wajure.core",
                      out: "./clj"}
@@ -356,6 +358,7 @@ async function start() {
 
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
+        // await instantiate_builtin(env); //iso load_stdlib
         await load_stdlib(env);
         console.log("data_end =", env.runtime.exports.__data_end.value);
 
@@ -363,6 +366,7 @@ async function start() {
         let module = { namespace: env.config.main };
         await load_modules(env, module);
         env.heap_base = env.data_start + env.data_offset;
+
 
         if (env.heap_base >= initial_memory_size) {
             let new_page_count = Math.ceil(env.heap_base / page_size)
@@ -385,7 +389,7 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        console.log(util.inspect(env.modules, null, Infinity, true));
+        // console.log(util.inspect(env.modules, null, Infinity, true));
         const main_module = env.modules[env.config.main];
 
         console.log("Init runtime  ----------------------------------------");
@@ -431,10 +435,10 @@ start();
 // console.log("data_end =", runtime.__data_end.value);
 // console.log("heap_base =", runtime.__heap_base.value);
 
-// fs.writeFile("__heap_base", "" + runtime.__heap_base.value,
-//              function (err) {
-//                  if (err) return console.log(err);
-//              })
 
 
     // console.log("data_end =", runtime.__data_end.value);
+
+    // fs.writeFile("__heap_base", "" + runtime.exports.__heap_base.value,
+    //              function (err) {
+    //                  if (err) return console.log(err);})

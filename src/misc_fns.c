@@ -455,18 +455,18 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   return eval_lambda_call(lval_fun, args);
 }
 
-RuntimeFn misc_builtins[] = {{"eval", eval_fn},
-                             {"print-env", print_env_fn},
-                             {"exit", exit_fn},
-                             {"load", load_fn},
-                             /* {"mpc_load", mpc_load_fn}, */
-                             {"macroexpand", macroexpand_fn},
-                             {"macroexpand-1", macroexpand_1_fn},
-                             /* {"compile", compile_fn}, */
-                             {"in-ns", in_ns_fn},
-                             {"require", require_fn},
-                             {"partial", partial_fn, "partial_fn", 2, 1},
-                             {"apply", apply_fn, "apply", 2, 1},
-                             {NIL}
+CFn misc_builtins[] = {{"eval", eval_fn},
+                       {"print-env", print_env_fn},
+                       {"exit", exit_fn},
+                       {"load", load_fn},
+                       /* {"mpc_load", mpc_load_fn}, */
+                       {"macroexpand", macroexpand_fn},
+                       {"macroexpand-1", macroexpand_1_fn},
+                       /* {"compile", compile_fn}, */
+                       {"in-ns", in_ns_fn},
+                       {"require", require_fn},
+                       {"partial", partial_fn, "partial_fn", 2, 1},
+                       {"apply", apply_fn, "apply", 2, 1},
+                       {NIL}
 
 };

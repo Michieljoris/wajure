@@ -2,13 +2,13 @@
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_=>_i32 (func (param i32 i32) (result i32)))
  (type $i32_=>_i32 (func (param i32) (result i32)))
- (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
  (type $i32_=>_none (func (param i32)))
+ (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
- (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
- (type $none_=>_none (func))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
+ (type $none_=>_none (func))
+ (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
@@ -26,9 +26,9 @@
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0ffn\00\00,,,,,,,,,,,,,,,,,,,,,foo Hello from wajure.core!!! \00\01\00\00\00\00\00\00\00\00\00\00\00L\00\00\00\02\t\00\00\1d\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00*\01+++++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00\8d\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff8\00\00\00\00\00\00\00\00\00\00\00h\00\00\00<\00\00\00}\00\00\00\a9\00\00\00\02\00\00\00\b1\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0ffn\00\00foo Hello from wajure.core!!! \00\01\00\00\00\00\00\00\00\00\00\00\007\00\00\00\02\t\00\00\08\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00c\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff2\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\'\00\00\00S\00\00\00\7f\00\00\00\02\00\00\00\87\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $call#0 $call#1 $call#2 $call#3 $call#4 $call#5 $call#6 $call#7 $call#8 $call#9 $call#10 $call#11 $call#12 $call#13 $call#14 $call#15 $call#16 $call#17 $call#18 $call#19 $call#20 $bundle_rest_arg#21 $bundle_rest_arg#22 $bundle_rest_arg#23 $bundle_rest_arg#24 $bundle_rest_arg#25 $bundle_rest_arg#26 $bundle_rest_arg#27 $bundle_rest_arg#28 $bundle_rest_arg#29 $bundle_rest_arg#30 $bundle_rest_arg#31 $bundle_rest_arg#32 $bundle_rest_arg#33 $bundle_rest_arg#34 $bundle_rest_arg#35 $bundle_rest_arg#36 $bundle_rest_arg#37 $bundle_rest_arg#38 $bundle_rest_arg#39 $bundle_rest_arg#40 $bundle_rest_arg#41 $rt_error_too_few_args $rt_error_too_many_args $rt_error_not_a_fn $copy_and_retain $partial $apply $keyword2 $keyword3 $symbol2 $symbol3 $map2 $map3 $vector $set $test-wajure_7)
+ (elem (global.get $fn_table_offset) $call#0 $call#1 $call#2 $call#3 $call#4 $call#5 $call#6 $call#7 $call#8 $call#9 $call#10 $call#11 $call#12 $call#13 $call#14 $call#15 $call#16 $call#17 $call#18 $call#19 $call#20 $bundle_rest_arg#21 $bundle_rest_arg#22 $bundle_rest_arg#23 $bundle_rest_arg#24 $bundle_rest_arg#25 $bundle_rest_arg#26 $bundle_rest_arg#27 $bundle_rest_arg#28 $bundle_rest_arg#29 $bundle_rest_arg#30 $bundle_rest_arg#31 $bundle_rest_arg#32 $bundle_rest_arg#33 $bundle_rest_arg#34 $bundle_rest_arg#35 $bundle_rest_arg#36 $bundle_rest_arg#37 $bundle_rest_arg#38 $bundle_rest_arg#39 $bundle_rest_arg#40 $bundle_rest_arg#41 $rt_error_too_few_args $rt_error_too_many_args $rt_error_not_a_fn $copy_and_retain $partial $apply $vector $set $test-wajure_7)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -56,7 +56,7 @@
  (import "env" "_strcpy" (func $_strcpy (param i32 i32) (result i32)))
  (import "env" "print_slot_size" (func $print_slot_size))
  (import "env" "wval_print" (func $wval_print (param i32)))
- (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32 i32) (result i32)))
+ (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32) (result i32)))
  (import "env" "get_wval_type" (func $get_wval_type (param i32) (result i32)))
  (import "env" "get_wval_subtype" (func $get_wval_subtype (param i32) (result i32)))
  (import "env" "get_wval_fn_table_index" (func $get_wval_fn_table_index (param i32) (result i32)))
@@ -1339,30 +1339,9 @@
    )
    (local.get $8)
    (local.get $7)
-   (call $get_wval_fn_call_relay_array
-    (local.get $4)
-   )
   )
  )
  (func $apply (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $keyword2 (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $keyword3 (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $symbol2 (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $symbol3 (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $map2 (param $0 i32) (param $1 i32) (param $2 i32)
-  (nop)
- )
- (func $map3 (param $0 i32) (param $1 i32) (param $2 i32)
   (nop)
  )
  (func $vector (param $0 i32) (param $1 i32) (param $2 i32)
@@ -1385,7 +1364,7 @@
          (call $retain
           (i32.add
            (global.get $data_offset)
-           (i32.const 76)
+           (i32.const 55)
           )
          )
          (call $prefix_list
@@ -1416,9 +1395,8 @@
    )
   )
  )
- ;; custom section "call_relay_arrays", size 19, contents: "rt_error_not_a_fn,8"
- ;; custom section "symbol_table", size 448
+ ;; custom section "symbol_table", size 289
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "197"
- ;; custom section "fn_table_size", size 2, contents: "57"
+ ;; custom section "data_size", size 3, contents: "155"
+ ;; custom section "fn_table_size", size 2, contents: "51"
 )
