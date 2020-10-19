@@ -569,14 +569,6 @@ void compile(Namespace* ns) {
 
   import_c_fns(wasm);
 
-  if (_strcmp(ns->namespace, config->stdlib) == 0) {
-    add_native_fns(wasm);
-  } else {
-    // TODO: move to init_wajure
-    assign_fn_table_index_to_native_fns(wasm);
-    register_native_relay_arrays();
-  }
-
   printf("Processing env =============\n");
   Cell* head = env->kv;
   int count = list_count(head);

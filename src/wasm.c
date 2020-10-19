@@ -135,7 +135,9 @@ void add_function_table(Wasm* wasm) {
 
   // Exports all fns
   /* for (int i = 0; i < wasm->fns_count; i++) { */
-  /*   BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]); */
+  /*   printf("%s\n", funcNames[i]); */
+  /*   /\* BinaryenAddFunctionExport(wasm->module, funcNames[i], funcNames[i]);
+   * *\/ */
   /* }; */
   int numFuncNames = wasm->fns_count;
 
@@ -189,6 +191,7 @@ CFn c_fns[] = {
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},
     {NULL, NULL, "get_wval_partial_count", 1, 1},
+    {NULL, NULL, "listify_args", 2, 1},
     {NULL, NULL, "bundle_rest_args", 3, 0},
     {NULL, NULL, "rewrite_pointers", 3, 0},
     {NULL, NULL, "new_cell", 2, 1},
@@ -287,100 +290,106 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   wasm->symbol_table_count += line_count;
 }
 
-void add_native_fns(Wasm* wasm) {
-  // Since we load config->stdlib ("wajure.core") first in nodejs that module
-  // will have offset of 0 for data and fns, so we add the call fns to
-  // wajure.core and now we can refer to these call fns by index 0-20 throughout
-  // all the modules.
-  add_call_fns(wasm);             // 0-20
-  add_bundle_rest_arg_fns(wasm);  //  21-41
+/* void add_native_fns(Wasm* wasm) { */
+/*   // Since we load config->stdlib ("wajure.core") first in nodejs that module
+ */
+/*   // will have offset of 0 for data and fns, so we add the call fns to */
+/*   // wajure.core and now we can refer to these call fns by index 0-20
+ * throughout */
+/*   // all the modules. */
+/*   add_call_fns(wasm);             // 0-20 */
+/*   add_bundle_rest_arg_fns(wasm);  //  21-41 */
 
-  int fns_count = sizeof(native_fns) / sizeof(*native_fns);
+/*   int fns_count = sizeof(native_fns) / sizeof(*native_fns); */
 
-  // 42 - (42 + fns_count)
-  for (int i = 0; i < fns_count; i++) {
-    native_fns[i].add_fn(wasm, native_fns[i].wasm_fn_name);
-    native_fns[i].fn_table_index =
-        add_fn_to_table(wasm, native_fns[i].wasm_fn_name);
-    char* fn_name = native_fns[i].wasm_fn_name;
-    char* type_str = "Function";
-    int max_len = 1024;
-    char* line = malloc(max_len);
-    snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", fn_name, type_str, -1,
-             native_fns[i].fn_table_index, 1, 1);
+/*   // 42 - (42 + fns_count) */
+/*   for (int i = 0; i < fns_count; i++) { */
+/*     native_fns[i].add_fn(wasm, native_fns[i].wasm_fn_name); */
+/*     native_fns[i].fn_table_index = */
+/*         add_fn_to_table(wasm, native_fns[i].wasm_fn_name); */
+/*     char* fn_name = native_fns[i].wasm_fn_name; */
+/*     char* type_str = "Function"; */
+/*     int max_len = 1024; */
+/*     char* line = malloc(max_len); */
+/*     snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", fn_name, type_str, -1, */
+/*              native_fns[i].fn_table_index, 1, 1); */
 
-    int line_count = _strlen(line);
-    wasm->symbol_table =
-        realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
-    _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
-    free(line);
-    wasm->symbol_table_count += line_count;
-    /* printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name, */
-    /*        native_fns[i].fn_table_index); */
-  }
-}
+/*     int line_count = _strlen(line); */
+/*     wasm->symbol_table = */
+/*         realloc(wasm->symbol_table, wasm->symbol_table_count + line_count);
+ */
+/*     _strncpy(wasm->symbol_table + wasm->symbol_table_count, line,
+ * line_count); */
+/*     free(line); */
+/*     wasm->symbol_table_count += line_count; */
+/*     /\* printf("native_fn index: %s %d\n", native_fns[i].wajure_fn_name, *\/
+ */
+/*     /\*        native_fns[i].fn_table_index); *\/ */
+/*   } */
+/* } */
 
-void register_native_relay_arrays() {
-  // We read the symbol table custom section of stdlib (wajure.core)
-  FILE* fp;
-  char command[1000];
-  char* file_name = ns_to_wasm(config->stdlib);
-  sprintf(command, "node custom.js %s call_relay_arrays\n", file_name);
-  release(file_name);
-  fp = popen(command, "r");
+/* void register_native_relay_arrays() { */
+/*   // We read the symbol table custom section of stdlib (wajure.core) */
+/*   FILE* fp; */
+/*   char command[1000]; */
+/*   char* file_name = ns_to_wasm(config->stdlib); */
+/*   sprintf(command, "node custom.js %s call_relay_arrays\n", file_name); */
+/*   release(file_name); */
+/*   fp = popen(command, "r"); */
 
-  char fn_name[1000];
-  // Line by line
-  do {
-    char line[1000];
-    int ret = fscanf(fp, "%s", line);
-    if (ret > 0) {
-      strsubst(line, ',', ' ');
-      int* data_offset = malloc(sizeof(int));
-      sscanf(line, "%s %d", fn_name, data_offset);
-      state->native_call_to_relay_array_map = alist_prepend(
-          state->native_call_to_relay_array_map, fn_name, data_offset);
-      /* printf("Register: %s %d\n", fn_name, *data_offset); */
-    } else
-      break;
-  } while (1);
-  fclose(fp);
-}
+/*   char fn_name[1000]; */
+/*   // Line by line */
+/*   do { */
+/*     char line[1000]; */
+/*     int ret = fscanf(fp, "%s", line); */
+/*     if (ret > 0) { */
+/*       strsubst(line, ',', ' '); */
+/*       int* data_offset = malloc(sizeof(int)); */
+/*       sscanf(line, "%s %d", fn_name, data_offset); */
+/*       state->native_call_to_relay_array_map = alist_prepend( */
+/*           state->native_call_to_relay_array_map, fn_name, data_offset); */
+/*       /\* printf("Register: %s %d\n", fn_name, *data_offset); *\/ */
+/*     } else */
+/*       break; */
+/*   } while (1); */
+/*   fclose(fp); */
+/* } */
 
-void assign_fn_table_index_to_native_fns(Wasm* wasm) {
-  // We read the symbol table custom section of stdlib (wajure.core)
-  FILE* fp;
-  char command[1000];
-  char* file_name = ns_to_wasm(config->stdlib);
-  sprintf(command, "node custom.js %s symbol_table\n", file_name);
-  release(file_name);
-  fp = popen(command, "r");
+/* void assign_fn_table_index_to_native_fns() { */
+/*   // We read the symbol table custom section of stdlib (wajure.core) */
+/*   FILE* fp; */
+/*   char command[1000]; */
+/*   char* file_name = ns_to_wasm(config->stdlib); */
+/*   sprintf(command, "node custom.js %s symbol_table\n", file_name); */
+/*   release(file_name); */
+/*   fp = popen(command, "r"); */
 
-  char fn_name[1000];
-  int data_offset, fn_table_index, param_count, has_rest_arg;
-  // Line by line
-  do {
-    char line[1000];
-    int ret = fscanf(fp, "%s", line);
-    if (ret > 0) {
-      strsubst(line, ',', ' ');
-      char type[100];
-      sscanf(line, "%s %s %d %d %d %d", fn_name, type, &data_offset,
-             &fn_table_index, &param_count, &has_rest_arg);
+/*   char fn_name[1000]; */
+/*   int data_offset, fn_table_index, param_count, has_rest_arg; */
+/*   // Line by line */
+/*   do { */
+/*     char line[1000]; */
+/*     int ret = fscanf(fp, "%s", line); */
+/*     if (ret > 0) { */
+/*       strsubst(line, ',', ' '); */
+/*       char type[100]; */
+/*       sscanf(line, "%s %s %d %d %d %d", fn_name, type, &data_offset, */
+/*              &fn_table_index, &param_count, &has_rest_arg); */
 
-      // See if it's one of our native fns
-      WasmFn* native_fn = (WasmFn*)alist_get(state->wajure_to_native_fn_map,
-                                             is_eq_str, fn_name);
-      // If so set its fn_table_index
-      if (native_fn) {
-        /* printf("assigning %d to %s\n", fn_table_index, fn_name); */
-        native_fn->fn_table_index = fn_table_index;
-      }
-    } else
-      break;
-  } while (1);
-  fclose(fp);
-}
+/*       // See if it's one of our native fns */
+/*       WasmFn* native_fn = (WasmFn*)alist_get(state->wajure_to_native_fn_map,
+ */
+/*                                              is_eq_str, fn_name); */
+/*       // If so set its fn_table_index */
+/*       if (native_fn) { */
+/*         /\* printf("assigning %d to %s\n", fn_table_index, fn_name); *\/ */
+/*         native_fn->fn_table_index = fn_table_index; */
+/*       } */
+/*     } else */
+/*       break; */
+/*   } while (1); */
+/*   fclose(fp); */
+/* } */
 
 void register_native_fns() {
   int fns_count = sizeof(native_fns) / sizeof(*native_fns);

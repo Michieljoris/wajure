@@ -366,6 +366,14 @@ void add_apply_fn(Wasm* wasm, char* fn_name) {
   BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
                       body);
 }
+void add_keyword_fn(Wasm* wasm, char* fn_name) {
+  BinaryenModuleRef module = wasm->module;
+  BinaryenType params_type = make_type_int32(3);
+  BinaryenType results_type = make_type_int32(0);
+  Ber body = BinaryenNop(module);
+  BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, 0,
+                      body);
+}
 
 void add_symbol_fn(Wasm* wasm, char* fn_name) {
   BinaryenModuleRef module = wasm->module;

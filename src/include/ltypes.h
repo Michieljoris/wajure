@@ -207,17 +207,17 @@ enum {
 
 // FTI = Function Table Index
 enum {
-  FTI_RTE_NOT_A_FN,
   FTI_RTE_TOO_FEW_ARGS,
   FTI_RTE_TOO_MANY_ARGS,
+  FTI_RTE_NOT_A_FN,
   FTI_COPY_AND_RETAIN,
   FTI_PARTIAL,
   FTI_APPLY,
   FTI_KEYWORD,
+  FTI_VECTOR,
+  FTI_SET,
   FTI_SYMBOL,
   FTI_MAP,
-  FTI_VECTOR,
-  FTI_SET
 };
 
 // Compiler

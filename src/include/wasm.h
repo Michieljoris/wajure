@@ -80,8 +80,6 @@ struct wasm_fn {
   int data_offset;
 };
 
-void add_native_fns(Wasm* wasm);
 void register_native_fns();
-void register_native_relay_arrays();
-void assign_fn_table_index_to_native_fns(Wasm* wasm);
+/* void assign_fn_table_index_to_native_fns(); */
 #endif  // __WASM_INIT_H_

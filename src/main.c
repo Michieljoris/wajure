@@ -5,6 +5,7 @@
 
 #include <math.h>
 
+#include "builtin.h"
 #include "compile.h"
 #include "compile_main.h"
 #include "hash.h"
@@ -47,6 +48,11 @@ int main(int argc, char** argv) {
   config = malloc(sizeof(Config));
   make_config(argc, argv);
   state = calloc(1, sizeof(State));
+
+  printf("making builtin module\n");
+  register_native_fns();
+  make_builtin_module("out_wasm");
+  printf("DONE making builtin module\n");
 
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
