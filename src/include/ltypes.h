@@ -12,6 +12,15 @@ typedef struct {
   char* user;  // user ns, dummy namespace
   char* out;   // dir of compiled wasm files
   int do_compile;
+  // when root fns get compiled there are 2 versions:
+  // 1. A fn where the params match the wajure params, which is called directly
+  // when possible
+  // 2. A fn that uses the standard abi of closure_ptr, args_block_ptr and
+  // args_count, used in datafied versions of the fn (partial f 1) or (let [g
+  // f]).
+  // if reuse_wajure_fn is truthy the first fn is called from the second. Else
+  // the first fn is inlined, which might be slightly faster.
+  int reuse_wajure_fn;
 } Config;
 
 typedef struct cell Cell;

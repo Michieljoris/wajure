@@ -3,6 +3,7 @@
 (defn f [x y z] [x y z])
 (def fp (partial f 1))
 
+
 ;; (defn f []
 ;;   (let [plus (partial + 1 1)]
 ;;    (t (plus 1) 3)

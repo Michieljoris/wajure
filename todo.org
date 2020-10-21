@@ -1,5 +1,19 @@
 * TODO compiler
 ** clean up and comment all of code
+** add br_table to add_wasm_function and to wrap_root_fn
+
+** what about (def p foo/fp) or (def f foo/f) ?
+Do we recompile the fn or refer to the fn in the other ns
+** What about: (def f (partial foo/f 1)). How does that get called?
+by name? by index? by ref?
+** What about: (let [fp (partial foo/f 1)]
+    ;; (fp  2 3)
+    )
+    This doesn't pull in the global to make the new lval-wasm_lambda!!!
+
+** somehow listify_args creates a bug.
+It returns a nil if list is empty because it's used for the rest arg,but make
+sure not to use it when we expect an empty list!!!!
 ** make sure stdlib is compiled (and first) if dirty!!!
 if dirty compile everything, and stdlib first.
 we can then move:

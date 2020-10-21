@@ -3,7 +3,7 @@
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
-;; (require '[foo.core :as foo])
+(require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -13,16 +13,27 @@
 ;; (def l (list 1 2 3))
 ;; (def s "foo")
 ;; (defn g [x & y] [x y])
-
-;; (defn f [x y z] [x y z])
+;; (def fp (partial foo/fp 2))
+(defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn main [x y]
-  (print 123)
-  ;; (let [g (partial + 1)
-  ;;       h (partial + 1)]
-  ;;   (print (g  2 3)))
-  (test-wajure 1)
+(defn main [x]
+  (print (foo/f 1 2 3))
+  ;; (fp  3)
+  ;; (let [fp (partial foo/f 1)]
+  ;;   ;; (fp  2 3)
+  ;;   )
+  ;; (print 123)
+  ;; (let [;; g (partial f 1)
+  ;;       g f
+  ;;       ;; h (partial + 1)
+  ;;       ]
+  ;;   (print (f 1 2 3))
+  ;;   ;; (print (g 1 2 3))
+  ;;   )
+  ;; (range 1)
+  ;; (let [p +]
+  ;;   (p 1 2))
   ;; (let [f (fn [] 1)]
   ;;   (print (f 1))
   ;;   )

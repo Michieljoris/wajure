@@ -160,10 +160,10 @@ void write_symbol_table_line(Wasm* wasm, int type, char* fn_name,
                              int data_offset, int fn_table_index,
                              int param_count, int has_rest_arg) {
   char* type_str = lval_type_constant_to_name(type);
-  char* line =
-      malloc(_strlen(fn_name) + _strlen(type_str) + number_len(data_offset) +
-             number_len(fn_table_index) + number_len(param_count) +
-             number_len(has_rest_arg) + 6 + 1);
+  int len = _strlen(fn_name) + _strlen(type_str) + number_len(data_offset) +
+            number_len(fn_table_index) + number_len(param_count) +
+            number_len(has_rest_arg) + 6 + 1;
+  char* line = malloc(len);
   sprintf(line, "%s,%s,%d,%d,%d,%d\n", fn_name, type_str, data_offset,
           fn_table_index, param_count, has_rest_arg);
 
@@ -185,27 +185,6 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
     param_count = lval->param_count;
     has_rest_arg = lval->rest_arg_index;
   }
-  write_symbol_table_line(wasm, lval->subtype, sym, data_offset, fn_table_index,
+  write_symbol_table_line(wasm, lval->type, sym, data_offset, fn_table_index,
                           param_count, has_rest_arg);
-  /* printf("-- ADD TO SYMBOL TABLE\n"); */
-  /* char* type_str = lval_type_to_name(lval); */
-  /* /\* int ptr_len = 10; *\/ */
-  /* /\* int max_len = _strlen(sym) + ptr_len + _strlen(type_str) + 10; *\/ */
-  /* int max_len = 1024; */
-  /* char* line = malloc(max_len); */
-  /* int offset = lval->data_offset; */
-  /* if (lval->type == LVAL_FUNCTION) { */
-  /*   int fn_table_index = */
-  /*       lval->cfn ? lval->cfn->offset : lval->offset;  // partials */
-  /*   snprintf(line, max_len, "%s,%s,%d,%d,%d,%d\n", sym, type_str, offset, */
-  /*            fn_table_index, lval->param_count, lval->rest_arg_index); */
-  /* } else */
-  /*   snprintf(line, max_len, "%s,%s,%d\n", sym, type_str, offset); */
-  /* int line_count = _strlen(line); */
-  /* wasm->symbol_table = */
-  /*     realloc(wasm->symbol_table, wasm->symbol_table_count + line_count); */
-  /* _strncpy(wasm->symbol_table + wasm->symbol_table_count, line, line_count);
-   */
-  /* free(line); */
-  /* wasm->symbol_table_count += line_count; */
 }

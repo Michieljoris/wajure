@@ -45,7 +45,7 @@ CResult compile_list(Wasm* wasm, Cell* head) {
       BinaryenCall(module, "prefix_list", operands, 2, make_type_int32(1)));
 }
 
-CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
+CResult compile_do_list(Wasm* wasm, Lval* lval_list, Ber init) {
   /* printf("COMPILE_DO_LIST!!!!\n"); */
   /* lval_println(lval_list); */
   BinaryenModuleRef module = wasm->module;
@@ -54,10 +54,10 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list) {
 
   LocalIndices* li = li_init();
 
-  if (do_list_count < 2) do_list_count = 2;
   Ber* do_body = malloc(do_list_count * sizeof(Ber));
 
   int do_list_index = 0;
+  if (init) do_body[do_list_index++] = init;
 
   Ber do_result = NULL;
 
@@ -179,16 +179,42 @@ CResult compile_lval_ref(Wasm* wasm, Lval* lval_symbol, Lval* lval_ref) {
   }
 }
 
+Ber args_into_locals(Wasm* wasm, int min_param_count, int has_rest_arg) {
+  BinaryenModuleRef module = wasm->module;
+  int args_block_ptr_param = 1;
+  int args_count_param = 2;
+
+  Ber* block_operands = malloc((min_param_count + 1) * sizeof(Ber));
+  int block_count = 0;
+  for (int i = 0; i < min_param_count; i++) {
+    int local = li_new(wasm);
+    Ber arg = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
+                           local_get_int32(module, args_block_ptr_param));
+    block_operands[block_count++] = BinaryenLocalSet(module, local, arg);
+  }
+  if (has_rest_arg) {
+    Ber listify_args_operands[] = {
+        local_get_int32(module, args_block_ptr_param),
+        local_get_int32(module, args_count_param)};
+    Ber args_as_list = BinaryenCall(
+        module, "listify_args", listify_args_operands, 2, BinaryenTypeInt32());
+    int local = li_new(wasm);
+    block_operands[block_count++] =
+        BinaryenLocalSet(module, local, args_as_list);
+  }
+  return BinaryenBlock(module, uniquify_name(wasm, "args_into_locals"),
+                       block_operands, block_count, BinaryenTypeNone());
+}
+
 FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
-                               Lval* lval_fun) {
+                               Lval* lval_fun, int wajure_args) {
   printf(">>>>>>>> add_wasm_function %s offset: %d\n", fn_name,
          lval_fun->offset);
 
   int param_count = lval_fun->param_count;
-  int wajure_params_count = 1;
-  int wasm_params_count =
-      wajure_params_count + param_count;  // the function's closure
-  int results_count = 1;
+  // The function's closure, args_count_ptr and args_count, or closure and
+  // params
+  int wasm_params_count = 1 + (wajure_args ? param_count : 2);
   CONTEXT_FUNCTION(">>>>>>>add_wasm_function", fn_name, wasm_params_count)
 
   Lenv* current_env = wasm->env;
@@ -197,13 +223,14 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Params
   Lenv* params_env = enter_env(wasm);
 
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int min_param_count = rest_arg_index ? param_count - 1 : param_count;
+  int has_rest_arg = lval_fun->rest_arg_index;  // 1 based
+  int min_param_count = has_rest_arg ? param_count - 1 : param_count;
 
   int i = 0;
+  int first_free_local = wajure_args ? 1 : 3;
   Cell* param = lval_fun->params->data.head;
   while (i < min_param_count) {
-    Lval* lval_ref = make_lval_ref(context, PARAM, i + wajure_params_count);
+    Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
     Lval* lval_sym = param->car;
     lenv_put(params_env, lval_sym, lval_ref);
     release(lval_ref);
@@ -211,17 +238,19 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
     i++;
   }
 
-  if (rest_arg_index) {
+  if (has_rest_arg) {
     param = param->cdr;
-    Lval* lval_ref = make_lval_ref(context, PARAM, i + wajure_params_count);
+    Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
     Lval* lval_sym = param->car;
     lenv_put(params_env, lval_sym, lval_ref);
   }
   /* env_print(params_env); */
 
+  Ber init = wajure_args
+                 ? NULL
+                 : args_into_locals(wasm, min_param_count, has_rest_arg);
   // Compile body
-  Ber body = compile_do_list(wasm, lval_fun->body).ber;
-  // Compile body
+  Ber body = compile_do_list(wasm, lval_fun->body, init).ber;
 
   // Post compile
   leave_env(wasm);
@@ -242,7 +271,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   BinaryenModuleRef module = wasm->module;
 
   BinaryenType params_type = make_type_int32(wasm_params_count);
-  BinaryenType results_type = make_type_int32(results_count);
+  BinaryenType results_type = make_type_int32(1);
 
   BinaryenType* local_types = make_type_int32_array(locals_count);
 
@@ -251,9 +280,10 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
                       locals_count, body);
   /* } */
 
-  lval_fun->offset = fn_table_index;
-  FunctionData function_data = {retain(context->function_context->closure),
-                                context->function_context->closure_count};
+  /* lval_fun->offset = fn_table_index; */
+  FunctionData function_data = {context->function_context->closure,
+                                context->function_context->closure_count,
+                                fn_table_index};
 
   wasm->env = current_env;
   return function_data;
@@ -283,20 +313,13 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
   FunctionData function_data =
-      add_wasm_function(wasm, wasm->env, lambda_name, lval_fn);
+      add_wasm_function(wasm, wasm->env, lambda_name, lval_fn, 0);
 
   // Which gives us info on the wasm fn's fn_table_index and which and
   // how many bindings it closes over
-  int fn_table_index = lval_fn->offset;
+  int fn_table_index = function_data.fn_table_index;
   Lenv* closure = function_data.closure;
   int closure_count = function_data.closure_count;
-
-  // We get param info from lval_fn
-  /* int param_count = lval_fn->param_count; */
-  /* int rest_arg_index = lval_fn->rest_arg_index; */
-
-  // We're done with with lval_fn
-  release(lval_fn);
 
   /* printf("COMPILED FUNCTION!!! %d %d %d\n", rest_arg_index, */
   /*        closure_count, param_count); */
@@ -366,6 +389,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
                                    BinaryenTypeAuto());
   free(lambda_block_children);
   release(lambda_name);
+  release(lval_fn);
 
   CResult ret = {.ber = lambda_block, .is_fn_call = 1};
   return ret;
@@ -379,7 +403,7 @@ CResult compile_special_call(Wasm* wasm, Lval* lval_fn_sym, Cell* args) {
   if (_strcmp(fn_name, "do") == 0) {
     Lval* do_list = make_lval_list();
     do_list->data.head = retain(args);
-    CResult result = compile_do_list(wasm, do_list);
+    CResult result = compile_do_list(wasm, do_list, NULL);
     release(do_list);
     result.is_fn_call = 1;
     return result;
@@ -410,8 +434,8 @@ CResult compile_native_call(Wasm* wasm, Lval* lval_fn_native, Cell* args) {
 CResult compile_sys_call(Wasm* wasm, Lval* lval_fn_sys, Cell* args) {
   CFn* c_fn =
       alist_get(state->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
+  if (!c_fn) return compile_native_call(wasm, lval_fn_sys, args);
   char* c_fn_name = c_fn->c_fn_name;
-  if (!c_fn_name) return compile_native_call(wasm, lval_fn_sys, args);
 
   BinaryenModuleRef module = wasm->module;
 
@@ -583,19 +607,17 @@ void compile(Namespace* ns) {
     Lval* lval_sym = (Lval*)((Cell*)pair)->car;
     Lval* lval = (Lval*)((Cell*)pair)->cdr;
 
-    CResult result;
-
     printf("----Processing: ");
     lval_print(lval_sym);
     printf(": ");
     lval_println(lval);
     if (lval->type == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
-        result = lval_compile(wasm, lval);
-        add_to_symbol_table(wasm, lval->cname, lval);
+        lval_compile(wasm, lval);
+        if (!lval->cfn) add_to_symbol_table(wasm, lval->cname, lval);
       }
     } else {
-      result = datafy_lval(wasm, lval);
+      datafy_lval(wasm, lval);
       add_to_symbol_table(wasm, lval_sym->data.str, lval);
     }
   }

@@ -211,7 +211,6 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
 }
 
 CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
-  /* printf("COMPILE_PARTIAL_CALL\n"); */
   BinaryenModuleRef module = wasm->module;
   int args_count = list_count(args);
   if (args_count == 0) quit(wasm, "Need at last one argument for partial");
@@ -232,6 +231,7 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
   switch (fn_arg.lval->type) {
     case LVAL_FUNCTION: {
       Lval* lval_fn = fn_arg.lval;
+      printf("compile partial_call\n");
 
       // If we know this is a function at compile time then we compile the
       // rest of the args and put them in the partials block of a copy of the
@@ -299,31 +299,19 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
           BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
       Ber ber_partial_count = make_int32(module, partial_count);
 
-      int fn_table_index =
-          lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
+      printf("lval_fn: %d ", lval_fn->subtype);
+      lval_println(lval_fn);
       Ber ber_fn_table_index;
       if (lval_fn->subtype == SYS) {
-        printf("SYS: %s, %d\n", fn_arg.lval->cname, fn_arg.lval->offset);
-        // Let's get fn_table_index from the datafied sys fn
-        /* int wval_fn_local = li_new(wasm); */
-        /* Ber wval_fn = BinaryenLocalTee(module, wval_fn_local, fn_arg.ber, */
-        /*                                BinaryenTypeInt32()); */
-        /* ber_fn_table_index = get_wval_prop(module, wval_fn,
-         * "fn_table_index"); */
-        ber_fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), make_int32(module, fn_arg.lval->offset),
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-        /* fn_call_relay_array_ptr = */
-        /*     get_wval_prop(module, local_get_int32(module, wval_fn_local), */
-        /*                   "fn_call_relay_array"); */
-
-        /* fn_call_relay_array_ptr = BinaryenBinary( */
-        /*     module, BinaryenAddInt32(), make_int32(module,
-         * fn_arg.lval->offset), */
-        /*     BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));
-         */
+        /* printf("SYS: %s, %d\n", lval_fn->cname, lval_fn->offset); */
+        ber_fn_table_index = make_int32(module, fn_arg.fn_table_index);
 
       } else {
+        // TODO: if lval_fn is external get fn_table_index from global,
+        // if it's a partial check if cfn is external
+        int fn_table_index =
+            lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
+        printf("offset: %d\n", fn_table_index);
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset
         ber_fn_table_index = make_int32(module, fn_table_index);

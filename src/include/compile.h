@@ -12,7 +12,7 @@ void compile(Namespace* ns);
 CResult lval_compile(Wasm* wasm, Lval* lval);
 
 FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
-                               Lval* lval_fun);
+                               Lval* lval_fun, int wajure_args);
 
 CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index);
 

@@ -51,10 +51,9 @@ int main(int argc, char** argv) {
   make_config(argc, argv);
   state = calloc(1, sizeof(State));
 
-  printf("making builtin module\n");
-  make_builtin_module(config->out_wasm, config->builtin);
-  printf("DONE making builtin module\n");
-  return 1;
+  /* printf("making builtin module\n"); */
+  /* make_builtin_module(config->out_wasm, config->builtin); */
+  /* printf("DONE making builtin module\n"); */
   for (int i = 2; i < argc; ++i) {
     if (config->do_compile) {
       printf("COMPILING!!!\n");

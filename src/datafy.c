@@ -36,22 +36,11 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
   WasmFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
                                 lval_fn_native->data.str);
-  /* if (!native_fn) */
-  /*   quit(wasm, "Native function %s not found in runtime", */
-  /*        lval_fn_native->data.str); */
-
-  /* /\* printf("DATAFY_NATIVE_FN: %s %d\n", lval_fn_native->data.str, *\/ */
-  /* /\*        native_fn->fn_table_index); *\/ */
-  /* /\* lval_println(lval_fn_native); *\/ */
-  /* int fn_table_index = */
-  /*     0;  // not used since we're dispatching to our native fn by param_count
-   */
-  /* /\* int has_rest_arg = 0;  // also not used *\/ */
-  /* char* data_lval = make_data_lval(wasm, NULL, fn_table_index); */
-  /* int lval_ptr = inter_data_lval(wasm, data_lval); */
 
   int lval_ptr = native_fn->data_offset;
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
+  CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
+                 .data_offset = lval_ptr,
+                 .fn_table_index = native_fn->fn_table_index};
   return ret;
 }
 
@@ -60,66 +49,84 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
       alist_get(state->wajure_to_c_fn_map, is_eq_str, lval_fn_sys->data.str);
   if (!c_fn) return datafy_native_fn(wasm, lval_fn_sys);
 
-  /* BinaryenModuleRef module = wasm->module; */
-
-  /* scoped char* fn_name = lalloc_size(512); */
-  /* _strcpy(fn_name, "sys_"); */
-  /* _strcat(fn_name, lval_fn_sys->data.str); */
-
-  /* int fn_table_index; */
-  /* int wasm_params_count = 2;  // the function's closure and rest args */
-  /* int results_count = 1; */
-  /* BinaryenType params_type = make_type_int32(wasm_params_count); */
-  /* BinaryenType results_type = make_type_int32(results_count); */
-  /* int locals_count = 0; */
-
-  /* Ber rest_arg = BinaryenLocalGet(module, 1, BinaryenTypeInt32()); */
-  /* Ber sys_fn_operands[2] = {make_int32(wasm->module, 0), rest_arg}; */
-
-  /* // We pretend this fn has 1 param, namely a rest param, so any args past */
-  /* // into this fn will be wrapped in a list, ready to be passed to our sys
-   * fn. */
-  /* // Actually call this sys fn with the rest args */
-  /* Ber call_sys_fn = */
-  /*     BinaryenCall(module, c_fn_name, sys_fn_operands, 2,
-   * make_type_int32(1)); */
-  /* Ber body = call_sys_fn; */
-  /* BinaryenAddFunction(module, fn_name, params_type, results_type, NULL, */
-  /*                     locals_count, body); */
-
-  /* fn_table_index = add_fn_to_table(wasm, fn_name); */
-  /* lval_fn_sys->offset = fn_table_index; */
-  /* lval_fn_sys->cname = retain(fn_name); */
-
-  /* int fcra_offset = get_fn_call_relay_array_offset(wasm, 1, 1); */
-  /* char* data_lval = make_data_lval( */
-  /*     wasm, NULL, wasm->__fn_table_end + fn_table_index, fcra_offset); */
-  /* int lval_ptr = inter_data_lval(wasm, data_lval); */
   int lval_ptr = c_fn->data_offset;
-
-  CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
+  CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
+                 .data_offset = lval_ptr,
+                 .fn_table_index = c_fn->fn_table_index};
   return ret;
+}
+
+int add_root_fn_wrapper(Wasm* wasm, Lval* lval_fn, char* fn_name) {
+  BinaryenModuleRef module = wasm->module;
+  Ber* operands = malloc((1 + lval_fn->param_count) * sizeof(Ber));
+  int operands_count = 0;
+  operands[operands_count++] = make_int32(module, 0);
+
+  int args_block_ptr_param = 1;
+  int args_count_param = 2;
+  int has_rest_arg = lval_fn->rest_arg_index;  // 1 based
+  int param_count = lval_fn->param_count;
+  int min_param_count = has_rest_arg ? param_count - 1 : param_count;
+
+  for (int i = 0; i < min_param_count; i++) {
+    Ber arg = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
+                           local_get_int32(module, args_block_ptr_param));
+    operands[operands_count++] = arg;
+  }
+
+  if (has_rest_arg) {
+    Ber listify_args_operands[] = {
+        local_get_int32(module, args_block_ptr_param),
+        local_get_int32(module, args_count_param)};
+    Ber args_as_list = BinaryenCall(
+        module, "listify_args", listify_args_operands, 2, BinaryenTypeInt32());
+    operands[operands_count++] = args_as_list;
+  }
+
+  Ber call_fn = BinaryenCall(module, fn_name, operands, operands_count,
+                             BinaryenTypeInt32());
+
+  BinaryenType params_type = make_type_int32(3);
+  BinaryenType results_type = make_type_int32(1);
+  BinaryenAddFunction(module, lval_fn->cname, params_type, results_type, NULL,
+                      0, call_fn);
+  return add_fn_to_table(wasm, fn_name);
+}
+
+char* make_wajure_fn_name(Lval* lval_fn) {
+  char* wajure_fn_name = malloc(_strlen(lval_fn->cname) + 2);
+  sprintf(wajure_fn_name, "w_%s", lval_fn->cname);
+  return wajure_fn_name;
+}
+
+int add_root_fn(Wasm* wasm, Lval* lval_fn) {
+  char* wajure_fn_name = make_wajure_fn_name(lval_fn);
+  FunctionData function_data =
+      add_wasm_function(wasm, lval_fn->closure, wajure_fn_name, lval_fn, 1);
+  write_symbol_table_line(wasm, LVAL_FUNCTION, wajure_fn_name, -1,
+                          function_data.fn_table_index, lval_fn->param_count,
+                          lval_fn->rest_arg_index);
+  int fn_table_index = add_root_fn_wrapper(wasm, lval_fn, wajure_fn_name);
+  free(wajure_fn_name);
+  return fn_table_index;
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
   int offset;
-  /* Cell* partials = NULL; */
   if (cfn) {
-    /* partials = lval_fn->partials; */
     // Add the canonical fn for this partial if we haven't already
     if (cfn->offset == -1) {
-      add_wasm_function(wasm, cfn->closure, cfn->cname, cfn);
+      cfn->offset = add_root_fn(wasm, cfn);
     }
     offset = cfn->offset;
   } else {
     // If not a partial fn just add the wasm fn
-    add_wasm_function(wasm, lval_fn->closure, lval_fn->cname, lval_fn);
-
+    lval_fn->offset = add_root_fn(wasm, lval_fn);
     offset = lval_fn->offset;
   }
-  // Make a lval_wasm_lambda of our fn and inter it in wasm data
 
+  // Make a lval_wasm_lambda of our fn and inter it in wasm data
   char* data_lval =
       make_data_lval(wasm, lval_fn, wasm->__fn_table_end + offset);
 

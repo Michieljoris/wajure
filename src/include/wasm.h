@@ -10,6 +10,7 @@ typedef struct {
   Ber ber;
   int data_offset;
   int is_fn_call;
+  int fn_table_index;
   Lval* lval;
 } CResult;
 
@@ -57,6 +58,7 @@ typedef struct {
 typedef struct {
   Lenv* closure;
   int closure_count;
+  int fn_table_index;
 } FunctionData;
 
 Wasm* init_wasm();

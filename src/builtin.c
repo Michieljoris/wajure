@@ -173,7 +173,6 @@ void add_c_fn_wrappers(Wasm* wasm, CFn c_fns[]) {
   do {
     char* c_fn_name = c_fns[i].c_fn_name;
     if (!c_fn_name) break;  // end of list
-    printf("foo %s\n", c_fn_name);
     add_c_fn_wrapper(wasm, c_fns[i]);
     i++;
   } while (1);
@@ -201,8 +200,9 @@ void add_wasm_fns(Wasm* wasm) {
     char* fn_name = wasm_fn.wasm_fn_name;
     write_symbol_table_line(wasm, LVAL_FUNCTION, fn_name, wasm_fn.data_offset,
                             wasm_fn.fn_table_index, -1, -1);
-    printf("wasm_fn name: %s index: %d data_offset: %d\n", wasm_fn.wasm_fn_name,
-           wasm_fn.fn_table_index, wasm_fn.data_offset);
+    /* printf("wasm_fn name: %s index: %d data_offset: %d\n",
+     * wasm_fn.wasm_fn_name, */
+    /*        wasm_fn.fn_table_index, wasm_fn.data_offset); */
   }
 }
 
@@ -231,7 +231,8 @@ void assign_offsets_to_builtins() {
       CFn* c_fn =
           (CFn*)alist_get(state->wajure_to_c_fn_map, is_eq_str, fn_name);
       if (c_fn) {
-        printf("assigning %d to %s\n", data_offset, fn_name);
+        /* printf("assigning %d %d to %s\n", data_offset, fn_table_index,
+         * fn_name); */
         c_fn->fn_table_index = fn_table_index;
         c_fn->data_offset = data_offset;
       } else {
@@ -249,6 +250,18 @@ void assign_offsets_to_builtins() {
       break;
   } while (1);
   fclose(fp);
+  /* int fns_count = 0; */
+  /* while (wasm_fns[fns_count].wasm_fn_name) fns_count++; */
+  /* for (int i = 0; i < fns_count; i++) */
+  /*   printf("%s %d %d\n", wasm_fns[i].wasm_fn_name, wasm_fns[i].data_offset,
+   */
+  /*          wasm_fns[i].fn_table_index); */
+  /* fns_count = 0; */
+  /* while (list_c_fns[fns_count].c_fn_name) fns_count++; */
+  /* for (int i = 0; i < fns_count; i++) */
+  /*   printf("%s %d %d\n", list_c_fns[i].c_fn_name, list_c_fns[i].data_offset,
+   */
+  /*          list_c_fns[i].fn_table_index); */
 }
 
 void register_native_fns() {

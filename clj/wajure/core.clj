@@ -38,4 +38,4 @@
              form)
            form)))
 
-(defn test-wajure [x] (print "foo Hello from wajure.core!!! " x x x))
+(defn range [x] (print "TODO: implement range" x))
