@@ -28,6 +28,7 @@ void lispy_mempool_log(int type, char* msg);
   }
 
 MEMPOOL_LOG(lval, LVAL);
+MEMPOOL_LOG(lambda, FN);
 MEMPOOL_LOG(lenv, LENV);
 MEMPOOL_LOG(cell, CELL);
 MEMPOOL_LOG(iter, ITER);
@@ -48,6 +49,7 @@ MEMPOOL_LOG(char8, CHAR8);
 
 void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   int namespace_count = 10;
+  int lambda_count = 100;
   int internal_count = 1;  // just for the mempool log
   int char512_count = 10;
   int char256_count = 10;
@@ -64,6 +66,7 @@ void init_lispy_mempools(uint lval_count, int lenv_count, int cell_count) {
   // 4 bytes, since we don't need fun, closure, params, body, context and offset
   // attributes, we will never refer to it (by offset).
   MEMPOOL(LVAL, sizeof(Lval), lval)
+  MEMPOOL(FN, sizeof(Lambda), lambda)
   // TODO wasm: we don't need Lenv either
   MEMPOOL(LENV, sizeof(Lenv), lenv)
   MEMPOOL(CELL, sizeof(Cell), cell)
@@ -121,8 +124,7 @@ void destroy_lval(void* data) {
       } else {
 #ifdef WASM
 #else
-        release(lval->params);
-        release(lval->body);
+        release(lval->lambdas);
         release(lval->partials);
         release(lval->closure);
 #endif  // WASM
@@ -145,10 +147,16 @@ void destroy_lval(void* data) {
   }
 }
 
+void destroy_lambda(void* lambda) {
+  release(((Lambda*)lambda)->params);
+  release(((Lambda*)lambda)->body);
+}
+
 void destroy_lenv(void* env) {
   release(((Lenv*)env)->kv);
   release(((Lenv*)env)->parent_env);
 }
+
 void destroy_cell(void* cell) {
   /* printf("destroy cell\n"); */
 
@@ -175,9 +183,10 @@ void destroy_namespace(void* namespace) {
 
 // The order and number of these types needs to match with the enum in
 // lispy_mempool.h!
-char* slot_type_str[] = {"LVAL", "LENV", "CELL", "ITER", "NAMESPACE"};
-Destructor destructors[SLOT_TYPE_COUNT] = {
-    destroy_lval, destroy_lenv, destroy_cell, destroy_iter, destroy_namespace};
+char* slot_type_str[] = {"LVAL", "LAMBDA", "LENV", "CELL", "ITER", "NAMESPACE"};
+Destructor destructors[SLOT_TYPE_COUNT] = {destroy_lval, destroy_lambda,
+                                           destroy_lenv, destroy_cell,
+                                           destroy_iter, destroy_namespace};
 
 void lispy_mempool_log(int type, char* msg) {
   if (type >= CHAR8) {
@@ -191,6 +200,7 @@ void lispy_mempool_log(int type, char* msg) {
 
 void free_lispy_mempools() {
   free_mempool(mempools[LVAL]);
+  free_mempool(mempools[FN]);
   free_mempool(mempools[LENV]);
   free_mempool(mempools[CELL]);
   free_mempool(mempools[ITER]);
@@ -198,9 +208,9 @@ void free_lispy_mempools() {
   _free(mempools);
 }
 
-char* type_names[] = {"LVAL",     "LENV",    "CELL",   "ITER",   "NAMESPACE",
-                      "INTERNAL", "CHAR8",   "CHAR16", "CHAR32", "CHAR64",
-                      "CHAR128",  "CHAR256", "CHAR512"};
+char* type_names[] = {"LVAL",      "LAMBDA",   "LENV",    "CELL",   "ITER",
+                      "NAMESPACE", "INTERNAL", "CHAR8",   "CHAR16", "CHAR32",
+                      "CHAR64",    "CHAR128",  "CHAR256", "CHAR512"};
 
 char* type_to_name(int type) { return type_names[type]; }
 
@@ -270,6 +280,7 @@ void print_mempool_counts() {
   printf("\n");
   print_mempool_free(LENV);
   print_mempool_free(LVAL);
+  print_mempool_free(FN);
   print_mempool_free(CELL);
   print_mempool_free(ITER);
   print_mempool_free(NAMESPACE);
@@ -286,6 +297,7 @@ void print_mempool_counts() {
 SlotCount get_slot_count() {
   SlotCount ret = {.env = get_taken_slot_count(mempools[LENV]),
                    .lval = get_taken_slot_count(mempools[LVAL]),
+                   .lambda = get_taken_slot_count(mempools[FN]),
                    .cell = get_taken_slot_count(mempools[CELL]),
                    .iter = get_taken_slot_count(mempools[ITER])};
   return ret;

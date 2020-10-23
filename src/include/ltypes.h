@@ -64,6 +64,13 @@ typedef union {
   Cell* head;
 } Data;
 
+typedef struct {
+  Lval* params;
+  int param_count;
+  int has_rest_arg;
+  Lval* body;
+} Lambda;
+
 #ifdef WASM
 
 struct lval {
@@ -91,11 +98,14 @@ struct lval {
   // Interpreter props
   Lbuiltin fun;
   Lenv* closure;
-  Lval* params;
-  Lval* body;
   Cell* partials;
+
+  Cell* lambdas;  // multi arity fns
+  Lval* params;
   int param_count;
   int rest_arg_index;
+  Lval* body;
+
   // We need to keep track of in which namespace a fn is defined and under which
   // name so we can refer to its fn_table_index from other namespaces in
   // compiled code by imported global.
@@ -110,7 +120,7 @@ struct lval {
   // Compiler to wasm data
   int data_offset;  // offset of datafied lval relative to module's data offset
   Context* context;
-  int offset;
+  int offset;  // fn_table_index, local_index or closure offset.
 };
 #endif
 

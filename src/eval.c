@@ -82,6 +82,9 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   /*        lval_fun->rest_arg_index); */
   /* printf("namespace: %s\n ", lval_fun->ns->namespace); */
   /* lval_println(lval_fun); */
+  // TODO:
+  // Work out arity
+  int arg_count = list_count(arg_list->data.head);
 
   int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
   int param_count = lval_fun->param_count;

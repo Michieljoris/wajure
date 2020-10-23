@@ -219,8 +219,28 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
 #endif
 }
 
+Lambda* make_lambda(Lval* params, int param_count, int has_rest_arg,
+                    Lval* body) {
+  Lambda* lambda = lalloc_type(FN);
+  *lambda = (Lambda){
+      .params = params,
+      .param_count = param_count,
+      .has_rest_arg = has_rest_arg,
+      .body = body,
+  };
+  return lambda;
+}
+
+Lambda* make_lambda_err(Lval* error) {
+  Lambda* lambda = lalloc_type(LAMBDA);
+  *lambda = (Lambda){
+      .body = error,
+  };
+  return lambda;
+}
+
 // LAMBDA and MACRO
-Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
+Lval* make_lval_lambda(Lenv* env, int subtype, Cell* lambdas) {
 #ifdef WASM
   return NULL;
 #else
@@ -228,8 +248,7 @@ Lval* make_lval_lambda(Lenv* env, Lval* params, Lval* body, int subtype) {
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
                  .closure = env,
-                 .params = params,
-                 .body = body,
+                 .lambdas = lambdas,
                  .offset = -1,
                  INIT(-1)};
   lval->hash = lval_hash(lval);

@@ -121,14 +121,29 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
     case MACRO:;
 #ifdef WASM
 #else
-      char* fn_name = lval->subtype == LAMBDA ? "fn" : "macro";
-      ret += fctprintf(out, arg, "(%s ", fn_name);
-      ret += _lval_print(out, arg, lval->params);
-      out(' ', arg);
-      ret++;
-      ret += lval_collection_print(out, arg, lval->body, 0, 0);
+      char* lambda_type = lval->subtype == LAMBDA ? "fn" : "macro";
+      ret += fctprintf(out, arg, "(%s ", lambda_type);
+      Cell* head = lval->lambdas;
+      while (head) {
+        Lambda* lambda = head->car;
+        out('(', arg);
+        ret++;
+        ret += _lval_print(out, arg, lambda->params);
+        out(' ', arg);
+        ret++;
+        ret += lval_collection_print(out, arg, lambda->body, 0, 0);
+        out(')', arg);
+        ret++;
+        head = head->cdr;
+        if (head) {
+          out(' ', arg);
+          ret++;
+        }
+      }
+
       out(')', arg);
       ret++;
+
 #endif
       break;
     case SPECIAL:

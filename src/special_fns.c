@@ -96,27 +96,29 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   return make_lval_nil();
 }
 
-Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
-  ITER_NEW_MIN("fn", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
-  Lval* lval_params = arg;
+Lambda* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
+  Cell* head = arg_list->data.head;
+  if (!head || ((Lval*)head->car)->subtype != VECTOR)
+    return make_lambda_err(
+        make_lval_err("lambda expects at least a vector with params"));
 
+  Lval* lval_params = head->car;
   Cell* param = lval_params->data.head;
-
   // Includes any rest arg, so [a & b] has param_count = 2
   int param_count = 0;
   int rest_arg_index = 0;
   int offset = 0;
   while (param) {
-    LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
-            "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name(param->car),
-            lval_type_constant_to_name(LVAL_SYMBOL));
+    if (((Lval*)param->car)->type != LVAL_SYMBOL) {
+      return make_lambda_err(
+          make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
+                        lval_type_to_name(param->car),
+                        lval_type_constant_to_name(LVAL_SYMBOL)));
+    }
     if (rest_arg_index && param_count == rest_arg_index) {
-      lval_println(lval_params);
-      return make_lval_err(
-          "Function format invalid. "
-          "Symbol '&' not followed by single symbol.");
+      return make_lambda_err(
+          make_lval_err("Function format invalid. "
+                        "Symbol '&' not followed by single symbol."));
       /* return make_lval_err("ERROR: only one rest arg allowed"); */
     }
     Lval* lval_sym = param->car;
@@ -135,18 +137,51 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   }
 
   if (rest_arg_index && param_count != rest_arg_index)
-    return make_lval_err(
-        "Function format invalid. "
-        "Symbol '&' not followed by single symbol.");
+    return make_lambda_err(
+        make_lval_err("Function format invalid. "
+                      "Symbol '&' not followed by single symbol."));
 
   if (param_count > MAX_FN_PARAMS)
-    return make_lval_err("A function cannot have more than 20 parameters");
-  /* return make_lval_err("ERROR: rest arg missing"); */
+    return make_lambda_err(
+        make_lval_err("A function cannot have more than 20 parameters"));
 
-  // Creates lambda lval and sets the parent_env of its env field (bindings)
-  // to the passed in env
   Lval* lval_body = make_lval_list();
   lval_body->data.head = list_rest(arg_list->data.head);
+  Lambda* lambda =
+      make_lambda(retain(lval_params), param_count, rest_arg_index, lval_body);
+  return lambda;
+}
+
+Lval* eval_lambda(Lenv* env, Lval* arg_list) {
+  printf("Eval lambda!!!\n");
+  lval_println(arg_list);
+  Cell* head = arg_list->data.head;
+  if (!head) {
+    return make_lval_err("fn* expects at least one arg");
+  }
+
+  Cell* lambdas = NULL;
+
+  do {
+    Lambda* lambda = eval_lambda_form(env, head->car, LAMBDA);
+    int* param_count = malloc(sizeof(int));
+    *param_count = lambda->param_count;
+
+    lambdas = alist_prepend(lambdas, param_count, lambda);
+    head = head->cdr;
+  } while (head);
+  /* Cell* lambda_list = make_cell(); */
+  /* Cell* lambdas = lambda_list; */
+  /* do { */
+  /*   lambda_list->car = eval_lambda_form(env, head->car, LAMBDA); */
+  /*   head = head->cdr; */
+  /*   if (head) { */
+  /*     lambda_list->cdr = lalloc_type(CELL); */
+  /*     lambda_list = lambda_list->cdr; */
+  /*   } else */
+  /*     break; */
+  /* } while (1); */
+
   Lenv* closure_env = lenv_new();
   /* closure_env->parent_env = retain(env); */
   closure_env->parent_env = retain(env->parent_env);
@@ -154,21 +189,19 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ddebug("lambda has retained env: %d ", is_ns_env(env));
   /* lenv_print(env); */
   ddebug("refcount: %d\n", get_ref_count(env));
-  Lval* fn =
-      make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
-  fn->param_count = param_count;
-  fn->rest_arg_index = rest_arg_index;
-
+  // Creates fn and sets the parent_env of its env field (bindings)
+  // to the passed in env
+  Lval* fn = make_lval_lambda(closure_env, LAMBDA, lambdas);
+  printf("!!!!!!!!!!!!!!!!\n");
+  lval_println(fn);
+  printf("!!!!!!!!!!!!!!!!\n");
   return fn;
-}
-
-Lval* eval_lambda(Lenv* env, Lval* arg_list) {
-  return eval_lambda_form(env, arg_list, LAMBDA);
 }
 
 // Macros close over the environment where they are defined.
 Lval* eval_macro(Lenv* env, Lval* arg_list) {
-  return eval_lambda_form(env, arg_list, MACRO);
+  return make_lval_err("ERROR: implement multi arity for macros!!!");
+  /* return eval_lambda_form(env, arg_list, MACRO); */
 }
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
@@ -486,7 +519,7 @@ CFn special_builtins[] = {
     {"quasiquote", eval_quasiquote},
     {"def", eval_def},
     {"if", eval_if}, /* TCO! */
-    {"fn", eval_lambda},
+    {"fn*", eval_lambda},
     {"macro", eval_macro},
     {"try", eval_try},
     {"throw", eval_throw},

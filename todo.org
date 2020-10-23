@@ -14,7 +14,8 @@ by name? by index? by ref?
 ** somehow listify_args creates a bug.
 It returns a nil if list is empty because it's used for the rest arg,but make
 sure not to use it when we expect an empty list!!!!
-** make sure stdlib is compiled (and first) if dirty!!!
+** DONE make sure stdlib is compiled (and first) if dirty!!!
+obsolete
 if dirty compile everything, and stdlib first.
 we can then move:
 
@@ -27,7 +28,7 @@ It's used for multiple purposes:
 - fn_table_index
 - closure local
 - param local (lval_ref)
-** put native fns in their own module
+** DONE put native fns in their own module
 - DONE export/record the fns table indices somehow, so we can use them when compiling other modules
 - add fn_call_relay_arrays to wajure.core data for and export the pointers to use in make_lval and in datafy
  1-4 {}, #{}, [], :kw

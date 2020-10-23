@@ -7,6 +7,7 @@
 // The order and number of these types needs to match!!
 enum {
   LVAL,
+  FN,
   LENV,
   CELL,
   ITER,
@@ -37,6 +38,7 @@ void print_mempool_counts();
 typedef struct {
   int env;
   int lval;
+  int lambda;
   int cell;
   int iter;
 } SlotCount;

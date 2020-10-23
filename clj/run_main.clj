@@ -1,9 +1,36 @@
 (in-ns 'run-main)
-(require '[main :refer [main]])
+;; (require '[main :refer [main]])
+
+;; (defmacro fn [& sigs]
+;;   (print (first sigs))
+;;   )
+;; (defn f [x] x)
+;; (print "----------")
+;; (defmacro fn [& args]
+;;   (if (vector? (first args))
+;;     `(fn* ~args)
+;;     `(fn* ~@args)))
+
+
+;; (print (macroexpand '(fn [x] x) ))
+;; (print (macroexpand '(fn ([x] x)
+;;                           ([x y] [x y])) ))
+
+;; (def f (fn ([x] x) ([x y] [x y ])))
+(def f (fn* ([x] x)
+            ([x y] [x y ])))
+
+;; (defmacro when [] 1)
+;; (print when)
+;; (foo 1)
+
+;; (defn foo
+;;   ([x] [x])
+;;   ([x y] [x y]))
 
 
 
-(main 1 2)
+;; (main 1 2)
 ;; (require '[test.tests])
 
 ;; (defn g [x y] x y)

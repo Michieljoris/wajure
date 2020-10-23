@@ -11,7 +11,7 @@ Lval* make_lval_list(void);
 Lval* make_lval_map(void);
 Lval* make_lval_vector(void);
 Lval* make_lval_fun(Lbuiltin func, char* func_name, int type);
-Lval* make_lval_lambda(Lenv* env, Lval* formals, Lval* body, int subtype);
+Lval* make_lval_lambda(Lenv* env, int subtype, Cell* lambdas);
 Lval* make_lval_macro(Lval* formals, Lval* body);
 Lval* make_lval_err(char* fmt, ...);
 Lval* make_lval_exception(char* msg);
@@ -24,5 +24,9 @@ Lval* new_lval_list(void* head);
 Lval* new_lval_vector(void* head);
 char* get_namespace_part(Lval* lval_sym);
 char* get_name_part(Lval* lval_sym);
+
+Lambda* make_lambda(Lval* params, int param_count, int has_rest_arg,
+                    Lval* body);
+Lambda* make_lambda_err(Lval* error);
 
 #endif  // __LVAL_H_

@@ -4,7 +4,7 @@
                      `(def ~sym (macro ~params ~@body))))
 
 (defmacro defn [sym params & body]
-  `(def ~sym (fn ~params ~@body)))
+  `(def ~sym (fn* ~params ~@body)))
 
 (defmacro cond [& xs]
   (if (> (count xs) 0)

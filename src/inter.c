@@ -165,6 +165,7 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
     *(char*)(p + subtype_offset) = LAMBDA;
   }
 
+  printf("FN_TABLE_INDEX %d %d\n", fn_table_index, FTI_RTE_NOT_A_FN);
   *(short*)(p + fn_table_index_offset) = fn_table_index;
 
   if (lval) {

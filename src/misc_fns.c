@@ -390,14 +390,13 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   /* printf("Current partials: "); */
   /* list_print(lval_fun->partials, print_lval, ", "); */
 
-  Lval* partial_fn =
-      make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
-                       retain(lval_fun->body), LAMBDA);
+  Lval* partial_fn = make_lval_lambda(retain(lval_fun->closure), LAMBDA,
+                                      retain(lval_fun->lambdas));
   partial_fn->data.str = retain(lval_fun->data.str);
   partial_fn->fun = lval_fun->fun;
   partial_fn->subtype = lval_fun->subtype;
-  partial_fn->param_count = lval_fun->param_count;
-  partial_fn->rest_arg_index = lval_fun->rest_arg_index;
+  /* partial_fn->param_count = lval_fun->param_count; */
+  /* partial_fn->rest_arg_index = lval_fun->rest_arg_index; */
   partial_fn->partials =
       list_concat(lval_fun->partials, arg_list->data.head->cdr);
 
@@ -455,6 +454,18 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   return eval_lambda_call(lval_fun, args);
 }
 
+Lval* is_vector_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("vector?", 1)
+  ITER_NEXT
+  if (arg->subtype == VECTOR)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
+}
+
 CFn misc_builtins[] = {{"eval", eval_fn},
                        {"print-env", print_env_fn},
                        {"exit", exit_fn},
@@ -467,6 +478,7 @@ CFn misc_builtins[] = {{"eval", eval_fn},
                        {"require", require_fn},
                        {"partial", partial_fn, "partial_fn", 2, 1},
                        {"apply", apply_fn, "apply", 2, 1},
+                       {"vector?", is_vector_fn, "is_vector_fn", 1, 1},
                        {NIL}
 
 };
