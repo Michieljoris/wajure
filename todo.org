@@ -1,6 +1,7 @@
 * TODO compiler
 ** clean up and comment all of code
 ** add br_table to add_wasm_function and to wrap_root_fn
+** when fn has duplicate param names -> give error!!!
 
 ** what about (def p foo/fp) or (def f foo/f) ?
 Do we recompile the fn or refer to the fn in the other ns
@@ -35,6 +36,7 @@ It's used for multiple purposes:
  5. Not a fn runtime error.
 - write fns to dispatch to when first arg of list is a kw, map, set, vector.
 - And set the fn_call_relay_array properly on on all lvals!!!!
+** multi arity fns!!!
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
@@ -60,11 +62,6 @@ last arg is a list (put a check in if it's a lval_compiler)
 3. When datafying the apply fn we don't know anything at compile time and we
    need to rely on a apply fn such as in clojure.core. But we need multiarity
    fns for that first.
-** multi arity fns!!!
-** map, reduce,
-** gensym and #foo in macro
-http://clojure-doc.org/articles/language/macros.html
-** ----------------
 ** fix self recursive calls
     Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
@@ -74,11 +71,15 @@ http://clojure-doc.org/articles/language/macros.html
     So after we define a fn we need to add it to the closure. This will fix it
     for the interpreter.
 
+** ----------------
+** map, reduce,
+** gensym and #foo in macro
+http://clojure-doc.org/articles/language/macros.html
+** ----------------------------
 ** loop/recur
 ** multimethods
 ** try/throw/catch
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
-** ----------------------------
 ** when macros return a function (when called from within another fn), are they deduplicated, no!
 (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
 (defn main [x y]
@@ -167,14 +168,23 @@ rewrite it or find another c algorhitm
 ** add stdlib (defined in wajure and compiled) to runtime
 Similar to clojure.core. Probably needs namespaces implemented first
 * TODO interpreter
+** macros from wajure.core don't get expanded?
+
+(defmacro when2 [cond body]
+  `(if ~cond ~body))
+(print (macroexpand '(when 1 2)))
+(print (macroexpand '(when2 1 2)))
+
+
+-> (when 1 2)
+-> (if 1 2)
 ** add rest of tests from mal
-** implement: loop/recur, doseq, keywords, apply, map, reduce, and, or, xor, doseq, multimethods, destructering,  meta data
+** implement: loop/recur, doseq, keywords,  map, reduce, and, or, xor, doseq, multimethods, destructering,  meta data
 ** implement maps and sets
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
 ** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
-** multi-arity fns
 * TODO Both interpreter and compiler:
 ** error handling and tracking of line number and pos
 Don't cut off compiling, try to continue, produce list of errors.
@@ -389,6 +399,7 @@ Anonymous lambdas found in fns become foobar#1, foobar#2 etc.
 ** DONE add root fns to function table when they get used at all
 ** DONE implement calling wajure fn from js
 * done interpreter
+** DONE multi-arity fns
 ** DONE reader has bug where last parens gets ignored
 ** DONE namespaces
 ** DONE implement partial, apply,

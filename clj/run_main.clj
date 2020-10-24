@@ -22,9 +22,13 @@
 ;;     `(fn* ~args)
 ;;     `(fn* ~@args)))
 
-;; (print (macroexpand '(defmacro foo [x] x)))
-(defn f [x] (+ x 1))
-(print (apply f '(1)))
+(defmacro when2 [cond body]
+  `(if ~cond ~body))
+(print (macroexpand '(when 1 2)))
+(print (macroexpand '(when2 1 2)))
+
+;; (defn f [x] (+ x 1))
+;; (print (apply f '(1)))
 ;; (defmacro foo [x] x)
 
 

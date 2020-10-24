@@ -99,13 +99,19 @@ char* make_wajure_fn_name(Lval* lval_fn) {
   return wajure_fn_name;
 }
 
+// This adds a wasm fn that has as params: [closure, param 1, param 2, etc].
+// When we call this fn directly (by name) and pass our compiled args directly
+// to the fn,
 int add_root_fn(Wasm* wasm, Lval* lval_fn) {
   char* wajure_fn_name = make_wajure_fn_name(lval_fn);
   FunctionData function_data =
       add_wasm_function(wasm, lval_fn->closure, wajure_fn_name, lval_fn, 1);
+
   write_symbol_table_line(wasm, LVAL_FUNCTION, wajure_fn_name, -1,
                           function_data.fn_table_index, lval_fn->param_count,
                           lval_fn->rest_arg_index);
+  // We want/need also a fn that has the standard abi of [closure,
+  // args_block_ptr, args_count]
   int fn_table_index = add_root_fn_wrapper(wasm, lval_fn, wajure_fn_name);
   free(wajure_fn_name);
   return fn_table_index;

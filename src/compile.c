@@ -206,12 +206,106 @@ Ber args_into_locals(Wasm* wasm, int min_param_count, int has_rest_arg) {
                        block_operands, block_count, BinaryenTypeNone());
 }
 
-FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
-                               Lval* lval_fun, int wajure_args) {
-  printf(">>>>>>>> add_wasm_function %s offset: %d\n", fn_name,
-         lval_fun->offset);
+Ber* add_case(Wasm* wasm, Ber* ber, char* name, Ber result) {
+  BinaryenModuleRef module = wasm->module;
+  Ber* children = malloc(2 * sizeof(Ber));
+  int ber_count = 2;
+  children[0] = BinaryenBlock(module, name, ber, ber_count, BinaryenTypeNone());
+  free(ber);
+  children[1] = BinaryenReturn(module, result);
+  return children;
+}
 
-  int param_count = lval_fun->param_count;
+Ber switch_on_args_count(Wasm* wasm, Lval* lval_fn) {
+  BinaryenModuleRef module = wasm->module;
+  const char* br_table[MAX_FN_PARAMS];
+  int br_table_count = 0;
+  Lambda** lambdas = lval_fn->lambdas;
+  int max_arity = 0;
+  int has_rest_arg = 0;
+  char* case_names[MAX_FN_PARAMS + 1] = {
+      "case0",  "case1",  "case2",  "case3",  "case4",  "case5",  "case6",
+      "case7",  "case8",  "case9",  "case10", "case11", "case12", "case13",
+      "case14", "case15", "case16", "case17", "case18", "case19", "case20"};
+
+  char* clauses[MAX_FN_PARAMS + 1];
+  Ber bers[MAX_FN_PARAMS + 1];
+  int clause_count = 0;
+
+  char* default_name = NULL;
+  int add_rt_error_clause = 0;
+  printf("\n----------\n");
+  for (int i = 0; i <= MAX_FN_PARAMS; i++) {
+    Lambda* lambda = lambdas[i];
+    if (lambda) {
+      if (lambda->has_rest_arg) {
+        has_rest_arg = 1;
+        max_arity = i - 1;
+        default_name = clauses[clause_count] = "rest_arg";
+        bers[clause_count] = make_int32(module, 999);
+        /* bers[clause_count] = call rest arg lambda!!! */
+        clause_count++;
+        break;
+      } else
+        max_arity = i;
+    }
+  }
+  if (!default_name) {
+    default_name = "rt_error";
+    add_rt_error_clause = 1;
+  }
+
+  for (int i = 0; i <= max_arity; i++) {
+    Lambda* lambda = lambdas[i];
+    if (!lambda) {
+      if (i == max_arity && has_rest_arg)
+        max_arity--;  // this will be handled by the variadic fn
+      else {
+        br_table[br_table_count++] = "rt_error";
+        add_rt_error_clause = 1;
+      }
+    } else {
+      br_table[br_table_count++] = clauses[clause_count] = case_names[i];
+      bers[clause_count] = make_int32(module, i);
+      /* bers[clause_count] = call lambdas[i] error!!! */
+      clause_count++;
+    }
+  }
+
+  if (add_rt_error_clause) {
+    clauses[clause_count] = "rt_error";
+    bers[clause_count] = make_int32(module, 666);
+    /* bers[clause_count] = call rt error!!! */
+    clause_count++;
+  }
+
+  /* printf(" max arity : %d ---------- \n", max_arity); */
+  /* for (int i = 0; i <= max_arity; i++) { */
+  /*   if (br_table[i]) printf("%s ", br_table[i]); */
+  /* } */
+
+  /* printf("\n----------\n"); */
+  /* const char* names[2] = {"case0", "case1"}; */
+  Ber args_count = make_int32(module, 1);
+  Ber br_table_ber = BinaryenSwitch(module, br_table, br_table_count,
+                                    default_name, args_count, NULL);
+  Ber* clause = malloc(2 * sizeof(Ber));
+  clause[0] = br_table_ber;
+  clause[1] = BinaryenNop(module);
+
+  for (int i = 0; i < clause_count; i++)
+    clause = add_case(wasm, clause, clauses[i], bers[i]);
+
+  Ber body = BinaryenBlock(module, NULL, clause, 2, BinaryenTypeInt32());
+  return body;
+}
+
+FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
+                               Lval* lval_fn, int wajure_args) {
+  printf(">>>>>>>> add_wasm_function %s offset: %d\n", fn_name,
+         lval_fn->offset);
+  Lambda* lambda = lval_fn->lambdas[0];
+  int param_count = lambda->param_count;
   // The function's closure, args_count_ptr and args_count, or closure and
   // params
   int wasm_params_count = 1 + (wajure_args ? param_count : 2);
@@ -223,12 +317,12 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Params
   Lenv* params_env = enter_env(wasm);
 
-  int has_rest_arg = lval_fun->rest_arg_index;  // 1 based
+  int has_rest_arg = lambda->has_rest_arg;  // 1 based
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
 
   int i = 0;
   int first_free_local = wajure_args ? 1 : 3;
-  Cell* param = lval_fun->params->data.head;
+  Cell* param = lambda->params->data.head;
   while (i < min_param_count) {
     Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
     Lval* lval_sym = param->car;
@@ -250,7 +344,8 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
                  ? NULL
                  : args_into_locals(wasm, min_param_count, has_rest_arg);
   // Compile body
-  Ber body = compile_do_list(wasm, lval_fun->body, init).ber;
+  Ber body = compile_do_list(wasm, lambda->body, init).ber;
+  body = switch_on_args_count(wasm, lval_fn);
 
   // Post compile
   leave_env(wasm);
@@ -307,7 +402,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   // Eval the lambda form to get info on params and body
   Lval* arg_list = new_lval_list(retain(args));
   Lval* lval_fn = eval_lambda_form(wasm->env, arg_list, LAMBDA);
-  lval_println(lval_fn);
+  /* lval_println(lval_fn); */
   release(arg_list);
   if (lval_fn->type == LVAL_ERR) quit(wasm, "Error evalling lambda form");
 
@@ -672,3 +767,18 @@ void compile(Namespace* ns) {
 
   free_wasm(wasm);
 }
+/* (block $switch$1$leave */
+/*        (block $switch$1$default */
+/*               (block $switch$1$case$3 */
+/*                      (block $switch$1$case$2 */
+/*                             (br_table $switch$1$default $switch$1$default
+ * $switch$1$case$2 $switch$1$default $switch$1$case$3 $switch$1$case$2
+ * $switch$1$default */
+/*                                       (i32.const -99))) */
+/*                      (i32.const 1) */
+/*                      (br $switch$1$leave)) */
+/*               (drop */
+/*                (i32.const 55)) */
+/*               (br $switch$1$leave)) */
+/*        (i32.const 3) */
+/*        (br $switch$1$leave)) */

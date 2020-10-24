@@ -62,7 +62,8 @@ async function run_wajure_fn(env, module, fn_name, ...args) {
 
     let closure_pointer = 0;
     try {
-        module.instance.exports[fn_name](closure_pointer, ... wajure_args);
+        console.log(fn_name);
+        console.log(module.instance.exports[fn_name](closure_pointer, ... wajure_args));
     } catch (e) {
         console.log("RUNTIME ERROR");
         console.log(e);

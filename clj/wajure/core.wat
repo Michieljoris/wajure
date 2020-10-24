@@ -6,12 +6,10 @@
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
  (type $none_=>_none (func))
- (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0fTODO: implement range\00\01\00\00\00\00\00\00\00\00\00\00\00*\00\00\00\02\t\00\00\04\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00V\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\1a\00\00\00F\00\00\00r\00\00\00\02\00\00\00z\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\04\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $w_range_7 $w_range_7)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -78,51 +76,8 @@
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "mem" (memory $0))
- (func $w_range_7 (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
-  (local $3 i32)
-  (block $do_2 (result i32)
-   (block $sys_call_1 (result i32)
-    (local.set $3
-     (call $print_fn
-      (i32.const 0)
-      (local.tee $2
-       (call $new_lval_list
-        (call $prefix_list
-         (call $retain
-          (i32.add
-           (global.get $data_offset)
-           (i32.const 42)
-          )
-         )
-         (call $prefix_list
-          (call $retain
-           (local.get $1)
-          )
-          (i32.const 0)
-         )
-        )
-       )
-      )
-     )
-    )
-    (call $release
-     (local.get $2)
-    )
-    (local.get $3)
-   )
-  )
- )
- (func $range_7 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (call $w_range_7
-   (i32.const 0)
-   (i32.load align=2
-    (local.get $1)
-   )
-  )
- )
- ;; custom section "symbol_table", size 54
+ ;; custom section "symbol_table", size 0, contents: ""
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "142"
- ;; custom section "fn_table_size", size 1, contents: "2"
+ ;; custom section "data_size", size 2, contents: "24"
+ ;; custom section "fn_table_size", size 1, contents: "0"
 )

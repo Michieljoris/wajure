@@ -17,43 +17,50 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn foo
-  ([x] [x])
-  ([x y] [x y]))
+;; (defn foo
+;;   ([x] [x])
+;;   ([x y] [x y]))
 
-(defn main [x y]
-  (foo 1)
-  ;; (let [k :kw
-  ;;       f (fn [x] x)]
-  ;;   (print k)
-  ;;   ;; (k 1)
-  ;;   )
-  ;; (print (foo/f 1 2 3))
-  ;; (fp  3)
-  ;; (let [fp (partial foo/f 1)]
-  ;;   ;; (fp  2 3)
-  ;;   )
-  ;; (print 123)
-  ;; (let [;; g (partial f 1)
-  ;;       g f
-  ;;       ;; h (partial + 1)
-  ;;       ]
-  ;;   (print (f 1 2 3))
-  ;;   ;; (print (g 1 2 3))
-  ;;   )
-  ;; (range 1)
-  ;; (let [p +]
-  ;;   (p 1 2))
-  ;; (let [f (fn [] 1)]
-  ;;   (print (f 1))
-  ;;   )
-  ;; (run-tests)
-  ;; (let [f (foo 0)
-  ;;       f2 (foo 0)]
-  ;;   (print (f))
-  ;;   (print (f2))
-  ;;   )
+(defn main
+  ([] "foo")
+  ([x] x)
+  ;; ([x y] [x y])
+  ([x y & z] [x y z])
+  ;; ([x y  z & q] x)
   )
+;; (defn main [x]
+;;   ;; (foo 1)
+;;   ;; (let [k :kw
+;;   ;;       f (fn [x] x)]
+;;   ;;   (print k)
+;;   ;;   ;; (k 1)
+;;   ;;   )
+;;   ;; (print (foo/f 1 2 3))
+;;   ;; (fp  3)
+;;   ;; (let [fp (partial foo/f 1)]
+;;   ;;   ;; (fp  2 3)
+;;   ;;   )
+;;   ;; (print 123)
+;;   ;; (let [;; g (partial f 1)
+;;   ;;       g f
+;;   ;;       ;; h (partial + 1)
+;;   ;;       ]
+;;   ;;   (print (f 1 2 3))
+;;   ;;   ;; (print (g 1 2 3))
+;;   ;;   )
+;;   ;; (range 1)
+;;   ;; (let [p +]
+;;   ;;   (p 1 2))
+;;   ;; (let [f (fn [] 1)]
+;;   ;;   (print (f 1))
+;;   ;;   )
+;;   ;; (run-tests)
+;;   ;; (let [f (foo 0)
+;;   ;;       f2 (foo 0)]
+;;   ;;   (print (f))
+;;   ;;   (print (f2))
+;;   ;;   )
+;;   )
   ;; (let [f (partial f 1 2 4 5 6 )]
   ;;   (print (f 3   )))
   ;; (let [f1 f]
