@@ -1,10 +1,17 @@
 (in-ns 'wajure.core)
 
-(def defmacro (macro [sym params & body]
-                     `(def ~sym (macro ~params ~@body))))
+(def defmacro (macro ([sym & args]
+                      (if (list? (first args))
+                        `(def ~sym (macro ~@args))
+                        `(def ~sym (macro ~args))))))
 
-(defmacro defn [sym params & body]
-  `(def ~sym (fn ~params ~@body)))
+(defmacro fn [& args]
+  (if (list? (first args))
+    `(fn* ~@args)
+    `(fn* ~args)))
+
+(defmacro defn [sym & args]
+  `(def ~sym (fn ~@args)))
 
 (defmacro cond [& xs]
   (if (> (count xs) 0)

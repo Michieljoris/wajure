@@ -127,7 +127,9 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
       compile_args_into_block(wasm, wval_local, partial_count_local, args,
                               args_count, args_block_ptr_local, li);
   block_children[(*block_children_count)++] = args_block;
-  Ber call_operands[] = {local_get_int32(module, wval_local),
+  Ber closure_pointer =
+      get_wval_prop(module, local_get_int32(module, wval_local), "closure");
+  Ber call_operands[] = {closure_pointer,
                          local_get_int32(module, args_block_ptr_local),
                          local_get_int32(module, total_args_count_local)};
 

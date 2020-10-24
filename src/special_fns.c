@@ -31,17 +31,7 @@ char* make_cname(char* name) {
   return cname;
 }
 
-Lval* eval_def(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("def", 2);
-  ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
-  Lval* lval_sym = arg;
-  /* printf("\n++++++++++++in eval_def\n"); */
-  /* lval_println(lval_sym); */
-  ITER_NEXT;
-  Lval* lval = arg;
-  ITER_END;
-  lval = lval_eval(env, lval);
-  if (lval->type == LVAL_ERR) return lval;
+void bind_symbol(Lval* lval_sym, Lval* lval) {
   Namespace* ns = get_current_ns();
   Lval* bound_symbol = eval_symbol(ns->env, lval_sym);
   /* printf("bound_symbol:"); */
@@ -70,6 +60,21 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
     lval->ns = retain(get_current_ns());
   }
   lenv_put(ns->env, lval_sym, lval);
+}
+
+Lval* eval_def(Lenv* env, Lval* arg_list) {
+  ITER_NEW_N("def", 2);
+  ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
+  Lval* lval_sym = arg;
+  /* printf("\n++++++++++++in eval_def\n"); */
+  /* lval_println(lval_sym); */
+  ITER_NEXT;
+  Lval* lval = arg;
+  ITER_END;
+  lval = lval_eval(env, lval);
+  if (lval->type == LVAL_ERR) return lval;
+
+  bind_symbol(lval_sym, lval);
   release(lval);
   return make_lval_nil();
 }
@@ -96,27 +101,33 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   return make_lval_nil();
 }
 
-Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
-  ITER_NEW_MIN("fn", 1)
-  ITER_NEXT_TYPE(LVAL_COLLECTION, VECTOR);
-  Lval* lval_params = arg;
+Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
+  if (lval_list->subtype != LIST)
+    return make_lambda_err(
+        make_lval_err("Expecting list to hold params and body"));
 
+  Cell* head = lval_list->data.head;
+  if (!head || ((Lval*)head->car)->subtype != VECTOR)
+    return make_lambda_err(
+        make_lval_err("lambda expects at least a vector with params"));
+
+  Lval* lval_params = head->car;
   Cell* param = lval_params->data.head;
-
   // Includes any rest arg, so [a & b] has param_count = 2
   int param_count = 0;
   int rest_arg_index = 0;
   int offset = 0;
   while (param) {
-    LASSERT(arg_list, ((Lval*)param->car)->type == LVAL_SYMBOL,
-            "Canot bind non-symbol. Got %s, expected %s.",
-            lval_type_to_name(param->car),
-            lval_type_constant_to_name(LVAL_SYMBOL));
+    if (((Lval*)param->car)->type != LVAL_SYMBOL) {
+      return make_lambda_err(
+          make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
+                        lval_type_to_name(param->car),
+                        lval_type_constant_to_name(LVAL_SYMBOL)));
+    }
     if (rest_arg_index && param_count == rest_arg_index) {
-      lval_println(lval_params);
-      return make_lval_err(
-          "Function format invalid. "
-          "Symbol '&' not followed by single symbol.");
+      return make_lambda_err(
+          make_lval_err("Function format invalid. "
+                        "Symbol '&' not followed by single symbol."));
       /* return make_lval_err("ERROR: only one rest arg allowed"); */
     }
     Lval* lval_sym = param->car;
@@ -135,18 +146,68 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   }
 
   if (rest_arg_index && param_count != rest_arg_index)
-    return make_lval_err(
-        "Function format invalid. "
-        "Symbol '&' not followed by single symbol.");
+    return make_lambda_err(
+        make_lval_err("Function format invalid. "
+                      "Symbol '&' not followed by single symbol."));
 
   if (param_count > MAX_FN_PARAMS)
-    return make_lval_err("A function cannot have more than 20 parameters");
-  /* return make_lval_err("ERROR: rest arg missing"); */
+    return make_lambda_err(
+        make_lval_err("A function cannot have more than 20 parameters"));
 
-  // Creates lambda lval and sets the parent_env of its env field (bindings)
-  // to the passed in env
   Lval* lval_body = make_lval_list();
-  lval_body->data.head = list_rest(arg_list->data.head);
+  lval_body->data.head = list_rest(lval_list->data.head);
+  Lambda* lambda =
+      make_lambda(retain(lval_params), param_count, rest_arg_index, lval_body);
+  return lambda;
+}
+
+Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
+  Cell* head = arg_list;
+  int s = (MAX_FN_PARAMS + 1) * (sizeof(char*));
+  Lambda** lambdas = lalloc_size(s);
+  memset(lambdas, 0, s);
+
+  int max_param_count = 0;
+  int has_rest_arg = 0;
+  Lval* err = NULL;
+  do {
+    Lambda* lambda = eval_lambda_form(env, head->car, LAMBDA);
+    if (lambda->err) {
+      err = lambda->err;
+      break;
+    }
+    int param_count = lambda->param_count;
+    if (lambda->has_rest_arg) {
+      if (has_rest_arg) {
+        err = make_lval_err("Can't have more than 1 variadic overload");
+        break;
+      }
+      has_rest_arg = lambda->has_rest_arg;
+      for (int i = has_rest_arg; i <= MAX_FN_PARAMS; i++)
+        lambdas[i] = retain(lambda);
+    } else {
+      if (lambdas[param_count]) {
+        err = make_lval_err("Can't have 2 overloads with same arity");
+        break;
+      }
+      max_param_count = max(max_param_count, param_count);
+      lambdas[param_count] = retain(lambda);
+    }
+    if (has_rest_arg && max_param_count >= has_rest_arg) {
+      err = make_lval_err(
+          "Can't have fixed arity function with more params than variadic "
+          "function");
+      break;
+    }
+
+    head = head->cdr;
+  } while (head);
+
+  if (err) {
+    for (int i = 0; i <= MAX_FN_PARAMS; i++) release(lambdas[i]);
+    return err;
+  }
+
   Lenv* closure_env = lenv_new();
   /* closure_env->parent_env = retain(env); */
   closure_env->parent_env = retain(env->parent_env);
@@ -154,50 +215,56 @@ Lval* eval_lambda_form(Lenv* env, Lval* arg_list, int subtype) {
   ddebug("lambda has retained env: %d ", is_ns_env(env));
   /* lenv_print(env); */
   ddebug("refcount: %d\n", get_ref_count(env));
-  Lval* fn =
-      make_lval_lambda(closure_env, retain(lval_params), lval_body, subtype);
-  fn->param_count = param_count;
-  fn->rest_arg_index = rest_arg_index;
-
+  // Creates fn and sets the parent_env of its env field (bindings)
+  // to the passed in env
+  Lval* fn = make_lval_lambda(closure_env, type, lambdas);
+  /* printf("!!!!!!!!!!!!!!!!\n"); */
+  /* lval_println(fn); */
+  /* printf("!!!!!!!!!!!!!!!!\n"); */
   return fn;
 }
 
 Lval* eval_lambda(Lenv* env, Lval* arg_list) {
-  return eval_lambda_form(env, arg_list, LAMBDA);
+  Cell* head = arg_list->data.head;
+  if (!head) return make_lval_err("fn* expects at least one arg");
+  return eval_lambdas(env, head, LAMBDA);
 }
 
 // Macros close over the environment where they are defined.
 Lval* eval_macro(Lenv* env, Lval* arg_list) {
-  return eval_lambda_form(env, arg_list, MACRO);
+  Cell* head = arg_list->data.head;
+  if (!head) return make_lval_err("macro expects at least one arg");
+  return eval_lambdas(env, head, MACRO); /*  */
 }
 
-int is_fn_call(Lval* lval, char* sym, int min_node_count) {
-  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
-      list_count(lval->data.head) >= min_node_count) {
-    lval = lval->data.head->car;
-    return lval->type == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
-  }
-  return 0;
-}
-
-Lval* eval_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "unquote");
-  return lval_eval(env, lval->data.head->cdr->car);
-}
-
-Lval* eval_splice_unquote(Lenv* env, Lval* lval) {
-  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "splice-unquote");
-  Lval* ret = lval_eval(env, lval->data.head->cdr->car);
-  if (ret->type == LVAL_ERR) return ret;
-  if (ret->subtype == LNIL) return ret;
-  LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");
-  return ret;
-}
-
-Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) {
-  scoped_iter Cell* i = iter_new(arg_list);
-  Lval* arg = iter_next(i);
-
+int is_fn_call(Lval* lval, char* sym, int min_node_count) {     /*  */
+  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST && /*  */
+      list_count(lval->data.head) >= min_node_count) {          /*  */
+    lval = lval->data.head->car;                                /*  */
+    return lval->type == LVAL_SYMBOL &&
+           _strcmp(lval->data.str, sym) == 0; /*  */
+  }                                           /*  */
+  return 0;                                   /*  */
+} /*  */
+/*  */
+Lval* eval_unquote(Lenv* env, Lval* lval) {                     /*  */
+  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "unquote"); /*  */
+  return lval_eval(env, lval->data.head->cdr->car);             /*  */
+} /*  */
+/*  */
+Lval* eval_splice_unquote(Lenv* env, Lval* lval) {                     /*  */
+  LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "splice-unquote"); /*  */
+  Lval* ret = lval_eval(env, lval->data.head->cdr->car);               /*  */
+  if (ret->type == LVAL_ERR) return ret;                               /*  */
+  if (ret->subtype == LNIL) return ret;                                /*  */
+  LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");                    /*  */
+  return ret;                                                          /*  */
+} /*  */
+/*  */
+Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) { /*  */
+  scoped_iter Cell* i = iter_new(arg_list);              /*  */
+  Lval* arg = iter_next(i);                              /*  */
+                                                         /*  */
   /* a place to store processed cells */
   Lval* evalled_list = make_lval_list();
   Cell** lp;
@@ -486,7 +553,7 @@ CFn special_builtins[] = {
     {"quasiquote", eval_quasiquote},
     {"def", eval_def},
     {"if", eval_if}, /* TCO! */
-    {"fn", eval_lambda},
+    {"fn*", eval_lambda},
     {"macro", eval_macro},
     {"try", eval_try},
     {"throw", eval_throw},

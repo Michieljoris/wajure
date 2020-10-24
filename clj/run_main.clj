@@ -1,9 +1,79 @@
 (in-ns 'run-main)
-(require '[main :refer [main]])
+;; (require '[main :refer [main]])
+;; (require '[foo.core :as foo])
+;; (defmacro fn [& sigs]
+;;   (print (first sigs))
+;;   )
+;; (defn f [x] x)
+;; (print "----------")
+
+
+;; (print (macroexpand '(fn [x] x) ))
+;; (print (macroexpand '(fn ([x] x)
+;;                           ([x y] [x y])) ))
+
+;; (def defmacro (macro ([sym & args]
+;;                       (if (list? (first args))
+;;                         `(def ~sym (macro ~@args))
+;;                         `(def ~sym (macro ~args))))))
+
+;; (defmacro fn [& args]
+;;   (if (vector? (first args))
+;;     `(fn* ~args)
+;;     `(fn* ~@args)))
+
+;; (print (macroexpand '(defmacro foo [x] x)))
+(defn f [x] (+ x 1))
+(print (apply f '(1)))
+;; (defmacro foo [x] x)
+
+
+;; (print (macroexpand '(defmacro foo ([x] x))))
+;; (def fn (macro ([& args]
+;;                 (if (vector? (first args))
+;;                   `(fn* ~args)
+;;                   `(fn* ~@args)))))
+
+;; (def f (fn ([x] x) ([x y] [x y])) )
+;; (print (f 1 2))
+;; (def f (fn ([x] x) ([x y] [x y ])))
+;; (def mymacro (macro ([x] `(+ 1 ~x))))
+;; (defmacro mymacro [x] `(+ 1 ~x))
+;; (print (macroexpand '(mymacro 2)))
+;; (print (mymacro 1))
+;; (def f (fn*
+;;         ([] "foo")
+;;         ([x y & z] [x y z])
+;;         ([x y] [x y])
+;;         ([x] [x])
+;;         ))
+
+;; (defn f ([] "foo")
+;;         ([x y & z] [x y z])
+;;         ([x y] [x y])
+;;         ([x] [x])
+;;         )
+;; (def g (fn* ([x y] [x y])))
+;; (print f)
+;; (print (f))
+;; (print (f 1))
+;; (print (f 1 2))
+;; (print (f 1 2 3))
+;; (print (g 5 6))
+
+;; (print foo/f)
+
+;; (defmacro when [] 1)
+;; (print when)
+;; (foo 1)
+
+;; (defn foo
+;;   ([x] [x])
+;;   ([x y] [x y]))
 
 
 
-(main 1 2)
+;; (main 1 2)
 ;; (require '[test.tests])
 
 ;; (defn g [x y] x y)

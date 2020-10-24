@@ -456,3 +456,16 @@ int number_len(int n) {
       return len;
   }
 }
+
+#define CHAR_BIT 8
+#define BITS (CHAR_BIT * sizeof(int) - 1)
+
+int max(int a, int b) {
+  int rets[] = {a, b};
+  return rets[(unsigned)(a - b) >> BITS];
+}
+
+int min(int a, int b) {
+  int rets[] = {b, a};
+  return rets[(unsigned)(a - b) >> BITS];
+}
