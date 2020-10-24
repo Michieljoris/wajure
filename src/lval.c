@@ -232,15 +232,13 @@ Lambda* make_lambda(Lval* params, int param_count, int has_rest_arg,
 }
 
 Lambda* make_lambda_err(Lval* error) {
-  Lambda* lambda = lalloc_type(LAMBDA);
-  *lambda = (Lambda){
-      .body = error,
-  };
+  Lambda* lambda = lalloc_type(FN);
+  *lambda = (Lambda){.err = error};
   return lambda;
 }
 
 // LAMBDA and MACRO
-Lval* make_lval_lambda(Lenv* env, int subtype, Cell* lambdas) {
+Lval* make_lval_lambda(Lenv* env, int subtype, Lambda** lambdas) {
 #ifdef WASM
   return NULL;
 #else

@@ -77,35 +77,26 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
 }
 
 Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  /* printf("---------------------eval_lambda_call %d %d\n",
-   * lval_fun->param_count, */
-  /*        lval_fun->rest_arg_index); */
-  /* printf("namespace: %s\n ", lval_fun->ns->namespace); */
-  /* lval_println(lval_fun); */
-  // TODO:
-  // Work out arity
   int arg_count = list_count(arg_list->data.head);
+  int arity = min(arg_count, MAX_FN_PARAMS);
+  Lambda* lambda = lval_fun->lambdas[arity];
+  if (!lambda)
+    return make_lval_err("Wrong number of args (%d) passed to %s", arity,
+                         lval_fun->cname);
 
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int param_count = lval_fun->param_count;
+  int rest_arg_index = lambda->has_rest_arg;  // 1 based
+  int param_count = lambda->param_count;
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
-  int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->data.head);
-  if (arg_list_count < min_param_count)
-    return make_lval_err("Not enough args passed, expected %d, got %d.",
-                         min_param_count, arg_list_count);
-  if (!rest_arg_index && arg_list_count > param_count)
-    return make_lval_err("Too many args passed, expected %i, got %i.",
-                         param_count, arg_list_count);
 
   scoped Lenv* bindings_env = lenv_new();
 
-  scoped_iter Cell* p = iter_new(lval_fun->params);
+  scoped_iter Cell* p = iter_new(lambda->params);
   Lval* param = iter_next(p);
 
   scoped Cell* head = list_concat(lval_fun->partials, arg_list->data.head);
 
   int i = 0;
+
   while (i < min_param_count) {
     Lval* arg = head->car;
     bindings_env->kv =
@@ -137,26 +128,13 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
 
   bindings_env->parent_env = retain(lval_fun->closure);
 
-  /* Namespace* old_ns = state->current_ns; */
-  // TODO: bit iffy, look into more
-  /* if (lval_fun->ns) state->current_ns = lval_fun->ns; */
-  Lval* ret = do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
+  Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR);
 
-  // TODO: if ret is a lambda then set its ns to lval_fun->ns!!!!
-  /* state->current_ns = old_ns; */
   return ret;
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
-  debug(">>>>>>>>>>>>>>>>>>> expand_macro:\n ");
-  lval_debugln(lval_fun);
   Lval* lval = eval_lambda_call(lval_fun, arg_list);
-  if (lval->type == LVAL_FUNCTION) {
-    release(lval);
-    return make_lval_err("Macro needs all its params bound");
-  }
-  lval_debugln(lval);
-
   return lval;
 }
 

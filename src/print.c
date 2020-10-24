@@ -123,21 +123,20 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
 #else
       char* lambda_type = lval->subtype == LAMBDA ? "fn" : "macro";
       ret += fctprintf(out, arg, "(%s ", lambda_type);
-      Cell* head = lval->lambdas;
-      while (head) {
-        Lambda* lambda = head->car;
-        out('(', arg);
-        ret++;
-        ret += _lval_print(out, arg, lambda->params);
-        out(' ', arg);
-        ret++;
-        ret += lval_collection_print(out, arg, lambda->body, 0, 0);
-        out(')', arg);
-        ret++;
-        head = head->cdr;
-        if (head) {
+      for (int i = 0; i <= MAX_FN_PARAMS; i++) {
+        Lambda** lambdas = lval->lambdas;
+        Lambda* lambda = lambdas[i];
+        if (lambda) {
+          ret += fctprintf(out, arg, "\n  ");
+          out('(', arg);
+          ret++;
+          ret += _lval_print(out, arg, lambda->params);
           out(' ', arg);
           ret++;
+          ret += lval_collection_print(out, arg, lambda->body, 0, 0);
+          out(')', arg);
+          ret++;
+          if (lambda->has_rest_arg) break;
         }
       }
 

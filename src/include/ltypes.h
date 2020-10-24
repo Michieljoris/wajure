@@ -69,6 +69,7 @@ typedef struct {
   int param_count;
   int has_rest_arg;
   Lval* body;
+  Lval* err;
 } Lambda;
 
 #ifdef WASM
@@ -100,7 +101,7 @@ struct lval {
   Lenv* closure;
   Cell* partials;
 
-  Cell* lambdas;  // multi arity fns
+  Lambda** lambdas;  // multi arity fns
   Lval* params;
   int param_count;
   int rest_arg_index;
