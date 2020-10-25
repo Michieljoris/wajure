@@ -8,6 +8,7 @@
 #include "list.h"
 #include "ltypes.h"
 #include "lval.h"
+#include "make_wasm_fn.h"
 #include "namespace.h"
 #include "print.h"
 #include "state.h"
@@ -56,65 +57,90 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
   return ret;
 }
 
-int add_root_fn_wrapper(Wasm* wasm, Lval* lval_fn, char* fn_name) {
+char* make_wajure_fn_name(Lval* lval_fn, int index) {
+  char* wajure_fn_name = malloc(_strlen(lval_fn->cname) + 2);
+  sprintf(wajure_fn_name, "f%d_%s", index, lval_fn->cname);
+  return wajure_fn_name;
+}
+
+Operands make_fn_call_operands(Wasm* wasm, Lambda* lambda) {
   BinaryenModuleRef module = wasm->module;
-  Ber* operands = malloc((1 + lval_fn->param_count) * sizeof(Ber));
+
+  // The actual root fn takes closure ptr and args matching the params of the
+  // original wajure fn.
+  Ber* operands = malloc((1 + lambda->param_count) * sizeof(Ber));
   int operands_count = 0;
+
+  // Closure pointer (NULL)
   operands[operands_count++] = make_int32(module, 0);
 
   int args_block_ptr_param = 1;
   int args_count_param = 2;
-  int has_rest_arg = lval_fn->rest_arg_index;  // 1 based
-  int param_count = lval_fn->param_count;
+  int has_rest_arg = lambda->has_rest_arg;  // 1 based
+  int param_count = lambda->param_count;
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
 
+  // Load all non variadic args into operands
   for (int i = 0; i < min_param_count; i++) {
     Ber arg = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
                            local_get_int32(module, args_block_ptr_param));
     operands[operands_count++] = arg;
   }
 
+  // Load any extra args into variadic arg.
   if (has_rest_arg) {
     Ber listify_args_operands[] = {
-        local_get_int32(module, args_block_ptr_param),
-        local_get_int32(module, args_count_param)};
+        BinaryenBinary(module, BinaryenAddInt32(),
+                       local_get_int32(module, args_block_ptr_param),
+                       make_int32(module, (has_rest_arg - 1) * 4)),
+        BinaryenBinary(module, BinaryenSubInt32(),
+                       local_get_int32(module, args_count_param),
+                       make_int32(module, has_rest_arg - 1))};
     Ber args_as_list = BinaryenCall(
         module, "listify_args", listify_args_operands, 2, BinaryenTypeInt32());
     operands[operands_count++] = args_as_list;
   }
-
-  Ber call_fn = BinaryenCall(module, fn_name, operands, operands_count,
-                             BinaryenTypeInt32());
-
-  BinaryenType params_type = make_type_int32(3);
-  BinaryenType results_type = make_type_int32(1);
-  BinaryenAddFunction(module, lval_fn->cname, params_type, results_type, NULL,
-                      0, call_fn);
-  return add_fn_to_table(wasm, fn_name);
-}
-
-char* make_wajure_fn_name(Lval* lval_fn) {
-  char* wajure_fn_name = malloc(_strlen(lval_fn->cname) + 2);
-  sprintf(wajure_fn_name, "w_%s", lval_fn->cname);
-  return wajure_fn_name;
+  Operands ret = {.operands = operands, .count = operands_count};
+  return ret;
 }
 
 // This adds a wasm fn that has as params: [closure, param 1, param 2, etc].
 // When we call this fn directly (by name) and pass our compiled args directly
 // to the fn,
-int add_root_fn(Wasm* wasm, Lval* lval_fn) {
-  char* wajure_fn_name = make_wajure_fn_name(lval_fn);
-  FunctionData function_data =
-      add_wasm_function(wasm, lval_fn->closure, wajure_fn_name, lval_fn, 1);
+Ber make_lambda_ber(Wasm* wasm, Lval* lval_fn, int lambda_index) {
+  BinaryenModuleRef module = wasm->module;
+  char* wajure_fn_name = make_wajure_fn_name(lval_fn, lambda_index);
+  Lambda* lambda = lval_fn->lambdas[lambda_index];
+  FunctionData function_data = add_wasm_function(
+      wasm, lval_fn->closure, wajure_fn_name, lambda, ABI_PARAMS);
 
   write_symbol_table_line(wasm, LVAL_FUNCTION, wajure_fn_name, -1,
-                          function_data.fn_table_index, lval_fn->param_count,
-                          lval_fn->rest_arg_index);
-  // We want/need also a fn that has the standard abi of [closure,
-  // args_block_ptr, args_count]
-  int fn_table_index = add_root_fn_wrapper(wasm, lval_fn, wajure_fn_name);
-  free(wajure_fn_name);
-  return fn_table_index;
+                          function_data.fn_table_index, lambda->param_count,
+                          lambda->has_rest_arg);
+  Operands operands = make_fn_call_operands(wasm, lambda);
+
+  // Call the root fn with actual params (not args_block)
+  Ber call_fn = BinaryenCall(module, wajure_fn_name, operands.operands,
+                             operands.count, BinaryenTypeInt32());
+  return call_fn;
+}
+
+int add_root_fn(Wasm* wasm, Lval* lval_fn) {
+  // Build a fn that takes closure, args_block_ptr and args_count and calls the
+  // actual root fn.
+  BinaryenModuleRef module = wasm->module;
+  int args_count_param = 2;
+
+  Ber branch_on_arity =
+      switch_on_args_count(wasm, lval_fn, args_count_param, make_lambda_ber);
+  // Add the function to wasm
+  BinaryenType params_type = make_type_int32(3);
+  BinaryenType results_type = make_type_int32(1);
+
+  BinaryenAddFunction(module, lval_fn->cname, params_type, results_type, NULL,
+                      0, branch_on_arity);
+
+  return add_fn_to_table(wasm, lval_fn->cname);
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {

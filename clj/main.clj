@@ -22,10 +22,12 @@
 ;;   ([x y] [x y]))
 
 (defn main
-  ([] "foo")
-  ([x] x)
-  ;; ([x y] [x y])
-  ([x y & z] [x y z])
+  ([] (print "zero params"))
+  ;; ([x] (print "1 param: " x))
+  ([x y] (print "2 params: " x y))
+  ([x y  z] (print "3 params: " x y z))
+  ([x y z q] (print "4 params: " x y z q))
+  ;; ([x y  z] [x y z])
   ;; ([x y  z & q] x)
   )
 ;; (defn main [x]

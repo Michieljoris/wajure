@@ -378,14 +378,16 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
         lval_fun->data.str);
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int param_count = lval_fun->param_count;
-  int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->data.head) - 1;
-  if (!rest_arg_index && lval_fun->subtype != SYS &&
-      arg_list_count > param_count)
-    return make_lval_err("Too many args, expected not more than %i, got %i.",
-                         param_count, arg_list_count);
+  /* int rest_arg_index = lval_fun->rest_arg_index;  // 1 based */
+  /* int param_count = lval_fun->param_count; */
+  /* int arg_list_count = */
+  /*     list_count(lval_fun->partials) + list_count(arg_list->data.head) - 1;
+   */
+  /* if (!rest_arg_index && lval_fun->subtype != SYS && */
+  /*     arg_list_count > param_count) */
+  /*   return make_lval_err("Too many args, expected not more than %i, got %i.",
+   */
+  /*                        param_count, arg_list_count); */
 
   /* printf("Current partials: "); */
   /* list_print(lval_fun->partials, print_lval, ", "); */
@@ -393,7 +395,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   Lval* partial_fn = make_lval_lambda(retain(lval_fun->closure), LAMBDA,
                                       retain(lval_fun->lambdas));
   partial_fn->data.str = retain(lval_fun->data.str);
-  partial_fn->fun = lval_fun->fun;
+  partial_fn->c_fn = lval_fun->c_fn;
   partial_fn->subtype = lval_fun->subtype;
   /* partial_fn->param_count = lval_fun->param_count; */
   /* partial_fn->rest_arg_index = lval_fun->rest_arg_index; */

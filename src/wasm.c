@@ -182,8 +182,10 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int has_rest_arg = -1;
   if (lval->type == LVAL_FUNCTION) {
     fn_table_index = lval->cfn ? lval->cfn->offset : lval->offset;  // partials
-    param_count = lval->param_count;
-    has_rest_arg = lval->rest_arg_index;
+    /* param_count = lval->param_count; */
+    /* has_rest_arg = lval->rest_arg_index; */
+    param_count = -1;   // unused
+    has_rest_arg = -1;  // unused
   }
   write_symbol_table_line(wasm, lval->type, sym, data_offset, fn_table_index,
                           param_count, has_rest_arg);

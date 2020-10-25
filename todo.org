@@ -2,6 +2,8 @@
 ** clean up and comment all of code
 ** add br_table to add_wasm_function and to wrap_root_fn
 ** when fn has duplicate param names -> give error!!!
+** make sure that adding bytes to data returns aligned pointer!!
+4 bytes aligned. Probably better for loading data!!!
 
 ** what about (def p foo/fp) or (def f foo/f) ?
 Do we recompile the fn or refer to the fn in the other ns
@@ -423,6 +425,11 @@ runtime includes:
 ** DONE reference counting
 
 * Good to know
+** gdb debugging:
+M-x gdb
+gdb -i=mi
+cd ..; file out/lispy
+run -c wajure/main.clj
 ** ref counting
 
   // Every lval is either the result of a fn/lambda call, special form or a

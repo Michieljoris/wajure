@@ -4,15 +4,13 @@
 #include "wasm.h"
 
 // Runtime error codes
-enum { RT_TOO_FEW_ARGS, RT_TOO_MANY_ARGS, RT_NOT_A_FN };
+enum { RT_WRONG_NUMBER_OF_ARGS, RT_NOT_A_FN };
 
 CResult compile_list(Wasm* wasm, Cell* head);
+CResult compile_do_list(Wasm* wasm, Lval* lval_list, Ber init);
 void compile(Namespace* ns);
 
 CResult lval_compile(Wasm* wasm, Lval* lval);
-
-FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
-                               Lval* lval_fun, int wajure_args);
 
 CResult wasm_process_args(Wasm* wasm, int param_count, int rest_arg_index);
 

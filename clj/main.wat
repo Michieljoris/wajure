@@ -5,13 +5,14 @@
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
- (type $none_=>_none (func))
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
+ (type $none_=>_none (func))
+ (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0ffoo\00\01\00\00\00\00\00\00\00\00\00\00\00\18\00\00\00\02\t\00\00\04\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00D\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\08\00\00\004\00\00\00`\00\00\00\02\00\00\00h\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0fzero params\00\01\00\00\00\00\00\00\00\00\00\00\00 \00\00\00\02\t\00\00\04\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\002 params: \00\01\00\00\00\00\00\00\00\00\00\00\00W\00\00\00\02\t\00\00<\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\003 params: \00\01\00\00\00\00\00\00\00\00\00\00\00\8e\00\00\00\02\t\00\00s\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\004 params: \00\01\00\00\00\00\00\00\00\00\00\00\00\c5\00\00\00\02\t\00\00\aa\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\f1\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\10\00\00\00G\00\00\00~\00\00\00\b5\00\00\00\e1\00\00\00\0d\01\00\00\05\00\00\00!\01\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $w_main_0 $w_main_0)
+ (elem (global.get $fn_table_offset) $f0_main_0 $f2_main_0 $f3_main_0 $f4_main_0 $main_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -79,34 +80,248 @@
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "main" (func $main_0))
  (export "mem" (memory $0))
- (func $w_main_0 (param $0 i32) (result i32)
-  (block $case1
-   (block $case0
-    (block $rest_arg
-     (br_table $case0 $case1 $rest_arg
-      (i32.const 1)
+ (func $f0_main_0 (param $0 i32) (result i32)
+  (local $1 i32)
+  (local $2 i32)
+  (block $do_2 (result i32)
+   (block $sys_call_1 (result i32)
+    (local.set $2
+     (call $print_fn
+      (i32.const 0)
+      (local.tee $1
+       (call $new_lval_list
+        (call $prefix_list
+         (call $retain
+          (i32.add
+           (global.get $data_offset)
+           (i32.const 32)
+          )
+         )
+         (i32.const 0)
+        )
+       )
+      )
      )
-     (nop)
     )
-    (return
-     (i32.const 999)
+    (call $release
+     (local.get $1)
     )
-   )
-   (return
-    (i32.const 0)
+    (local.get $2)
    )
   )
-  (return
-   (i32.const 1)
+ )
+ (func $f2_main_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+  (local $3 i32)
+  (local $4 i32)
+  (block $do_4 (result i32)
+   (block $sys_call_3 (result i32)
+    (local.set $4
+     (call $print_fn
+      (i32.const 0)
+      (local.tee $3
+       (call $new_lval_list
+        (call $prefix_list
+         (call $retain
+          (i32.add
+           (global.get $data_offset)
+           (i32.const 87)
+          )
+         )
+         (call $prefix_list
+          (call $retain
+           (local.get $1)
+          )
+          (call $prefix_list
+           (call $retain
+            (local.get $2)
+           )
+           (i32.const 0)
+          )
+         )
+        )
+       )
+      )
+     )
+    )
+    (call $release
+     (local.get $3)
+    )
+    (local.get $4)
+   )
+  )
+ )
+ (func $f3_main_0 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+  (local $4 i32)
+  (local $5 i32)
+  (block $do_6 (result i32)
+   (block $sys_call_5 (result i32)
+    (local.set $5
+     (call $print_fn
+      (i32.const 0)
+      (local.tee $4
+       (call $new_lval_list
+        (call $prefix_list
+         (call $retain
+          (i32.add
+           (global.get $data_offset)
+           (i32.const 142)
+          )
+         )
+         (call $prefix_list
+          (call $retain
+           (local.get $1)
+          )
+          (call $prefix_list
+           (call $retain
+            (local.get $2)
+           )
+           (call $prefix_list
+            (call $retain
+             (local.get $3)
+            )
+            (i32.const 0)
+           )
+          )
+         )
+        )
+       )
+      )
+     )
+    )
+    (call $release
+     (local.get $4)
+    )
+    (local.get $5)
+   )
+  )
+ )
+ (func $f4_main_0 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (param $4 i32) (result i32)
+  (local $5 i32)
+  (local $6 i32)
+  (block $do_8 (result i32)
+   (block $sys_call_7 (result i32)
+    (local.set $6
+     (call $print_fn
+      (i32.const 0)
+      (local.tee $5
+       (call $new_lval_list
+        (call $prefix_list
+         (call $retain
+          (i32.add
+           (global.get $data_offset)
+           (i32.const 197)
+          )
+         )
+         (call $prefix_list
+          (call $retain
+           (local.get $1)
+          )
+          (call $prefix_list
+           (call $retain
+            (local.get $2)
+           )
+           (call $prefix_list
+            (call $retain
+             (local.get $3)
+            )
+            (call $prefix_list
+             (call $retain
+              (local.get $4)
+             )
+             (i32.const 0)
+            )
+           )
+          )
+         )
+        )
+       )
+      )
+     )
+    )
+    (call $release
+     (local.get $5)
+    )
+    (local.get $6)
+   )
   )
  )
  (func $main_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (call $w_main_0
-   (i32.const 0)
+  (block $rt_error
+   (block $case4
+    (block $case3
+     (block $case2
+      (block $case0
+       (br_table $case0 $rt_error $case2 $case3 $case4 $rt_error
+        (local.get $2)
+       )
+       (nop)
+      )
+      (return
+       (call $f0_main_0
+        (i32.const 0)
+       )
+      )
+     )
+     (return
+      (call $f2_main_0
+       (i32.const 0)
+       (i32.load align=2
+        (local.get $1)
+       )
+       (i32.load offset=4 align=2
+        (local.get $1)
+       )
+      )
+     )
+    )
+    (return
+     (call $f3_main_0
+      (i32.const 0)
+      (i32.load align=2
+       (local.get $1)
+      )
+      (i32.load offset=4 align=2
+       (local.get $1)
+      )
+      (i32.load offset=8 align=2
+       (local.get $1)
+      )
+     )
+    )
+   )
+   (return
+    (call $f4_main_0
+     (i32.const 0)
+     (i32.load align=2
+      (local.get $1)
+     )
+     (i32.load offset=4 align=2
+      (local.get $1)
+     )
+     (i32.load offset=8 align=2
+      (local.get $1)
+     )
+     (i32.load offset=12 align=2
+      (local.get $1)
+     )
+    )
+   )
+  )
+  (return
+   (block (result i32)
+    (call $log_int
+     (local.get $2)
+    )
+    (call $runtime_error
+     (i32.const 0)
+     (i32.const 0)
+    )
+    (i32.const 0)
+   )
   )
  )
- ;; custom section "symbol_table", size 52
+ ;; custom section "symbol_table", size 140
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "124"
- ;; custom section "fn_table_size", size 1, contents: "2"
+ ;; custom section "data_size", size 3, contents: "309"
+ ;; custom section "fn_table_size", size 1, contents: "5"
 )

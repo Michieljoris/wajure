@@ -101,13 +101,15 @@ Ber wasm_log_string(Wasm* wasm, int offset) {
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
   /* printf("msg: %s\n", msg); */
-  int msg_offset = add_string_to_data(wasm, msg);
+  int msg_offset = msg ? add_string_to_data(wasm, msg) : 0;
 
+  /* printf("msg_offset: %d\n", msg_offset); */
   /* BinaryenUnreachable(module); */
   BinaryenModuleRef module = wasm->module;
 
-  Ber operands[] = {make_int32(wasm->module, err_no),
-                    wasm_offset(wasm, msg_offset)};
+  Ber operands[] = {
+      make_int32(wasm->module, err_no),
+      msg_offset ? wasm_offset(wasm, msg_offset) : make_int32(module, 0)};
 
   Ber runtime_error =
       BinaryenCall(module, "runtime_error", operands, 2, BinaryenTypeNone());

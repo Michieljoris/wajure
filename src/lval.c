@@ -210,7 +210,7 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_FUNCTION,
                  .subtype = subtype,
-                 .fun = func,
+                 .c_fn = func,
                  .data.str = retain(func_name),
                  .offset = -1,
                  INIT(-1)};

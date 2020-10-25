@@ -7,6 +7,10 @@ var max_page_count = 100;
 var initial_memory_size = initial_page_count * page_size;
 var page_count = initial_page_count;
 
+function pad(s) {
+    return (s % 4) ? (s + 4 - (s % 4)) : s;
+}
+
 function makeLogString(memory, offset) {
     return function(offset) {
         var bytes = new Uint8Array(memory.buffer, offset);
@@ -19,25 +23,26 @@ function makeLogString(memory, offset) {
 }
 
 const runtime_error_codes = {
-    TOO_FEW_ARGS: 0,
-    TOO_MANY_ARGS: 1,
-    NOT_A_FN: 2
+    WRONG_NUMBER_OF_ARGS: 0,
+    NOT_A_FN: 1
 }
 
 function make_runtime_error_fn(memory, offset) {
     return function(err_no, offset) {
-        var bytes = new Uint8Array(memory.buffer, offset);
-        var length = 0;
-        while (bytes[length] != 0) length++;
-        var bytes = new Uint8Array(memory.buffer, offset, length);
-        var string = new TextDecoder('utf8').decode(bytes);
+        var string = "";
+        if (offset) {
+            var bytes = new Uint8Array(memory.buffer, offset);
+            var length = 0;
+            while (bytes[length] != 0) length++;
+            var bytes = new Uint8Array(memory.buffer, offset, length);
+            string = new TextDecoder('utf8').decode(bytes);
+        }
         switch (err_no) {
-            case runtime_error_codes.TOO_FEW_ARGS:
-                string = "Too few args passed to " + string; break;
-            case runtime_error_codes.TOO_MANY_ARGS:
-                string = "Too many args passed to " + string; break;
             case runtime_error_codes.NOT_A_FN:
                 string = "Not a fn!!!" + string; break;
+
+            case runtime_error_codes.WRONG_NUMBER_OF_ARGS:
+                string = "Wrong number of args passed." + string; break;
             default: string = "Unknown runtime error code: " + err_no + " " + string;
         }
         throw string;
@@ -54,6 +59,26 @@ function makeLogStringN(memory, offset, length) {
 
 async function run_wajure_fn(env, module, fn_name, ...args) {
     let args_count = args.length;
+    let args_block_ptr = env.runtime.exports.lalloc_size(4);
+    let ints = new Uint32Array(env.memory.buffer, args_block_ptr, args_count * 4);
+    for (i = 0;  i < args_count; i++) {
+        let arg = env.runtime.exports.make_lval_num(args[i]);
+        ints[i] = arg;
+    }
+
+    let closure_pointer = 0;
+    try {
+        console.log("Running: ", fn_name);
+        console.log(module.instance.exports[fn_name](closure_pointer, args_block_ptr, args_count));
+    } catch (e) {
+        console.log("RUNTIME ERROR");
+        console.log(e);
+    }
+
+}
+
+async function run_wajure_fn2(env, module, fn_name, ...args) {
+    let args_count = args.length;
     let wajure_args = [];
     for (i = 0;  i < args_count; i++) {
         let arg = env.runtime.exports.make_lval_num(args[i]);
@@ -62,7 +87,7 @@ async function run_wajure_fn(env, module, fn_name, ...args) {
 
     let closure_pointer = 0;
     try {
-        console.log(fn_name);
+        console.log("Running: ", fn_name);
         console.log(module.instance.exports[fn_name](closure_pointer, ... wajure_args));
     } catch (e) {
         console.log("RUNTIME ERROR");
@@ -188,6 +213,7 @@ async function instantiate_runtime(env) {
         throw("Error: runtime uses wrong memory layout, __data_end should equal __heap_base."+
               "Probably --stack-first flag is not set for linker.");
     }
+    env.data_start = pad(env.data_start);
 
     env.fn_table_start = 0;
 
@@ -278,7 +304,7 @@ async function instantiate_builtin(env) {
     module.data_offset = 0;
     module.fn_table_offset = 0;
 
-    env.data_offset = module.data_size;
+    env.data_offset = pad(module.data_size);
     env.fn_table_offset = module.fn_table_size;
 
     module.globals = {};
@@ -304,7 +330,7 @@ async function load_modules(env, module) {
     module.data_offset = env.data_offset;
     module.fn_table_offset = env.fn_table_offset;
 
-    env.data_offset += module.data_size;
+    env.data_offset += pad(module.data_size);
     env.fn_table_offset += module.fn_table_size;
 
     for (const [namespace, value] of Object.entries(module.deps)) {
@@ -399,7 +425,7 @@ async function start() {
         env.runtime.exports.init_lispy_mempools(3200, 3200, 3200);
        
         console.log("Running main/main(arg1, arg2, ..) ------------------------------");
-        run_wajure_fn(env, main_module, "main", 888, 777);
+        run_wajure_fn(env, main_module, "main",1,2);
 
         env.runtime.exports.free_lispy_mempools();
         env.runtime.exports. free_malloc();

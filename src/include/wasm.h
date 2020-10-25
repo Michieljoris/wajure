@@ -61,6 +61,13 @@ typedef struct {
   int fn_table_index;
 } FunctionData;
 
+typedef struct {
+  Ber* operands;
+  int count;
+} Operands;
+
+typedef Ber (*LambdaBer)(Wasm*, Lval*, int);
+
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 

@@ -147,20 +147,20 @@ void add_rt_error_fn(Wasm* wasm, int rt_error_code, char* fn_name,
                       body);
 }
 
-void add_rt_error_too_few_args_fn(Wasm* wasm, char* fn_name) {
-  int rt_error_code = RT_TOO_FEW_ARGS;
-  char* error_msg = "fn";
-  add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg);
-}
+/* void add_rt_error_too_few_args_fn(Wasm* wasm, char* fn_name) { */
+/*   int rt_error_code = RT_TOO_FEW_ARGS; */
+/*   char* error_msg = "fn"; */
+/*   add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg); */
+/* } */
 
-void add_rt_error_too_many_args_fn(Wasm* wasm, char* fn_name) {
-  int rt_error_code = RT_NOT_A_FN;
-  char* error_msg = "";
-  add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg);
-}
+/* void add_rt_error_too_many_args_fn(Wasm* wasm, char* fn_name) { */
+/*   int rt_error_code = RT_NOT_A_FN; */
+/*   char* error_msg = ""; */
+/*   add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg); */
+/* } */
 
 void add_fn_rt_error_not_a_fn(Wasm* wasm, char* fn_name) {
-  int rt_error_code = RT_TOO_MANY_ARGS;
+  int rt_error_code = RT_NOT_A_FN;
   char* error_msg = "fn";
   add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg);
 }

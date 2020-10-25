@@ -97,15 +97,11 @@ struct lval {
   int hash;
 
   // Interpreter props
-  Lbuiltin fun;
+  Lbuiltin c_fn;  // builtin c fns == sys fns
+
+  Lambda** lambdas;  // multi arity fns,
   Lenv* closure;
   Cell* partials;
-
-  Lambda** lambdas;  // multi arity fns
-  Lval* params;
-  int param_count;
-  int rest_arg_index;
-  Lval* body;
 
   // We need to keep track of in which namespace a fn is defined and under which
   // name so we can refer to its fn_table_index from other namespaces in

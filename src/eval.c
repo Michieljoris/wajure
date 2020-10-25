@@ -76,13 +76,13 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
   return rest_args;
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
+Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
   int arg_count = list_count(arg_list->data.head);
   int arity = min(arg_count, MAX_FN_PARAMS);
-  Lambda* lambda = lval_fun->lambdas[arity];
+  Lambda* lambda = lval_fn->lambdas[arity];
   if (!lambda)
     return make_lval_err("Wrong number of args (%d) passed to %s", arity,
-                         lval_fun->cname);
+                         lval_fn->cname);
 
   int rest_arg_index = lambda->has_rest_arg;  // 1 based
   int param_count = lambda->param_count;
@@ -93,7 +93,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
   scoped_iter Cell* p = iter_new(lambda->params);
   Lval* param = iter_next(p);
 
-  scoped Cell* head = list_concat(lval_fun->partials, arg_list->data.head);
+  scoped Cell* head = list_concat(lval_fn->partials, arg_list->data.head);
 
   int i = 0;
 
@@ -126,7 +126,7 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
         alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
   }
 
-  bindings_env->parent_env = retain(lval_fun->closure);
+  bindings_env->parent_env = retain(lval_fn->closure);
 
   Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR);
 
@@ -256,12 +256,12 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
         cdr = &c->cdr;
         head = head->cdr;
       }
-      ret = lval_fun->fun(env, rest_arg);
+      ret = lval_fun->c_fn(env, rest_arg);
       release(head);
       release(rest_arg);
       return ret;
     case SPECIAL: {
-      return lval_fun->fun(env, arg_list);
+      return lval_fun->c_fn(env, arg_list);
     }
     case MACRO:
       return eval_macro_call(env, lval_fun, arg_list);
