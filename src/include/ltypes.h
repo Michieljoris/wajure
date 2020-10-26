@@ -132,8 +132,10 @@ typedef struct {
   int local_count;
   char* fn_name;
   int param_count;
-  int closure_count;
-  Lenv* closure;
+  // Keep track of symbols (params and let bindings) as they are encountered
+  // when compiling a fn that are NOT local, but from a parent fn.
+  /* int symbol_count; */
+  Cell* symbol_to_ref;
 } FunctionContext;
 
 struct context {

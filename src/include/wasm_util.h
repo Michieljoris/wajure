@@ -62,8 +62,6 @@ void _leave_context(void* data);
   CONTEXT(_msg)                                                \
   context->function_context = malloc(sizeof(FunctionContext)); \
   context->function_context->fn_name = _fn_name;               \
-  context->function_context->closure_count = 0;                \
-  context->function_context->closure = lenv_new();             \
   context->function_context->local_count = _local_count;
 
 void print_context(Context* c);

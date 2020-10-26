@@ -56,8 +56,7 @@ typedef struct {
 } Wasm;
 
 typedef struct {
-  Lenv* closure;
-  int closure_count;
+  Cell* symbol_to_ref;
   int fn_table_index;
 } FunctionData;
 

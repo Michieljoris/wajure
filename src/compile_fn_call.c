@@ -8,6 +8,7 @@
 #include "list.h"
 #include "ltypes.h"
 #include "lval.h"
+#include "make_wasm_fn.h"
 #include "namespace.h"
 #include "native.h"
 #include "print.h"
@@ -143,7 +144,7 @@ Operands compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
                                     Cell* args, LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
 
-  int args_count = list_count(args);
+  int args_count = list_count(args) + list_count(lval_fn->partials);
   int arity = min(args_count, MAX_FN_PARAMS);
   Lambda* lambda = lval_fn->lambdas[arity];
   if (!lambda)
@@ -154,20 +155,6 @@ Operands compile_args_into_operands(Wasm* wasm, char* fn_name, Lval* lval_fn,
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
   int partial_count = list_count(lval_fn->partials);
   int total_args_count = args_count + partial_count;
-
-  /* // Check total number of args (partials plus args) matches signature of */
-  /* // function */
-  /* if (has_rest_arg) { */
-  /*   if (total_args_count < min_param_count) */
-  /*     quit(wasm, "Not enough args passed to %s/%s (need at least %d)", */
-  /*          lval_fn->ns->namespace, fn_name, min_param_count); */
-  /* } else { */
-  /*   if (total_args_count != param_count) */
-  /*     quit(wasm, "Wrong number of args (%d) passed to %s/%s (%d expected)",
-   */
-  /*          total_args_count, lval_fn->ns->namespace, fn_name, param_count);
-   */
-  /* } */
 
   Ber* compiled_args = malloc(sizeof(Ber) * total_args_count);
   int compiled_args_count = 0;
@@ -443,16 +430,18 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                 resolved_sym->ns && resolved_sym->ns != get_current_ns() ? 1
                                                                          : 0;
             Lval* cfn = resolved_sym->cfn;
+            int args_count = list_count(args);
+            args_count += list_count(resolved_sym->partials);
             if (cfn) {
+              printf("args_count: %d\n", args_count);
+              char* wajure_fn_name = make_wajure_fn_name(cfn, args_count);
               if (cfn->ns == get_current_ns()) {
                 // Partial fn, derived from cfn
-                char* wajure_fn_name = make_wajure_fn_name(cfn, 0);
                 /* union FnRef fn_ref = {.fn_name = cfn->cname}; */
                 union FnRef fn_ref = {.fn_name = wajure_fn_name};
                 fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);
                 free(wajure_fn_name);
               } else {
-                char* wajure_fn_name = make_wajure_fn_name(cfn, 0);
                 char* global_name =
                     make_global_name("fn:", cfn->ns->namespace, wajure_fn_name);
                 /* make_global_name("fn:", cfn->ns->namespace, cfn->cname); */
@@ -464,7 +453,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                 release(global_name);
               }
             } else if (lval_is_external) {  // required from another namespace
-              char* wajure_fn_name = make_wajure_fn_name(resolved_sym, 0);
+              char* wajure_fn_name =
+                  make_wajure_fn_name(resolved_sym, args_count);
               char* global_name = make_global_name(
                   "fn:", resolved_sym->ns->namespace, wajure_fn_name);
               /* char* global_name = make_global_name( */
@@ -477,7 +467,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
               free(wajure_fn_name);
               release(global_name);
             } else {  // local fn
-              char* wajure_fn_name = make_wajure_fn_name(resolved_sym, 0);
+              char* wajure_fn_name =
+                  make_wajure_fn_name(resolved_sym, args_count);
               union FnRef fn_ref = {.fn_name = wajure_fn_name};
               /* union FnRef fn_ref = {.fn_name = resolved_sym->cname}; */
               fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);

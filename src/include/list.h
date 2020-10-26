@@ -21,6 +21,7 @@ Cell* make_pair(void* key, void* value);
 
 // Association list
 
+int alist_index_of(Cell* alist, int cmp_key(void*, void*), void* key);
 void* alist_get(Cell* alist, int key_cmp(void*, void*), void* key);
 int alist_has_key(Cell* alist, int key_cmp(void*, void*), void* key);
 

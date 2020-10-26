@@ -4,6 +4,9 @@
 ** when fn has duplicate param names -> give error!!!
 ** make sure that adding bytes to data returns aligned pointer!!
 4 bytes aligned. Probably better for loading data!!!
+** make_wajure_name
+we only need to call this once, then hang it off the lambda and reuse it when we
+call by name
 
 ** what about (def p foo/fp) or (def f foo/f) ?
 Do we recompile the fn or refer to the fn in the other ns

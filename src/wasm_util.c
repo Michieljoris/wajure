@@ -210,7 +210,7 @@ void leave_context(Wasm* wasm) {
   if (prev_context_cell &&
       context->function_context !=
           ((Context*)(prev_context_cell->car))->function_context) {
-    release(context->function_context->closure);
+    release(context->function_context->symbol_to_ref);
     free(context->function_context);
   }
 
