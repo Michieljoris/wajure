@@ -5,13 +5,13 @@
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
- (type $none_=>_none (func))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
- (type $i32_i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32 i32) (result i32)))
+ (type $none_=>_none (func))
+ (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f***\03+++++++++++++++++\01\00\00\00\00\00\00\00\00\00\00\00)\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00U\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00U\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\85\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\00\00\01\00\00\00\00\00q\00\00\00\04\00\00\00\19\00\00\00E\00\00\00u\00\00\00\a1\00\00\00\03\00\00\00\ad\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00p\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\01\00\00\00\00\00\\\00\00\00\00\00\00\00\04\00\00\000\00\00\00`\00\00\00\8c\00\00\00\03\00\00\00\98\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $f_0)
+ (elem (global.get $fn_table_offset) $w_f_0 $w_f_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -39,14 +39,14 @@
  (import "env" "_strcpy" (func $_strcpy (param i32 i32) (result i32)))
  (import "env" "print_slot_size" (func $print_slot_size))
  (import "env" "wval_print" (func $wval_print (param i32)))
- (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32 i32) (result i32)))
+ (import "env" "make_lval_wasm_lambda" (func $make_lval_wasm_lambda (param i32 i32 i32 i32) (result i32)))
  (import "env" "get_wval_type" (func $get_wval_type (param i32) (result i32)))
  (import "env" "get_wval_subtype" (func $get_wval_subtype (param i32) (result i32)))
  (import "env" "get_wval_fn_table_index" (func $get_wval_fn_table_index (param i32) (result i32)))
  (import "env" "get_wval_closure" (func $get_wval_closure (param i32) (result i32)))
  (import "env" "get_wval_partials" (func $get_wval_partials (param i32) (result i32)))
  (import "env" "get_wval_partial_count" (func $get_wval_partial_count (param i32) (result i32)))
- (import "env" "get_wval_fn_call_relay_array" (func $get_wval_fn_call_relay_array (param i32) (result i32)))
+ (import "env" "listify_args" (func $listify_args (param i32 i32) (result i32)))
  (import "env" "bundle_rest_args" (func $bundle_rest_args (param i32 i32 i32)))
  (import "env" "rewrite_pointers" (func $rewrite_pointers (param i32 i32 i32)))
  (import "env" "new_cell" (func $new_cell (param i32 i32) (result i32)))
@@ -70,7 +70,6 @@
  (import "env" "nth_fn" (func $nth_fn (param i32 i32) (result i32)))
  (import "env" "is_list_fn" (func $is_list_fn (param i32 i32) (result i32)))
  (import "env" "is_nil_fn" (func $is_nil_fn (param i32 i32) (result i32)))
- (import "env" "foo_fn" (func $foo_fn (param i32 i32) (result i32)))
  (import "env" "print_fn" (func $print_fn (param i32 i32) (result i32)))
  (import "env" "pr_fn" (func $pr_fn (param i32 i32) (result i32)))
  (import "env" "debug_fn" (func $debug_fn (param i32 i32) (result i32)))
@@ -79,7 +78,7 @@
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "mem" (memory $0))
- (func $f_0 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $w_f_0 (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   (block $do_1 (result i32)
    (call $new_lval_vector
     (call $prefix_list
@@ -101,8 +100,22 @@
    )
   )
  )
+ (func $f_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+  (call $w_f_0
+   (i32.const 0)
+   (i32.load align=2
+    (local.get $1)
+   )
+   (i32.load offset=4 align=2
+    (local.get $1)
+   )
+   (i32.load offset=8 align=2
+    (local.get $1)
+   )
+  )
+ )
  ;; custom section "symbol_table", size 46
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "193"
- ;; custom section "fn_table_size", size 1, contents: "1"
+ ;; custom section "data_size", size 3, contents: "172"
+ ;; custom section "fn_table_size", size 1, contents: "2"
 )

@@ -131,7 +131,7 @@ void list_print(Cell* cell, void print(void*), char* seperator) {
 
 // Finds and returns cell for the appropriate association pair in alist for key.
 // cmp fn receives passed in key and the key for each successive association.
-Cell* find_cell(Cell* alist, int cmp_key(void*, void*), void* key) {
+Cell* alist_find(Cell* alist, int cmp_key(void*, void*), void* key) {
   if (!alist || !alist->car) return NULL;
   while (alist) {
     Cell* pair = (Cell*)alist->car;
@@ -141,17 +141,30 @@ Cell* find_cell(Cell* alist, int cmp_key(void*, void*), void* key) {
   return NULL;
 }
 
+// Returns index of key as added to alist (so first one added has index 0, last
+// added has index of length of alist -1)
+int alist_index_of(Cell* alist, int cmp_key(void*, void*), void* key) {
+  int i = 0;
+  while (alist) {
+    Cell* pair = (Cell*)alist->car;
+    if (cmp_key(pair->car, key)) return list_count(alist) - i - 1;
+    alist = alist->cdr;
+    i++;
+  }
+  return -1;
+}
+
 // Finds and returns associated value in alist for key. cmp fn receives passed
 // in key and the key for each successive association.
 void* alist_get(Cell* alist, int cmp_key(void*, void*), void* key) {
-  Cell* cell = find_cell(alist, cmp_key, key);
+  Cell* cell = alist_find(alist, cmp_key, key);
   if (cell) return ((Cell*)cell->car)->cdr;
   return NULL;
 }
 
 // Returns 1 if alist has key
 int alist_has_key(Cell* alist, int cmp_key(void*, void*), void* key) {
-  return find_cell(alist, cmp_key, key) ? 1 : 0;
+  return alist_find(alist, cmp_key, key) ? 1 : 0;
 }
 
 // Conses kv value pair to alist. Returns new head.
@@ -170,7 +183,7 @@ Cell* alist_prepend(Cell* alist, void* key, void* value) {
 // key and value, and releases old value if updated.
 Cell* alist_put(Cell* alist, int cmp_key(void*, void*), void* key,
                 void* value) {
-  Cell* node = find_cell(alist, cmp_key, key);
+  Cell* node = alist_find(alist, cmp_key, key);
   if (node) {
     Cell* pair = ((Cell*)node->car);
     void* cdr = pair->cdr;

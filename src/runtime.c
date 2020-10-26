@@ -12,8 +12,7 @@
 Lval* make_lval_wasm_lambda(int fn_table_index,
                             /* int param_count, */
                             /* int has_rest_arg, */
-                            int closure, int partials, int partial_count,
-                            int fn_call_relay_array) {
+                            int closure, int partials, int partial_count) {
   /* printf( */
   /*     "fn_table_index %d, closure: %d, partials %d, fn_call_relay_array
    * %d\n", */
@@ -30,7 +29,6 @@ Lval* make_lval_wasm_lambda(int fn_table_index,
       .closure = closure,
       .partials = partials,
       .partial_count = partial_count,
-      .fn_call_relay_array = fn_call_relay_array
       /* .str = "fn_name:TODO" */
       /* .param_count = param_count, */
       /* .has_rest_arg = has_rest_arg, */
@@ -71,15 +69,17 @@ int get_wval_fn_table_index(Lval* wval) { return wval->fn_table_index; }
 int get_wval_closure(Lval* wval) { return wval->closure; }
 int get_wval_partials(Lval* wval) { return wval->partials; }
 int get_wval_partial_count(Lval* wval) { return wval->partial_count; }
-int get_wval_fn_call_relay_array(Lval* wval) {
-  /* char* ptr = (char*)wval->fn_call_relay_array; */
-  /* for (int i = 0; i < 21; i++) { */
-  /*   printf("%d ", *((char*)(ptr + i))); */
-  /* } */
-  /* printf("\n"); */
-  return wval->fn_call_relay_array;
-}
 #endif
+
+Lval* listify_args(Lval** args, int args_count) {
+  if (args_count == 0) return make_lval_list();
+  Lval* lval_list = make_lval_list();
+  Cell* head = NULL;
+  int i = args_count - 1;
+  while (i >= 0) head = list_cons(args[i--], head);
+  lval_list->data.head = head;
+  return lval_list;
+}
 
 void bundle_rest_args(int rest_arg_index, Lval** args, int args_count) {
   int rest_arg_length = args_count - rest_arg_index;
@@ -113,13 +113,6 @@ void wval_print(Lval* lval) {
   printf("closure: %d %lu\n", lval->closure, offsetof(Lval, closure));
   printf("partials: %d %lu\n", lval->partials, offsetof(Lval, partials));
 
-  printf("fn_call_relay_array: %d %lu\n", lval->fn_call_relay_array,
-         offsetof(Lval, fn_call_relay_array));
-
-  char* array = (char*)lval->fn_call_relay_array;
-  for (int i = 0; i < 21; i++) {
-    printf("%d ", array[i]);
-  }
   /* printf("\n"); */
 #endif
 }
@@ -168,9 +161,6 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
 
     if (lval_ptr->closure) lval_ptr->closure += data_offset;
     if (lval_ptr->partials) lval_ptr->partials += data_offset;
-#ifdef WASM
-    lval_ptr->fn_call_relay_array += data_offset;
-#endif
 
 #ifdef WASM
     int* partials = (int*)((long)lval_ptr->partials);

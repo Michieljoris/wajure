@@ -7,6 +7,10 @@ var max_page_count = 100;
 var initial_memory_size = initial_page_count * page_size;
 var page_count = initial_page_count;
 
+function pad(s) {
+    return (s % 4) ? (s + 4 - (s % 4)) : s;
+}
+
 function makeLogString(memory, offset) {
     return function(offset) {
         var bytes = new Uint8Array(memory.buffer, offset);
@@ -19,25 +23,26 @@ function makeLogString(memory, offset) {
 }
 
 const runtime_error_codes = {
-    TOO_FEW_ARGS: 0,
-    TOO_MANY_ARGS: 1,
-    NOT_A_FN: 2
+    WRONG_NUMBER_OF_ARGS: 0,
+    NOT_A_FN: 1
 }
 
 function make_runtime_error_fn(memory, offset) {
     return function(err_no, offset) {
-        var bytes = new Uint8Array(memory.buffer, offset);
-        var length = 0;
-        while (bytes[length] != 0) length++;
-        var bytes = new Uint8Array(memory.buffer, offset, length);
-        var string = new TextDecoder('utf8').decode(bytes);
+        var string = "";
+        if (offset) {
+            var bytes = new Uint8Array(memory.buffer, offset);
+            var length = 0;
+            while (bytes[length] != 0) length++;
+            var bytes = new Uint8Array(memory.buffer, offset, length);
+            string = new TextDecoder('utf8').decode(bytes);
+        }
         switch (err_no) {
-            case runtime_error_codes.TOO_FEW_ARGS:
-                string = "Too few args passed to " + string; break;
-            case runtime_error_codes.TOO_MANY_ARGS:
-                string = "Too many args passed to " + string; break;
             case runtime_error_codes.NOT_A_FN:
                 string = "Not a fn!!!" + string; break;
+
+            case runtime_error_codes.WRONG_NUMBER_OF_ARGS:
+                string = "Wrong number of args passed." + string; break;
             default: string = "Unknown runtime error code: " + err_no + " " + string;
         }
         throw string;
@@ -54,6 +59,26 @@ function makeLogStringN(memory, offset, length) {
 
 async function run_wajure_fn(env, module, fn_name, ...args) {
     let args_count = args.length;
+    let args_block_ptr = env.runtime.exports.lalloc_size(4);
+    let ints = new Uint32Array(env.memory.buffer, args_block_ptr, args_count * 4);
+    for (i = 0;  i < args_count; i++) {
+        let arg = env.runtime.exports.make_lval_num(args[i]);
+        ints[i] = arg;
+    }
+
+    let closure_pointer = 0;
+    try {
+        console.log("Running: ", fn_name);
+        console.log(module.instance.exports[fn_name](closure_pointer, args_block_ptr, args_count));
+    } catch (e) {
+        console.log("RUNTIME ERROR");
+        console.log(e);
+    }
+
+}
+
+async function run_wajure_fn2(env, module, fn_name, ...args) {
+    let args_count = args.length;
     let wajure_args = [];
     for (i = 0;  i < args_count; i++) {
         let arg = env.runtime.exports.make_lval_num(args[i]);
@@ -62,7 +87,8 @@ async function run_wajure_fn(env, module, fn_name, ...args) {
 
     let closure_pointer = 0;
     try {
-        module.instance.exports[fn_name](closure_pointer, ... wajure_args);
+        console.log("Running: ", fn_name);
+        console.log(module.instance.exports[fn_name](closure_pointer, ... wajure_args));
     } catch (e) {
         console.log("RUNTIME ERROR");
         console.log(e);
@@ -181,12 +207,14 @@ async function instantiate_runtime(env) {
         then(res => res.instance);
 
     env.runtime = runtime;
-    env.data_start = env.runtime.exports.__data_end.value;
-    if (env.data_start !== env.runtime.exports.__heap_base.value) {
+    env.data_start = runtime.exports.__data_end.value;
+    if (env.data_start !== runtime.exports.__heap_base.value) {
         //Memory layout should be: runtime stack|runtime data|wajure data|wajure heap
         throw("Error: runtime uses wrong memory layout, __data_end should equal __heap_base."+
               "Probably --stack-first flag is not set for linker.");
     }
+    env.data_start = pad(env.data_start);
+
     env.fn_table_start = 0;
 
     // env.runtime_error_fn = make_runtime_error_fn(env.runtime.exports.memory);
@@ -203,7 +231,7 @@ async function instantiate_runtime(env) {
 }
 
 async function instantiate_module(env, { compiled_module, data_offset, data_size, fn_table_offset,
-                                         namespace, globals}) {
+                                         namespace, file_name,  globals}) {
     data_offset += env.data_start;
     fn_table_offset += env.fn_table_start;
 
@@ -235,11 +263,10 @@ async function instantiate_module(env, { compiled_module, data_offset, data_size
 
     // console.log("From nodejs.js: data_offset: ", data_offset, " data_size: ",
     //             data_size, " data_end: ", data_offset + data_size, " fn_table_offset: ", fn_table_offset);
-    console.log("Instantiating " + namespace);
+    console.log("Instantiating " + (namespace || file_name));
     const instance =  await WebAssembly.instantiate(compiled_module, module_import_object).
         then(instance => instance);
     env.runtime.exports.rewrite_pointers(data_offset, data_size, fn_table_offset);
-    env.modules[namespace].instance = instance;
     return instance;
 }
 
@@ -250,13 +277,11 @@ async function instantiate_modules(env, modules) {
 }
 
 async function load_module(env, module) {
-    console.log("Loading namespace: ", module.namespace);
-    module.file_name =
-        env.config.out + "/" +
-        module.namespace
-              .replace(/\./g,"/")
-              .replace(/-/g, "_") +
-        ".wasm";
+    if (module.namespace)
+        console.log("Loading namespace: ", module.namespace);
+    else
+        console.log("Loading file: ", module.file_name);
+   
     let buf = fs.readFileSync(module.file_name);
 
     module.compiled_module = await WebAssembly.compile(new Uint8Array(buf)).then(mod => mod);
@@ -272,18 +297,18 @@ async function load_module(env, module) {
     return module;
 }
 
-async function load_stdlib(env) {
-    let module = { namespace: env.config.stdlib};
+async function instantiate_builtin(env) {
+    let module = { file_name: env.config.builtin_wasm};
     await load_module(env, module);
 
     module.data_offset = 0;
     module.fn_table_offset = 0;
 
-    env.data_offset = module.data_size;
+    env.data_offset = pad(module.data_size);
     env.fn_table_offset = module.fn_table_size;
 
-    //Instantiate this module before any other
-    env.modules[module.namespace] = module;
+    module.globals = {};
+    module.instance = await instantiate_module(env, module);
     // console.log(module);
 }
 
@@ -293,12 +318,19 @@ async function load_modules(env, module) {
     let loaded_module = env.modules[module.namespace];
     if (loaded_module) return loaded_module;
 
+    module.file_name =
+        env.config.out + "/" +
+        module.namespace
+              .replace(/\./g,"/")
+              .replace(/-/g, "_") +
+        ".wasm";
+
     module = await load_module(env, module);
 
     module.data_offset = env.data_offset;
     module.fn_table_offset = env.fn_table_offset;
 
-    env.data_offset += module.data_size;
+    env.data_offset += pad(module.data_size);
     env.fn_table_offset += module.fn_table_size;
 
     for (const [namespace, value] of Object.entries(module.deps)) {
@@ -307,8 +339,7 @@ async function load_modules(env, module) {
                          " to " + namespace);
             break;
         }
-        if (namespace != env.config.stdlib) //already loaded.
-            await load_modules(env, { namespace: namespace });
+        await load_modules(env, { namespace: namespace });
     }
 
     env.modules[module.namespace] = module;
@@ -349,20 +380,21 @@ async function start() {
             data_offset: 0,
             fn_table_offset: 0,
             config: {runtime_wasm: './out_wasm/runtime.wasm',
+                     builtin_wasm: './out_wasm/builtin.wasm',
                      main: "main",
-                     stdlib: "wajure.core",
                      out: "./clj"}
         }
 
         console.log("Instantiate runtime ------------------------------------");
         await instantiate_runtime(env);
-        await load_stdlib(env);
-        console.log("data_end =", env.runtime.exports.__data_end.value);
+        await instantiate_builtin(env);
+        // console.log("data_end =", env.runtime.exports.__data_end.value);
 
         console.log("Load modules ------------------------------------");
         let module = { namespace: env.config.main };
         await load_modules(env, module);
         env.heap_base = env.data_start + env.data_offset;
+
 
         if (env.heap_base >= initial_memory_size) {
             let new_page_count = Math.ceil(env.heap_base / page_size)
@@ -385,7 +417,7 @@ async function start() {
 
         console.log("Instantiate modules  ----------------------------------------");
         await instantiate_modules(env, env.modules);
-        console.log(util.inspect(env.modules, null, Infinity, true));
+        // console.log(util.inspect(env.modules, null, Infinity, true));
         const main_module = env.modules[env.config.main];
 
         console.log("Init runtime  ----------------------------------------");
@@ -393,7 +425,7 @@ async function start() {
         env.runtime.exports.init_lispy_mempools(3200, 3200, 3200);
        
         console.log("Running main/main(arg1, arg2, ..) ------------------------------");
-        run_wajure_fn(env, main_module, "main", 888, 777);
+        run_wajure_fn(env, main_module, "main",1,2);
 
         env.runtime.exports.free_lispy_mempools();
         env.runtime.exports. free_malloc();
@@ -431,10 +463,10 @@ start();
 // console.log("data_end =", runtime.__data_end.value);
 // console.log("heap_base =", runtime.__heap_base.value);
 
-// fs.writeFile("__heap_base", "" + runtime.__heap_base.value,
-//              function (err) {
-//                  if (err) return console.log(err);
-//              })
 
 
     // console.log("data_end =", runtime.__data_end.value);
+
+    // fs.writeFile("__heap_base", "" + runtime.exports.__heap_base.value,
+    //              function (err) {
+    //                  if (err) return console.log(err);})

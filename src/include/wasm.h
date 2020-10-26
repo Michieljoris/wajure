@@ -10,6 +10,7 @@ typedef struct {
   Ber ber;
   int data_offset;
   int is_fn_call;
+  int fn_table_index;
   Lval* lval;
 } CResult;
 
@@ -23,7 +24,8 @@ typedef struct {
   int pic;  // position independent code
   int __data_end;
   int __fn_table_end;
-  /* int __heap_base; */
+  int builtins_data_start;
+  int heap_base;
   int lval_true_offset;
   int lval_false_offset;
   int lval_nil_offset;
@@ -49,39 +51,33 @@ typedef struct {
 
   int validate_fn_at_rt;
   Map deps;
-  int* fn_relay_table_offsets;
-  int* fn_relay_table_offsets_has_rest_arg;
   int id;
   char* buf;
 } Wasm;
 
 typedef struct {
-  Lenv* closure;
-  int closure_count;
+  Cell* symbol_to_ref;
+  int fn_table_index;
 } FunctionData;
+
+typedef struct {
+  Ber* operands;
+  int count;
+} Operands;
+
+typedef Ber (*LambdaBer)(Wasm*, Lval*, int);
 
 Wasm* init_wasm();
 void free_wasm(Wasm* wasm);
 
-void import_runtime_fns(Wasm* wasm);
-void register_runtime_fns();
 void add_memory_section(Wasm* wasm);
 void add_function_table(Wasm* wasm);
 
 CResult quit(Wasm* wasm, char* fmt, ...);
+
+void write_symbol_table_line(Wasm* wasm, int type, char* fn_name,
+                             int data_offset, int fn_table_index,
+                             int param_count, int has_rest_arg);
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval);
 
-typedef struct native_fn NativeFn;
-
-struct native_fn {
-  char* wasm_fn_name;
-  int fn_table_index;
-  void (*add_fn)(Wasm*, char*);
-  CResult (*compile_fn_call)(Wasm*, NativeFn, Cell*);
-};
-
-void add_native_fns(Wasm* wasm);
-void register_native_fns();
-void register_native_relay_arrays();
-void assign_fn_table_index_to_native_fns(Wasm* wasm);
 #endif  // __WASM_INIT_H_

@@ -447,7 +447,7 @@ long logical_rshift(long x, int n) {
 int is_eq_str(void *k1, void *k2) { return _strcmp(k1, k2) == 0; }
 
 int number_len(int n) {
-  int len = 1;
+  int len = n < 0 ? 2 : 1;
   while (1) {
     n = n / 10;
     if (n)
@@ -455,4 +455,17 @@ int number_len(int n) {
     else
       return len;
   }
+}
+
+#define CHAR_BIT 8
+#define BITS (CHAR_BIT * sizeof(int) - 1)
+
+int max(int a, int b) {
+  int rets[] = {a, b};
+  return rets[(unsigned)(a - b) >> BITS];
+}
+
+int min(int a, int b) {
+  int rets[] = {b, a};
+  return rets[(unsigned)(a - b) >> BITS];
 }

@@ -378,26 +378,27 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
         lval_fun->data.str);
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int param_count = lval_fun->param_count;
-  int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->data.head) - 1;
-  if (!rest_arg_index && lval_fun->subtype != SYS &&
-      arg_list_count > param_count)
-    return make_lval_err("Too many args, expected not more than %i, got %i.",
-                         param_count, arg_list_count);
+  /* int rest_arg_index = lval_fun->rest_arg_index;  // 1 based */
+  /* int param_count = lval_fun->param_count; */
+  /* int arg_list_count = */
+  /*     list_count(lval_fun->partials) + list_count(arg_list->data.head) - 1;
+   */
+  /* if (!rest_arg_index && lval_fun->subtype != SYS && */
+  /*     arg_list_count > param_count) */
+  /*   return make_lval_err("Too many args, expected not more than %i, got %i.",
+   */
+  /*                        param_count, arg_list_count); */
 
   /* printf("Current partials: "); */
   /* list_print(lval_fun->partials, print_lval, ", "); */
 
-  Lval* partial_fn =
-      make_lval_lambda(retain(lval_fun->closure), retain(lval_fun->params),
-                       retain(lval_fun->body), LAMBDA);
+  Lval* partial_fn = make_lval_lambda(retain(lval_fun->closure), LAMBDA,
+                                      retain(lval_fun->lambdas));
   partial_fn->data.str = retain(lval_fun->data.str);
-  partial_fn->fun = lval_fun->fun;
+  partial_fn->c_fn = lval_fun->c_fn;
   partial_fn->subtype = lval_fun->subtype;
-  partial_fn->param_count = lval_fun->param_count;
-  partial_fn->rest_arg_index = lval_fun->rest_arg_index;
+  /* partial_fn->param_count = lval_fun->param_count; */
+  /* partial_fn->rest_arg_index = lval_fun->rest_arg_index; */
   partial_fn->partials =
       list_concat(lval_fun->partials, arg_list->data.head->cdr);
 
@@ -455,18 +456,31 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   return eval_lambda_call(lval_fun, args);
 }
 
-RuntimeFn misc_builtins[] = {{"eval", eval_fn},
-                             {"print-env", print_env_fn},
-                             {"exit", exit_fn},
-                             {"load", load_fn},
-                             /* {"mpc_load", mpc_load_fn}, */
-                             {"macroexpand", macroexpand_fn},
-                             {"macroexpand-1", macroexpand_1_fn},
-                             /* {"compile", compile_fn}, */
-                             {"in-ns", in_ns_fn},
-                             {"require", require_fn},
-                             {"partial", partial_fn, "partial_fn", 2, 1},
-                             {"apply", apply_fn, "apply", 2, 1},
-                             {NIL}
+Lval* is_vector_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("vector?", 1)
+  ITER_NEXT
+  if (arg->subtype == VECTOR)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
+}
+
+CFn misc_builtins[] = {{"eval", eval_fn},
+                       {"print-env", print_env_fn},
+                       {"exit", exit_fn},
+                       {"load", load_fn},
+                       /* {"mpc_load", mpc_load_fn}, */
+                       {"macroexpand", macroexpand_fn},
+                       {"macroexpand-1", macroexpand_1_fn},
+                       /* {"compile", compile_fn}, */
+                       {"in-ns", in_ns_fn},
+                       {"require", require_fn},
+                       {"partial", partial_fn, "partial_fn", 2, 1},
+                       {"apply", apply_fn, "apply", 2, 1},
+                       {"vector?", is_vector_fn, "is_vector_fn", 1, 1},
+                       {NIL}
 
 };

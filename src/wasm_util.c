@@ -101,13 +101,15 @@ Ber wasm_log_string(Wasm* wasm, int offset) {
 
 CResult wasm_runtime_error(Wasm* wasm, int err_no, char* msg) {
   /* printf("msg: %s\n", msg); */
-  int msg_offset = add_string_to_data(wasm, msg);
+  int msg_offset = msg ? add_string_to_data(wasm, msg) : 0;
 
+  /* printf("msg_offset: %d\n", msg_offset); */
   /* BinaryenUnreachable(module); */
   BinaryenModuleRef module = wasm->module;
 
-  Ber operands[] = {make_int32(wasm->module, err_no),
-                    wasm_offset(wasm, msg_offset)};
+  Ber operands[] = {
+      make_int32(wasm->module, err_no),
+      msg_offset ? wasm_offset(wasm, msg_offset) : make_int32(module, 0)};
 
   Ber runtime_error =
       BinaryenCall(module, "runtime_error", operands, 2, BinaryenTypeNone());
@@ -173,57 +175,6 @@ int add_fn_to_table(Wasm* wasm, char* fn_name) {
   return free_fn_slot;
 }
 
-/* int fn_exists(Wasm* wasm, char* fn_name) { */
-/*   int i = wasm->fns_count; */
-/*   while (i-- > NATIVE_INDEX_COUNT) { */
-/*     if (_strcmp(fn_name, wasm->fn_names[i]) == 0) return i; */
-/*   } */
-/*   return -1; */
-/* } */
-
-/* Lenv* load_stdlib() { */
-/*   Lenv* root_env = lenv_new(); */
-/*   lenv_add_builtin_fns(root_env); */
-
-/*   Lenv* stdlib_env = lenv_new(); */
-/*   stdlib_env->parent_env = retain(root_env); */
-
-/*   stdlib_env->is_ns_env = 1; */
-/*   Lval* result = load(stdlib_env, "clj/stdlib.lispy"); */
-/*   if (result->type == LVAL_ERR) { */
-/*     lval_println(result); */
-/*     exit(1); */
-/*   } */
-
-/*   stdlib_env->is_ns_env = 0; */
-/*   return stdlib_env; */
-/* } */
-
-/* Lenv* interprete_file(char* file_name) { */
-/*   Lenv* stdlib_env = load_stdlib(); */
-/*   Lenv* user_env = lenv_new(); */
-/*   user_env->parent_env = retain(stdlib_env); */
-/*   stdlib_env->is_ns_env = 0; */
-/*   user_env->is_ns_env = 1; */
-/*   printf("load user env\n"); */
-/*   Lval* result = load(user_env, file_name); */
-/*   printf("load user env2\n"); */
-/*   if (result->type == LVAL_ERR) { */
-/*     lval_println(result); */
-/*     exit(1); */
-/*   } */
-/*   release(result); */
-/*   return user_env; */
-/* } */
-
-/* void release_env(Lenv* env) { */
-/*   release(env->kv); */
-/*   env->kv = NIL; */
-/*   Lenv* parent_env = env->parent_env; */
-/*   release(env); */
-/*   if (parent_env) release_env(parent_env); */
-/* } */
-
 BinaryenType* make_type_int32_array(int count) {
   BinaryenType* types = malloc(count * sizeof(BinaryenTypeInt32()));
   while (count--) types[count] = BinaryenTypeInt32();
@@ -251,15 +202,10 @@ Wasm* enter_context(Wasm* wasm) {
 void leave_context(Wasm* wasm) {
   Context* context = wasm->context->car;
   Cell* prev_context_cell = wasm->context->cdr;
-  /* if (prev_context_cell && */
-  /*     context->local_count !=
-   * ((Context*)(prev_context_cell->car))->local_count) */
-  /*   free(context->local_count); */
-
   if (prev_context_cell &&
       context->function_context !=
           ((Context*)(prev_context_cell->car))->function_context) {
-    release(context->function_context->closure);
+    /* release(context->function_context->symbol_to_ref); */
     free(context->function_context);
   }
 
@@ -508,49 +454,53 @@ Ber local_get_int32(BinaryenModuleRef module, int index) {
   return BinaryenLocalGet(module, index, BinaryenTypeInt32());
 }
 
-void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
-                              int param_count, int has_rest_arg) {
-  if (param_count > MAX_FN_PARAMS) {
-    for (int i = 0; i < 21; i++) fn_call_relay_table[i] = param_count;
-    return;
-  }
-  NativeFn* rt_error_too_few_args = alist_get(
-      state->wajure_to_native_fn_map, is_eq_str, "rt_error_too_few_args");
-  NativeFn* rt_error_too_many_args = alist_get(
-      state->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
+/* void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table, */
+/*                               int param_count, int has_rest_arg) { */
+/*   if (param_count > MAX_FN_PARAMS) { */
+/*     for (int i = 0; i < 21; i++) fn_call_relay_table[i] = param_count; */
+/*     return; */
+/*   } */
+/*   WasmFn* rt_error_too_few_args = alist_get(state->wajure_to_native_fn_map,
+ */
+/*                                             is_eq_str,
+ * "rt_error_too_few_args"); */
+/*   WasmFn* rt_error_too_many_args = alist_get( */
+/*       state->wajure_to_native_fn_map, is_eq_str, "rt_error_too_many_args");
+ */
 
-  if (has_rest_arg)
-    for (int i = 0; i < 21; i++) {
-      int bundle_args_fn_table_index = 21 + param_count;
-      fn_call_relay_table[i] = i < param_count - 1
-                                   ? rt_error_too_few_args->fn_table_index
-                                   : bundle_args_fn_table_index;
-    }
-  else {
-    for (int i = 0; i < 21; i++)
-      fn_call_relay_table[i] = i < param_count
-                                   ? rt_error_too_few_args->fn_table_index
-                                   : rt_error_too_many_args->fn_table_index;
-    int call_fn_table_index = param_count;
-    fn_call_relay_table[param_count] = call_fn_table_index;
-  }
-}
+/*   if (has_rest_arg) */
+/*     for (int i = 0; i < 21; i++) { */
+/*       int bundle_args_fn_table_index = 21 + param_count; */
+/*       fn_call_relay_table[i] = i < param_count - 1 */
+/*                                    ? rt_error_too_few_args->fn_table_index */
+/*                                    : bundle_args_fn_table_index; */
+/*     } */
+/*   else { */
+/*     for (int i = 0; i < 21; i++) */
+/*       fn_call_relay_table[i] = i < param_count */
+/*                                    ? rt_error_too_few_args->fn_table_index */
+/*                                    : rt_error_too_many_args->fn_table_index;
+ */
+/*     int call_fn_table_index = param_count; */
+/*     fn_call_relay_table[param_count] = call_fn_table_index; */
+/*   } */
+/* } */
 
-int get_fn_call_relay_array_offset(Wasm* wasm, int param_count,
-                                   int has_rest_arg) {
-  int index = param_count > MAX_FN_PARAMS ? 0
-              : has_rest_arg              ? MAX_FN_PARAMS + 1
-                                          : 0;
-  index += param_count;
-  int offset = wasm->fn_relay_table_offsets[index];
+/* int get_fn_call_relay_array_offset(Wasm* wasm, int param_count, */
+/*                                    int has_rest_arg) { */
+/*   int index = param_count > MAX_FN_PARAMS ? 0 */
+/*               : has_rest_arg              ? MAX_FN_PARAMS + 1 */
+/*                                           : 0; */
+/*   index += param_count; */
+/*   int offset = wasm->fn_relay_table_offsets[index]; */
 
-  if (!offset) {
-    char* fn_call_relay_table = malloc(21);
-    make_fn_call_relay_table(wasm, fn_call_relay_table, param_count,
-                             has_rest_arg);
-    offset = wasm->fn_relay_table_offsets[index] =
-        add_bytes_to_data(wasm, fn_call_relay_table, 21);
-    free(fn_call_relay_table);
-  }
-  return offset;
-}
+/*   if (!offset) { */
+/*     char* fn_call_relay_table = malloc(21); */
+/*     make_fn_call_relay_table(wasm, fn_call_relay_table, param_count, */
+/*                              has_rest_arg); */
+/*     offset = wasm->fn_relay_table_offsets[index] = */
+/*         add_bytes_to_data(wasm, fn_call_relay_table, 21); */
+/*     free(fn_call_relay_table); */
+/*   } */
+/*   return offset; */
+/* } */

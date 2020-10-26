@@ -172,7 +172,7 @@ Lval* not_eq_fn(Lenv* env, Lval* arg_list) {
   return cmp_fn(env, arg_list, "not=");
 }
 
-RuntimeFn math_builtin_fns[] = {
+CFn math_c_fns[] = {
 
     {"+", add_fn, "add_fn", 2, 1},
     {"-", sub_fn, "sub_fn", 2, 1},

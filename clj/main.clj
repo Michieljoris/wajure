@@ -1,10 +1,9 @@
 (in-ns 'main)
-;; uncomment and call a wajure.core fn to compile the namespace
-(require '[wajure.core])
+;; (require '[wajure.core])
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (clojure.core/use 'clojure.core)
-(require '[foo.core :as foo])
+;; (require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -14,25 +13,68 @@
 ;; (def l (list 1 2 3))
 ;; (def s "foo")
 ;; (defn g [x & y] [x y])
-
+;; (def fp (partial foo/fp 2))
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn main [x y]
-  (let [g (partial + 1)
-        h (partial + 1)]
-    (print (g  2 3)))
-  ;; (test-wajure 1)
-  ;; (let [f (fn [] 1)]
-  ;;   (print (f 1))
-  ;;   )
-  ;; (run-tests)
-  ;; (let [f (foo 0)
-  ;;       f2 (foo 0)]
-  ;;   (print (f))
-  ;;   (print (f2))
-  ;;   )
+;; (defn foo
+;;   ([x] [x])
+;;   ([x y] [x y]))
+
+;; (def foop (partial foo 1))
+
+(defn main [& args]
+  (let [f (fn
+            ([x] x)
+            ([x y & z] [x y z])
+            ([x y] [x y]))]
+    (print (f 1))
+    (print (f 1 2))
+    (print (f 1 2 3))
+    )
+  ;; (print "only a rest arg: ", args)
+  ;; (print (foop  ))
+  ;; ([] (print "zero params"))
+  ;; ([x] (print "1 param: " x))
+  ;; ([x y] (print "2 params: " x y))
+  ;; ([x y  z] (print "3 params: " x y z))
+  ;; ([x y z q] (print "4 params: " x y z q))
+  ;; ([x y  z] [x y z])
+  ;; ([x y  z & q] x)
   )
+;; (defn main [x]
+;;   ;; (foo 1)
+;;   ;; (let [k :kw
+;;   ;;       f (fn [x] x)]
+;;   ;;   (print k)
+;;   ;;   ;; (k 1)
+;;   ;;   )
+;;   ;; (print (foo/f 1 2 3))
+;;   ;; (fp  3)
+;;   ;; (let [fp (partial foo/f 1)]
+;;   ;;   ;; (fp  2 3)
+;;   ;;   )
+;;   ;; (print 123)
+;;   ;; (let [;; g (partial f 1)
+;;   ;;       g f
+;;   ;;       ;; h (partial + 1)
+;;   ;;       ]
+;;   ;;   (print (f 1 2 3))
+;;   ;;   ;; (print (g 1 2 3))
+;;   ;;   )
+;;   ;; (range 1)
+;;   ;; (let [p +]
+;;   ;;   (p 1 2))
+;;   ;; (let [f (fn [] 1)]
+;;   ;;   (print (f 1))
+;;   ;;   )
+;;   ;; (run-tests)
+;;   ;; (let [f (foo 0)
+;;   ;;       f2 (foo 0)]
+;;   ;;   (print (f))
+;;   ;;   (print (f2))
+;;   ;;   )
+;;   )
   ;; (let [f (partial f 1 2 4 5 6 )]
   ;;   (print (f 3   )))
   ;; (let [f1 f]

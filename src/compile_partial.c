@@ -70,7 +70,7 @@ CResult test_native_partial_fn(Wasm* wasm, CResult fn_arg, Cell* args,
     args = args->cdr;
   }
 
-  NativeFn* native_fn =
+  WasmFn* native_fn =
       alist_get(state->wajure_to_native_fn_map, is_eq_str, "partial");
   Ber partial_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber ber_args_count = make_int32(module, args_count);
@@ -144,7 +144,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
       local_get_int32(module,
                       new_partials_local)};  // ptr to partials of new fn
 
-  NativeFn* native_fn =
+  WasmFn* native_fn =
       alist_get(state->wajure_to_native_fn_map, is_eq_str, "copy_and_retain");
   Ber copy_and_retain_fn_index = make_int32(module, native_fn->fn_table_index);
   Ber copy_wval_partials = BinaryenCallIndirect(
@@ -184,23 +184,13 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
           wasm,
           get_wval_prop(module, local_get_int32(module, wval_local), "closure"))
           .ber;
-  /* Ber wval_param_count = */
-  /*     get_wval_prop(module, local_get_int32(module, wval_local),
-   * "param_count"); */
-  /* Ber wval_has_rest_arg = get_wval_prop( */
-  /*     module, local_get_int32(module, wval_local), "has_rest_arg"); */
 
-  Ber fn_call_relay_array_ptr = get_wval_prop(
-      module, local_get_int32(module, wval_local), "fn_call_relay_array");
-
-  Ber operands[5] = {
+  Ber operands[4] = {
       wval_fn_table_index,
-      /* wval_param_count, */
-      /* wval_has_rest_arg, */
       wval_closure,
       BinaryenLocalGet(module, new_partials_local, BinaryenTypeInt32()),
       BinaryenLocalGet(module, new_partial_count_local, BinaryenTypeInt32()),
-      fn_call_relay_array_ptr};
+  };
 
   // TODO: if fn is not an function we want to return just the value itself,
   // retained, since at compile time we don't know if it's been a real fn
@@ -209,7 +199,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
 
   // Make the new wval_fn
   Ber make_lval_wasm_lambda_call = BinaryenCall(
-      wasm->module, "make_lval_wasm_lambda", operands, 5, make_type_int32(1));
+      wasm->module, "make_lval_wasm_lambda", operands, 4, make_type_int32(1));
   children[children_count++] = make_lval_wasm_lambda_call;
 
   Ber block = BinaryenBlock(module, uniquify_name(wasm, "partial_call"),
@@ -220,8 +210,7 @@ CResult compile_rt_partial_call(Wasm* wasm, CResult fn_arg, Cell* args,
   return ret;
 }
 
-CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
-  /* printf("COMPILE_PARTIAL_CALL\n"); */
+CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
   BinaryenModuleRef module = wasm->module;
   int args_count = list_count(args);
   if (args_count == 0) quit(wasm, "Need at last one argument for partial");
@@ -242,6 +231,7 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
   switch (fn_arg.lval->type) {
     case LVAL_FUNCTION: {
       Lval* lval_fn = fn_arg.lval;
+      printf("compile partial_call\n");
 
       // If we know this is a function at compile time then we compile the
       // rest of the args and put them in the partials block of a copy of the
@@ -309,54 +299,32 @@ CResult compile_partial_call(Wasm* wasm, NativeFn native_fn, Cell* args) {
           BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
       Ber ber_partial_count = make_int32(module, partial_count);
 
-      int fn_table_index =
-          lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
+      printf("lval_fn: %d ", lval_fn->subtype);
+      lval_println(lval_fn);
       Ber ber_fn_table_index;
-      Ber fn_call_relay_array_ptr;
       if (lval_fn->subtype == SYS) {
-        printf("SYS: %s, %d\n", fn_arg.lval->cname, fn_arg.lval->offset);
-        // Let's get fn_table_index from the datafied sys fn
-        /* int wval_fn_local = li_new(wasm); */
-        /* Ber wval_fn = BinaryenLocalTee(module, wval_fn_local, fn_arg.ber, */
-        /*                                BinaryenTypeInt32()); */
-        /* ber_fn_table_index = get_wval_prop(module, wval_fn,
-         * "fn_table_index"); */
-        ber_fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), make_int32(module, fn_arg.lval->offset),
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-        /* fn_call_relay_array_ptr = */
-        /*     get_wval_prop(module, local_get_int32(module, wval_fn_local), */
-        /*                   "fn_call_relay_array"); */
+        /* printf("SYS: %s, %d\n", lval_fn->cname, lval_fn->offset); */
+        ber_fn_table_index = make_int32(module, fn_arg.fn_table_index);
 
-        /* fn_call_relay_array_ptr = BinaryenBinary( */
-        /*     module, BinaryenAddInt32(), make_int32(module,
-         * fn_arg.lval->offset), */
-        /*     BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));
-         */
-
-        fn_call_relay_array_ptr =
-            get_wval_prop(module, fn_arg.ber, "fn_call_relay_array");
       } else {
+        // TODO: if lval_fn is external get fn_table_index from global,
+        // if it's a partial check if cfn is external
+        int fn_table_index =
+            lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
+        printf("offset: %d\n", fn_table_index);
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset
         ber_fn_table_index = make_int32(module, fn_table_index);
         ber_fn_table_index = BinaryenBinary(
             module, BinaryenAddInt32(), ber_fn_table_index,
             BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
-
-        fn_call_relay_array_ptr = BinaryenBinary(
-            module, BinaryenAddInt32(),
-            BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()),
-            make_int32(module, get_fn_call_relay_array_offset(
-                                   wasm, lval_fn->param_count,
-                                   lval_fn->rest_arg_index)));
       }
 
       // Call the runtime make_lval_wasm_lambda fn
-      Ber operands[5] = {ber_fn_table_index, closure_ptr, partials_ptr,
-                         ber_partial_count, fn_call_relay_array_ptr};
+      Ber operands[4] = {ber_fn_table_index, closure_ptr, partials_ptr,
+                         ber_partial_count};
       children[children_count++] =
-          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 5,
+          BinaryenCall(wasm->module, "make_lval_wasm_lambda", operands, 4,
                        make_type_int32(1));
 
       // And return a block that does all of the above

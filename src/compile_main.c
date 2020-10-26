@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 
+#include "builtin.h"
 #include "compile.h"
 #include "io.h"
 #include "lispy_mempool.h"
@@ -144,8 +145,13 @@ void unmark(Namespace* ns) { ns->compile = 0; }
 
 int compile_main() {
   init_wajure();
+
   state->mark_deps = 0;
   if (load_main() == 1) exit(1);
+
+  register_c_fns();
+  register_native_fns();
+  assign_offsets_to_builtins();
 
   Namespace* main_ns = get_namespace(config->main);
   walk_namespaces(unmark);
@@ -171,32 +177,32 @@ int compile_main() {
   return 1;
 }
 
-char** get_module_deps(char* namespace_str) {
-  char* wasm_file_name = ns_to_wasm(namespace_str);
-  char* node_command = "node custom.js";
-  int size = _strlen(wasm_file_name) + _strlen(node_command);
-  char* command = malloc(size);
-  sprintf(command, "%s %s", node_command, wasm_file_name);
-  release(wasm_file_name);
-  FILE* f = popen(command, "r");
-  int line_size = 1028;
-  int dep_lines_allocated = 100;
-  char** deps = malloc(dep_lines_allocated);
-  int i = 0;
-  char* line = calloc(line_size, 1);
-  while (fgets(line, line_size, f) != NULL) {
-    line = realloc(line, _strlen(line) + 1);
-    if (*line == '\n') {
-      free(line);
-      break;
-    }
-    deps[i++] = line;
-    if (i == dep_lines_allocated) {
-      dep_lines_allocated += 100;
-      deps = realloc(deps, dep_lines_allocated);
-    }
-    line = calloc(line_size, 1);
-  }
-  pclose(f);
-  return deps;
-}
+/* char** get_module_deps(char* namespace_str) { */
+/*   char* wasm_file_name = ns_to_wasm(namespace_str); */
+/*   char* node_command = "node custom.js"; */
+/*   int size = _strlen(wasm_file_name) + _strlen(node_command); */
+/*   char* command = malloc(size); */
+/*   sprintf(command, "%s %s", node_command, wasm_file_name); */
+/*   release(wasm_file_name); */
+/*   FILE* f = popen(command, "r"); */
+/*   int line_size = 1028; */
+/*   int dep_lines_allocated = 100; */
+/*   char** deps = malloc(dep_lines_allocated); */
+/*   int i = 0; */
+/*   char* line = calloc(line_size, 1); */
+/*   while (fgets(line, line_size, f) != NULL) { */
+/*     line = realloc(line, _strlen(line) + 1); */
+/*     if (*line == '\n') { */
+/*       free(line); */
+/*       break; */
+/*     } */
+/*     deps[i++] = line; */
+/*     if (i == dep_lines_allocated) { */
+/*       dep_lines_allocated += 100; */
+/*       deps = realloc(deps, dep_lines_allocated); */
+/*     } */
+/*     line = calloc(line_size, 1); */
+/*   } */
+/*   pclose(f); */
+/*   return deps; */
+/* } */

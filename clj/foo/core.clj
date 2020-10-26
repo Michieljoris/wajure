@@ -1,8 +1,16 @@
 (in-ns 'foo.core)
 
-(defn f [x y z] [x y z])
-(def fp (partial f 1))
+;; (defn f [x y z] [x y z])
+;; (def fp (partial f 1))
 
+(def bar 123)
+
+(def f (fn*
+        ([] "foo")
+        ([x y & z] [x y z bar])
+        ([x y] [x y])
+        ([x] [x])
+        ))
 ;; (defn f []
 ;;   (let [plus (partial + 1 1)]
 ;;    (t (plus 1) 3)

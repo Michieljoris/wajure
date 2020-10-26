@@ -170,7 +170,7 @@ Lval* nth_fn(Lenv* env, Lval* arg_list) {
   return nth_lval;
 }
 
-RuntimeFn list_builtin_fns[] = {
+CFn list_c_fns[] = {
 
     {"cons", cons_fn, "cons_fn", 2, 1},
     {"first", first_fn, "first_fn", 2, 1},
@@ -181,7 +181,6 @@ RuntimeFn list_builtin_fns[] = {
     {"nth", nth_fn, "nth_fn", 2, 1},
     {"list?", is_list_fn, "is_list_fn", 2, 1},
     {"nil?", is_nil_fn, "is_nil_fn", 2, 1},
-    {"foo", foo_fn, "foo_fn", 2, 1},
     {NIL}
 
 };

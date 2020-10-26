@@ -76,33 +76,27 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
   return rest_args;
 }
 
-Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
-  /* printf("---------------------eval_lambda_call %d %d\n",
-   * lval_fun->param_count, */
-  /*        lval_fun->rest_arg_index); */
-  /* printf("namespace: %s\n ", lval_fun->ns->namespace); */
-  /* lval_println(lval_fun); */
+Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
+  int arg_count = list_count(arg_list->data.head);
+  int arity = min(arg_count, MAX_FN_PARAMS);
+  Lambda* lambda = lval_fn->lambdas[arity];
+  if (!lambda)
+    return make_lval_err("Wrong number of args (%d) passed to %s", arity,
+                         lval_fn->cname);
 
-  int rest_arg_index = lval_fun->rest_arg_index;  // 1 based
-  int param_count = lval_fun->param_count;
+  int rest_arg_index = lambda->has_rest_arg;  // 1 based
+  int param_count = lambda->param_count;
   int min_param_count = rest_arg_index ? param_count - 1 : param_count;
-  int arg_list_count =
-      list_count(lval_fun->partials) + list_count(arg_list->data.head);
-  if (arg_list_count < min_param_count)
-    return make_lval_err("Not enough args passed, expected %d, got %d.",
-                         min_param_count, arg_list_count);
-  if (!rest_arg_index && arg_list_count > param_count)
-    return make_lval_err("Too many args passed, expected %i, got %i.",
-                         param_count, arg_list_count);
 
   scoped Lenv* bindings_env = lenv_new();
 
-  scoped_iter Cell* p = iter_new(lval_fun->params);
+  scoped_iter Cell* p = iter_new(lambda->params);
   Lval* param = iter_next(p);
 
-  scoped Cell* head = list_concat(lval_fun->partials, arg_list->data.head);
+  scoped Cell* head = list_concat(lval_fn->partials, arg_list->data.head);
 
   int i = 0;
+
   while (i < min_param_count) {
     Lval* arg = head->car;
     bindings_env->kv =
@@ -132,28 +126,15 @@ Lval* eval_lambda_call(Lval* lval_fun, Lval* arg_list) {
         alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
   }
 
-  bindings_env->parent_env = retain(lval_fun->closure);
+  bindings_env->parent_env = retain(lval_fn->closure);
 
-  /* Namespace* old_ns = state->current_ns; */
-  // TODO: bit iffy, look into more
-  /* if (lval_fun->ns) state->current_ns = lval_fun->ns; */
-  Lval* ret = do_list(bindings_env, lval_fun->body, RETURN_ON_ERROR);
+  Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR);
 
-  // TODO: if ret is a lambda then set its ns to lval_fun->ns!!!!
-  /* state->current_ns = old_ns; */
   return ret;
 }
 
 Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
-  debug(">>>>>>>>>>>>>>>>>>> expand_macro:\n ");
-  lval_debugln(lval_fun);
   Lval* lval = eval_lambda_call(lval_fun, arg_list);
-  if (lval->type == LVAL_FUNCTION) {
-    release(lval);
-    return make_lval_err("Macro needs all its params bound");
-  }
-  lval_debugln(lval);
-
   return lval;
 }
 
@@ -165,8 +146,7 @@ Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   return lval_eval(env, expanded_macro);
 }
 
-struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
-  struct resolved_symbol ret = {};
+Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   Namespace* current_ns = get_current_ns();
@@ -176,34 +156,30 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
     if (!ns) {
-      ret.lval = make_lval_err("Can't find namespace to resolve %s",
-                               lval_symbol->data.str);
-      return ret;
+      return make_lval_err("Can't find namespace to resolve %s",
+                           lval_symbol->data.str);
     }
     scoped char* name = get_name_part(lval_symbol);
     scoped Lval* lval_name = make_lval_sym(name);
-    ret.lval =
+    Lval* lval =
         lenv_get_or_error(ns->env,
                           lval_name);  // resolved in the symbol's namespace
     if (state->mark_deps)
       ns->dependants = alist_put(ns->dependants, is_eq_str,
                                  retain(current_ns->namespace), current_ns);
-    /* ret.lval->ns = ns; */
-    return ret;
+    return lval;
   }
 
   // From the current namespace
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
-    ret.lval = lval_resolved_sym;  // resolved in symbols lexical env
-    /* ret.lval->ns = current_ns; */
-    return ret;
+    return lval_resolved_sym;  // resolved in symbols lexical env
   }
 
   // From a required namespace
   Namespace* ns = get_ns_for_referred_symbol(lval_symbol);
   if (ns) {
-    ret.lval =
+    Lval* lval =
         lenv_get_or_error(ns->env,
                           lval_symbol);  // resolved as a referring symbol
 
@@ -212,7 +188,7 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
                                  retain(current_ns->namespace), current_ns);
 
     /* ret.lval->ns = ns; */
-    return ret;
+    return lval;
   }
 
   // From stdlib
@@ -220,16 +196,14 @@ struct resolved_symbol eval_symbol(Lenv* env, Lval* lval_symbol) {
   if (ns) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
     if (lval_resolved_sym) {
-      ret.lval = lval_resolved_sym;  // resolved in stdlib env
-      return ret;
+      return lval_resolved_sym;  // resolved in stdlib env
     }
   }
 
   // From builtins
   Lenv* builtins_env = state->builtins_env;
-  ret.lval = lenv_get_or_error(builtins_env,
-                               lval_symbol);  // resolved in builtins env
-  return ret;
+  return lenv_get_or_error(builtins_env,
+                           lval_symbol);  // resolved in builtins env
 }
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
@@ -282,12 +256,12 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
         cdr = &c->cdr;
         head = head->cdr;
       }
-      ret = lval_fun->fun(env, rest_arg);
+      ret = lval_fun->c_fn(env, rest_arg);
       release(head);
       release(rest_arg);
       return ret;
     case SPECIAL: {
-      return lval_fun->fun(env, arg_list);
+      return lval_fun->c_fn(env, arg_list);
     }
     case MACRO:
       return eval_macro_call(env, lval_fun, arg_list);
@@ -306,7 +280,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   /* Lval* ret = NIL; */
   switch (lval->type) {
     case LVAL_SYMBOL:
-      return eval_symbol(env, lval).lval;
+      return eval_symbol(env, lval);
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:

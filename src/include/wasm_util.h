@@ -58,12 +58,11 @@ void _leave_context(void* data);
   CONTEXT(_msg)                   \
   context->cell = _cell;
 
-#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count)         \
-  CONTEXT(_msg)                                                \
-  context->function_context = malloc(sizeof(FunctionContext)); \
-  context->function_context->fn_name = _fn_name;               \
-  context->function_context->closure_count = 0;                \
-  context->function_context->closure = lenv_new();             \
+#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count, _symbol_to_ref) \
+  CONTEXT(_msg)                                                        \
+  context->function_context = calloc(1, sizeof(FunctionContext));      \
+  context->function_context->fn_name = _fn_name;                       \
+  context->function_context->symbol_to_ref = _symbol_to_ref;           \
   context->function_context->local_count = _local_count;
 
 void print_context(Context* c);
@@ -112,9 +111,9 @@ Ber get_wval_prop(BinaryenModuleRef module, Ber wval, char* prop);
 
 Ber local_get_int32(BinaryenModuleRef module, int index);
 
-void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table,
-                              int param_count, int has_rest_arg);
-int get_fn_call_relay_array_offset(Wasm* wasm, int param_count,
-                                   int has_rest_arg);
+/* void make_fn_call_relay_table(Wasm* wasm, char* fn_call_relay_table, */
+/*                               int param_count, int has_rest_arg); */
+/* int get_fn_call_relay_array_offset(Wasm* wasm, int param_count, */
+/*                                    int has_rest_arg); */
 
 #endif  // __WASM_UTIL_H_

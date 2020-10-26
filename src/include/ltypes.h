@@ -4,12 +4,23 @@
 #define MAX_FN_PARAMS 20
 
 typedef struct {
-  char* src;     // root dir of src files
-  char* main;    // namespace containing main fn
-  char* stdlib;  // stdlib namespace
-  char* user;    // user ns, dummy namespace
-  char* out;     // dir of compiled wasm files
+  char* src;   // root dir of src files
+  char* main;  // namespace containing main fn
+  char* stdlib;
+  char* out_wasm;
+  char* builtin;
+  char* user;  // user ns, dummy namespace
+  char* out;   // dir of compiled wasm files
   int do_compile;
+  // when root fns get compiled there are 2 versions:
+  // 1. A fn where the params match the wajure params, which is called directly
+  // when possible
+  // 2. A fn that uses the standard abi of closure_ptr, args_block_ptr and
+  // args_count, used in datafied versions of the fn (partial f 1) or (let [g
+  // f]).
+  // if reuse_wajure_fn is truthy the first fn is called from the second. Else
+  // the first fn is inlined, which might be slightly faster.
+  int reuse_wajure_fn;
 } Config;
 
 typedef struct cell Cell;
@@ -38,7 +49,9 @@ typedef struct {
   char* c_fn_name;
   int params_count;
   int results_count;
-} RuntimeFn;
+  int fn_table_index;
+  int data_offset;
+} CFn;
 
 // TODO: refactor!!!
 typedef struct context Context;
@@ -51,6 +64,14 @@ typedef union {
   Cell* head;
 } Data;
 
+typedef struct {
+  Lval* params;
+  int param_count;
+  int has_rest_arg;
+  Lval* body;
+  Lval* err;
+} Lambda;
+
 #ifdef WASM
 
 struct lval {
@@ -62,11 +83,10 @@ struct lval {
   int hash;
 
   // fn
-  short fn_table_index;
+  short fn_table_index;  // TODO: max of 65000 fns, possible make int?
   short partial_count;
   int closure;
   int partials;
-  int fn_call_relay_array;
 };
 #else
 struct lval {
@@ -77,13 +97,12 @@ struct lval {
   int hash;
 
   // Interpreter props
-  Lbuiltin fun;
+  Lbuiltin c_fn;  // builtin c fns == sys fns
+
+  Lambda** lambdas;  // multi arity fns,
   Lenv* closure;
-  Lval* params;
-  Lval* body;
   Cell* partials;
-  int param_count;
-  int rest_arg_index;
+
   // We need to keep track of in which namespace a fn is defined and under which
   // name so we can refer to its fn_table_index from other namespaces in
   // compiled code by imported global.
@@ -98,7 +117,7 @@ struct lval {
   // Compiler to wasm data
   int data_offset;  // offset of datafied lval relative to module's data offset
   Context* context;
-  int offset;
+  int offset;  // fn_table_index, local_index or closure offset.
 };
 #endif
 
@@ -113,8 +132,10 @@ typedef struct {
   int local_count;
   char* fn_name;
   int param_count;
-  int closure_count;
-  Lenv* closure;
+  // Keep track of symbols (params and let bindings) as they are encountered
+  // when compiling a fn that are NOT local, but from a parent fn.
+  /* int symbol_count; */
+  Cell* symbol_to_ref;
 } FunctionContext;
 
 struct context {
@@ -158,12 +179,7 @@ typedef struct {
 
   Cell* wajure_to_c_fn_map;
   Cell* wajure_to_native_fn_map;
-  Cell* native_call_to_relay_array_map;
 } State;
-
-struct resolved_symbol {
-  Lval* lval;
-};
 
 /* lval types */
 enum {
@@ -202,6 +218,21 @@ enum {
   PARAM,
   LOCAL
 
+};
+
+// FTI = Function Table Index
+enum {
+  FTI_RTE_TOO_FEW_ARGS,
+  FTI_RTE_TOO_MANY_ARGS,
+  FTI_RTE_NOT_A_FN,
+  FTI_COPY_AND_RETAIN,
+  FTI_PARTIAL,
+  FTI_APPLY,
+  FTI_KEYWORD,
+  FTI_VECTOR,
+  FTI_SET,
+  FTI_SYMBOL,
+  FTI_MAP,
 };
 
 // Compiler
