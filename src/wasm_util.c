@@ -202,15 +202,10 @@ Wasm* enter_context(Wasm* wasm) {
 void leave_context(Wasm* wasm) {
   Context* context = wasm->context->car;
   Cell* prev_context_cell = wasm->context->cdr;
-  /* if (prev_context_cell && */
-  /*     context->local_count !=
-   * ((Context*)(prev_context_cell->car))->local_count) */
-  /*   free(context->local_count); */
-
   if (prev_context_cell &&
       context->function_context !=
           ((Context*)(prev_context_cell->car))->function_context) {
-    release(context->function_context->symbol_to_ref);
+    /* release(context->function_context->symbol_to_ref); */
     free(context->function_context);
   }
 

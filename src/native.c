@@ -236,7 +236,7 @@ void add_copy_and_retain_fn(Wasm* wasm, char* fn_name) {
 // 3. anything else: return as is
 
 void add_partial_fn(Wasm* wasm, char* fn_name) {
-  CONTEXT_FUNCTION("add_partial_fn", "add_partail_fn", 4)
+  CONTEXT_FUNCTION("add_partial_fn", "add_partail_fn", 4, NULL)
 
   int wasm_params_count = 3;
 

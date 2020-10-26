@@ -434,7 +434,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             args_count += list_count(resolved_sym->partials);
             if (cfn) {
               printf("args_count: %d\n", args_count);
-              char* wajure_fn_name = make_wajure_fn_name(cfn, args_count);
+              char* wajure_fn_name =
+                  add_arity_to_fn_name(cfn->cname, args_count);
               if (cfn->ns == get_current_ns()) {
                 // Partial fn, derived from cfn
                 /* union FnRef fn_ref = {.fn_name = cfn->cname}; */
@@ -454,7 +455,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
               }
             } else if (lval_is_external) {  // required from another namespace
               char* wajure_fn_name =
-                  make_wajure_fn_name(resolved_sym, args_count);
+                  add_arity_to_fn_name(resolved_sym->cname, args_count);
               char* global_name = make_global_name(
                   "fn:", resolved_sym->ns->namespace, wajure_fn_name);
               /* char* global_name = make_global_name( */
@@ -468,7 +469,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
               release(global_name);
             } else {  // local fn
               char* wajure_fn_name =
-                  make_wajure_fn_name(resolved_sym, args_count);
+                  add_arity_to_fn_name(resolved_sym->cname, args_count);
               union FnRef fn_ref = {.fn_name = wajure_fn_name};
               /* union FnRef fn_ref = {.fn_name = resolved_sym->cname}; */
               fn_call = apply(wasm, FN_NAME, fn_ref, resolved_sym, args);

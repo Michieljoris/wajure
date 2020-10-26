@@ -58,10 +58,11 @@ void _leave_context(void* data);
   CONTEXT(_msg)                   \
   context->cell = _cell;
 
-#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count)         \
-  CONTEXT(_msg)                                                \
-  context->function_context = malloc(sizeof(FunctionContext)); \
-  context->function_context->fn_name = _fn_name;               \
+#define CONTEXT_FUNCTION(_msg, _fn_name, _local_count, _symbol_to_ref) \
+  CONTEXT(_msg)                                                        \
+  context->function_context = calloc(1, sizeof(FunctionContext));      \
+  context->function_context->fn_name = _fn_name;                       \
+  context->function_context->symbol_to_ref = _symbol_to_ref;           \
   context->function_context->local_count = _local_count;
 
 void print_context(Context* c);

@@ -124,7 +124,7 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list, Ber init) {
 // A lval_ref is a value that we don't know at compile time, but that we
 // can retrieve at runtime, because it's either a local var, a param or a closed
 // over var. So we insert the code to do this in place of the symbol.
-CResult compile_lval_ref(Wasm* wasm, char* symbol, Lval* lval_ref) {
+CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
   /* printf( */
   /*     "We've got a LVAL_REF (param, local or closed over binding)!!! "
@@ -164,7 +164,7 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol, Lval* lval_ref) {
     // when making the fn object for the current fn we can add a closure block
     // using this alist.
     int closure_index = alist_index_of(context->function_context->symbol_to_ref,
-                                       is_eq_str, symbol);
+                                       is_eq_str, symbol_str);
 
     if (closure_index == -1) {
       // Let's add the symbol to the the current function context symbol_to_ref
@@ -175,7 +175,7 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol, Lval* lval_ref) {
       closure_index = list_count(context->function_context->symbol_to_ref);
       context->function_context->symbol_to_ref =
           alist_prepend(context->function_context->symbol_to_ref,
-                        retain(symbol), retain(lval_ref));
+                        retain(symbol_str), retain(lval_ref));
     }
 
     // Retrieve closed over value at closure_index in closure block
@@ -204,27 +204,28 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   Context* context = wasm->context->car;
 
-  // Eval the lambda form to get info on params and body
+  // Eval the lambda form to get info on params and body for every arity
   Lval* arg_list = new_lval_list(retain(args));
-  Lval* lval_fn = eval_lambda_form(wasm->env, arg_list, LAMBDA);
+  Lval* lval_fn = eval_lambda(wasm->env, arg_list);
   /* lval_println(lval_fn); */
   release(arg_list);
   if (lval_fn->type == LVAL_ERR) quit(wasm, "Error evalling lambda form");
 
-  //---------------------
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
-  Lambda* lambda = lval_fn->lambdas[0];  // TODO!!!!!!!!
-  FunctionData function_data =
-      add_wasm_function(wasm, wasm->env, lambda_name, lambda, ABI_ARGS_BLOCK);
+  lval_fn->data.str = lambda_name;
+  FunctionData function_data = add_local_lambda(wasm, lval_fn);
 
   // Which gives us info on the wasm fn's fn_table_index and which and
   // how many bindings it closes over
   int fn_table_index = function_data.fn_table_index;
+  Cell* symbol_to_ref = function_data.symbol_to_ref;
 
   /* printf("COMPILED FUNCTION!!! %d %d %d\n", rest_arg_index, */
   /*        closure_count, param_count); */
 
   // Make ber versions of our info on the lambda we now have
+
+  // Fn table index
   Ber ber_fn_table_index =
       make_int32(module, wasm->__fn_table_end + fn_table_index);
   if (wasm->pic) {
@@ -233,13 +234,13 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
     ber_fn_table_index = BinaryenBinary(wasm->module, BinaryenAddInt32(),
                                         fn_table_offset, ber_fn_table_index);
   }
+
+  // Partials
   Ber ber_partial_count = make_int32(module, 0);
   Ber ber_partials = make_int32(module, 0);  // NULL
 
-  Cell* symbol_to_ref = function_data.symbol_to_ref;
+  // Closure
   int symbol_count = list_count(symbol_to_ref);
-  // Let's create a block in which we prepare the args for and then call
-  // make_lval_wasm_lambda
   Ber* lambda_block_children = malloc((symbol_count + 2) * sizeof(Ber));
   int lambda_block_count = 0;
 
@@ -292,9 +293,10 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   // Make and return the block
   Ber lambda_block = BinaryenBlock(module, uniquify_name(wasm, lambda_name),
                                    lambda_block_children, lambda_block_count,
-                                   BinaryenTypeAuto());
+                                   BinaryenTypeInt32());
   free(lambda_block_children);
   release(lambda_name);
+  release(symbol_to_ref);
   release(lval_fn);
 
   CResult ret = {.ber = lambda_block, .is_fn_call = 1};

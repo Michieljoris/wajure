@@ -17,15 +17,20 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn foo
-  ([x] [x])
-  ([x y] [x y]))
+;; (defn foo
+;;   ([x] [x])
+;;   ([x y] [x y]))
 
-(def foop (partial foo 1))
+;; (def foop (partial foo 1))
 
 (defn main [& args]
-  (let [f (fn [x] x)]
-    (f x)
+  (let [f (fn
+            ([x] x)
+            ([x y & z] [x y z])
+            ([x y] [x y]))]
+    (print (f 1))
+    (print (f 1 2))
+    (print (f 1 2 3))
     )
   ;; (print "only a rest arg: ", args)
   ;; (print (foop  ))

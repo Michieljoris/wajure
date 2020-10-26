@@ -23,10 +23,10 @@ TODO:
 - [x] compile test suite
 - [x] str and read-str
 - [x] partial
+- [x] multi-arity fns
 - [ ] apply
 - [ ] loop/recur
 - [ ] try/throw/catch
-- [ ] multi-arity fns
 - [ ] persistent maps/sets/vectors
 - [ ] multimethods
 - [ ] map/reduce
