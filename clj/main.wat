@@ -9,7 +9,7 @@
  (type $none_=>_none (func))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\02\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00l\00\00\00\02\08\00\00\03\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\98\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\05\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\000\00\00\00\\\00\00\00\88\00\00\00\b4\00\00\00\04\00\00\00\c4\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\02\08\00\00{\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00l\00\00\00\02\08\00\00\02\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\98\00\00\00\02\08\00\00\03\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\c4\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\05\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\000\00\00\00\\\00\00\00\88\00\00\00\b4\00\00\00\e0\00\00\00\05\00\00\00\f4\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
  (elem (global.get $fn_table_offset) $main_0_a1#0_a3 $main_0_a1#0_a1 $main_0_a1#0_a2 $main_0_a1#0 $main_0_a1 $main_0)
  (import "env" "__data_end" (global $__data_end i32))
@@ -97,8 +97,14 @@
     )
     (local.set $5
      (call $listify_args
-      (local.get $1)
-      (local.get $2)
+      (i32.add
+       (local.get $1)
+       (i32.const 8)
+      )
+      (i32.sub
+       (local.get $2)
+       (i32.const 2)
+      )
      )
     )
    )
@@ -115,7 +121,14 @@
        (call $retain
         (local.get $5)
        )
-       (i32.const 0)
+       (call $prefix_list
+        (call $retain
+         (i32.load align=2
+          (local.get $0)
+         )
+        )
+        (i32.const 0)
+       )
       )
      )
     )
@@ -132,8 +145,20 @@
      )
     )
    )
-   (call $retain
-    (local.get $3)
+   (call $new_lval_vector
+    (call $prefix_list
+     (call $retain
+      (local.get $3)
+     )
+     (call $prefix_list
+      (call $retain
+       (i32.load align=2
+        (local.get $0)
+       )
+      )
+      (i32.const 0)
+     )
+    )
    )
   )
  )
@@ -162,7 +187,14 @@
       (call $retain
        (local.get $4)
       )
-      (i32.const 0)
+      (call $prefix_list
+       (call $retain
+        (i32.load align=2
+         (local.get $0)
+        )
+       )
+       (i32.const 0)
+      )
      )
     )
    )
@@ -248,47 +280,58 @@
   (local $31 i32)
   (local $32 i32)
   (local $33 i32)
+  (local $34 i32)
   (block $do_20 (result i32)
    (block $let_19 (result i32)
-    (local.set $3
+    (local.set $2
+     (i32.add
+      (global.get $data_offset)
+      (i32.const 20)
+     )
+    )
+    (local.set $4
      (block $main_0_a1#0_7 (result i32)
-      (local.set $2
+      (local.set $3
        (call $lalloc_size
-        (i32.const 0)
+        (i32.const 4)
        )
+      )
+      (i32.store
+       (local.get $3)
+       (local.get $2)
       )
       (call $make_lval_wasm_lambda
        (i32.add
         (global.get $fn_table_offset)
         (i32.const 3)
        )
-       (local.get $2)
+       (local.get $3)
        (i32.const 0)
        (i32.const 0)
       )
      )
     )
-    (local.set $13
+    (local.set $14
      (block $sys_call_10 (result i32)
-      (local.set $12
+      (local.set $13
        (call $print_fn
         (i32.const 0)
-        (local.tee $11
+        (local.tee $12
          (call $new_lval_list
           (call $prefix_list
            (block $lambda_call_9 (result i32)
-            (local.set $5
-             (local.get $3)
+            (local.set $6
+             (local.get $4)
             )
-            (local.set $4
+            (local.set $5
              (call $lalloc_size
               (i32.mul
-               (local.tee $7
+               (local.tee $8
                 (i32.add
                  (i32.const 1)
-                 (local.tee $6
+                 (local.tee $7
                   (call $get_wval_partial_count
-                   (local.get $5)
+                   (local.get $6)
                   )
                  )
                 )
@@ -298,54 +341,54 @@
              )
             )
             (block $args_8
-             (local.set $9
+             (local.set $10
               (if (result i32)
-               (local.get $6)
+               (local.get $7)
                (block (result i32)
                 (memory.copy
-                 (local.get $4)
+                 (local.get $5)
                  (call $get_wval_partials
-                  (local.get $5)
+                  (local.get $6)
                  )
-                 (local.tee $8
+                 (local.tee $9
                   (i32.mul
-                   (local.get $6)
+                   (local.get $7)
                    (i32.const 4)
                   )
                  )
                 )
                 (i32.add
-                 (local.get $4)
-                 (local.get $8)
+                 (local.get $5)
+                 (local.get $9)
                 )
                )
-               (local.get $4)
+               (local.get $5)
               )
              )
              (i32.store align=2
-              (local.get $9)
+              (local.get $10)
               (i32.add
                (global.get $data_offset)
-               (i32.const 20)
+               (i32.const 64)
               )
              )
             )
-            (local.set $10
+            (local.set $11
              (call_indirect (type $i32_i32_i32_=>_i32)
               (call $get_wval_closure
-               (local.get $5)
+               (local.get $6)
               )
-              (local.get $4)
-              (local.get $7)
+              (local.get $5)
+              (local.get $8)
               (call $get_wval_fn_table_index
-               (local.get $5)
+               (local.get $6)
               )
              )
             )
             (call $release
-             (local.get $4)
+             (local.get $5)
             )
-            (local.get $10)
+            (local.get $11)
            )
            (i32.const 0)
           )
@@ -354,32 +397,32 @@
        )
       )
       (call $release
-       (local.get $11)
+       (local.get $12)
       )
-      (local.get $12)
+      (local.get $13)
      )
     )
-    (local.set $23
+    (local.set $24
      (block $sys_call_13 (result i32)
-      (local.set $22
+      (local.set $23
        (call $print_fn
         (i32.const 0)
-        (local.tee $21
+        (local.tee $22
          (call $new_lval_list
           (call $prefix_list
            (block $lambda_call_12 (result i32)
-            (local.set $15
-             (local.get $3)
+            (local.set $16
+             (local.get $4)
             )
-            (local.set $14
+            (local.set $15
              (call $lalloc_size
               (i32.mul
-               (local.tee $17
+               (local.tee $18
                 (i32.add
                  (i32.const 2)
-                 (local.tee $16
+                 (local.tee $17
                   (call $get_wval_partial_count
-                   (local.get $15)
+                   (local.get $16)
                   )
                  )
                 )
@@ -389,61 +432,61 @@
              )
             )
             (block $args_11
-             (local.set $19
+             (local.set $20
               (if (result i32)
-               (local.get $16)
+               (local.get $17)
                (block (result i32)
                 (memory.copy
-                 (local.get $14)
+                 (local.get $15)
                  (call $get_wval_partials
-                  (local.get $15)
+                  (local.get $16)
                  )
-                 (local.tee $18
+                 (local.tee $19
                   (i32.mul
-                   (local.get $16)
+                   (local.get $17)
                    (i32.const 4)
                   )
                  )
                 )
                 (i32.add
-                 (local.get $14)
-                 (local.get $18)
+                 (local.get $15)
+                 (local.get $19)
                 )
                )
-               (local.get $14)
+               (local.get $15)
               )
              )
              (i32.store align=2
-              (local.get $19)
-              (i32.add
-               (global.get $data_offset)
-               (i32.const 20)
-              )
-             )
-             (i32.store offset=4 align=2
-              (local.get $19)
+              (local.get $20)
               (i32.add
                (global.get $data_offset)
                (i32.const 64)
               )
              )
+             (i32.store offset=4 align=2
+              (local.get $20)
+              (i32.add
+               (global.get $data_offset)
+               (i32.const 108)
+              )
+             )
             )
-            (local.set $20
+            (local.set $21
              (call_indirect (type $i32_i32_i32_=>_i32)
               (call $get_wval_closure
-               (local.get $15)
+               (local.get $16)
               )
-              (local.get $14)
-              (local.get $17)
+              (local.get $15)
+              (local.get $18)
               (call $get_wval_fn_table_index
-               (local.get $15)
+               (local.get $16)
               )
              )
             )
             (call $release
-             (local.get $14)
+             (local.get $15)
             )
-            (local.get $20)
+            (local.get $21)
            )
            (i32.const 0)
           )
@@ -452,33 +495,33 @@
        )
       )
       (call $release
-       (local.get $21)
+       (local.get $22)
       )
-      (local.get $22)
+      (local.get $23)
      )
     )
     (block $let_body_result_18 (result i32)
-     (local.set $33
+     (local.set $34
       (block $sys_call_16 (result i32)
-       (local.set $32
+       (local.set $33
         (call $print_fn
          (i32.const 0)
-         (local.tee $31
+         (local.tee $32
           (call $new_lval_list
            (call $prefix_list
             (block $lambda_call_15 (result i32)
-             (local.set $25
-              (local.get $3)
+             (local.set $26
+              (local.get $4)
              )
-             (local.set $24
+             (local.set $25
               (call $lalloc_size
                (i32.mul
-                (local.tee $27
+                (local.tee $28
                  (i32.add
                   (i32.const 3)
-                  (local.tee $26
+                  (local.tee $27
                    (call $get_wval_partial_count
-                    (local.get $25)
+                    (local.get $26)
                    )
                   )
                  )
@@ -488,68 +531,68 @@
               )
              )
              (block $args_14
-              (local.set $29
+              (local.set $30
                (if (result i32)
-                (local.get $26)
+                (local.get $27)
                 (block (result i32)
                  (memory.copy
-                  (local.get $24)
+                  (local.get $25)
                   (call $get_wval_partials
-                   (local.get $25)
+                   (local.get $26)
                   )
-                  (local.tee $28
+                  (local.tee $29
                    (i32.mul
-                    (local.get $26)
+                    (local.get $27)
                     (i32.const 4)
                    )
                   )
                  )
                  (i32.add
-                  (local.get $24)
-                  (local.get $28)
+                  (local.get $25)
+                  (local.get $29)
                  )
                 )
-                (local.get $24)
+                (local.get $25)
                )
               )
               (i32.store align=2
-               (local.get $29)
-               (i32.add
-                (global.get $data_offset)
-                (i32.const 20)
-               )
-              )
-              (i32.store offset=4 align=2
-               (local.get $29)
+               (local.get $30)
                (i32.add
                 (global.get $data_offset)
                 (i32.const 64)
                )
               )
-              (i32.store offset=8 align=2
-               (local.get $29)
+              (i32.store offset=4 align=2
+               (local.get $30)
                (i32.add
                 (global.get $data_offset)
                 (i32.const 108)
                )
               )
+              (i32.store offset=8 align=2
+               (local.get $30)
+               (i32.add
+                (global.get $data_offset)
+                (i32.const 152)
+               )
+              )
              )
-             (local.set $30
+             (local.set $31
               (call_indirect (type $i32_i32_i32_=>_i32)
                (call $get_wval_closure
-                (local.get $25)
+                (local.get $26)
                )
-               (local.get $24)
-               (local.get $27)
+               (local.get $25)
+               (local.get $28)
                (call $get_wval_fn_table_index
-                (local.get $25)
+                (local.get $26)
                )
               )
              )
              (call $release
-              (local.get $24)
+              (local.get $25)
              )
-             (local.get $30)
+             (local.get $31)
             )
             (i32.const 0)
            )
@@ -558,23 +601,23 @@
         )
        )
        (call $release
-        (local.get $31)
+        (local.get $32)
        )
-       (local.get $32)
+       (local.get $33)
       )
      )
      (block $release_locals_for_let_17
       (call $release
-       (local.get $3)
+       (local.get $4)
       )
       (call $release
-       (local.get $13)
+       (local.get $14)
       )
       (call $release
-       (local.get $23)
+       (local.get $24)
       )
      )
-     (local.get $33)
+     (local.get $34)
     )
    )
   )
@@ -604,6 +647,6 @@
  )
  ;; custom section "symbol_table", size 56
  ;; custom section "deps", size 0, contents: ""
- ;; custom section "data_size", size 3, contents: "216"
+ ;; custom section "data_size", size 3, contents: "264"
  ;; custom section "fn_table_size", size 1, contents: "6"
 )

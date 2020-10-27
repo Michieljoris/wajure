@@ -24,10 +24,12 @@
 ;; (def foop (partial foo 1))
 
 (defn main [& args]
-  (let [f (fn
-            ([x] x)
-            ([x y & z] [x y z])
-            ([x y] [x y]))]
+  (let [foo 123
+        f (fn
+            ([x] [x foo])
+            ([x y & z] [x y z foo])
+            ([x y] [x y foo])
+            )]
     (print (f 1))
     (print (f 1 2))
     (print (f 1 2 3))

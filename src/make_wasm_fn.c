@@ -21,8 +21,12 @@ Ber args_into_locals(Wasm* wasm, int min_param_count, int has_rest_arg) {
   }
   if (has_rest_arg) {
     Ber listify_args_operands[] = {
-        local_get_int32(module, args_block_ptr_param),
-        local_get_int32(module, args_count_param)};
+        BinaryenBinary(module, BinaryenAddInt32(),
+                       local_get_int32(module, args_block_ptr_param),
+                       make_int32(module, 4 * min_param_count)),
+        BinaryenBinary(module, BinaryenSubInt32(),
+                       local_get_int32(module, args_count_param),
+                       make_int32(module, min_param_count))};
     Ber args_as_list = BinaryenCall(
         module, "listify_args", listify_args_operands, 2, BinaryenTypeInt32());
     int local = li_new(wasm);
