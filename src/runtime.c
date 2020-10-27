@@ -72,7 +72,7 @@ int get_wval_partial_count(Lval* wval) { return wval->partial_count; }
 #endif
 
 Lval* listify_args(Lval** args, int args_count) {
-  if (args_count == 0) return make_lval_list();
+  if (args_count == 0) return make_lval_nil();
   Lval* lval_list = make_lval_list();
   Cell* head = NULL;
   int i = args_count - 1;

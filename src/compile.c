@@ -199,7 +199,7 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
 // lval at runtime a closure data block that holds values of the free vars
 // found in the fn.
 CResult compile_local_lambda(Wasm* wasm, Cell* args) {
-  printf("compile local lambda!!!\n");
+  /* printf("compile local lambda!!!\n"); */
   BinaryenModuleRef module = wasm->module;
 
   Context* context = wasm->context->car;

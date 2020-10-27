@@ -22,10 +22,10 @@
 ;;     `(fn* ~args)
 ;;     `(fn* ~@args)))
 
-(defmacro when2 [cond body]
-  `(if ~cond ~body))
-(print (macroexpand '(when 1 2)))
-(print (macroexpand '(when2 1 2)))
+;; (defmacro when2 [cond body]
+;;   `(if ~cond ~body))
+;; (print (macroexpand '(when 1 2)))
+;; (print (macroexpand '(when2 1 2)))
 
 ;; (defn f [x] (+ x 1))
 ;; (print (apply f '(1)))
@@ -52,17 +52,17 @@
 ;;         ([x] [x])
 ;;         ))
 
-;; (defn f ([] "foo")
-;;         ([x y & z] [x y z])
-;;         ([x y] [x y])
-;;         ([x] [x])
-;;         )
+(defn f ([] "foo")
+        ([x y z] [x y])
+        ([x y & z] [x y z])
+        ([x] [x])
+        )
 ;; (def g (fn* ([x y] [x y])))
 ;; (print f)
-;; (print (f))
-;; (print (f 1))
-;; (print (f 1 2))
-;; (print (f 1 2 3))
+(print (f))
+(print (f 1))
+(print (f 1 2))
+(print (f 1 2 3))
 ;; (print (g 5 6))
 
 ;; (print foo/f)

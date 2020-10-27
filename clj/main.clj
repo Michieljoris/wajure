@@ -2,8 +2,11 @@
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[wajure.core])
 ;; (require '[test.run :refer [run-tests]])
+
+(require '[test.test-partial :refer [test-partial]])
+
 ;; (require '[test.test-partial :refer [test-partial]])
-(require '[foo.core :as foo])
+;; (require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -17,13 +20,22 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn f
-  ([x] [x])
-  ([x y] [x y]))
+;; (defn f
+;;   ([x] [x])
+;;   ([x y] [x y]))
 
-(def fp (partial f 1))
+;; (def fp (partial f 1))
 
 (defn main [& args]
+  
+  ;; (t (/ (- (+ 5 (* 2 3)) 3) 4)
+  ;;    2)
+  ;; (run-tests)
+  (test-partial)
+  ;; (let [f (fn [x y z] [x y z])
+  ;;       g (fn [x] x)]
+  ;;   (t (f 2 (g 1) 3) [2 1 3] "pass results of fn to fns"))
+
   ;; (let [foo 123
   ;;       f (fn
   ;;           ([x] [x foo])
@@ -35,13 +47,13 @@
   ;;   (print (f 1 2 3))
   ;;   )
   ;; (print "only a rest arg: ", args)
-  (print (f 1))
-  (print (f 1 2))
-  (print (fp  2))
+  ;; (print (f 1))
+  ;; (print (f 1 2))
+  ;; (print (fp  2))
 
-  (print (foo/foo 1))
-  (print (foo/foo 1 2 ))
-  (print (foo/foop  2 ))
+  ;; (print (foo/foo 1))
+  ;; (print (foo/foo 1 2 ))
+  ;; (print (foo/foop  2 ))
   ;; ([] (print "zero params"))
   ;; ([x] (print "1 param: " x))
   ;; ([x y] (print "2 params: " x y))

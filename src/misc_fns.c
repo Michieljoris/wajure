@@ -133,7 +133,8 @@ Lval* load(Lenv* _, char* file_name) {
       Namespace* current_ns = get_current_ns();
       result = lval_eval(current_ns->env, lval);
       if (result->type == LVAL_ERR) {
-        printf("Encountered error while evalling expression: \n");
+        printf("Encountered error while evalling expression in file %s: \n",
+               file_name);
         lval_println(lval);
         lval_println(result);
         error = 1;

@@ -13,10 +13,10 @@
 
 
 (defn run-tests []
-  ;; (pr "-------------- Running tests ---------------------")
+  (pr "-------------- Running tests ---------------------")
 
   (test2/test)
-  (test-partial)
+  ;; (test-partial)
 
   (test3/test)
 

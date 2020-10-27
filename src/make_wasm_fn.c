@@ -327,7 +327,7 @@ Ber make_local_lambda(Wasm* wasm, Lval* lval_fn, int arity) {
 
 FunctionData add_local_lambda(Wasm* wasm, Lval* lval_fn) {
   CONTEXT_LVAL("context: add_local_lambda", lval_fn)
-  print_context(context);
+  /* print_context(context); */
 
   // Build a fn that takes closure, args_block_ptr and args_count and calls the
   // actual root fn.

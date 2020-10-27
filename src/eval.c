@@ -80,6 +80,8 @@ Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
   int arg_count = list_count(arg_list->data.head);
   int arity = min(arg_count, MAX_FN_PARAMS);
   Lambda* lambda = lval_fn->lambdas[arity];
+  /* for (int i = 0; i <= MAX_FN_PARAMS; i++) */
+  /*   printf("%d: %p\n", i, lval_fn->lambdas[i]); */
   if (!lambda)
     return make_lval_err("Wrong number of args (%d) passed to %s", arity,
                          lval_fn->cname);
@@ -133,8 +135,8 @@ Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
   return ret;
 }
 
-Lval* expand_macro(Lval* lval_fun, Lval* arg_list) {
-  Lval* lval = eval_lambda_call(lval_fun, arg_list);
+Lval* expand_macro(Lval* lval_fn, Lval* arg_list) {
+  Lval* lval = eval_lambda_call(lval_fn, arg_list);
   return lval;
 }
 

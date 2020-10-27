@@ -195,12 +195,16 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
         break;
       }
       has_rest_arg = lambda->has_rest_arg;
-      for (int i = has_rest_arg; i <= MAX_FN_PARAMS; i++)
-        lambdas[i] = retain(lambda);
+      int from = lambdas[has_rest_arg - 1] ? has_rest_arg : has_rest_arg - 1;
+      for (int i = from; i <= MAX_FN_PARAMS; i++) lambdas[i] = retain(lambda);
     } else {
       if (lambdas[param_count]) {
-        err = make_lval_err("Can't have 2 overloads with same arity");
-        break;
+        Lambda* lambda = lambdas[param_count];
+        if (!has_rest_arg || param_count < has_rest_arg - 1 ||
+            (param_count == has_rest_arg - 1 && !lambda->has_rest_arg)) {
+          err = make_lval_err("Can't have 2 overloads with same arity");
+          break;
+        }
       }
       max_param_count = max(max_param_count, param_count);
       lambdas[param_count] = retain(lambda);
@@ -213,6 +217,13 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     }
 
     head = head->cdr;
+    /* printf("lambda param_count: %d, has_rest_arg: %d\n", lambda->param_count,
+     */
+    /*        lambda->has_rest_arg); */
+
+    /* for (int i = 0; i <= MAX_FN_PARAMS; i++) printf("%d: %p, ", i,
+     * lambdas[i]); */
+    /* printf("\n"); */
   } while (head);
 
   if (err) {
@@ -244,6 +255,8 @@ Lval* eval_lambda(Lenv* env, Lval* arg_list) {
 
 // Macros close over the environment where they are defined.
 Lval* eval_macro(Lenv* env, Lval* arg_list) {
+  printf("eval macro: ");
+  lval_println(arg_list);
   Cell* head = arg_list->data.head;
   if (!head) return make_lval_err("macro expects at least one arg");
   return eval_lambdas(env, head, MACRO); /*  */

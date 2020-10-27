@@ -1,4 +1,7 @@
 * TODO compiler
+** get tests running again
+- add new tests for multi arity fns
+- and for (:foo 123) etc
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
@@ -10,27 +13,25 @@ so get interpreter to end with all slots free again!
 *** fix freeing of fn_name
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
-** get tests running again
-add new tests for multi arity fns
 ** make sure ([1] 0) => 1 works
 and in general make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
 1. direct to NOT_A_FN rt error by default
 2. fns should receive ptr to lval, not just to closure as first arg
 
-** make_wajure_name
+** DONE make_wajure_name
 we only need to call this once, then hang it off the lambda and reuse it when we
 call by name
 
-** named fns for recursion of locally defined lambdas
-Also, clojure allows it.
 ** fix self recursive calls
-    Since we point the closure of a fn to what it's in the env up to that point
+***  Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
     (foo)) will not work since foo is not yet defined when we add the foo fn to
     the env.
 
     So after we define a fn we need to add it to the closure. This will fix it
     for the interpreter.
+*** named fns for recursion of locally defined lambdas
+Also, clojure allows it.
 
 ** what about (def p foo/fp) or (def f foo/f) ?
 Do we recompile the fn or refer to the fn in the other ns
