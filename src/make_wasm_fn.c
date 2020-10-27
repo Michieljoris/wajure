@@ -253,7 +253,6 @@ Operands make_fn_call_operands(Wasm* wasm, Lambda* lambda) {
   return ret;
 }
 
-/* char* make_wajure_fn_name(Lval* lval_fn, int index) { */
 char* add_arity_to_fn_name(char* fn_name, int index) {
   char* wajure_fn_name = malloc(_strlen(fn_name) + 2);
   sprintf(wajure_fn_name, "%s_a%d", fn_name, index);
@@ -269,6 +268,8 @@ Ber make_root_fn(Wasm* wasm, Lval* lval_fn, int arity) {
   // Add the fn for the arity to wasm
   char* wajure_fn_name = add_arity_to_fn_name(lval_fn->cname, arity);
   Lambda* lambda = lval_fn->lambdas[arity];
+  lambda->name = wajure_fn_name;
+  printf("make_root_fn, lambda_name is: %s\n", wajure_fn_name);
   FunctionData function_data = add_wasm_function(
       wasm, lval_fn->closure, wajure_fn_name, lambda, NULL, ABI_PARAMS);
 
@@ -282,7 +283,6 @@ Ber make_root_fn(Wasm* wasm, Lval* lval_fn, int arity) {
   Operands operands = make_fn_call_operands(wasm, lambda);
   Ber call_fn = BinaryenCall(module, wajure_fn_name, operands.operands,
                              operands.count, BinaryenTypeInt32());
-  free(wajure_fn_name);
   return call_fn;
 }
 
@@ -311,6 +311,7 @@ Ber make_local_lambda(Wasm* wasm, Lval* lval_fn, int arity) {
   char* lambda_name = add_arity_to_fn_name(lval_fn->data.str, arity);
 
   Lambda* lambda = lval_fn->lambdas[arity];  // TODO!!!!!!!!
+  lambda->name = lambda_name;
   FunctionData function_data = add_wasm_function(
       wasm, wasm->env, lambda_name, lambda, context->cell, ABI_ARGS_BLOCK);
   context->cell = function_data.symbol_to_ref;

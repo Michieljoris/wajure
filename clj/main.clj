@@ -3,7 +3,7 @@
 ;; (require '[wajure.core])
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
-;; (require '[foo.core :as foo])
+(require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -17,25 +17,31 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-;; (defn foo
-;;   ([x] [x])
-;;   ([x y] [x y]))
+(defn f
+  ([x] [x])
+  ([x y] [x y]))
 
-;; (def foop (partial foo 1))
+(def fp (partial f 1))
 
 (defn main [& args]
-  (let [foo 123
-        f (fn
-            ([x] [x foo])
-            ([x y z] [x y z foo])
-            ([x y] [x y foo])
-            )]
-    (print (f 1))
-    (print (f 1 2))
-    (print (f 1 2 3))
-    )
+  ;; (let [foo 123
+  ;;       f (fn
+  ;;           ([x] [x foo])
+  ;;           ([x y z] [x y z foo])
+  ;;           ([x y] [x y foo])
+  ;;           )]
+  ;;   (print (f 1))
+  ;;   (print (f 1 2))
+  ;;   (print (f 1 2 3))
+  ;;   )
   ;; (print "only a rest arg: ", args)
-  ;; (print (foop  ))
+  (print (f 1))
+  (print (f 1 2))
+  (print (fp  2))
+
+  (print (foo/foo 1))
+  (print (foo/foo 1 2 ))
+  (print (foo/foop  2 ))
   ;; ([] (print "zero params"))
   ;; ([x] (print "1 param: " x))
   ;; ([x y] (print "2 params: " x y))

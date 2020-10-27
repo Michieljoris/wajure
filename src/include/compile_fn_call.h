@@ -15,7 +15,4 @@ enum { BER, FN_NAME, INDIRECT_EXTERNAL, INDIRECT_LOCAL };
 
 CResult compile_application(Wasm* wasm, Lval* lval_list);
 
-CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lval* lval_fun,
-              Cell* args);
-
 #endif  // __COMPILE_FN_CALL_H_

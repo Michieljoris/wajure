@@ -70,6 +70,7 @@ typedef struct {
   int has_rest_arg;
   Lval* body;
   Lval* err;
+  char* name;  // malloced!!!
 } Lambda;
 
 #ifdef WASM

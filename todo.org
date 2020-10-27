@@ -78,7 +78,8 @@ last arg is a list (put a check in if it's a lval_compiler)
 3. When datafying the apply fn we don't know anything at compile time and we
    need to rely on a apply fn such as in clojure.core. But we need multiarity
    fns for that first.
-** map, reduce,
+** reduce,
+map is special case of reduce
 ** gensym and #foo in macro
 http://clojure-doc.org/articles/language/macros.html
 ** ----------------------------
