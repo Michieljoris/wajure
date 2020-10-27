@@ -83,7 +83,8 @@ struct lval {
   int hash;
 
   // fn
-  short fn_table_index;  // TODO: max of 65000 fns, possible make int?
+  short fn_table_index;  // TODO: max of about 65000 (2^16) fns, possible make
+                         // int?
   short partial_count;
   int closure;
   int partials;
@@ -117,7 +118,8 @@ struct lval {
   // Compiler to wasm data
   int data_offset;  // offset of datafied lval relative to module's data offset
   Context* context;
-  int offset;  // fn_table_index, local_index or closure offset.
+  int fn_table_index;  // fn_table_index, local_index or closure offset.
+  int local_index;
 };
 #endif
 

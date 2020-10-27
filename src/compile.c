@@ -142,12 +142,12 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
   if (is_local_ref) {
     switch (lval_ref->subtype) {
       case PARAM: {
-        Ber local = BinaryenLocalGet(wasm->module, lval_ref->offset,
+        Ber local = BinaryenLocalGet(wasm->module, lval_ref->local_index,
                                      BinaryenTypeInt32());
         return cresult(local);
       }
       case LOCAL: {
-        Ber local = BinaryenLocalGet(wasm->module, lval_ref->offset,
+        Ber local = BinaryenLocalGet(wasm->module, lval_ref->local_index,
                                      BinaryenTypeInt32());
         return cresult(local);
       }
@@ -209,7 +209,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   Lval* lval_fn = eval_lambda(wasm->env, arg_list);
   /* lval_println(lval_fn); */
   release(arg_list);
-  if (lval_fn->type == LVAL_ERR) quit(wasm, "Error evalling lambda form");
+  if (lval_fn->type == LVAL_ERR) quit(wasm, lval_fn->data.str);
 
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
   lval_fn->data.str = lambda_name;

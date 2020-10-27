@@ -1,8 +1,8 @@
 (in-ns 'main)
+;; (clojure.core/use 'clojure.core)
 ;; (require '[wajure.core])
 ;; (require '[test.run :refer [run-tests]])
 ;; (require '[test.test-partial :refer [test-partial]])
-;; (clojure.core/use 'clojure.core)
 ;; (require '[foo.core :as foo])
 
 
@@ -27,7 +27,7 @@
   (let [foo 123
         f (fn
             ([x] [x foo])
-            ([x y & z] [x y z foo])
+            ([x y z] [x y z foo])
             ([x y] [x y foo])
             )]
     (print (f 1))
@@ -44,6 +44,13 @@
   ;; ([x y  z] [x y z])
   ;; ([x y  z & q] x)
   )
+;; (do
+;;   (let [bar 123]
+;;     (defmacro foo [a] (print &env))
+;;     (foo (+ 1 1))))
+
+;; (defmacro foo [a] (first a))
+;; (main 1)
 ;; (defn main [x]
 ;;   ;; (foo 1)
 ;;   ;; (let [k :kw

@@ -11,7 +11,7 @@
  (import "env" "memory" (memory $0 2 65536))
  (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\02\08\00\00{\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00l\00\00\00\02\08\00\00\02\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\98\00\00\00\02\08\00\00\03\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\c4\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\05\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\000\00\00\00\\\00\00\00\88\00\00\00\b4\00\00\00\e0\00\00\00\05\00\00\00\f4\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $main_0_a1#0_a3 $main_0_a1#0_a1 $main_0_a1#0_a2 $main_0_a1#0 $main_0_a1 $main_0)
+ (elem (global.get $fn_table_offset) $main_0_a1#0_a1 $main_0_a1#0_a2 $main_0_a1#0_a3 $main_0_a1#0 $main_0_a1 $main_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -79,66 +79,10 @@
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "main" (func $main_0))
  (export "mem" (memory $0))
- (func $main_0_a1#0_a3 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (local $3 i32)
-  (local $4 i32)
-  (local $5 i32)
-  (block $do_2 (result i32)
-   (block $args_into_locals_1
-    (local.set $3
-     (i32.load align=2
-      (local.get $1)
-     )
-    )
-    (local.set $4
-     (i32.load offset=4 align=2
-      (local.get $1)
-     )
-    )
-    (local.set $5
-     (call $listify_args
-      (i32.add
-       (local.get $1)
-       (i32.const 8)
-      )
-      (i32.sub
-       (local.get $2)
-       (i32.const 2)
-      )
-     )
-    )
-   )
-   (call $new_lval_vector
-    (call $prefix_list
-     (call $retain
-      (local.get $3)
-     )
-     (call $prefix_list
-      (call $retain
-       (local.get $4)
-      )
-      (call $prefix_list
-       (call $retain
-        (local.get $5)
-       )
-       (call $prefix_list
-        (call $retain
-         (i32.load align=2
-          (local.get $0)
-         )
-        )
-        (i32.const 0)
-       )
-      )
-     )
-    )
-   )
-  )
- )
  (func $main_0_a1#0_a1 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
-  (block $do_4 (result i32)
-   (block $args_into_locals_3
+  (block $do_2 (result i32)
+   (block $args_into_locals_1
     (local.set $3
      (i32.load align=2
       (local.get $1)
@@ -165,8 +109,8 @@
  (func $main_0_a1#0_a2 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (local $3 i32)
   (local $4 i32)
-  (block $do_6 (result i32)
-   (block $args_into_locals_5
+  (block $do_4 (result i32)
+   (block $args_into_locals_3
     (local.set $3
      (i32.load align=2
       (local.get $1)
@@ -200,18 +144,67 @@
    )
   )
  )
+ (func $main_0_a1#0_a3 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+  (local $3 i32)
+  (local $4 i32)
+  (local $5 i32)
+  (block $do_6 (result i32)
+   (block $args_into_locals_5
+    (local.set $3
+     (i32.load align=2
+      (local.get $1)
+     )
+    )
+    (local.set $4
+     (i32.load offset=4 align=2
+      (local.get $1)
+     )
+    )
+    (local.set $5
+     (i32.load offset=8 align=2
+      (local.get $1)
+     )
+    )
+   )
+   (call $new_lval_vector
+    (call $prefix_list
+     (call $retain
+      (local.get $3)
+     )
+     (call $prefix_list
+      (call $retain
+       (local.get $4)
+      )
+      (call $prefix_list
+       (call $retain
+        (local.get $5)
+       )
+       (call $prefix_list
+        (call $retain
+         (i32.load align=2
+          (local.get $0)
+         )
+        )
+        (i32.const 0)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
  (func $main_0_a1#0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (block $rt_error
-   (block $case2
-    (block $case1
-     (block $rest_arg
-      (br_table $rt_error $case1 $case2 $rest_arg
+   (block $case3
+    (block $case2
+     (block $case1
+      (br_table $rt_error $case1 $case2 $case3 $rt_error
        (local.get $2)
       )
       (nop)
      )
      (return
-      (call $main_0_a1#0_a3
+      (call $main_0_a1#0_a1
        (local.get $0)
        (local.get $1)
        (local.get $2)
@@ -219,7 +212,7 @@
      )
     )
     (return
-     (call $main_0_a1#0_a1
+     (call $main_0_a1#0_a2
       (local.get $0)
       (local.get $1)
       (local.get $2)
@@ -227,7 +220,7 @@
     )
    )
    (return
-    (call $main_0_a1#0_a2
+    (call $main_0_a1#0_a3
      (local.get $0)
      (local.get $1)
      (local.get $2)

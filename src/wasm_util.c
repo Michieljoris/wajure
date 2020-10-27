@@ -139,7 +139,10 @@ Ber wasm_printf(Wasm* wasm, int offset) {
   return drop;
 }
 
+int pad(int s) { return (s % 4) ? (s + 4 - (s % 4)) : s; }
+
 int add_bytes_to_data(Wasm* wasm, char* data, int len) {
+  len = pad(len);
   int offset = wasm->data_offset;
   wasm->data = realloc(wasm->data, offset + len);
   _memmove(wasm->data + offset, data, len);
@@ -153,6 +156,7 @@ int add_string_to_data(Wasm* wasm, char* str) {
   int* ret = (int*)alist_get(wasm->string_pool, is_eq_str, str);
   if (!ret) {
     int len = _strlen(str) + 1;
+    len = pad(len);
     int offset = wasm->data_offset;
     wasm->data = realloc(wasm->data, offset + len);
     _strncpy(wasm->data + offset, str, len);
@@ -263,11 +267,11 @@ void leave_env(Wasm* wasm) {
   /* release(env); */
 }
 
-Lval* make_lval_ref(Context* context, int subtype, int offset) {
+Lval* make_lval_ref(Context* context, int subtype, int local_index) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.type = LVAL_REF,
                  .subtype = subtype,
-                 .offset = offset,
+                 .local_index = local_index,
                  .context = context};
   return lval;
 }

@@ -181,7 +181,8 @@ void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
   int param_count = -1;
   int has_rest_arg = -1;
   if (lval->type == LVAL_FUNCTION) {
-    fn_table_index = lval->cfn ? lval->cfn->offset : lval->offset;  // partials
+    fn_table_index = lval->cfn ? lval->cfn->fn_table_index
+                               : lval->fn_table_index;  // partials
     /* param_count = lval->param_count; */
     /* has_rest_arg = lval->rest_arg_index; */
     param_count = -1;   // unused

@@ -199,9 +199,9 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
     case LVAL_REF:
       switch (lval->subtype) {
         case PARAM:
-          return fctprintf(out, arg, "P%d", lval->offset);
+          return fctprintf(out, arg, "P%d", lval->local_index);
         case LOCAL:
-          return fctprintf(out, arg, "L%d", lval->offset);
+          return fctprintf(out, arg, "L%d", lval->local_index);
       }
 #endif
     case LVAL_ERR:

@@ -101,6 +101,17 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   return make_lval_nil();
 }
 
+int is_unique_param(Lval* lval_sym, Cell* param_list) {
+  Cell* head = param_list;
+  char* sym_str = lval_sym->data.str;
+  while (head) {
+    Lval* param = head->car;
+    if (_strcmp(sym_str, param->data.str) == 0) return 0;
+    head = head->cdr;
+  }
+  return 1;
+}
+
 Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
   if (lval_list->subtype != LIST)
     return make_lambda_err(
@@ -128,7 +139,6 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
       return make_lambda_err(
           make_lval_err("Function format invalid. "
                         "Symbol '&' not followed by single symbol."));
-      /* return make_lval_err("ERROR: only one rest arg allowed"); */
     }
     Lval* lval_sym = param->car;
     if (_strcmp(lval_sym->data.str, "&") == 0) {
@@ -136,10 +146,12 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
       param = param->cdr;
       continue;
     }
+
+    if (!is_unique_param(lval_sym, param->cdr)) {
+      return make_lambda_err(
+          make_lval_err("param %s is not unique", lval_sym->data.str));
+    }
     offset++;
-    /* Lval* lval_ref = make_lval_ref(context, PARAM, param_count + 1); */
-    /* lenv_put(params_env, lval_sym, lval_ref); */
-    /* release(lval_ref); */
 
     param_count++;
     param = param->cdr;

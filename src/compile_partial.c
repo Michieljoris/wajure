@@ -309,8 +309,8 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
       } else {
         // TODO: if lval_fn is external get fn_table_index from global,
         // if it's a partial check if cfn is external
-        int fn_table_index =
-            lval_fn->cfn ? lval_fn->cfn->offset : lval_fn->offset;
+        int fn_table_index = lval_fn->cfn ? lval_fn->cfn->fn_table_index
+                                          : lval_fn->fn_table_index;
         printf("offset: %d\n", fn_table_index);
         // We know the offset/fn_table_index, let's add the module's
         // fn_table_offset

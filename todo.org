@@ -1,47 +1,58 @@
 * TODO compiler
 ** clean up and comment all of code
-** add br_table to add_wasm_function and to wrap_root_fn
-** when fn has duplicate param names -> give error!!!
-** make sure that adding bytes to data returns aligned pointer!!
-4 bytes aligned. Probably better for loading data!!!
+** fix all memory leaks for interpreter, compiler and wasm
+*** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
+in a lval_wasm_lambda any partials should all be retained, meaning we can release all
+of the partials when releasing the lval_wasm_lambda
+*** Release/retain partials, closure and rest args properly
+*** cleanup memory of namespaces
+so get interpreter to end with all slots free again!
+*** fix freeing of fn_name
+*** releasing a lval_wasm_lambda!!!
+we need to free its closure and partials!!
+** get tests running again
+add new tests for multi arity fns
+** make sure ([1] 0) => 1 works
+and in general make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
+1. direct to NOT_A_FN rt error by default
+2. fns should receive ptr to lval, not just to closure as first arg
+
 ** make_wajure_name
 we only need to call this once, then hang it off the lambda and reuse it when we
 call by name
 
+** named fns for recursion of locally defined lambdas
+Also, clojure allows it.
+** fix self recursive calls
+    Since we point the closure of a fn to what it's in the env up to that point
+    when the fn is defined the fn itself is not in the env yet. So (defn foo []
+    (foo)) will not work since foo is not yet defined when we add the foo fn to
+    the env.
+
+    So after we define a fn we need to add it to the closure. This will fix it
+    for the interpreter.
+
 ** what about (def p foo/fp) or (def f foo/f) ?
 Do we recompile the fn or refer to the fn in the other ns
-** What about: (def f (partial foo/f 1)). How does that get called?
+** Partial
+*** Partial What about: (def f (partial foo/f 1)). How does that get called?
 by name? by index? by ref?
-** What about: (let [fp (partial foo/f 1)]
+*** Partial: What about: (let [fp (partial foo/f 1)]
     ;; (fp  2 3)
     )
     This doesn't pull in the global to make the new lval-wasm_lambda!!!
 
-** somehow listify_args creates a bug.
-It returns a nil if list is empty because it's used for the rest arg,but make
-sure not to use it when we expect an empty list!!!!
-** DONE make sure stdlib is compiled (and first) if dirty!!!
-obsolete
-if dirty compile everything, and stdlib first.
-we can then move:
-
-    assign_fn_table_index_to_native_fns(wasm);
-    register_native_relay_arrays();
-
-to init_wajure
-** sort out offset prop on lval
-It's used for multiple purposes:
-- fn_table_index
-- closure local
-- param local (lval_ref)
-** DONE put native fns in their own module
-- DONE export/record the fns table indices somehow, so we can use them when compiling other modules
-- add fn_call_relay_arrays to wajure.core data for and export the pointers to use in make_lval and in datafy
- 1-4 {}, #{}, [], :kw
- 5. Not a fn runtime error.
-- write fns to dispatch to when first arg of list is a kw, map, set, vector.
-- And set the fn_call_relay_array properly on on all lvals!!!!
-** multi arity fns!!!
+*** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
+So LOCAL and PARAM (don't set to local, since we just retrieve a local for these
+ones) vs closure (set to local because its a computed value, and we don't want
+to insert it every time we refer to it)
+*** Partial: And what about (partial partial f 2) or where either partial is an lval_ref or result of fn call!!!
+*** Partial: if fn is not an function we want to return just the value itself,
+  retained, since at compile time we don't know if it's been a real fn call, so
+  we'll pretend it was, and the result of the whole partial call can then be
+  released when required, but we still want to compile all args, well the fn
+  calls at least.
+** ----------------
 ** apply
 https://github.com/clojure/clojure/blob/38bafca9e76cd6625d8dce5fb6d16b87845c8b9d/src/clj/clojure/core.clj#L660
 Use core lib fn to reduce args to a single list
@@ -67,24 +78,17 @@ last arg is a list (put a check in if it's a lval_compiler)
 3. When datafying the apply fn we don't know anything at compile time and we
    need to rely on a apply fn such as in clojure.core. But we need multiarity
    fns for that first.
-** fix self recursive calls
-    Since we point the closure of a fn to what it's in the env up to that point
-    when the fn is defined the fn itself is not in the env yet. So (defn foo []
-    (foo)) will not work since foo is not yet defined when we add the foo fn to
-    the env.
-
-    So after we define a fn we need to add it to the closure. This will fix it
-    for the interpreter.
-
-** ----------------
 ** map, reduce,
 ** gensym and #foo in macro
 http://clojure-doc.org/articles/language/macros.html
 ** ----------------------------
+** replace list implementations of maps, sets and vectors with permanent data structures other than list
+-> vector and map hamt.
 ** loop/recur
 ** multimethods
 ** try/throw/catch
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
+** ----------------------------
 ** when macros return a function (when called from within another fn), are they deduplicated, no!
 (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
 (defn main [x y]
@@ -105,46 +109,21 @@ We're already efficiently wiping compiler data from root lvals (as found in env 
 When we use macros in fns we can encounter literals that have their compiler data set already.
 This is ok unless compiler data is set when compiling another namespace, the data_offset is not applicable then. So we check if the lval is from this namespace or not. See logic and comments in datafy.c/datafy_lval
 So the trouble seems managable so far....
-** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
-So LOCAL and PARAM (don't set to local, since we just retrieve a local for these
-ones) vs closure (set to local because its a computed value, and we don't want
-to insert it every time we refer to it)
-** Partial: And what about (partial partial f 2) or where either partial is an lval_ref or result of fn call!!!
-** DONE Partial: make sure first arg is a wval_fn!!!! Or something that can be turned
-  into a fn, such as {},[],:kw etc
-  Not needed with our fn_call_relay_array. We can just add the partials.
-
-** Partial: if fn is not an function we want to return just the value itself,
-  retained, since at compile time we don't know if it's been a real fn call, so
-  we'll pretend it was, and the result of the whole partial call can then be
-  released when required, but we still want to compile all args, well the fn
-  calls at least.
-** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
-in a lval_wasm_lambda any partials should all be retained, meaning we can release all
-of the partials when releasing the lval_wasm_lambda
-** Release/retain partials, closure and rest args properly
 ** get fn name for lval_ref's
 So we need to store the name as we do param_count, rest_arg_index etc now as well in the wval
-** fix freeing of fn_name
-** DONE release uniquify_name
-** cleanup memory of namespaces
-so get interpreter to end with all slots free again!
-** add repl and watch options to config
-in repl you can (re)compile namespaces. Also, it can watch directory and if any
-clj source file gets modified, recompile. Because it's a live env we can expand
-macros at compile time if needed, not sure how yet. But we do need a live env
-for that be possible when macros use referred values and fns from required
-namespaces when expanded. 
-
-You should also be able to switch namespace.
 ** review closures in the context of namespaces
-especially:
-Lval* closure_lval = lenv_get(context->function_context->closure, lval_symbol);
-** releasing a lval_wasm_lambda!!!
-we need to free its closure and partials!!
 ** rewrite sys fns into native fns to use args block iso c arg_list
 ** benchmark whether internal module calls are faster than calling imported fns or calling imported table fns
-** ? dynamic namespaces, or rather a repl into compiled code.
+** don't reuse Ber's!!!
+As per warning in Binaryen docs. When reusing optimisations might screw things up.
+** pass floats, strings, maps, vectors, sets etc from js to wajure fn
+Currently only ints work
+** add and implement maps and sets and vectors with permanent data structures
+ hamt
+** max str size, elide with warning or abort
+** check for max closure size (currently 128 vars (CHAR512 mempool type))
+** RESEARCH
+*** ? dynamic namespaces, or rather a repl into compiled code.
 Currently vars of a namespace are/will be hardcoded into the fns that then refer
 to them statically. Alternatively we could store them in a namespace env and
 refer to them dynamically. This way we could have a 'image' that we can modify
@@ -154,24 +133,20 @@ fun objects. So they would have to be bridged. Either by building in a compiler,
 but the wasm would have to be reloaded then, or by relaying any call to an
 interpreted fn to the interpreter's repl. Interpreter and runtime can easily
 share env though.
-** don't reuse Ber's!!!
-As per warning in Binaryen docs. When reusing optimisations might screw things up.
-** pass floats, strings, maps, vectors, sets etc from js to wajure fn
-Currently only ints work
-** named fns for recursion of locally defined lambdas
-Also, clojure allows it.
-** add and implement maps and sets and vectors with permanent data structures
- hamt
-** compare by hash!!!
+*** compare by hash!!!
 But our algorhitm to compute a hash needs 64bits operations, so we need to
 rewrite it or find another c algorhitm
-** implement lazy seqs
-** max str size, elide with warning or abort
-** check for max closure size (currently 128 vars (CHAR512 mempool type))
-** find out about and add binaryen optimisations
-** add wajure interpreter to the runtime
-** add stdlib (defined in wajure and compiled) to runtime
-Similar to clojure.core. Probably needs namespaces implemented first
+*** implement lazy seqs
+*** add wajure interpreter to the runtime
+*** find out about and add binaryen optimisations
+*** add repl and watch options to config
+in repl you can (re)compile namespaces. Also, it can watch directory and if any
+clj source file gets modified, recompile. Because it's a live env we can expand
+macros at compile time if needed, not sure how yet. But we do need a live env
+for that be possible when macros use referred values and fns from required
+namespaces when expanded.
+
+You should also be able to switch namespace.
 * TODO interpreter
 ** macros from wajure.core don't get expanded?
 
@@ -198,8 +173,16 @@ Don't cut off compiling, try to continue, produce list of errors.
 
     &form - the actual form (as data) that is being invoked
 
-    &env - a map of local bindings at the point of macro expansion. The env map is from symbols to objects holding compiler information about that binding.
+(defmacro foo [a] (print &form))
+ (foo (+ 1 1)) prints out (foo (+ 1 1))
 
+    &env - a map of local bindings at the point of macro expansion. The env map is from symbols to objects holding compiler information about that binding.
+(do
+  (let [bar 123]
+    (defmacro foo [a] (print &env))
+    (foo (+ 1 1))))
+prints:
+{bar #object[clojure.lang.Compiler$LocalBinding 0x7fad7051 clojure.lang.Compiler$LocalBinding@7fad7051]}nil
 
 ** implement/copy from clojure.core various macros:
 *** Branching:
@@ -215,6 +198,42 @@ assert comment doc
 
 * done compiler
 
+** DONE add stdlib (defined in wajure and compiled) to runtime
+Similar to clojure.core. Probably needs namespaces implemented first
+** DONE Partial: make sure first arg is a wval_fn!!!! Or something that can be turned
+  into a fn, such as {},[],:kw etc
+  Not needed with our fn_call_relay_array. We can just add the partials.
+
+** DONE release uniquify_name
+
+** DONE somehow listify_args creates a bug.
+It returns a nil lval if list is empty because it's used for the rest arg,but make
+sure not to use it when we expect an empty list!!!!
+** DONE add br_table to add_wasm_function and to wrap_root_fn
+** DONE when fn has duplicate param names -> give error!!!
+** DONE make sure that adding bytes to data returns aligned pointer!!
+4 bytes aligned. Probably better for loading data!!!
+** DONE make sure stdlib is compiled (and first) if dirty!!!
+obsolete
+if dirty compile everything, and stdlib first.
+we can then move:
+
+    assign_fn_table_index_to_native_fns(wasm);
+    register_native_relay_arrays();
+
+to init_wajure
+** DONE sort out offset prop on lval
+It's used for multiple purposes:
+- fn_table_index
+- param and local index (lval_ref)
+** DONE put native fns in their own module
+- DONE export/record the fns table indices somehow, so we can use them when compiling other modules
+- add fn_call_relay_arrays to wajure.core data for and export the pointers to use in make_lval and in datafy
+ 1-4 {}, #{}, [], :kw
+ 5. Not a fn runtime error.
+- write fns to dispatch to when first arg of list is a kw, map, set, vector.
+- And set the fn_call_relay_array properly on on all lvals!!!!
+** DONE multi arity fns!!!
 ** DONE make lval as minimal as possible
 ** DONE unify wval_fn and lval
 ** DONE reset uniquify counter between compiles!!

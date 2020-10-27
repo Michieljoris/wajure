@@ -62,14 +62,14 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   int offset;
   if (cfn) {
     // Add the canonical fn for this partial if we haven't already
-    if (cfn->offset == -1) {
-      cfn->offset = add_root_fn(wasm, cfn);
+    if (cfn->fn_table_index == -1) {
+      cfn->fn_table_index = add_root_fn(wasm, cfn);
     }
-    offset = cfn->offset;
+    offset = cfn->fn_table_index;
   } else {
     // If not a partial fn just add the wasm fn
-    lval_fn->offset = add_root_fn(wasm, lval_fn);
-    offset = lval_fn->offset;
+    lval_fn->fn_table_index = add_root_fn(wasm, lval_fn);
+    offset = lval_fn->fn_table_index;
   }
 
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
