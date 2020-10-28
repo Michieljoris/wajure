@@ -9,9 +9,9 @@
  (type $none_=>_none (func))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00p\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\02\00\01\00\00\00\00\00\\\00\00\00\00\00\00\00\04\00\00\000\00\00\00`\00\00\00\8c\00\00\00\03\00\00\00\98\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\02\08\00\00\01\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00p\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\00\00\01\00\00\00\00\00\\\00\00\00\00\00\00\00\04\00\00\000\00\00\00`\00\00\00\8c\00\00\00\03\00\00\00\98\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $foo_0_a1 $foo_0_a2 $foo_0)
+ (elem (global.get $fn_table_offset) $f_0_a1 $f_0_a2 $f_0_a3 $f_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -78,28 +78,28 @@
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "mem" (memory $0))
- (func $foo_0_a1 (param $0 i32) (param $1 i32) (result i32)
+ (func $f_0_a1 (param $0 i32) (result i32)
   (block $do_1 (result i32)
    (call $new_lval_vector
     (call $prefix_list
      (call $retain
-      (local.get $1)
+      (local.get $0)
      )
      (i32.const 0)
     )
    )
   )
  )
- (func $foo_0_a2 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+ (func $f_0_a2 (param $0 i32) (param $1 i32) (result i32)
   (block $do_2 (result i32)
    (call $new_lval_vector
     (call $prefix_list
      (call $retain
-      (local.get $1)
+      (local.get $0)
      )
      (call $prefix_list
       (call $retain
-       (local.get $2)
+       (local.get $1)
       )
       (i32.const 0)
      )
@@ -107,31 +107,66 @@
    )
   )
  )
- (func $foo_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (block $rt_error
-   (block $case2
-    (block $case1
-     (br_table $rt_error $case1 $case2 $rt_error
-      (local.get $2)
+ (func $f_0_a3 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+  (block $do_3 (result i32)
+   (call $new_lval_vector
+    (call $prefix_list
+     (call $retain
+      (local.get $0)
      )
-     (nop)
+     (call $prefix_list
+      (call $retain
+       (local.get $1)
+      )
+      (call $prefix_list
+       (call $retain
+        (local.get $2)
+       )
+       (i32.const 0)
+      )
+     )
+    )
+   )
+  )
+ )
+ (func $f_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+  (block $rt_error
+   (block $case3
+    (block $case2
+     (block $case1
+      (br_table $rt_error $case1 $case2 $case3 $rt_error
+       (local.get $2)
+      )
+      (nop)
+     )
+     (return
+      (call $f_0_a1
+       (i32.load align=2
+        (local.get $1)
+       )
+      )
+     )
     )
     (return
-     (call $foo_0_a1
-      (i32.const 0)
+     (call $f_0_a2
       (i32.load align=2
+       (local.get $1)
+      )
+      (i32.load offset=4 align=2
        (local.get $1)
       )
      )
     )
    )
    (return
-    (call $foo_0_a2
-     (i32.const 0)
+    (call $f_0_a3
      (i32.load align=2
       (local.get $1)
      )
      (i32.load offset=4 align=2
+      (local.get $1)
+     )
+     (i32.load offset=8 align=2
       (local.get $1)
      )
     )
@@ -150,8 +185,8 @@
    )
   )
  )
- ;; custom section "symbol_table", size 80
+ ;; custom section "symbol_table", size 125
  ;; custom section "deps", size 0, contents: ""
  ;; custom section "data_size", size 3, contents: "172"
- ;; custom section "fn_table_size", size 1, contents: "3"
+ ;; custom section "fn_table_size", size 1, contents: "4"
 )

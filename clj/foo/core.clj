@@ -5,10 +5,13 @@
 
 ;; (def bar 123)
 
-(defn foo
+(defn f
   ([x] [x])
-  ([x y] [x y]))
-(def foop (partial foo 1))
+  ([x y] [x y])
+  ([x y z] [x y z])
+  )
+(def fp (partial f 1))
+
 
 ;; (def f (fn*
 ;;         ([] "foo")

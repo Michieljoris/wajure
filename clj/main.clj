@@ -6,7 +6,7 @@
 ;; (require '[test.test-partial :refer [test-partial]])
 
 ;; (require '[test.test-partial :refer [test-partial]])
-;; (require '[foo.core :as foo])
+(require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -20,16 +20,37 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-;; (defn f
-;;   ([x] [x])
-;;   ([x y] [x y]))
+(defn f
+  ([x] [x])
+  ([x y] [x y])
+  ([x y z] [x y z])
+  )
 
 ;; (def fp (partial f 1))
-
+;; (def f foo/f)
+;; (def fp foo/fp)
+;; (def fp (partial foo/f 1))
+;; (def fp (partial foo/f 1))
 (defn main [& args]
+  (let [my-partial partial
+        p (my-partial partial f)
+        ;; p (partial partial f )
+        ]
+    (print ((p 1) 2))
+    ;; (print ((p 1) 2))
+    )
+  ;; (let [fp (partial foo/f 1)]
+  ;;   (print (fp 2 3))
+  ;;   )
+
+  ;; (let [fpp (partial foo/fp 2)]
+  ;;   (print (fpp  3))
+  ;;   )
   ;; (test.run/run-tests)
-  (let [v 1]
-    (v 1))
+  ;; (print (f 1 2) )
+  ;; (print (fp 2))
+  ;; (let [v 1]
+  ;;   (v 1))
   ;; (let [f (fn [] )]
   ;;  ( f)
   ;;   )

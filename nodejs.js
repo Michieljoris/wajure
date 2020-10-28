@@ -61,7 +61,9 @@ function make_runtime_error_fn(memory, offset) {
         switch (err_no) {
             case runtime_error_codes.NOT_A_FN:
                 // string = "Not a fn: " + offset; break;
-                string = "A " + lval_types_to_str[offset] + " cannot be used as a function";
+                let type = lval_types_to_str[offset];
+                type = type ? type : offset;
+                string = "A " + type + " cannot be used as a function";
                 break;
             case runtime_error_codes.WRONG_NUMBER_OF_ARGS:
                 string = "Wrong number of args passed." +
@@ -436,7 +438,7 @@ async function start() {
         console.log("heap_base =", env.heap_base);
 
         console.log("Link modules  ----------------------------------------");
-        console.log(util.inspect(env.modules, null, Infinity, true));
+        // console.log(util.inspect(env.modules, null, Infinity, true));
         link_modules(env, env.modules);
 
         console.log("Instantiate modules  ----------------------------------------");

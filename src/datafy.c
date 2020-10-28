@@ -37,7 +37,6 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
   WasmFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
                                 lval_fn_native->data.str);
-
   int lval_ptr = native_fn->data_offset;
   CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
                  .data_offset = lval_ptr,
@@ -157,7 +156,6 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   // Every lval when it is created has its ns prop set to the namespace it was
   // found in.
   int lval_is_external = lval->ns && lval->ns != get_current_ns();
-
   if (lval_is_external) {
     if (lval->cname) {  // we can refer to it by name!!!
       global_name = make_global_name("data:", lval->ns->namespace, lval->cname);
@@ -180,7 +178,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   if (!lval_is_external && lval->data_offset > 0) {
     int data_offset = lval->data_offset;
     CResult _ret = {.ber = make_ptr(wasm, data_offset),
-                    .data_offset = data_offset};
+                    .data_offset = data_offset,
+                    .fn_table_index = lval->fn_table_index};
     return _ret;
   }
   switch (lval->type) {
@@ -229,6 +228,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
       }
   }
   lval->data_offset = ret.data_offset;
+  lval->fn_table_index = ret.fn_table_index;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */
   return ret;

@@ -525,7 +525,7 @@ void compile(Namespace* ns) {
     if (lval->type == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
         lval_compile(wasm, lval);
-        if (!lval->cfn) add_to_symbol_table(wasm, lval->cname, lval);
+        add_to_symbol_table(wasm, lval->cname, lval);
       }
     } else {
       datafy_lval(wasm, lval);
@@ -583,18 +583,3 @@ void compile(Namespace* ns) {
 
   free_wasm(wasm);
 }
-/* (block $switch$1$leave */
-/*        (block $switch$1$default */
-/*               (block $switch$1$case$3 */
-/*                      (block $switch$1$case$2 */
-/*                             (br_table $switch$1$default $switch$1$default
- * $switch$1$case$2 $switch$1$default $switch$1$case$3 $switch$1$case$2
- * $switch$1$default */
-/*                                       (i32.const -99))) */
-/*                      (i32.const 1) */
-/*                      (br $switch$1$leave)) */
-/*               (drop */
-/*                (i32.const 55)) */
-/*               (br $switch$1$leave)) */
-/*        (i32.const 3) */
-/*        (br $switch$1$leave)) */

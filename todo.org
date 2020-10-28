@@ -1,8 +1,33 @@
 * TODO compiler
-** DONE get tests running again
+** Keep tests running passing!!!!
 ** Add new tests
-- add new tests for multi arity fns
-- and for (:foo 123), (1) etc
+*** add new tests for multi arity fns
+*** and for (:foo 123), (1) etc
+*** (def p foo/fp) and (def f foo/f)
+*** (def fp (partial foo/f 1))
+*** (def fpp (partial foo/fp 2))
+***   (let [fp (partial foo/f 1)]
+    (print (fp 2 3))
+    )
+
+  (let [fpp (partial foo/fp 2)]
+    (print (fpp  3))
+    )
+*** (let [p (partial partial f 1)]
+    (print ((p 2) 3)))
+    => [1 2 3]
+
+(defn f
+  ([x] [x])
+  ([x y] [x y])
+  ([x y z] [x y z])
+  )
+*** (let [my-partial partial
+        p (partial my-partial f 1)]
+    (print ((p 2) 3)))
+*** (let [my-partial partial
+        p (my-partial my-partial f 1)]
+    (print ((p 2) 3)))
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
@@ -24,17 +49,6 @@ In eval.c, eval_lambda_call:
   state->current_ns = old_ns;
 
   Maybe make sure things are included in the lval_fn's closure
-** make sure ([1] 0) => 1 works
-** DONE make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
-1. direct to NOT_A_FN rt error by default
-2. fns should receive ptr to lval, not just to closure as first arg
-** DONE (let [p partial] (print p)) -> ref count error
-WARNING (src/refcount.c:70): Warning: trying to release data that's not managed by ref_count (data_p: 70264, slot->data_p: 112).
-
-** DONE make_wajure_name
-we only need to call this once, then hang it off the lambda and reuse it when we
-call by name
-
 ** fix self recursive calls
 ***  Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
@@ -46,16 +60,7 @@ call by name
 *** named fns for recursion of locally defined lambdas
 Also, clojure allows it.
 
-** what about (def p foo/fp) or (def f foo/f) ?
-Do we recompile the fn or refer to the fn in the other ns
 ** Partial
-*** Partial What about: (def f (partial foo/f 1)). How does that get called?
-by name? by index? by ref?
-*** Partial: What about: (let [fp (partial foo/f 1)]
-    ;; (fp  2 3)
-    )
-    This doesn't pull in the global to make the new lval-wasm_lambda!!!
-
 *** Partial: When referring to LVAL_REF/wval only set to local when it was a fn call.
 So LOCAL and PARAM (don't set to local, since we just retrieve a local for these
 ones) vs closure (set to local because its a computed value, and we don't want
@@ -104,6 +109,7 @@ http://clojure-doc.org/articles/language/macros.html
 ** try/throw/catch
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
 ** ----------------------------
+** ([1] 0) => 1
 ** when macros return a function (when called from within another fn), are they deduplicated, no!
 (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
 (defn main [x y]
@@ -212,6 +218,16 @@ ns declare defmethod defmulti defn- defonce
 assert comment doc
 
 * done compiler
+
+** DONE make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
+1. direct to NOT_A_FN rt error by default
+2. fns should receive ptr to lval, not just to closure as first arg
+** DONE (let [p partial] (print p)) -> ref count error
+WARNING (src/refcount.c:70): Warning: trying to release data that's not managed by ref_count (data_p: 70264, slot->data_p: 112).
+
+** DONE make_wajure_name
+we only need to call this once, then hang it off the lambda and reuse it when we
+call by name
 
 ** DONE add stdlib (defined in wajure and compiled) to runtime
 Similar to clojure.core. Probably needs namespaces implemented first

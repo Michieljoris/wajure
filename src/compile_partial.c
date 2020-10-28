@@ -219,9 +219,7 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
 
   head = head->cdr;
   // If just one arg, return compiled arg
-  if (!head) {
-    return fn_arg;
-  }
+  if (!head) return fn_arg;
 
   if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
     /* return test_native_partial_fn(wasm, fn_arg, head, list_count(args)); */
@@ -299,25 +297,37 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
           BinaryenLocalGet(module, partials_ptr_index, BinaryenTypeInt32());
       Ber ber_partial_count = make_int32(module, partial_count);
 
-      printf("lval_fn: %d ", lval_fn->subtype);
-      lval_println(lval_fn);
+      /* printf("lval_fn: %d ", lval_fn->subtype); */
+      /* lval_println(lval_fn); */
       Ber ber_fn_table_index;
       if (lval_fn->subtype == SYS) {
-        /* printf("SYS: %s, %d\n", lval_fn->cname, lval_fn->offset); */
+        /* TODO: get the fn_table index it it's a native fn!!!!!*/
+        /* printf("SYS: %d, %d\n", fn_arg.data_offset, fn_arg.fn_table_index);
+         */
         ber_fn_table_index = make_int32(module, fn_arg.fn_table_index);
 
       } else {
-        // TODO: if lval_fn is external get fn_table_index from global,
-        // if it's a partial check if cfn is external
-        int fn_table_index = lval_fn->cfn ? lval_fn->cfn->fn_table_index
-                                          : lval_fn->fn_table_index;
-        printf("offset: %d\n", fn_table_index);
-        // We know the offset/fn_table_index, let's add the module's
-        // fn_table_offset
-        ber_fn_table_index = make_int32(module, fn_table_index);
-        ber_fn_table_index = BinaryenBinary(
-            module, BinaryenAddInt32(), ber_fn_table_index,
-            BinaryenGlobalGet(module, "fn_table_offset", BinaryenTypeInt32()));
+        Lval* fn = lval_fn->cfn ? lval_fn->cfn : lval_fn;
+        int is_external = fn->ns != get_current_ns();
+        if (is_external) {
+          /* printf("cname: %s\n", fn->cname); */
+          char* global_name =
+              make_global_name("fn:", fn->ns->namespace, fn->cname);
+          add_dep(wasm, global_name);
+          ber_fn_table_index =
+              BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
+        } else {
+          int fn_table_index = lval_fn->cfn ? lval_fn->cfn->fn_table_index
+                                            : lval_fn->fn_table_index;
+          // We know the offset/fn_table_index, let's add the module's
+          // fn_table_offset
+          ber_fn_table_index = make_int32(module, fn_table_index);
+
+          ber_fn_table_index =
+              BinaryenBinary(module, BinaryenAddInt32(), ber_fn_table_index,
+                             BinaryenGlobalGet(module, "fn_table_offset",
+                                               BinaryenTypeInt32()));
+        }
       }
 
       // Call the runtime make_lval_wasm_lambda fn
