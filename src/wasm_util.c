@@ -172,6 +172,7 @@ int add_string_to_data(Wasm* wasm, char* str) {
 int add_fn_to_table(Wasm* wasm, char* fn_name) {
   int free_fn_slot = wasm->fns_count;
   wasm->fns_count++;
+  printf("%p, realloc, new size:%d\n", wasm->fn_names, wasm->fns_count);
   wasm->fn_names = realloc(wasm->fn_names, wasm->fns_count * sizeof(char*));
   int len = _strlen(fn_name) + 1;
   wasm->fn_names[free_fn_slot] = malloc(len);

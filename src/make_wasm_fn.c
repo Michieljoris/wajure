@@ -133,7 +133,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   int param_count = lambda->param_count;
   // The function's closure, args_count_ptr and args_count, or closure and
   // params
-  int wasm_params_count = 1 + (wajure_args == ABI_PARAMS ? param_count : 2);
+  int wasm_params_count = wajure_args == ABI_PARAMS ? param_count : 3;
   CONTEXT_FUNCTION(">>>>>>>add_wasm_function", fn_name, wasm_params_count,
                    symbol_to_ref)
 
@@ -149,7 +149,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
 
   int i = 0;
-  int first_free_local = wajure_args == ABI_PARAMS ? 1 : 3;
+  int first_free_local = wajure_args == ABI_PARAMS ? 0 : 3;
   Cell* param = lambda->params->data.head;
   while (i < min_param_count) {
     Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
@@ -221,7 +221,7 @@ Operands make_fn_call_operands(Wasm* wasm, Lambda* lambda) {
   int operands_count = 0;
 
   // Closure pointer (NULL)
-  operands[operands_count++] = make_int32(module, 0);
+  /* operands[operands_count++] = make_int32(module, 0); */
 
   int args_block_ptr_param = 1;
   int args_count_param = 2;
@@ -254,7 +254,7 @@ Operands make_fn_call_operands(Wasm* wasm, Lambda* lambda) {
 }
 
 char* add_arity_to_fn_name(char* fn_name, int index) {
-  char* wajure_fn_name = malloc(_strlen(fn_name) + 2);
+  char* wajure_fn_name = malloc(_strlen(fn_name) + number_len(index) + 3);
   sprintf(wajure_fn_name, "%s_a%d", fn_name, index);
   return wajure_fn_name;
 }

@@ -224,9 +224,8 @@ enum {
 };
 
 // FTI = Function Table Index
+// These FTI_ constants need to match the builtin array in builtin.c
 enum {
-  FTI_RTE_TOO_FEW_ARGS,
-  FTI_RTE_TOO_MANY_ARGS,
   FTI_RTE_NOT_A_FN,
   FTI_COPY_AND_RETAIN,
   FTI_PARTIAL,

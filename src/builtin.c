@@ -85,11 +85,8 @@ extern CFn util_c_fns[];
 /*   CResult (*compile_fn_call)(Wasm*, NativeFn, Cell*); */
 /* int data_offset; */
 /* }; */
+// These FTI_ constants need to match the enum in ltypes.h
 WasmFn wasm_fns[] = {
-    /* {"rt_error_too_few_args", FTI_RTE_TOO_FEW_ARGS, */
-    /*  add_rt_error_too_few_args_fn, NULL}, */
-    /* {"rt_error_too_many_args", FTI_RTE_TOO_MANY_ARGS, */
-    /*  add_rt_error_too_many_args_fn, NULL}, */
     {"rt_error_not_a_fn", FTI_RTE_NOT_A_FN, add_fn_rt_error_not_a_fn, NULL},
     {"copy_and_retain", FTI_COPY_AND_RETAIN, add_copy_and_retain_fn, NULL},
     {"partial", FTI_PARTIAL, add_partial_fn, compile_partial_call},

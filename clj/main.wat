@@ -15,7 +15,7 @@
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
- (import "env" "fn:test.test-partial/test-partial_10_a0" (global $fn:test.test-partial/test-partial_10_a0 i32))
+ (import "env" "fn:test.run/run-tests_0_a0" (global $fn:test.run/run-tests_0_a0 i32))
  (import "env" "log_int" (func $log_int (param i32)))
  (import "env" "log_string" (func $log_string (param i32)))
  (import "env" "log_string_n" (func $log_string_n (param i32 i32)))
@@ -80,17 +80,16 @@
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
  (export "main" (func $main_0))
  (export "mem" (memory $0))
- (func $main_0_a0 (param $0 i32) (param $1 i32) (result i32)
-  (local $2 i32)
+ (func $main_0_a0 (param $0 i32) (result i32)
+  (local $1 i32)
   (block $do_2 (result i32)
    (block $lambda_call_1 (result i32)
-    (local.set $2
-     (call_indirect (type $i32_=>_i32)
-      (i32.const 0)
-      (global.get $fn:test.test-partial/test-partial_10_a0)
+    (local.set $1
+     (call_indirect (type $none_=>_i32)
+      (global.get $fn:test.run/run-tests_0_a0)
      )
     )
-    (local.get $2)
+    (local.get $1)
    )
   )
  )
@@ -103,7 +102,6 @@
   )
   (return
    (call $main_0_a0
-    (i32.const 0)
     (call $listify_args
      (i32.add
       (local.get $1)
@@ -118,7 +116,7 @@
   )
  )
  ;; custom section "symbol_table", size 55
- ;; custom section "deps", size 40
+ ;; custom section "deps", size 27
  ;; custom section "data_size", size 2, contents: "72"
  ;; custom section "fn_table_size", size 1, contents: "2"
 )

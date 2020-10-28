@@ -143,7 +143,7 @@ Operands compile_args_into_operands(Wasm* wasm, Lambda* lambda, Cell* partials,
                                     Cell* args, int total_args_count,
                                     LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
-
+  printf("lambda: %p\n", lambda);
   int param_count = lambda->param_count;
   int has_rest_arg = lambda->has_rest_arg;
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
@@ -190,9 +190,9 @@ Operands compile_args_into_operands(Wasm* wasm, Lambda* lambda, Cell* partials,
   // Let's make the operands for the fn call
   Ber* call_operands = malloc((1 + param_count) * sizeof(Ber));
   // First arg is always a closure pointer
-  Ber closure_pointer = make_int32(module, 0);
+  /* Ber closure_pointer = make_int32(module, 0); */
   int call_operands_count = 0;
-  call_operands[call_operands_count++] = closure_pointer;
+  /* call_operands[call_operands_count++] = closure_pointer; */
 
   // Add all the args that are definitely not part of any rest arg.
   for (int i = 0; i < min_param_count; i++)
@@ -410,7 +410,10 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
                 list_count(args) + list_count(lval_fn->partials);
             int arity = min(total_args_count, MAX_FN_PARAMS);
             Lambda* lambda = lval_fn->lambdas[arity];
-
+            if (!lambda) {
+              quit(wasm, "Wrong number of arguments (%d) passed",
+                   total_args_count);
+            }
             if (is_local) {
               union FnRef fn_ref = {};
               fn_call = apply(wasm, FN_NAME, fn_ref, lambda, lval_fn->partials,
