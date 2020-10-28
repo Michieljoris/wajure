@@ -26,105 +26,6 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
-void add_call_fn(Wasm* wasm, int n) {
-  BinaryenModuleRef module = wasm->module;
-  char* fn_name = number_fn_name(wasm, "call");  // call#0 - call#n
-  add_fn_to_table(wasm, fn_name);
-
-  // wval, args_block_ptr and args count
-  int wval_param = 0;
-  int args_block_ptr_param = 1;
-  /* int args_count_param = 2; */
-
-  int body_children_count = 0;
-  Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ????
-
-  // Load args into operands of call to fn
-  Ber closure_pointer =
-      get_wval_prop(module, local_get_int32(module, wval_param), "closure");
-  Ber* operands = malloc((n + 1) * sizeof(Ber));
-  operands[0] = closure_pointer;
-  Ber args_block_ptr = local_get_int32(module, args_block_ptr_param);
-  for (int i = 0; i < n; i++) {
-    operands[i + 1] = BinaryenLoad(module, 4, 0, i * 4, 2, BinaryenTypeInt32(),
-                                   args_block_ptr);
-  }
-
-  // Call fn
-  Ber wval_fn_table_index = get_wval_prop(
-      module, local_get_int32(module, wval_param), "fn_table_index");
-  BinaryenType call_params_type =
-      make_type_int32(n + 1);  // first param is closure_pointer
-  BinaryenType call_results_type = make_type_int32(1);
-  Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, n + 1,
-                                  call_params_type, call_results_type);
-  body_children[body_children_count++] = call;
-  Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
-                           BinaryenTypeInt32());
-
-  // Add function to wasm
-  BinaryenType fn_params_type = make_type_int32(3);
-  BinaryenType fn_results_type = make_type_int32(1);
-  BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
-                      body);
-  free(operands);
-  free(body_children);
-  release(fn_name);
-}
-
-// This adds MAX_FN_PARAMS wasm fns (call#0-call#20), each fn takes 3 params:
-// closure_pointer, fn_table_index and args_block
-void add_call_fns(Wasm* wasm) {
-  for (int i = 0; i <= MAX_FN_PARAMS; i++) add_call_fn(wasm, i);
-}
-
-void add_bundle_rest_arg_fn(Wasm* wasm, int n) {
-  BinaryenModuleRef module = wasm->module;
-  char* fn_name = number_fn_name(
-      wasm, "bundle_rest_arg");  // bundle_rest-arg#21 - bundle_rest_arg#41
-  add_fn_to_table(wasm, fn_name);
-
-  // wval, args_block_ptr and args count
-  int wval_param = 0;
-  int args_block_ptr_param = 1;
-  int args_count_param = 2;
-
-  int body_children_count = 0;
-  Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ?????
-
-  // We know the rest arg index (n-1), let's bundle any excess args
-  Ber bundle_operands[] = {make_int32(module, n - 1),
-                           local_get_int32(module, args_block_ptr_param),
-                           local_get_int32(module, args_count_param)};
-  body_children[body_children_count++] = BinaryenCall(
-      module, "bundle_rest_args", bundle_operands, 3, BinaryenTypeNone());
-
-  // Forward to call fn (which loads the args)
-  Ber wval_fn_table_index = make_int32(module, n);
-  BinaryenType call_params_type = make_type_int32(3);
-  BinaryenType call_results_type = make_type_int32(1);
-  Ber operands[] = {local_get_int32(module, wval_param),
-                    local_get_int32(module, args_block_ptr_param),
-                    local_get_int32(module, args_count_param)};
-  Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, 3,
-                                  call_params_type, call_results_type);
-  body_children[body_children_count++] = call;
-  Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
-                           BinaryenTypeInt32());
-
-  // Add function to wasm
-  BinaryenType fn_params_type = make_type_int32(3);
-  BinaryenType fn_results_type = make_type_int32(1);
-  BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
-                      body);
-  free(body_children);
-  release(fn_name);
-}
-
-void add_bundle_rest_arg_fns(Wasm* wasm) {
-  for (int i = 0; i <= MAX_FN_PARAMS; i++) add_bundle_rest_arg_fn(wasm, i);
-}
-
 void add_rt_error_fn(Wasm* wasm, int rt_error_code, char* fn_name,
                      char* error_msg) {
   BinaryenModuleRef module = wasm->module;
@@ -147,22 +48,29 @@ void add_rt_error_fn(Wasm* wasm, int rt_error_code, char* fn_name,
                       body);
 }
 
-/* void add_rt_error_too_few_args_fn(Wasm* wasm, char* fn_name) { */
-/*   int rt_error_code = RT_TOO_FEW_ARGS; */
-/*   char* error_msg = "fn"; */
-/*   add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg); */
-/* } */
-
-/* void add_rt_error_too_many_args_fn(Wasm* wasm, char* fn_name) { */
-/*   int rt_error_code = RT_NOT_A_FN; */
-/*   char* error_msg = ""; */
-/*   add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg); */
-/* } */
-
 void add_fn_rt_error_not_a_fn(Wasm* wasm, char* fn_name) {
-  int rt_error_code = RT_NOT_A_FN;
-  char* error_msg = "fn";
-  add_rt_error_fn(wasm, rt_error_code, fn_name, error_msg);
+  BinaryenModuleRef module = wasm->module;
+
+  int body_children_count = 0;
+  Ber* body_children = malloc(2 * sizeof(Ber));
+  int wval_param = 0;
+  Ber wval = local_get_int32(wasm->module, wval_param);
+
+  Ber operands[] = {make_int32(wasm->module, RT_NOT_A_FN),
+                    get_wval_prop(wasm->module, wval, "subtype")};
+
+  Ber rt_error =
+      BinaryenCall(module, "runtime_error", operands, 2, BinaryenTypeNone());
+
+  body_children[body_children_count++] = rt_error;
+  body_children[body_children_count++] = make_int32(module, 0);
+  Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
+                           BinaryenTypeInt32());
+  // Add function to wasm
+  BinaryenType fn_params_type = make_type_int32(3);
+  BinaryenType fn_results_type = make_type_int32(1);
+  BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL, 0,
+                      body);
 }
 
 void add_copy_and_retain_fn(Wasm* wasm, char* fn_name) {
@@ -417,3 +325,112 @@ int get_fn_table_index(Wasm* wasm, char* fn_name) {
       alist_get(state->wajure_to_native_fn_map, is_eq_str, fn_name);
   return native_fn->fn_table_index;
 }
+
+/* void add_call_fn(Wasm* wasm, int n) { */
+/*   BinaryenModuleRef module = wasm->module; */
+/*   char* fn_name = number_fn_name(wasm, "call");  // call#0 - call#n */
+/*   add_fn_to_table(wasm, fn_name); */
+
+/*   // wval, args_block_ptr and args count */
+/*   int wval_param = 0; */
+/*   int args_block_ptr_param = 1; */
+/*   /\* int args_count_param = 2; *\/ */
+
+/*   int body_children_count = 0; */
+/*   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ???? */
+
+/*   // Load args into operands of call to fn */
+/*   Ber closure_pointer = */
+/*       get_wval_prop(module, local_get_int32(module, wval_param), "closure");
+ */
+/*   Ber* operands = malloc((n + 1) * sizeof(Ber)); */
+/*   operands[0] = closure_pointer; */
+/*   Ber args_block_ptr = local_get_int32(module, args_block_ptr_param); */
+/*   for (int i = 0; i < n; i++) { */
+/*     operands[i + 1] = BinaryenLoad(module, 4, 0, i * 4, 2,
+ * BinaryenTypeInt32(), */
+/*                                    args_block_ptr); */
+/*   } */
+
+/*   // Call fn */
+/*   Ber wval_fn_table_index = get_wval_prop( */
+/*       module, local_get_int32(module, wval_param), "fn_table_index"); */
+/*   BinaryenType call_params_type = */
+/*       make_type_int32(n + 1);  // first param is closure_pointer */
+/*   BinaryenType call_results_type = make_type_int32(1); */
+/*   Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, n +
+ * 1, */
+/*                                   call_params_type, call_results_type); */
+/*   body_children[body_children_count++] = call; */
+/*   Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
+ */
+/*                            BinaryenTypeInt32()); */
+
+/*   // Add function to wasm */
+/*   BinaryenType fn_params_type = make_type_int32(3); */
+/*   BinaryenType fn_results_type = make_type_int32(1); */
+/*   BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL,
+ * 0, */
+/*                       body); */
+/*   free(operands); */
+/*   free(body_children); */
+/*   release(fn_name); */
+/* } */
+
+// This adds MAX_FN_PARAMS wasm fns (call#0-call#20), each fn takes 3 params:
+// closure_pointer, fn_table_index and args_block
+/* void add_call_fns(Wasm* wasm) { */
+/*   for (int i = 0; i <= MAX_FN_PARAMS; i++) add_call_fn(wasm, i); */
+/* } */
+
+/* void add_bundle_rest_arg_fn(Wasm* wasm, int n) { */
+/*   BinaryenModuleRef module = wasm->module; */
+/*   char* fn_name = number_fn_name( */
+/*       wasm, "bundle_rest_arg");  // bundle_rest-arg#21 - bundle_rest_arg#41
+ */
+/*   add_fn_to_table(wasm, fn_name); */
+
+/*   // wval, args_block_ptr and args count */
+/*   int wval_param = 0; */
+/*   int args_block_ptr_param = 1; */
+/*   int args_count_param = 2; */
+
+/*   int body_children_count = 0; */
+/*   Ber* body_children = malloc(10 * sizeof(Ber));  // TODO: 10 ????? */
+
+/*   // We know the rest arg index (n-1), let's bundle any excess args */
+/*   Ber bundle_operands[] = {make_int32(module, n - 1), */
+/*                            local_get_int32(module, args_block_ptr_param), */
+/*                            local_get_int32(module, args_count_param)}; */
+/*   body_children[body_children_count++] = BinaryenCall( */
+/*       module, "bundle_rest_args", bundle_operands, 3, BinaryenTypeNone()); */
+
+/*   // Forward to call fn (which loads the args) */
+/*   Ber wval_fn_table_index = make_int32(module, n); */
+/*   BinaryenType call_params_type = make_type_int32(3); */
+/*   BinaryenType call_results_type = make_type_int32(1); */
+/*   Ber operands[] = {local_get_int32(module, wval_param), */
+/*                     local_get_int32(module, args_block_ptr_param), */
+/*                     local_get_int32(module, args_count_param)}; */
+/*   Ber call = BinaryenCallIndirect(module, wval_fn_table_index, operands, 3,
+ */
+/*                                   call_params_type, call_results_type); */
+/*   body_children[body_children_count++] = call; */
+/*   Ber body = BinaryenBlock(module, NULL, body_children, body_children_count,
+ */
+/*                            BinaryenTypeInt32()); */
+
+/*   // Add function to wasm */
+/*   BinaryenType fn_params_type = make_type_int32(3); */
+/*   BinaryenType fn_results_type = make_type_int32(1); */
+/*   BinaryenAddFunction(module, fn_name, fn_params_type, fn_results_type, NULL,
+ * 0, */
+/*                       body); */
+/*   free(body_children); */
+/*   release(fn_name); */
+/* } */
+
+/* void add_bundle_rest_arg_fns(Wasm* wasm) { */
+/*   for (int i = 0; i <= MAX_FN_PARAMS; i++) add_bundle_rest_arg_fn(wasm, i);
+ */
+/* } */

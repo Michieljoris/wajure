@@ -122,15 +122,24 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
       BinaryenLocalSet(module, args_block_ptr_local, args_block_ptr);
   block_children[(*block_children_count)++] = local_set_args_block_ptr;
 
+  block_children[(*block_children_count)++] = wasm_log_int(
+      wasm, get_wval_prop(module, local_get_int32(module, wval_local), "type"));
+
+  block_children[(*block_children_count)++] = wasm_log_int(
+      wasm,
+      get_wval_prop(module, local_get_int32(module, wval_local), "subtype"));
+
+  block_children[(*block_children_count)++] = wasm_log_int(
+      wasm, get_wval_prop(module, local_get_int32(module, wval_local),
+                          "fn_table_index"));
+
   // Load partials and args into the args block
   Ber args_block =
       compile_args_into_block(wasm, wval_local, partial_count_local, args,
                               args_count, args_block_ptr_local, li);
   block_children[(*block_children_count)++] = args_block;
-  Ber closure_pointer =
-      get_wval_prop(module, local_get_int32(module, wval_local), "closure");
-  Ber call_operands[] = {closure_pointer,
-                         local_get_int32(module, args_block_ptr_local),
+  wval = local_get_int32(module, wval_local);
+  Ber call_operands[] = {wval, local_get_int32(module, args_block_ptr_local),
                          local_get_int32(module, total_args_count_local)};
 
   Ber fn_table_index = get_wval_prop(

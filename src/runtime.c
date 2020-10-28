@@ -156,7 +156,10 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
        * data_offset); */
 
 #ifdef WASM
-    lval_ptr->fn_table_index += fn_table_offset;
+    // Other types have fns in builtins module, with fn_table_index that's
+    // absolute
+    if (lval_ptr->type == LVAL_FUNCTION)
+      lval_ptr->fn_table_index += fn_table_offset;
 #endif
 
     if (lval_ptr->closure) lval_ptr->closure += data_offset;

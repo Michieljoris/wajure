@@ -120,13 +120,6 @@ Lval* new_lval_list(void* head) {
                  .subtype = LIST,
                  .data.head = head,
                  INIT(FTI_RTE_NOT_A_FN)};
-  /* printf("arg list to cons (new_lval_list):\n"); */
-  /* printf("lval_list: %d\n", get_ref_count(lval)); */
-  /* printf("lval_list->head: %d\n", get_ref_count(lval->head)); */
-  /* printf("lval_list->head->car: %d\n", get_ref_count(lval->head->car)); */
-  /* printf("lval_list->head->cdr: %d\n", get_ref_count(lval->head->cdr)); */
-  /* printf("lval_list->head->cdr-car: %d\n",
-   * get_ref_count(lval->head->cdr->car)); */
   lval->hash = lval_hash(lval);
   return lval;
 }

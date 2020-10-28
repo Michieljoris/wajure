@@ -15,7 +15,7 @@ typedef struct {
   // when root fns get compiled there are 2 versions:
   // 1. A fn where the params match the wajure params, which is called directly
   // when possible
-  // 2. A fn that uses the standard abi of closure_ptr, args_block_ptr and
+  // 2. A fn that uses the standard abi of wval_ptr, args_block_ptr and
   // args_count, used in datafied versions of the fn (partial f 1) or (let [g
   // f]).
   // if reuse_wajure_fn is truthy the first fn is called from the second. Else
@@ -186,31 +186,31 @@ typedef struct {
 
 /* lval types */
 enum {
-  LVAL_SYMBOL,
-  LVAL_COLLECTION,
-  LVAL_LITERAL,
-  LVAL_FUNCTION,
-  LVAL_ERR,
+  LVAL_SYMBOL,      // 0
+  LVAL_COLLECTION,  // 1
+  LVAL_LITERAL,     // 2
+  LVAL_FUNCTION,    // 3
+  LVAL_ERR,         // 4
 
   /* subtypes */
   // literal subtypes
-  LNIL,
-  LTRUE,
-  LFALSE,
-  NUMBER,
-  STRING,
-  REGEX,
-  KEYWORD,
+  LNIL,     // 5
+  LTRUE,    // 6
+  LFALSE,   // 7
+  NUMBER,   // 8
+  STRING,   // 9
+  REGEX,    // 10
+  KEYWORD,  // 11
   // function subtypes
-  SYS,
-  MACRO,
-  SPECIAL,
-  LAMBDA,
+  SYS,      // 12
+  MACRO,    // 13
+  SPECIAL,  // 14
+  LAMBDA,   // 15
   // collection subtypes
-  LIST,
-  MAP,
-  VECTOR,
-  SET,
+  LIST,    // 16
+  MAP,     // 17
+  VECTOR,  // 18
+  SET,     // 19
   // error subtypes
   USER,
 

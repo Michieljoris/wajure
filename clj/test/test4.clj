@@ -1,7 +1,7 @@
 (in-ns 'test.test4)
 
 
-(defn test4a [] 
+(defn test4a []
   ;; ;; Testing list functions
   (t (list) ())
   ;;TODO TEST
@@ -38,7 +38,6 @@
   (t (if nil 8) nil)
   (t (if nil 8 7) 7)
   (t (if true (+ 1 7)) 8)
-
 
   ;; ;; ;; Testing basic conditionals
   (t (= 2 1)
@@ -115,8 +114,6 @@
 
 
   ;; ;; ;; Testing builtin and user defined functions
-
- 
   (t (+ 1 2) 3)
   (t ( (fn [a b] (+ b a)) 3 4) 7)
   (t ( (fn [] 4) ) 4)
@@ -138,6 +135,7 @@
 
 ;; TODO: use let to make the closed over fns
 (defn test4b []
+
   (t (plus5 7) 12)
   (t (plus7 8) 15)
 

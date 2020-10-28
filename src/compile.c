@@ -179,11 +179,11 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
     }
 
     // Retrieve closed over value at closure_index in closure block
-    int closure_param = 0;  // first param to fn is closure pointer
-    Ber closure_pointer = local_get_int32(wasm->module, closure_param);
-    Ber load_closure_lval =
-        BinaryenLoad(wasm->module, 4, 0, closure_index * 4, 2,
-                     BinaryenTypeInt32(), closure_pointer);
+    int wval_param = 0;  // first param to fn is wval pointer
+    Ber wval_ptr = local_get_int32(wasm->module, wval_param);
+    Ber closure_ptr = get_wval_prop(wasm->module, wval_ptr, "closure");
+    Ber load_closure_lval = BinaryenLoad(wasm->module, 4, 0, closure_index * 4,
+                                         2, BinaryenTypeInt32(), closure_ptr);
 
     return cresult(load_closure_lval);
   }

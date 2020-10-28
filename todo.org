@@ -1,7 +1,8 @@
 * TODO compiler
 ** DONE get tests running again
+** Add new tests
 - add new tests for multi arity fns
-- and for (:foo 123) etc
+- and for (:foo 123), (1) etc
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
@@ -24,7 +25,7 @@ In eval.c, eval_lambda_call:
 
   Maybe make sure things are included in the lval_fn's closure
 ** make sure ([1] 0) => 1 works
-and in general make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
+** DONE make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
 1. direct to NOT_A_FN rt error by default
 2. fns should receive ptr to lval, not just to closure as first arg
 ** DONE (let [p partial] (print p)) -> ref count error

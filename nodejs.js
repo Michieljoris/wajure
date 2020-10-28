@@ -27,22 +27,45 @@ const runtime_error_codes = {
     NOT_A_FN: 1
 }
 
+const m = { "1": 123 };
+
+const lval_types_to_str = {
+    "5": "nil",
+    "6":  "true",
+    "7": "false",
+    "8": "number",
+    "9": "string",
+    "10": "regex",
+    "11": "keyword",
+    // collection subtypes
+    "16": "list",
+    "17": "map",
+    "18": "vector",
+    "19": "set",
+}
+
+function offset_to_str(offset) {
+    var string = "";
+    if (offset) {
+        var bytes = new Uint8Array(memory.buffer, offset);
+        var length = 0;
+        while (bytes[length] != 0) length++;
+        var bytes = new Uint8Array(memory.buffer, offset, length);
+        string = new TextDecoder('utf8').decode(bytes);
+    }
+    return string;
+}
+
 function make_runtime_error_fn(memory, offset) {
     return function(err_no, offset) {
-        var string = "";
-        if (offset) {
-            var bytes = new Uint8Array(memory.buffer, offset);
-            var length = 0;
-            while (bytes[length] != 0) length++;
-            var bytes = new Uint8Array(memory.buffer, offset, length);
-            string = new TextDecoder('utf8').decode(bytes);
-        }
         switch (err_no) {
             case runtime_error_codes.NOT_A_FN:
-                string = "Not a fn!!!" + string; break;
-
+                // string = "Not a fn: " + offset; break;
+                string = "A " + lval_types_to_str[offset] + " cannot be used as a function";
+                break;
             case runtime_error_codes.WRONG_NUMBER_OF_ARGS:
-                string = "Wrong number of args passed." + string; break;
+                string = "Wrong number of args passed." +
+                    offset_to_str(offset); break;
             default: string = "Unknown runtime error code: " + err_no + " " + string;
         }
         throw string;
@@ -413,7 +436,7 @@ async function start() {
         console.log("heap_base =", env.heap_base);
 
         console.log("Link modules  ----------------------------------------");
-        // console.log(util.inspect(env.modules, null, Infinity, true));
+        console.log(util.inspect(env.modules, null, Infinity, true));
         link_modules(env, env.modules);
 
         console.log("Instantiate modules  ----------------------------------------");
