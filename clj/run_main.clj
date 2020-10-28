@@ -1,13 +1,36 @@
 (in-ns 'run-main)
-;; (require '[main :refer [main]])
-(require '[test.test-partial :refer [test-partial]])
+(require '[main :refer [main]])
+;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
+
+(main 1 2)
 ;; (defmacro fn [& sigs]
 ;;   (print (first sigs))
 ;;   )
 ;; (main)
-  (test-partial)
-;; (defn f [x] x)
+  ;; (pr "-----------------")
+;; (defn f [x y z] [x y z])
+;; (let [f1 (partial f 1 2)
+;;       ;; g1 (partial g 1 2)
+;;       ]
+;;   ;;No rest arg
+;;   (f1 3)
+;;   ;;With rest arg
+;;   ;; (t (g1) [1 2 nil])
+;;   ;; (t (g1 3) [1 2 (3)])
+;;   ;; (t (g1 3 4) [1 2 (3 4)])
+;;   ;; (t (g1 3 4 5) [1 2 (3 4 5)])
+;;   )
+  ;; (test-partial)
+;; (defn f [x y z] [x y z])
+
+;; (partial 1)
+;; (let [fp (partial f)]
+;;     (t (fp 1 2 3) [1 2 3])
+;;     ;; Partials of non fn is identity fn
+;;     (t (partial 1) 1)
+;;     (t (partial "abc") "abc")
+;;     )
 ;; (print "----------")
 
 

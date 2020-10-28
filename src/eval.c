@@ -77,7 +77,8 @@ Lval* read_rest_args(Lval* param, Cell* p, Cell* args) {
 }
 
 Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
-  int arg_count = list_count(arg_list->data.head);
+  int arg_count =
+      list_count(arg_list->data.head) + list_count(lval_fn->partials);
   int arity = min(arg_count, MAX_FN_PARAMS);
   Lambda* lambda = lval_fn->lambdas[arity];
   /* for (int i = 0; i <= MAX_FN_PARAMS; i++) */
@@ -160,7 +161,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Namespace* current_ns = get_current_ns();
   // From a required namespace
   if (namespace_or_alias) {
-    printf("eval_symbol: %s\n", lval_symbol->data.str);
+    /* printf("eval_symbol: %s\n", lval_symbol->data.str); */
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
     if (!ns) {
@@ -223,9 +224,6 @@ Lval* eval_vector(Lenv* env, Lval* lval_vector) {
 // We've got a list. We expect first node to be a fn call, and the rest args to
 // the fn.
 Lval* eval_application(Lenv* env, Lval* lval_list) {
-  /* printf("evalling fn call: \n"); */
-  /* lval_println(lval_list); */
-
   if (lval_list->data.head == NIL) {
     return make_lval_list();  // empty;
   }

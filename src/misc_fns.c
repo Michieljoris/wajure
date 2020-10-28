@@ -373,26 +373,34 @@ void print_lval(void* lval) { lval_print(lval); }
 
 Lval* partial_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN("partial", 1)
-  ITER_NEXT_TYPE(LVAL_FUNCTION, -1)
-  Lval* lval_fun = arg;
-  if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
+  ITER_NEXT
+  Lval* lval_fn = arg;
+  if (lval_fn->subtype == MACRO || lval_fn->subtype == SPECIAL)
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
-        lval_fun->data.str);
+        lval_fn->data.str);
+  if (lval_fn->type != LVAL_FUNCTION) {
+    return retain(lval_fn);
+  }
+  /* return make_lval_err( */
+  /*     "Function 'partial' passed incorrect type for arg 1, got %s, expected "
+   */
+  /*     "Function", */
+  /*     lval_type_constant_to_name(lval_fun->subtype)); */
 
-  Lval* partial_fn = make_lval_lambda(retain(lval_fun->closure), LAMBDA,
-                                      retain(lval_fun->lambdas));
-  partial_fn->data.str = retain(lval_fun->data.str);
-  partial_fn->c_fn = lval_fun->c_fn;
-  partial_fn->subtype = lval_fun->subtype;
+  Lval* partial_fn = make_lval_lambda(retain(lval_fn->closure), LAMBDA,
+                                      retain(lval_fn->lambdas));
+  partial_fn->data.str = retain(lval_fn->data.str);
+  partial_fn->c_fn = lval_fn->c_fn;
+  partial_fn->subtype = lval_fn->subtype;
   /* partial_fn->param_count = lval_fun->param_count; */
   /* partial_fn->rest_arg_index = lval_fun->rest_arg_index; */
   partial_fn->partials =
-      list_concat(lval_fun->partials, arg_list->data.head->cdr);
+      list_concat(lval_fn->partials, arg_list->data.head->cdr);
 
   // For compiler purposes so we know what the fn is that this partial is
   // derived from.
-  partial_fn->cfn = lval_fun->cfn ? lval_fun->cfn : lval_fun;
+  partial_fn->cfn = lval_fn->cfn ? lval_fn->cfn : lval_fn;
 
   return partial_fn;
 }

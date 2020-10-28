@@ -18,20 +18,28 @@
 (def plus1 (partial + 1))
 (def plus2 (partial plus1 1))
 
-;; (defn test-partial []
+;; (defn test-partial2 []
 
-;;   (fn [])
-
-
-;;   (let [f (fn [x y z] [x y z])
-;;         g (fn [x] x)]
-;;     (t (f 2 (g 1) 3) [2 1 3] "pass results of fn to fns"))
+;;   ;; (let [f (fn [x y z] [x y z])
+;;   ;;       g (fn [x] x)]
+;;   ;;   (t (f 2 (g 1) 3) [2 1 3] "pass results of fn to fns"))
 
 
+;;   (let [f1 (partial f 1 2)
+;;         ;; g1 (partial g 1 2)
+;;         ]
+;;     ;;No rest arg
+;;     (f1 3)
+;;     ;;With rest arg
+;;     ;; (t (g1) [1 2 nil])
+;;     ;; (t (g1 3) [1 2 (3)])
+;;     ;; (t (g1 3 4) [1 2 (3 4)])
+;;     ;; (t (g1 3 4 5) [1 2 (3 4 5)])
+;;     )
 
 
 ;; )
-;; 
+
 
 
 (defn test-partial []
@@ -51,6 +59,7 @@
     (t (g1 3 4) [1 2 (3 4)])
     (t (g1 3 4 5) [1 2 (3 4 5)])
     )
+
   ;; Partial global fns
   (t (fp 2 3) [1 2 3])
   (t (gp) [1 2 nil])
