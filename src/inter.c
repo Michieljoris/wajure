@@ -10,32 +10,6 @@
 #include "wasm.h"
 #include "wasm_util.h"
 
-// Slot offsets
-#define ref_count_offset 0
-#define data_p_offset 12  // bytes
-#define slot_type_size data_p_offset + 4
-
-// Cell offsets
-#define wcell_size slot_type_size + cell_type_size
-#define cell_hash_offset slot_type_size + 0
-#define car_offset slot_type_size + 4
-#define cdr_offset slot_type_size + 8
-#define cell_type_size cdr_offset + 4
-
-// Lval offsets
-#define type_offset slot_type_size + 0     // char
-#define subtype_offset slot_type_size + 1  // char
-#define d_offset slot_type_size + 4        // int
-#define hash_offset slot_type_size + 8     // int
-
-#define fn_table_index_offset slot_type_size + 12  // short
-#define partial_count_offset slot_type_size + 14   // short
-#define closure_offset slot_type_size + 16         // int
-#define partials_offset slot_type_size + 20        // int
-#define fn_call_relay_offset slot_type_size + 24   // int
-#define lval_type_size fn_call_relay_offset + 4
-/* #define str_offset 4  // 20 */
-
 void add_to_offset_list(int** offsets, int* count, int* allocated, int offset) {
   if (*count >= *allocated) {
     *allocated += 100;

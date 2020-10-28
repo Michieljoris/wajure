@@ -143,7 +143,6 @@ Operands compile_args_into_operands(Wasm* wasm, Lambda* lambda, Cell* partials,
                                     Cell* args, int total_args_count,
                                     LocalIndices* li) {
   BinaryenModuleRef module = wasm->module;
-  printf("lambda: %p\n", lambda);
   int param_count = lambda->param_count;
   int has_rest_arg = lambda->has_rest_arg;
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
@@ -266,7 +265,7 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lambda* lambda,
                                 operands.count, BinaryenTypeInt32());
         } break;
         case INDIRECT_EXTERNAL: {
-          printf("indirect exterrnal\n");
+          /* printf("indirect external\n"); */
           char* fn_table_index_external = fn_ref.global_name;
           Ber fn_table_index = BinaryenGlobalGet(
               wasm->module, fn_table_index_external, BinaryenTypeInt32());

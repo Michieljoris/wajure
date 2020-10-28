@@ -130,7 +130,13 @@ Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
 
   bindings_env->parent_env = retain(lval_fn->closure);
 
+  Namespace* old_ns = state->current_ns;
+  // TODO: bit iffy, look into more
+  if (lval_fn->ns) state->current_ns = lval_fn->ns;
   Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR);
+
+  state->current_ns = old_ns;
+  /* Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR); */
 
   return ret;
 }
@@ -152,9 +158,9 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   Namespace* current_ns = get_current_ns();
-
   // From a required namespace
   if (namespace_or_alias) {
+    printf("eval_symbol: %s\n", lval_symbol->data.str);
     Namespace* ns =
         get_ns_for_namespaced_symbol(lval_symbol, namespace_or_alias);
     if (!ns) {

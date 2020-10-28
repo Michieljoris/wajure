@@ -409,6 +409,7 @@ async function start() {
             console.log("New wasm memory size: " + (page_count * page_size / 1024) + "kb")
 
         }
+        console.log("data_start =", env.data_start);
         console.log("heap_base =", env.heap_base);
 
         console.log("Link modules  ----------------------------------------");

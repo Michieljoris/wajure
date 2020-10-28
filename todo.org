@@ -1,5 +1,5 @@
 * TODO compiler
-** get tests running again
+** DONE get tests running again
 - add new tests for multi arity fns
 - and for (:foo 123) etc
 ** clean up and comment all of code
@@ -13,10 +13,22 @@ so get interpreter to end with all slots free again!
 *** fix freeing of fn_name
 *** releasing a lval_wasm_lambda!!!
 we need to free its closure and partials!!
+** When calling a fn in interpreter we need set current ns,bit iffy
+In eval.c, eval_lambda_call:
+  Namespace* old_ns = state->current_ns;
+  // TODO: bit iffy, look into more
+  if (lval_fn->ns) state->current_ns = lval_fn->ns;
+  Lval* ret = do_list(bindings_env, lambda->body, RETURN_ON_ERROR);
+
+  state->current_ns = old_ns;
+
+  Maybe make sure things are included in the lval_fn's closure
 ** make sure ([1] 0) => 1 works
 and in general make sure we can treat all lvals as a fn, iow, fn_table_index should always be set
 1. direct to NOT_A_FN rt error by default
 2. fns should receive ptr to lval, not just to closure as first arg
+** DONE (let [p partial] (print p)) -> ref count error
+WARNING (src/refcount.c:70): Warning: trying to release data that's not managed by ref_count (data_p: 70264, slot->data_p: 112).
 
 ** DONE make_wajure_name
 we only need to call this once, then hang it off the lambda and reuse it when we

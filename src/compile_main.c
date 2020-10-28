@@ -83,9 +83,8 @@ int walk_namespaces(void f(Namespace*)) {
 }
 
 void p_info(Namespace* ns) {
-  /* printf("%d %s: ", ns->compile, ns->namespace); */
+  printf("%s dirty?: %s\n", ns->namespace, ns->compile ? "yes" : "no");
   print_alist(ns->dependants);
-  if (list_count(ns->dependants) == 0) printf("\n");
 }
 
 // Not the best solution, better would be to separate compiler data from lvals
@@ -160,6 +159,8 @@ int compile_main() {
   /* Namespace* foo_core_ns = get_namespace("foo.core"); */
   /* foo_core_ns->compile = 1; */
   walk_namespaces(p_info);
+
+  printf("\n");
 
   state->mark_deps = 1;
   walk_namespaces(maybe_compile);

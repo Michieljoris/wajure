@@ -79,6 +79,7 @@ Namespace* get_namespace(char* namespace_str) {
 Namespace* get_ns_for_namespaced_symbol(Lval* lval_symbol,
                                         char* namespace_or_alias) {
   Namespace* current_namespace = get_current_ns();
+  printf("current ns: %s\n", current_namespace->namespace);
   char* namespace_str =
       alist_get(current_namespace->as, is_eq_str, namespace_or_alias);
 

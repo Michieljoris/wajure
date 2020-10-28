@@ -192,8 +192,14 @@ void add_wasm_fns(Wasm* wasm) {
     wasm_fn.add_fn(wasm, wasm_fn.wasm_fn_name);
     add_native_fn_to_table(wasm, wasm_fn.wasm_fn_name, wasm_fn.fn_table_index);
     char* data_lval = make_data_lval(wasm, NULL, wasm_fn.fn_table_index);
-    wasm_fn.data_offset =
-        inter_data_lval(wasm, data_lval) + wasm->builtins_data_start;
+    int data_ptr = inter_data_lval(wasm, data_lval);
+
+    // Make sure we set the mempool's slot's pointer to the data properly as
+    // well
+    *(int*)(wasm->data + data_ptr - slot_type_size + data_p_offset) =
+        wasm->builtins_data_start + data_ptr;
+
+    wasm_fn.data_offset = data_ptr + wasm->builtins_data_start;
     char* fn_name = wasm_fn.wasm_fn_name;
     write_symbol_table_line(wasm, LVAL_FUNCTION, fn_name, wasm_fn.data_offset,
                             wasm_fn.fn_table_index, -1, -1);

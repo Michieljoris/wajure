@@ -255,8 +255,6 @@ Lval* eval_lambda(Lenv* env, Lval* arg_list) {
 
 // Macros close over the environment where they are defined.
 Lval* eval_macro(Lenv* env, Lval* arg_list) {
-  printf("eval macro: ");
-  lval_println(arg_list);
   Cell* head = arg_list->data.head;
   if (!head) return make_lval_err("macro expects at least one arg");
   return eval_lambdas(env, head, MACRO); /*  */
