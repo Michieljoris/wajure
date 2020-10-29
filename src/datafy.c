@@ -35,6 +35,8 @@ Ber make_ptr(Wasm* wasm, int ptr) {
 }
 
 CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
+  printf("datafy_native_fn!!!! \n");
+  lval_println(lval_fn_native);
   WasmFn* native_fn = alist_get(state->wajure_to_native_fn_map, is_eq_str,
                                 lval_fn_native->data.str);
   int lval_ptr = native_fn->data_offset;
@@ -79,7 +81,8 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
 
   // And return a wasm pointer so that it can be attached to the lval for future
   // reference
-  CResult ret = {.data_offset = lval_ptr};
+  CResult ret = {.data_offset = lval_ptr,
+                 .fn_table_index = lval_fn->fn_table_index};
   return ret;
 }
 
@@ -177,9 +180,15 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   // A data offset in another module is of no use.
   if (!lval_is_external && lval->data_offset > 0) {
     int data_offset = lval->data_offset;
-    CResult _ret = {.ber = make_ptr(wasm, data_offset),
-                    .data_offset = data_offset,
-                    .fn_table_index = lval->fn_table_index};
+    printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->subtype));
+    lval_println(lval);
+    CResult _ret = {
+        .ber =
+            lval->subtype == SYS  // we have absolute data offsets for sys fns
+                ? make_int32(wasm->module, data_offset)
+                : make_ptr(wasm, data_offset),
+        .data_offset = data_offset,
+        .fn_table_index = lval->fn_table_index};
     return _ret;
   }
   switch (lval->type) {

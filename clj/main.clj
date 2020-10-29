@@ -1,12 +1,12 @@
 (in-ns 'main)
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[wajure.core])
-;; (require '[test.run :as r :refer [run-tests]])
+(require '[test.run :as r :refer [run-tests]])
 
 ;; (require '[test.test-partial :refer [test-partial]])
 
 ;; (require '[test.test-partial :refer [test-partial]])
-(require '[foo.core :as foo])
+;; (require '[foo.core :as foo])
 
 
 ;; (require '[foo.test4-if-fn-do :as foo ;; :refer [foo]
@@ -20,25 +20,79 @@
 ;; (defn f [x y z] [x y z])
 ;; (def fp (partial f 1))
 ;; (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))
-(defn f
-  ([x] [x])
-  ([x y] [x y])
-  ([x y z] [x y z])
-  )
 
+;; (defn g
+;;   ([x] [x])
+;;   ([x y] [x y])
+;;   ([x y z] [x y z])
+;;   )
+;; (defn f
+;;   ([x] [x])
+;;   ([x y] [x y])
+;;   ([x y z] [x y z])
+;;   )
+;; (defn f [x y] (if false (f 1 2)) [x y])
 ;; (def fp (partial f 1))
 ;; (def f foo/f)
 ;; (def fp foo/fp)
 ;; (def fp (partial foo/f 1))
 ;; (def fp (partial foo/f 1))
 (defn main [& args]
-  (let [my-partial partial
-        p (my-partial partial f)
-        ;; p (partial partial f )
-        ]
-    (print ((p 1) 2))
-    ;; (print ((p 1) 2))
+  (let [f (fn "foo" [x] x)]
+    (print (f 1))
     )
+  ;; (run-tests)
+  ;; (let [p (partial partial f)]
+  ;;   (t ((p 1) 2) [1 2]))
+
+  ;; (let [f (fn [x y] [x y])
+  ;;       p (partial partial f)]
+  ;;   (t ((p 1) 2) [1 2]))
+
+  ;; (let [mypartial partial
+  ;;       pp (mypartial partial f)
+  ;;       p (pp 1)]
+  ;;   (t (p 2) [1 2]))
+
+  ;; (let [mypartial partial
+  ;;       pp (mypartial mypartial f)
+  ;;       p (pp 1)]
+  ;;   (t (p 2) [1 2]))
+
+  ;; (let [mypartial partial
+  ;;       pp (partial mypartial f)
+  ;;       p (pp 1)]
+  ;;   (t (p 2) [1 2]))
+
+  ;; (let [mypartial partial
+  ;;       pp (mypartial partial f)
+  ;;       p (pp 1)]
+  ;;   (print partial)
+  ;;   (print (p 2))
+  ;;   ;; (print partial)
+  ;;   (t (p 2) [1 2])
+  ;;   )
+
+  ;; (let [mypartial partial
+  ;;       p1 (partial mypartial f)]
+  ;;   (t ((p1 1) 2) [1 2]))
+
+  ;; (let [mypartial partial
+  ;;       p1 (mypartial mypartial f)]
+  ;;   (t ((p1 1) 2) [1 2]))
+
+
+
+
+
+  ;; (let [mypartial partial
+  ;;       p1 (mypartial plus 1)
+  ;;       ]
+  ;;   (print ">>>>" (p1 2))
+  ;;   ;; (t ((p1 1) 2) [1 2])
+  ;;   )
+ 
+
   ;; (let [fp (partial foo/f 1)]
   ;;   (print (fp 2 3))
   ;;   )
@@ -123,7 +177,6 @@
 ;;   ;; (let [f (fn [] 1)]
 ;;   ;;   (print (f 1))
 ;;   ;;   )
-;;   ;; (run-tests)
 ;;   ;; (let [f (foo 0)
 ;;   ;;       f2 (foo 0)]
 ;;   ;;   (print (f))

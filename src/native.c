@@ -242,6 +242,9 @@ void add_partial_fn(Wasm* wasm, char* fn_name) {
           get_wval_prop(module, local_get_int32(module, wval_local), "closure"))
           .ber;
 
+  children[children_count++] = wasm_log_int(wasm, wval_fn_table_index);
+  children[children_count++] =
+      wasm_log_int(wasm, local_get_int32(module, wval_local));
   Ber operands[4] = {
       wval_fn_table_index,
       wval_closure,

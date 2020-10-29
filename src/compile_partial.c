@@ -317,6 +317,8 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
           ber_fn_table_index =
               BinaryenGlobalGet(wasm->module, global_name, BinaryenTypeInt32());
         } else {
+          lval_println(lval_fn);
+          printf("lval_fn->table_index %d\n", lval_fn->fn_table_index);
           int fn_table_index = lval_fn->cfn ? lval_fn->cfn->fn_table_index
                                             : lval_fn->fn_table_index;
           // We know the offset/fn_table_index, let's add the module's

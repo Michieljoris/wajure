@@ -113,6 +113,7 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
                                       total_args_count, BinaryenTypeInt32());
   Ber operands[] = {BinaryenBinary(module, BinaryenMulInt32(), total_args_count,
                                    make_int32(module, 4))};
+
   // Allocate a block of memory to copy the arg ptrs into
   Ber args_block_ptr =
       BinaryenCall(module, "lalloc_size", operands, 1, BinaryenTypeInt32());
@@ -144,6 +145,7 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
 
   Ber fn_table_index = get_wval_prop(
       module, local_get_int32(module, wval_local), "fn_table_index");
+
   return BinaryenCallIndirect(module, fn_table_index, call_operands, 3,
                               make_type_int32(3), BinaryenTypeInt32());
 }
