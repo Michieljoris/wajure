@@ -14,14 +14,13 @@ Lval* cons_fn(Lenv* env, Lval* arg_list) {
 
   ITER_NEXT
   Lval* x = arg;
-  /* ITER_NEXT_TYPE(LVAL_COLLECTION, -1) */
   ITER_NEXT
   Lval* lval_list = arg;
 
   ITER_END
   Lval* lval_list2 = make_lval_list();
   if (lval_list->type != LNIL)
-    LASSERT_TYPE("cons", arg_list, 2, LVAL_COLLECTION, LIST, lval_list)
+    LASSERT_TYPE("cons", arg_list, 2, LVAL_COLLECTION, -1, lval_list)
 
   lval_list2->data.head = list_cons(x, lval_list->data.head);
   /* lval_list2->hash = lval_list2->data.head->hash = */

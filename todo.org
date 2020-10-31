@@ -80,7 +80,6 @@
                (cons n (bix2 (- n 1)))))]
   (t (= (foobar 5) (list 5 4 3 2 1)) true))
 
-
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg

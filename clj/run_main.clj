@@ -1,9 +1,16 @@
 (in-ns 'run-main)
-;; (require '[main :refer [main]])
+(require '[main :refer [main]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
 
 ;; (main 1 2)
+(defn map2 [f c]
+  (reduce (fn [acc v]
+            (cons (f v) acc))
+          nil c))
+
+(print (map2 (fn [x] (+ x 1)) [ 0 1 2 ]))
+
 ;; (def b 1)
 ;; (declare b)
 ;; (def c b)
@@ -75,10 +82,10 @@
 ;;   (def bax (get-bax4))
 ;;   (t (= bax (get-bax4)) false))
 
-(let [foobar (fn bix2 [n]
-             (when (> n 0)
-               (cons n (bix2 (- n 1)))))]
-  (t (= (foobar 5) (list 5 4 3 2 1)) true))
+;; (let [foobar (fn bix2 [n]
+;;              (when (> n 0)
+;;                (cons n (bix2 (- n 1)))))]
+;;   (t (= (foobar 5) (list 5 4 3 2 1)) true))
 
 ;; (t (= (bix 5) (list 5 4 3 2 1)) true)
 ;; (print (cons 1 nil))

@@ -1,7 +1,7 @@
 (in-ns 'main)
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[wajure.core])
-(require '[test.run :as r :refer [run-tests]])
+;; (require '[test.run :as r :refer [run-tests]])
 
 ;; (require '[test.test-partial :refer [test-partial]])
 
@@ -40,9 +40,13 @@
 ;; (let [f (fn foo  [x] (print foo) x)]
 ;;     (print (f 1))
 ;;     )
+(defn f [] (print f))
+
+;; (defn g [] (print "in second g"))
 
 (defn main [& args]
-  (run-tests)
+  ;; (f)
+  ;; (run-tests)
   ;; (let [p (partial partial f)]
   ;;   (t ((p 1) 2) [1 2]))
 

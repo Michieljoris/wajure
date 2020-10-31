@@ -59,23 +59,25 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
+  printf("datafy root fn:\n");
+  lval_println(lval_fn);
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
-  int offset;
+  int fn_table_index;
   if (cfn) {
     // Add the canonical fn for this partial if we haven't already
     if (cfn->fn_table_index == -1) {
       cfn->fn_table_index = add_root_fn(wasm, cfn);
     }
-    offset = cfn->fn_table_index;
+    fn_table_index = cfn->fn_table_index;
   } else {
     // If not a partial fn just add the wasm fn
     lval_fn->fn_table_index = add_root_fn(wasm, lval_fn);
-    offset = lval_fn->fn_table_index;
+    fn_table_index = lval_fn->fn_table_index;
   }
 
   // Make a lval_wasm_lambda of our fn and inter it in wasm data
   char* data_lval =
-      make_data_lval(wasm, lval_fn, wasm->__fn_table_end + offset);
+      make_data_lval(wasm, lval_fn, wasm->__fn_table_end + fn_table_index);
 
   int lval_ptr = inter_data_lval(wasm, data_lval);
 
@@ -150,8 +152,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   scoped char* global_name = NULL;
 
   /* if (lval->subtype == LTRUE) { */
-  /*   printf("datafy ======================= wval_ptr: %d, ",
-   * lval->data_offset); */
+  printf("datafy ======================= wval_ptr: %d, ", lval->data_offset);
   /*   printf("%s ", lval->ns->namespace); */
   /*   lval_println(lval); */
   /* } */
