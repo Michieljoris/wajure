@@ -2,6 +2,7 @@
 #define __LVAL_H_
 #include "ltypes.h"
 
+Lval* make_lval_unbound();
 Lval* make_lval_num(long x);
 Lval* make_lval_quote(void);
 Lval* make_lval_sym(char* s);

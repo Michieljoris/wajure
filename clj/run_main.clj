@@ -1,21 +1,14 @@
 (in-ns 'run-main)
-(require '[main :refer [main]])
+;; (require '[main :refer [main]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
 
-;; (defmacro t [expr expected & str]
-;;   `(let [evalled ~expr]
-;;      (when (not= evalled (quote ~expected))
-;;       (do
-;;         (pr "FAIL" ~@str)
-;;         (pr (quote ~expr) )
-;;         (pr "Expected:" (quote ~expected))
-;;         (pr "Got:" ~expr))
-;;       )))
-  ;; (print "macroexpand: " (macroexpand '(t 11 11)))
-;; (t 11 11)
-(main 1 2)
-(print (= [] (list)))
+;; (main 1 2)
+;; (def b 1)
+;; (declare b)
+;; (def c b)
+;; (print-env)
+;; (print  (= b c))
 
   ;; (t (= [] (list))
   ;;    true)
@@ -53,26 +46,49 @@
 ;;   (l))
 
 ;; (do
-;;   (defn bax [x] (print bax))
-;;   (bax 1))
-
-
-;; (do
-;;   (def bax (do (fn [x] (print bax))))
-;;   (bax 1))
-
-;; (do
-;;   (def bax (let [x 1 y (fn [x] (print bax) )] y))
-;;   (bax 1))
-
-;; (let [bar (fn bar [x] (print bar))]
-;;   (bar 1)
+;;   (defn bax []  bax)
+;;   (t (= (bax) bax) true)
 ;;   )
 
+;; (defn get-bax2 []
+;;   (fn [] bax2))
+
+;; (do
+;;   (def bax2 (get-bax2))
+;;   (t (= bax2 (get-bax2)) false)
+;;   (t (= bax2 bax2) true)
+;; )
+
+;; (do
+;;   (def bax3 (let [x 1
+;;                  y (fn [] bax3)]
+;;              y))
+;;   (t (= bax3 (bax3)) true))
+
+;; (let [bax (fn bax4 [] bax4)]
+;;   (t (= bax (bax)) true))
+
+;; (defn get-bax4 []
+;;   (fn bax4 [] bax4))
+
+;; (do
+;;   (def bax (get-bax4))
+;;   (t (= bax (get-bax4)) false))
+
+(let [foobar (fn bix2 [n]
+             (when (> n 0)
+               (cons n (bix2 (- n 1)))))]
+  (t (= (foobar 5) (list 5 4 3 2 1)) true))
+
+;; (t (= (bix 5) (list 5 4 3 2 1)) true)
+;; (print (cons 1 nil))
+;; (cons 1 nil)
 ;; (do
 ;;   (def q (let [r q] r))
-;;   (print "hello:" q)
-;;   )
+;;   (t (bound? (var q)) false))
+
+;; (def z)
+;; (print z)
 
 ;; (do
 ;;   (def a (if true (fn [x] x)))
@@ -81,8 +97,10 @@
 
 ;; (declare bom2)
 ;; (print bom2)
-;; (def bloo (fn [] (+ bom2 1)))
+;; (def bloo (fn [] bom2))
 ;; (bloo)
+;; (def bom2 123)
+;; (print bom2)
 ;; (def bom2 123)
 ;; (do
 ;;   (def foobar 1111)

@@ -54,6 +54,9 @@ int lval_hash(Lval* lval) {
         case LFALSE:
           hash = 2;
           break;
+        case UNBOUND:
+          /* hash = 2; */
+          break;
         default:
           printf("OOPS, can't calculate hash of unknown collection type %d\n",
                  lval->type);
@@ -80,6 +83,14 @@ int lval_hash(Lval* lval) {
       printf("OOPS, can't calculate hash of unknown type %d\n", lval->group);
   }
   return hash;
+}
+
+Lval* make_lval_unbound() {
+  Lval* lval = lalloc_type(LVAL);
+  *lval =
+      (Lval){.group = LVAL_LITERAL, .type = UNBOUND, INIT(FTI_RTE_NOT_A_FN)};
+  lval->hash = lval_hash(lval);
+  return lval;
 }
 
 Lval* make_lval_sym(char* s) {

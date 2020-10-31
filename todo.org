@@ -34,6 +34,52 @@
         pp (partial mypartial f)
         p (pp 1)]
     (t (p 2) [1 2]))
+*** named fns
+(do
+  (defn bax []  bax)
+  (t (= (bax) bax) true)
+  )
+
+(defn get-bax2 []
+  (fn [] bax2))
+
+(do
+  (def bax2 (get-bax2))
+  (t (= bax2 (get-bax2)) false)
+  (t (= bax2 bax2) true)
+)
+
+(do
+  (def bax3 (let [x 1
+                 y (fn [] bax3)]
+             y))
+  (t (= bax3 (bax3)) true))
+
+(let [bax (fn bax4 [] bax4)]
+  (t (= bax (bax)) true))
+
+(do
+  (def q (let [r q] r))
+  (t (bound? (var q)) false))
+
+(defn get-bax4 []
+  (fn bax4 [] bax4))
+
+(do
+  (def bax (get-bax4))
+  (t (= bax (get-bax4)) false))
+
+(defn bix [n]
+  (when (> n 0)
+    (cons n (bix (- n 1)))))
+
+(t (= (bix 5) (list 5 4 3 2 1)) true)
+
+(let [foobar (fn bix2 [n]
+             (when (> n 0)
+               (cons n (bix2 (- n 1)))))]
+  (t (= (foobar 5) (list 5 4 3 2 1)) true))
+
 
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm

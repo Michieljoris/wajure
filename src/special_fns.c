@@ -35,22 +35,24 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
   Namespace* ns = get_current_ns();
   // We want any fn that's defined too have only access to the env as defined
   // sofar.
-  Lenv* env = lenv_new();
-  env->kv = retain(ns->env->kv);
-  Lval* bound_symbol = eval_symbol(env, lval_sym);
-  release(env);
-  /* printf("bound_symbol:"); */
-  /* lval_println(bound_symbol); */
-  if (bound_symbol->group != LVAL_ERR) {
-    if (bound_symbol->type == SYS) {
-      warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
-      lval_println(bound_symbol);
-    } else
-      warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
-           lval_sym->data.str, bound_symbol->ns->namespace, lval_sym->data.str,
-           bound_symbol->ns->namespace);
-    release(bound_symbol);
-  }
+  /* Lenv* env = lenv_new(); */
+  /* env->kv = retain(ns->env->kv); */
+  /* Lval* bound_symbol = eval_symbol(env, lval_sym); */
+  /* release(env); */
+  /* /\* printf("bound_symbol:"); *\/ */
+  /* /\* lval_println(bound_symbol); *\/ */
+  /* if (bound_symbol->group != LVAL_ERR) { */
+  /*   if (bound_symbol->type == SYS) { */
+  /*     warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
+   */
+  /*     lval_println(bound_symbol); */
+  /*   } else */
+  /*     warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n", */
+  /*          lval_sym->data.str, bound_symbol->ns->namespace,
+   * lval_sym->data.str, */
+  /*          bound_symbol->ns->namespace); */
+  /*   release(bound_symbol); */
+  /* } */
   if (!lval->cname) {
     // We need to keep track of in which namespace a fn is actually defined and
     // under which name so we can refer to its fn_table_index from other
@@ -69,21 +71,63 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
 }
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
-  ITER_NEW_N("def", 2);
+  ITER_NEW("def");
   ITER_NEXT_TYPE(LVAL_LITERAL, SYMBOL);
   Lval* lval_sym = arg;
-  printf("\n++++++++++++in eval_def\n");
 
+  Namespace* ns = get_current_ns();
+  Lval* bound_symbol = eval_symbol(ns->env, lval_sym);
+  /* printf("bound_symbol:"); */
+  /* lval_println(bound_symbol); */
+  Lval* lval_unbound = NULL;
+  if (bound_symbol->group == LVAL_ERR) {
+    lval_unbound = make_lval_unbound();
+    lenv_put(ns->env, lval_sym, lval_unbound);
+  } else {
+    if (bound_symbol->type == SYS) {
+      warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
+      lval_println(bound_symbol);
+    } else
+      warn("WARNING: %s already refers to: #'%s/%s in namespace: %s\n",
+           lval_sym->data.str, bound_symbol->ns->namespace, lval_sym->data.str,
+           bound_symbol->ns->namespace);
+  }
+  release(bound_symbol);
+
+  /* printf("\n++++++++++++in eval_def\n"); */
   /* lval_println(lval_sym); */
   ITER_NEXT;
   Lval* lval = arg;
-  lval_println(lval);
+  /* lval_println(lval); */
   ITER_END;
-  lval = lval_eval(env, lval);
-  if (lval->group == LVAL_ERR) return lval;
+  if (lval) {
+    // We want any fn that's defined to have only access to the env as defined
+    // sofar.
+    /* Lenv* env = lenv_new(); */
+    /* env->kv = retain(ns->env->kv); */
+    lval = lval_eval(env, lval);
+    /* release(env); */
+    if (lval->group == LVAL_ERR) return lval;
 
-  bind_symbol(lval_sym, lval);
-  release(lval);
+    if (!lval->cname) {
+      // We need to keep track of in which namespace a fn is actually defined
+      // and under which name so we can refer to its fn_table_index from other
+      // namespaces in compiled code by imported global.
+
+      /* printf("def of lambda: %s/%s\n", get_current_ns()->namespace, */
+      /*        lval_sym->data.str); */
+      /* lval_println(lval); */
+
+      // Set a unique cname on every lval we add to our environment
+      lval->cname = make_cname(lval_sym->data.str);
+      lval->ns = retain(get_current_ns());
+    }
+    // We want to mutate env as we update it as this is a namespace root
+    // binding.
+    lenv_put(ns->env, lval_sym, lval);
+    release(lval);
+  }
+
   return make_lval_nil();
 }
 
@@ -250,7 +294,6 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
 
   // Creates fn and sets the parent_env of its env field (bindings)
   // to the passed in env
-  /* Lenv* closure_env = lenv_new(); */
   Lval* fn = make_lval_lambda(retain(env), type, lambdas);
   if (fn_name) {
     fn->closure = lenv_prepend(env, retain(fn_name), retain(fn));

@@ -133,6 +133,8 @@ int lval_eq(Lval* x, Lval* y) {
         case LTRUE:
         case LFALSE:
           return x->type == y->type;
+        case UNBOUND:
+          return x == y;
         default:
           printf(
               "Warning: comparing instances of type '%s' is not implemented\n",

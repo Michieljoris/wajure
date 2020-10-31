@@ -187,6 +187,11 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
           return fctprintf(out, arg, "true");
         case LFALSE:
           return fctprintf(out, arg, "false");
+        case UNBOUND:
+          return fctprintf(out, arg, "<unbound>");
+        default:
+          return fctprintf(out, arg, "unknown lval type %s\n",
+                           lval_type_constant_to_name(lval->type));
       }
 #ifdef WASM
     case LVAL_FUNCTION:
