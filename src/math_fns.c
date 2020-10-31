@@ -25,7 +25,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
             "Math operation %s needs at least one argument", operator);
       }
       if (!iter_peek(i)) {
-        if (arg->subtype != NUMBER) {
+        if (arg->type != NUMBER) {
           return make_lval_err("Expected number but got %s",
                                lval_type_to_name(arg));
         }
@@ -43,7 +43,7 @@ static Lval* op_fn(Lenv* env, char* operator, Lval * arg_list) {
   }
 
   while (arg) {
-    if (arg->subtype != NUMBER) {
+    if (arg->type != NUMBER) {
       return make_lval_err("Expected number but got %s",
                            lval_type_to_name(arg));
     }
@@ -118,7 +118,7 @@ int lval_eq(Lval* x, Lval* y) {
       }
       return 1;
     case LVAL_LITERAL:
-      switch (x->subtype) {
+      switch (x->type) {
         case NUMBER:
           return (x->data.num == y->data.num);
         case KEYWORD:
@@ -127,7 +127,7 @@ int lval_eq(Lval* x, Lval* y) {
         case LNIL:
         case LTRUE:
         case LFALSE:
-          return x->subtype == y->subtype;
+          return x->type == y->type;
         default:
           printf(
               "Warning: comparing instances of type '%s' is not implemented\n",

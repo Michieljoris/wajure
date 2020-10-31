@@ -42,7 +42,7 @@ Lval* first_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("first", 1)
   /* ITER_NEXT_TYPE(LVAL_COLLECTION, -1) */
   ITER_NEXT
-  if (arg->subtype == LNIL) return retain(arg);
+  if (arg->type == LNIL) return retain(arg);
   LASSERT_TYPE("first", arg_list, 1, LVAL_COLLECTION, -1, arg)
   Lval* lval_list = arg;
   ITER_END
@@ -121,8 +121,7 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
 Lval* count_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("count", 1)
   ITER_NEXT
-  if (arg->group == LVAL_LITERAL && arg->subtype == LNIL)
-    return make_lval_num(0);
+  if (arg->group == LVAL_LITERAL && arg->type == LNIL) return make_lval_num(0);
   LASSERT_TYPE("count", arg_list, 1, LVAL_COLLECTION, -1, arg)
   int count = list_count(arg->data.head);
   ITER_END
@@ -133,7 +132,7 @@ Lval* is_nil_fn(Lenv* env, Lval* arg_list) {
   Lval* result;
   ITER_NEW_N("nil?", 1)
   ITER_NEXT
-  if (arg->subtype == LNIL)
+  if (arg->type == LNIL)
     result = make_lval_true();
   else
     result = make_lval_false();
@@ -145,7 +144,7 @@ Lval* is_list_fn(Lenv* env, Lval* arg_list) {
   Lval* result;
   ITER_NEW_N("list?", 1)
   ITER_NEXT
-  if (arg->subtype == LIST)
+  if (arg->type == LIST)
     result = make_lval_true();
   else
     result = make_lval_false();

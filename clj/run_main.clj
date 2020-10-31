@@ -2,6 +2,18 @@
 (require '[main :refer [main]])
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
+
+(defmacro t [expr expected & str]
+  `(let [evalled ~expr]
+     (when (not= evalled (quote ~expected))
+      (do
+        (pr "FAIL" ~@str)
+        (pr (quote ~expr) )
+        (pr "Expected:" (quote ~expected))
+        (pr "Got:" ~expr))
+      )))
+  (print "macroexpand: " (macroexpand '(t 11 11)))
+(t 11 11)
 (main 1 2)
 
 ;; (defmacro fn [& args]

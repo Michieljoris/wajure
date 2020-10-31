@@ -17,10 +17,10 @@
 #define cell_type_size cdr_offset + 4
 
 // Lval offsets
-#define type_offset slot_type_size + 0     // char
-#define subtype_offset slot_type_size + 1  // char
-#define d_offset slot_type_size + 4        // int
-#define hash_offset slot_type_size + 8     // int
+#define type_offset slot_type_size + 0   // char
+#define group_offset slot_type_size + 1  // char
+#define d_offset slot_type_size + 4      // int
+#define hash_offset slot_type_size + 8   // int
 
 #define fn_table_index_offset slot_type_size + 12  // short
 #define partial_count_offset slot_type_size + 14   // short

@@ -22,7 +22,7 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
 
   Lval* bindings = arg_list->car;
 
-  if (bindings->subtype != VECTOR)
+  if (bindings->type != VECTOR)
     quit(wasm, "Error: Expected vector as first arg to let, got %s ",
          lval_type_to_name(bindings));
 
@@ -148,8 +148,10 @@ CResult is_falsy(Wasm* wasm, Ber wval) {
   }
   int magic_value = (higher ^ lower) ^ 255;
   BinaryenModuleRef module = wasm->module;
-  Ber subtype = BinaryenLoad(module, 1, 0, 1, 0, BinaryenTypeInt32(), wval);
-  Ber and = BinaryenBinary(module, BinaryenAndInt32(), subtype,
+  int type_offset = 0;
+  Ber type =
+      BinaryenLoad(module, 1, 0, type_offset, 0, BinaryenTypeInt32(), wval);
+  Ber and = BinaryenBinary(module, BinaryenAndInt32(), type,
                            make_int32(module, magic_value));
   Ber eq =
       BinaryenBinary(module, BinaryenEqInt32(), and, make_int32(module, lower));

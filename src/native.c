@@ -57,7 +57,7 @@ void add_fn_rt_error_not_a_fn(Wasm* wasm, char* fn_name) {
   Ber wval = local_get_int32(wasm->module, wval_param);
 
   Ber operands[] = {make_int32(wasm->module, RT_NOT_A_FN),
-                    get_wval_prop(wasm->module, wval, "subtype")};
+                    get_wval_prop(wasm->module, wval, "type")};
 
   Ber rt_error =
       BinaryenCall(module, "runtime_error", operands, 2, BinaryenTypeNone());

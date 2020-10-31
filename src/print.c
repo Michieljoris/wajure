@@ -113,7 +113,7 @@ int lval_collection_print(void (*out)(char character, void* arg), void* arg,
 int lval_fun_print(void (*out)(char character, void* arg), void* arg,
                    Lval* lval) {
   int ret = 0;
-  switch (lval->subtype) {
+  switch (lval->type) {
     case SYS:
       ret = fctprintf(out, arg, "<function %s>", lval->data.str);
       break;
@@ -121,7 +121,7 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
     case MACRO:;
 #ifdef WASM
 #else
-      char* lambda_type = lval->subtype == LAMBDA ? "fn" : "macro";
+      char* lambda_type = lval->type == LAMBDA ? "fn" : "macro";
       ret += fctprintf(out, arg, "(%s ", lambda_type);
       if (lval->data.str) ret += fctprintf(out, arg, "%s ", lval->data.str);
       // TODO: if arity == 1 leave out surrounding () for the one lambda
@@ -162,7 +162,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
     case LVAL_SYMBOL:
       return fctprintf(out, arg, "%s", lval->data.str);
     case LVAL_COLLECTION:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case LIST:
           return lval_collection_print(out, arg, lval, '(', ')');
         case MAP:
@@ -170,11 +170,11 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
         case VECTOR:
           return lval_collection_print(out, arg, lval, '[', ']');
         default:
-          return fctprintf(out, arg, "unknown lval subtype %s\n",
-                           lval_type_constant_to_name(lval->subtype));
+          return fctprintf(out, arg, "unknown lval type %s\n",
+                           lval_type_constant_to_name(lval->type));
       }
     case LVAL_LITERAL:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case NUMBER:
           return fctprintf(out, arg, "%li", lval->data.num);
         case STRING:
@@ -199,7 +199,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
 #ifdef WASM
 #else
     case LVAL_REF:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case PARAM:
           return fctprintf(out, arg, "P%d", lval->local_index);
         case LOCAL:
@@ -254,7 +254,7 @@ void lval_print(Lval* lval) {
 // the normal print (so without quotes)
 void lval_pr(Lval* lval) {
   void* arg = NULL;
-  if (lval->subtype == STRING) {
+  if (lval->type == STRING) {
     lval_pr_str(out, arg, lval);
     return;
   }
@@ -289,7 +289,7 @@ int lval_snprint(char* str, int maxlen, Lval* lval) {
   int* index = lalloc_size(sizeof(int*));
   *index = 0;
   struct s_info arg = {str, maxlen, index};
-  if (lval->subtype == STRING)
+  if (lval->type == STRING)
     lval_pr_str(s_out, &arg, lval);
   else
     _lval_print(&s_out, &arg, lval);
@@ -313,7 +313,7 @@ void lval_debug(Lval* lval) {
 }
 
 void lval_println(Lval* v) {
-  /* printf("type, %d, subtype %d, num %li\n ", v->type, v->subtype, v->num); */
+  /* printf("group, %d, type %d, num %li\n ", v->group, v->type, v->num); */
   lval_print(v);
   putchar('\n');
 }

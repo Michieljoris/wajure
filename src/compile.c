@@ -140,7 +140,7 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
   /* print_context(lval_wasm_ref->context); */
   /* printf("------------\n"); */
   if (is_local_ref) {
-    switch (lval_ref->subtype) {
+    switch (lval_ref->type) {
       case PARAM: {
         Ber local = BinaryenLocalGet(wasm->module, lval_ref->local_index,
                                      BinaryenTypeInt32());
@@ -152,7 +152,7 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
         return cresult(local);
       }
       default:
-        quit(wasm, "ERROR: Unknown lval_ref subtype: %d", lval_ref->subtype);
+        quit(wasm, "ERROR: Unknown lval_ref type: %d", lval_ref->type);
         return cnull();
     }
   } else {  // Not local, so it's a ref to a closed over value, so it's a param
@@ -421,7 +421,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           release(resolved_sym);
           return ret;
         case LVAL_FUNCTION:  // as evalled in our compiler env
-          switch (resolved_sym->subtype) {
+          switch (resolved_sym->type) {
             case MACRO:
             case LAMBDA:  // functions in compiler env
               if (resolved_sym->data.str == NULL)
@@ -433,7 +433,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       };
       break;
     case LVAL_COLLECTION:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case LIST: {
           CResult ret = compile_application(wasm, lval);  // fn call
           ret.lval = lval;
@@ -523,7 +523,7 @@ void compile(Namespace* ns) {
     printf(": ");
     lval_println(lval);
     if (lval->group == LVAL_FUNCTION) {
-      if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
+      if (lval->type == LAMBDA) {  // not interested in compiling macros!
         lval_compile(wasm, lval);
         add_to_symbol_table(wasm, lval->cname, lval);
       }

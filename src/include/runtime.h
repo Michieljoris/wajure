@@ -6,8 +6,8 @@
 Lval* make_lval_wasm_lambda(int fn_table_index, int closure, int partials,
                             int partial_count);
 
+int get_wval_group(Lval* lval);
 int get_wval_type(Lval* lval);
-int get_wval_subtype(Lval* lval);
 int get_wval_fn_table_index(Lval* wval);
 /* int get_wval_param_count(Lval* wval); */
 /* int get_wval_has_rest_arg(Lval* wval); */

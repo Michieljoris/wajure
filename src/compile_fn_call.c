@@ -124,11 +124,11 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
   block_children[(*block_children_count)++] = local_set_args_block_ptr;
 
   block_children[(*block_children_count)++] = wasm_log_int(
-      wasm, get_wval_prop(module, local_get_int32(module, wval_local), "type"));
+      wasm,
+      get_wval_prop(module, local_get_int32(module, wval_local), "group"));
 
   block_children[(*block_children_count)++] = wasm_log_int(
-      wasm,
-      get_wval_prop(module, local_get_int32(module, wval_local), "subtype"));
+      wasm, get_wval_prop(module, local_get_int32(module, wval_local), "type"));
 
   block_children[(*block_children_count)++] = wasm_log_int(
       wasm, get_wval_prop(module, local_get_int32(module, wval_local),
@@ -325,7 +325,7 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lambda* lambda,
 CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
   switch (lval->group) {
     case LVAL_COLLECTION:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case LIST:;
           Ber compiled_list = compile_application(wasm, lval).ber;
           int anon_lambda_index = li_new(wasm);
@@ -354,7 +354,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
         case SET:
           quit(wasm, "ERROR: Map/set/vector cannot be cast as fn (yet)\n");
         default:
-          quit(wasm, "ERROR: Unknown collection subtype %d", lval->subtype);
+          quit(wasm, "ERROR: Unknown collection type %d", lval->type);
       }
       break;
     case LVAL_LITERAL:
@@ -401,7 +401,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
 
     switch (resolved_sym->group) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
-        switch (resolved_sym->subtype) {
+        switch (resolved_sym->type) {
           case SYS:;
             Cell* all_args = list_concat(resolved_sym->partials, args);
             fn_call = compile_sys_call(wasm, resolved_sym, all_args);
@@ -456,9 +456,8 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             release(bound_macro);
             return result;
           default:
-            quit(wasm,
-                 "ERROR: Can't compile function with unknown subtype %d\n",
-                 lval_applicator->subtype);
+            quit(wasm, "ERROR: Can't compile function with unknown type %d\n",
+                 lval_applicator->type);
         }
         break;
       case LVAL_REF:;
@@ -480,7 +479,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
              resolved_sym->data.str);
       case LVAL_COLLECTION:
-        switch (resolved_sym->subtype) {
+        switch (resolved_sym->type) {
           case LIST:
             quit(wasm, "ERROR: A list can't be cast to a fn");
           default:;

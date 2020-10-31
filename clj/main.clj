@@ -42,11 +42,46 @@
 ;;     )
 
 (defn main [& args]
-  (print "foo")
-  ;; (let [f (fn foo  [x] (if false (foo 1)) x)]
+  (run-tests)
+  ;; (print "foo")
+  ;; (print (+ 1 1))
+  ;; (let [f (fn [x]  x)]
   ;;   (print (f 1))
   ;;   )
-  (run-tests)
+  ;; (let [evalled 11]
+  ;;   (if (not= evalled (quote 11))
+  ;;     (print "not equal" evalled (quote 11) (not= evalled (quote 11)))
+  ;;     (print "hooray")
+  ;;     ))
+  
+  ;; (print (macroexpand '(t 11 11)))
+  ;; (test2/test)
+
+  ;; (test-partial)
+
+  ;; (test3/test)
+
+  ;; (pr "test4")
+  ;; (test4/test4a)
+  ;; (pr "test4b")
+  ;; (test4/test4b)
+  ;; (pr "test4c")
+  ;; (test4/test4c)
+  ;; (pr "test4d")
+  ;; (test4/test4d)
+  ;; (pr "test4e")
+  ;; (test4/test4e)
+
+  ;; (pr "test6")
+  ;; (test6/test)
+  ;; (pr "test7")
+  ;; (test7/test7a)
+
+  ;; (test7/test7c)
+  ;; (pr "test8")
+  ;; (test8/test)
+
+
   ;; (let [p (partial partial f)]
   ;;   (t ((p 1) 2) [1 2]))
 

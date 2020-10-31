@@ -90,7 +90,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
   /* printf("datafy_collection\n"); */
   /* lval_println(lval); */
   // List, map, set, vector;
-  switch (lval->subtype) {
+  switch (lval->type) {
     case LIST:
     case VECTOR:;
       int lval_ptr = inter_list(wasm, lval);
@@ -100,7 +100,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
     case SET:;
     default:
       return quit(wasm, "Unknown or unimplemented collection subtype %s %d",
-                  lval_type_to_name(lval), lval->subtype);
+                  lval_type_to_name(lval), lval->type);
   }
 }
 
@@ -110,7 +110,7 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   /* lval_println(lval); */
   if (lval->group == LVAL_SYMBOL)
     return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
-  switch (lval->subtype) {
+  switch (lval->type) {
     case NUMBER:;
       /* lval_println(lval); */
       if (lval->data.num >= wasm->lval_num_start &&
@@ -180,13 +180,12 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   // A data offset in another module is of no use.
   if (!lval_is_external && lval->data_offset > 0) {
     int data_offset = lval->data_offset;
-    printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->subtype));
+    printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->type));
     lval_println(lval);
     CResult _ret = {
-        .ber =
-            lval->subtype == SYS  // we have absolute data offsets for sys fns
-                ? make_int32(wasm->module, data_offset)
-                : make_ptr(wasm, data_offset),
+        .ber = lval->type == SYS  // we have absolute data offsets for sys fns
+                   ? make_int32(wasm->module, data_offset)
+                   : make_ptr(wasm, data_offset),
         .data_offset = data_offset,
         .fn_table_index = lval->fn_table_index};
     return _ret;
@@ -200,7 +199,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         ret = datafy_collection(wasm, lval);
       break;
     case LVAL_FUNCTION:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case SYS:
           ret = datafy_sys_fn(wasm, lval);
           break;
@@ -221,7 +220,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
                       global_name ? global_name : lval->data.str);
         default:;
           return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
-                      lval->subtype);
+                      lval->type);
       }
       break;
 

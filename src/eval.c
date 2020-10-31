@@ -123,7 +123,7 @@ Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
     }
     if (!rest_arg->data.head) {
       rest_arg->group = LVAL_LITERAL;
-      rest_arg->subtype = LNIL;
+      rest_arg->type = LNIL;
     }
     bindings_env->kv =
         alist_prepend(bindings_env->kv, retain(param), retain(rest_arg));
@@ -226,7 +226,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
 
 Lval* eval_vector(Lenv* env, Lval* lval_vector) {
   lval_vector = map_eval(env, lval_vector);
-  lval_vector->subtype = VECTOR;
+  lval_vector->type = VECTOR;
   return lval_vector;
 }
 
@@ -251,14 +251,14 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
   scoped Lval* arg_list = make_lval_list();
   arg_list->data.head = list_rest(lval_list->data.head);
   scoped Lval* evalled_arg_list = NIL;
-  switch (lval_fun->subtype) {
+  switch (lval_fun->type) {
     case SYS:
     case LAMBDA:
       evalled_arg_list = map_eval(env, arg_list);
       if (evalled_arg_list->group == LVAL_ERR) return retain(evalled_arg_list);
     default:;
   }
-  switch (lval_fun->subtype) {
+  switch (lval_fun->type) {
     case SYS:;
       Cell* head = list_concat(lval_fun->partials, evalled_arg_list->data.head);
       Lval* rest_arg = make_lval_list();
@@ -283,7 +283,7 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
     case LAMBDA:
       return eval_lambda_call(lval_fun, evalled_arg_list);
     default:
-      return make_lval_err("Unknown fun subtype %d for %s", lval_fun->subtype,
+      return make_lval_err("Unknown fun type %d for %s", lval_fun->type,
                            lval_fun->data.str);
   }
 }
@@ -297,7 +297,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
     case LVAL_SYMBOL:
       return eval_symbol(env, lval);
     case LVAL_COLLECTION:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case LIST:
           return eval_application(env, lval);
         case VECTOR:
@@ -306,7 +306,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           /* TODO: */
           return lval;
         default:
-          return make_lval_err("Unknown seq subtype: %d ", lval->subtype);
+          return make_lval_err("Unknown seq type: %d ", lval->type);
       }
       break;
     default:

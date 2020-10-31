@@ -67,8 +67,8 @@ Lval* debug_fn(Lenv* env, Lval* arg_list) {
 Lval* boolean_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("boolean", 1)
   ITER_NEXT
-  if (arg->subtype == LNIL) return make_lval_false();
-  if (arg->subtype == LFALSE) return retain(arg);
+  if (arg->type == LNIL) return make_lval_false();
+  if (arg->type == LFALSE) return retain(arg);
   ITER_END
   return make_lval_true();
 }

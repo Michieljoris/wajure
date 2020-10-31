@@ -300,7 +300,7 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
       /* printf("lval_fn: %d ", lval_fn->subtype); */
       /* lval_println(lval_fn); */
       Ber ber_fn_table_index;
-      if (lval_fn->subtype == SYS) {
+      if (lval_fn->type == SYS) {
         /* TODO: get the fn_table index it it's a native fn!!!!!*/
         /* printf("SYS: %d, %d\n", fn_arg.data_offset, fn_arg.fn_table_index);
          */

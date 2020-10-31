@@ -394,7 +394,7 @@ Lval* lval_read(char* s, int* i) {
       case '[':
         (*i)++;
         x = lval_read_list(s, i, ']');
-        x->subtype = VECTOR;
+        x->type = VECTOR;
         break;
       case '{':
         (*i)++;

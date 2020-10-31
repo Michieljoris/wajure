@@ -76,9 +76,9 @@ typedef struct {
 #ifdef WASM
 
 struct lval {
-  char group;    // more like the protocol (collection, function, literal etc)
-  char subtype;  // more like the actual type (list, map, vector, lambda, macro
-                 // etc)
+  char type;   // more like the actual type (list, map, vector, lambda, macro
+               // etc)
+  char group;  // more like the protocol (collection, function, literal etc)
   Data data;
 
   int hash;
@@ -92,8 +92,8 @@ struct lval {
 };
 #else
 struct lval {
+  char type;
   char group;
-  char subtype;
 
   Data data;
   int hash;

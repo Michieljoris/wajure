@@ -120,10 +120,10 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
   *(int*)(p + ref_count_offset) = 1;
 
   if (lval) {
-    *(char*)(p + type_offset) = lval->group;
-    *(char*)(p + subtype_offset) = lval->subtype;
+    *(char*)(p + type_offset) = lval->type;
+    *(char*)(p + group_offset) = lval->group;
 
-    if (lval->subtype == NUMBER)
+    if (lval->type == NUMBER)
       *(int*)(p + d_offset) = lval->data.num;
     else if (lval->group == LVAL_COLLECTION)
       *(Cell**)(p + d_offset) = lval->data.head;
@@ -135,8 +135,8 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
 
     *(int*)(p + hash_offset) = lval->hash;
   } else {
-    *(char*)(p + type_offset) = LVAL_FUNCTION;
-    *(char*)(p + subtype_offset) = LAMBDA;
+    *(char*)(p + type_offset) = LAMBDA;
+    *(char*)(p + group_offset) = LVAL_FUNCTION;
   }
 
   /* printf("FN_TABLE_INDEX %d %d\n", fn_table_index, FTI_RTE_NOT_A_FN); */

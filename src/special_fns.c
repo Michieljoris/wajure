@@ -42,7 +42,7 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
   /* printf("bound_symbol:"); */
   /* lval_println(bound_symbol); */
   if (bound_symbol->group != LVAL_ERR) {
-    if (bound_symbol->subtype == SYS) {
+    if (bound_symbol->type == SYS) {
       warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
       lval_println(bound_symbol);
     } else
@@ -93,7 +93,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   scoped Lval* cond = lval_eval(env, arg);
   if (cond->group == LVAL_ERR) return retain(cond);
   Lval* branch = NIL;
-  if (cond->subtype != LFALSE && cond->subtype != LNIL) { /* TRUE */
+  if (cond->type != LFALSE && cond->type != LNIL) { /* TRUE */
     ITER_NEXT;
     branch = arg;
     ITER_NEXT;
@@ -120,13 +120,13 @@ int is_unique_param(Lval* lval_sym, Cell* param_list) {
   return 1;
 }
 
-Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
-  if (lval_list->subtype != LIST)
+Lambda* eval_lambda_form(Lenv* env, Lval* lval_list) {
+  if (lval_list->type != LIST)
     return make_lambda_err(
         make_lval_err("Expecting list to hold params and body"));
 
   Cell* head = lval_list->data.head;
-  if (!head || ((Lval*)head->car)->subtype != VECTOR)
+  if (!head || ((Lval*)head->car)->type != VECTOR)
     return make_lambda_err(
         make_lval_err("lambda expects at least a param vector"));
 
@@ -201,7 +201,7 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     }
   }
   do {
-    Lambda* lambda = eval_lambda_form(env, head->car, LAMBDA);
+    Lambda* lambda = eval_lambda_form(env, head->car);
     if (lambda->err) {
       err = lambda->err;
       break;
@@ -288,7 +288,7 @@ Lval* eval_macro(Lenv* env, Lval* arg_list) {
 }
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
-  if (lval->group == LVAL_COLLECTION && lval->subtype == LIST &&
+  if (lval->group == LVAL_COLLECTION && lval->type == LIST &&
       list_count(lval->data.head) >= min_node_count) {
     lval = lval->data.head->car;
     return lval->group == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
@@ -305,7 +305,7 @@ Lval* eval_splice_unquote(Lenv* env, Lval* lval) {                     /*  */
   LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "splice-unquote"); /*  */
   Lval* ret = lval_eval(env, lval->data.head->cdr->car);               /*  */
   if (ret->group == LVAL_ERR) return ret;                              /*  */
-  if (ret->subtype == LNIL) return ret;                                /*  */
+  if (ret->type == LNIL) return ret;                                   /*  */
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");                    /*  */
   return ret;                                                          /*  */
 } /*  */
@@ -351,13 +351,13 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) { /*  */
     } else {
       /* if node is a list apply quasiquote recursively */
       if (arg->group == LVAL_COLLECTION) {
-        int subtype = arg->subtype;
+        int type = arg->type;
         arg = eval_quasiquote_nodes(env, arg);
         if (arg->group == LVAL_ERR) {
           release(evalled_list);
           return arg;
         }
-        arg->subtype = subtype;
+        arg->type = type;
       } else {
         retain(arg);
       }
@@ -384,7 +384,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
   Lval* ret = NIL;
   switch (qq_arg->group) {
     case LVAL_COLLECTION:
-      switch (qq_arg->subtype) {
+      switch (qq_arg->type) {
         case LIST:
           if (is_fn_call(qq_arg, "unquote", 2)) {
             ret = eval_unquote(env, qq_arg);
@@ -399,7 +399,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
           break;
         case VECTOR:
           ret = eval_quasiquote_nodes(env, qq_arg);
-          ret->subtype = VECTOR;
+          ret->type = VECTOR;
           break;
         case MAP:
 
@@ -494,7 +494,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           /* printf("evalling expr node\n"); */
           /* lval_println(ret); */
           if (ret->group == LVAL_ERR) {
-            if (ret->subtype == SYS) {
+            if (ret->type == SYS) {
               // We're not catching system errors
               return ret;
             }

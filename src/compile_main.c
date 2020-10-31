@@ -95,7 +95,7 @@ void reset_lval(Lval* lval) {
   lval->context = NULL;
   switch (lval->group) {
     case LVAL_COLLECTION: {
-      switch (lval->subtype) {
+      switch (lval->type) {
         case LIST:
         case VECTOR:;
           Cell* cell = lval->data.head;

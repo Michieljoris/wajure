@@ -61,8 +61,8 @@ CFn c_fns[] = {
     // runtime
     {NULL, NULL, "wval_print", 1, 0},
     {NULL, NULL, "make_lval_wasm_lambda", 4, 1},
+    {NULL, NULL, "get_wval_group", 1, 1},
     {NULL, NULL, "get_wval_type", 1, 1},
-    {NULL, NULL, "get_wval_subtype", 1, 1},
     {NULL, NULL, "get_wval_fn_table_index", 1, 1},
     {NULL, NULL, "get_wval_closure", 1, 1},
     {NULL, NULL, "get_wval_partials", 1, 1},

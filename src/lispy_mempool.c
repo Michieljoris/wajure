@@ -102,7 +102,7 @@ void destroy_lval(void* data) {
       release(lval->data.head);
       break;
     case LVAL_LITERAL:
-      switch (lval->subtype) {
+      switch (lval->type) {
         case NUMBER:
           break;
         case KEYWORD:
@@ -115,11 +115,11 @@ void destroy_lval(void* data) {
         case LFALSE:
           break;
         default:
-          error("Can't delete unknown literal subtype: %d\n", lval->subtype);
+          error("Can't delete unknown literal type: %d\n", lval->type);
       }
       break;
     case LVAL_FUNCTION:
-      if (lval->subtype == SYS || lval->subtype == SPECIAL) {
+      if (lval->type == SYS || lval->type == SPECIAL) {
         release(lval->data.str);
       } else {
 #ifdef WASM

@@ -15,8 +15,8 @@
 #include "read.h"
 #include "state.h"
 
-int is_lval_type(Lval* lval, int type, int subtype) {
-  return lval->group == type && lval->subtype == subtype;
+int is_lval_type(Lval* lval, int group, int type) {
+  return lval->group == group && lval->type == type;
 }
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
@@ -243,7 +243,7 @@ struct require_info parse_require_vector(Lval* vector) {
   head = head->cdr;
   while (head) {
     Lval* lval = head->car;
-    if (lval->subtype != KEYWORD) {
+    if (lval->type != KEYWORD) {
       ret.error = make_lval_err(
           "Expecting a keyword such as :as or :refer in quoted vector passed "
           "to require");
@@ -282,7 +282,7 @@ struct require_info parse_require_vector(Lval* vector) {
   }
 
   if (ret.refer) {
-    if (ret.refer->subtype != VECTOR) {
+    if (ret.refer->type != VECTOR) {
       ret.error = make_lval_err(
           "Expecting arg to refer to be a vector in require vector");
       return ret;
@@ -375,7 +375,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN("partial", 1)
   ITER_NEXT
   Lval* lval_fn = arg;
-  if (lval_fn->subtype == MACRO || lval_fn->subtype == SPECIAL)
+  if (lval_fn->type == MACRO || lval_fn->type == SPECIAL)
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
         lval_fn->data.str);
@@ -386,13 +386,13 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
   /*     "Function 'partial' passed incorrect type for arg 1, got %s, expected "
    */
   /*     "Function", */
-  /*     lval_type_constant_to_name(lval_fun->subtype)); */
+  /*     lval_type_constant_to_name(lval_fun->type)); */
 
   Lval* partial_fn = make_lval_lambda(retain(lval_fn->closure), LAMBDA,
                                       retain(lval_fn->lambdas));
   partial_fn->data.str = retain(lval_fn->data.str);
   partial_fn->c_fn = lval_fn->c_fn;
-  partial_fn->subtype = lval_fn->subtype;
+  partial_fn->type = lval_fn->type;
   /* partial_fn->param_count = lval_fun->param_count; */
   /* partial_fn->rest_arg_index = lval_fun->rest_arg_index; */
   partial_fn->partials =
@@ -409,7 +409,7 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN("partial", 2)
   ITER_NEXT_TYPE(LVAL_FUNCTION, -1)
   Lval* lval_fun = arg;
-  if (lval_fun->subtype == MACRO || lval_fun->subtype == SPECIAL)
+  if (lval_fun->type == MACRO || lval_fun->type == SPECIAL)
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
         lval_fun->data.str);
@@ -420,7 +420,7 @@ Lval* apply_fn(Lenv* env, Lval* arg_list) {
   while (head) {
     arg = head->car;
     if (!head->cdr) {
-      switch (arg->subtype) {
+      switch (arg->type) {
         case LNIL:
           break;
         case LIST:;
@@ -456,7 +456,7 @@ Lval* is_vector_fn(Lenv* env, Lval* arg_list) {
   Lval* result;
   ITER_NEW_N("vector?", 1)
   ITER_NEXT
-  if (arg->subtype == VECTOR)
+  if (arg->type == VECTOR)
     result = make_lval_true();
   else
     result = make_lval_false();
