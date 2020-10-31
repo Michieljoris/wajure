@@ -110,7 +110,7 @@ Namespace* install_stdlib() {
   Namespace* stdlib_ns = NULL;
   if (config->stdlib) {
     scoped Lval* result = require_ns(NULL, config->stdlib);
-    if (result->type == LVAL_ERR) {
+    if (result->group == LVAL_ERR) {
       lval_println(result);
       /* abort(); */
     }

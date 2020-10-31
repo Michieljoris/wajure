@@ -30,7 +30,7 @@ void destroy_wajure() {
 
 int load_main() {
   Lval* result = require_ns(NULL, config->main);
-  if (result->type == LVAL_ERR) {
+  if (result->group == LVAL_ERR) {
     lval_println(result);
     return 1;
   }

@@ -323,7 +323,7 @@ CResult apply(Wasm* wasm, int fn_ref_type, union FnRef fn_ref, Lambda* lambda,
 }
 
 CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_COLLECTION:
       switch (lval->subtype) {
         case LIST:;
@@ -366,7 +366,7 @@ CResult compile_as_fn_call(Wasm* wasm, Lval* lval, Cell* args) {
       quit(wasm, "ERROR compile_list: there was an error in parsing code: %s\n",
            lval->data.str);
     default:
-      quit(wasm, "ERROR compile_list: Unknown lval type %d\n", lval->type);
+      quit(wasm, "ERROR compile_list: Unknown lval type %d\n", lval->group);
   }
   return cnull();
 }
@@ -386,20 +386,20 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   CResult fn_call = cnull();
 
   // Fn call > (symbol args ...)
-  if (lval_applicator->type == LVAL_SYMBOL) {
+  if (lval_applicator->group == LVAL_SYMBOL) {
     Lval* lval_sym = lval_applicator;
     // Let's see if the symbol refers to something we know how to compile
     // already
     Lval* resolved_sym = eval_symbol(wasm->env, lval_sym);
     // If it's a symbol it has to be known in our compiler env!!!
-    if (resolved_sym->type == LVAL_ERR) {
+    if (resolved_sym->group == LVAL_ERR) {
       lval_println(lval_list);
       lval_println(lval_sym);
       quit(wasm, "ERROR: Can't apply an unknowm symbol: %s",
            lval_sym->data.str);
     }
 
-    switch (resolved_sym->type) {
+    switch (resolved_sym->group) {
       case LVAL_FUNCTION:  // as evalled in our compiler env
         switch (resolved_sym->subtype) {
           case SYS:;
@@ -449,7 +449,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
             arg_list->data.head = retain(args);
             Lval* bound_macro = expand_macro(resolved_sym, arg_list);
             release(arg_list);
-            if (bound_macro->type == LVAL_ERR) {
+            if (bound_macro->group == LVAL_ERR) {
               quit(wasm, "Error in expanding macro: %s", bound_macro->data.str);
             }
             CResult result = lval_compile(wasm, bound_macro);

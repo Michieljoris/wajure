@@ -209,7 +209,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   Lval* lval_fn = eval_lambda(wasm->env, arg_list);
   /* lval_println(lval_fn); */
   release(arg_list);
-  if (lval_fn->type == LVAL_ERR) quit(wasm, lval_fn->data.str);
+  if (lval_fn->group == LVAL_ERR) quit(wasm, lval_fn->data.str);
 
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
   lval_fn->data.str = lambda_name;
@@ -399,7 +399,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
 
   Lval* resolved_sym = NULL;
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
       // no notion of environments or symbols that resolve to other lvalues.
@@ -408,7 +408,7 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
       Lval* lval_sym = lval;
       Lval* resolved_sym = eval_symbol(wasm->env, lval_sym);
 
-      switch (resolved_sym->type) {
+      switch (resolved_sym->group) {
         case LVAL_ERR:
           return quit(wasm, resolved_sym->data.str);
         case LVAL_REF:;
@@ -522,7 +522,7 @@ void compile(Namespace* ns) {
     lval_print(lval_sym);
     printf(": ");
     lval_println(lval);
-    if (lval->type == LVAL_FUNCTION) {
+    if (lval->group == LVAL_FUNCTION) {
       if (lval->subtype == LAMBDA) {  // not interested in compiling macros!
         lval_compile(wasm, lval);
         add_to_symbol_table(wasm, lval->cname, lval);

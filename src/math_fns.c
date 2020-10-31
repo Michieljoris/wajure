@@ -98,9 +98,9 @@ MATH_FN(gte_fn, ">=", >=);
 
 int lval_eq(Lval* x, Lval* y) {
   /* if (x->hash != y->hash) return 0; */
-  if (x->type != y->type) return 0;
+  if (x->group != y->group) return 0;
 
-  switch (x->type) {
+  switch (x->group) {
     case LVAL_SYMBOL:
       return (_strcmp(x->data.str, y->data.str) == 0);
     case LVAL_COLLECTION:

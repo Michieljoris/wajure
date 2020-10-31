@@ -25,7 +25,7 @@ Lval* map_eval(Lenv* env, Lval* lval_list) {
   Cell** lp = &(new_list->data.head);
   while (lval) {
     Lval* x = lval_eval(env, lval);
-    if (x->type == LVAL_ERR) {
+    if (x->group == LVAL_ERR) {
       release(new_list);
       return x;
     }
@@ -46,7 +46,7 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
   while (lval) {
     if (iter_peek(i)) {
       result = lval_eval(env, lval);
-      if (result->type == LVAL_ERR) {
+      if (result->group == LVAL_ERR) {
         lval_println(lval);
         lval_println(result);
         if (mode == RETURN_ON_ERROR) return result;
@@ -54,7 +54,7 @@ Lval* do_list(Lenv* env, Lval* list, int mode) {
       release(result);
     } else {
       result = lval_eval(env, lval);
-      if (result->type == LVAL_ERR) {
+      if (result->group == LVAL_ERR) {
         lval_print(lval);
         printf(" resulted in: ");
         lval_println(result);
@@ -122,7 +122,7 @@ Lval* eval_lambda_call(Lval* lval_fn, Lval* arg_list) {
       head = head->cdr;
     }
     if (!rest_arg->data.head) {
-      rest_arg->type = LVAL_LITERAL;
+      rest_arg->group = LVAL_LITERAL;
       rest_arg->subtype = LNIL;
     }
     bindings_env->kv =
@@ -149,7 +149,7 @@ Lval* expand_macro(Lval* lval_fn, Lval* arg_list) {
 
 Lval* eval_macro_call(Lenv* env, Lval* lval_fun, Lval* arg_list) {
   scoped Lval* expanded_macro = expand_macro(lval_fun, arg_list);
-  if (expanded_macro->type == LVAL_ERR) return retain(expanded_macro);
+  if (expanded_macro->group == LVAL_ERR) return retain(expanded_macro);
 
   // Expanded macro closes over the environment where it is executed
   return lval_eval(env, expanded_macro);
@@ -239,9 +239,9 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
   Lval* lval_first = lval_list->data.head->car;
   scoped Lval* lval_fun = lval_eval(env, lval_first);
 
-  if (lval_fun->type == LVAL_ERR) return retain(lval_fun);
+  if (lval_fun->group == LVAL_ERR) return retain(lval_fun);
 
-  if (lval_fun->type != LVAL_FUNCTION)
+  if (lval_fun->group != LVAL_FUNCTION)
     return make_lval_err(
         "sexpr starts with incorrect type. "
         "Got %s, expected %s.",
@@ -255,7 +255,7 @@ Lval* eval_application(Lenv* env, Lval* lval_list) {
     case SYS:
     case LAMBDA:
       evalled_arg_list = map_eval(env, arg_list);
-      if (evalled_arg_list->type == LVAL_ERR) return retain(evalled_arg_list);
+      if (evalled_arg_list->group == LVAL_ERR) return retain(evalled_arg_list);
     default:;
   }
   switch (lval_fun->subtype) {
@@ -293,7 +293,7 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   /* lval_infoln(lval); */
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
   /* Lval* ret = NIL; */
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_SYMBOL:
       return eval_symbol(env, lval);
     case LVAL_COLLECTION:

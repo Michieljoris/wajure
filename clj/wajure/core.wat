@@ -75,6 +75,7 @@
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
+ (import "env" "is_symbol_fn" (func $is_symbol_fn (param i32 i32) (result i32)))
  (export "mem" (memory $0))
  ;; custom section "symbol_table", size 0, contents: ""
  ;; custom section "deps", size 0, contents: ""

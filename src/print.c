@@ -158,7 +158,7 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
   if (!lval) return fctprintf(out, arg, "<Trying to print a null pointer!!>");
   /* printf("Trying to print: type:%d %s\n", lval->type, */
   /*        lval_type_constant_to_name(lval->type)); */
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_SYMBOL:
       return fctprintf(out, arg, "%s", lval->data.str);
     case LVAL_COLLECTION:
@@ -209,8 +209,8 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
     case LVAL_ERR:
       return fctprintf(out, arg, "Error: %s", lval->data.str);
     default:
-      return fctprintf(out, arg, "unknown lval type %d, %s\n", lval->type,
-                       lval_type_constant_to_name(lval->type));
+      return fctprintf(out, arg, "unknown lval type %d, %s\n", lval->group,
+                       lval_type_constant_to_name(lval->group));
   }
 }
 

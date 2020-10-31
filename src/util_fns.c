@@ -115,7 +115,7 @@ Lval* is_symbol_fn(Lenv* env, Lval* arg_list) {
   Lval* result;
   ITER_NEW_N("symbol?", 1)
   ITER_NEXT
-  if (arg->type == LVAL_SYMBOL)
+  if (arg->group == LVAL_SYMBOL)
     result = make_lval_true();
   else
     result = make_lval_false();

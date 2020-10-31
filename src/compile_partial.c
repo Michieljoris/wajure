@@ -221,12 +221,12 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
   // If just one arg, return compiled arg
   if (!head) return fn_arg;
 
-  if (fn_arg.is_fn_call || fn_arg.lval->type == LVAL_REF) {
+  if (fn_arg.is_fn_call || fn_arg.lval->group == LVAL_REF) {
     /* return test_native_partial_fn(wasm, fn_arg, head, list_count(args)); */
     return compile_rt_partial_call(wasm, fn_arg, head, list_count(args));
   }
 
-  switch (fn_arg.lval->type) {
+  switch (fn_arg.lval->group) {
     case LVAL_FUNCTION: {
       Lval* lval_fn = fn_arg.lval;
       printf("compile partial_call\n");

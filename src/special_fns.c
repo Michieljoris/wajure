@@ -41,7 +41,7 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
   release(env);
   /* printf("bound_symbol:"); */
   /* lval_println(bound_symbol); */
-  if (bound_symbol->type != LVAL_ERR) {
+  if (bound_symbol->group != LVAL_ERR) {
     if (bound_symbol->subtype == SYS) {
       warn("WARNING: %s already refers to a builtin: ", lval_sym->data.str);
       lval_println(bound_symbol);
@@ -80,7 +80,7 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   lval_println(lval);
   ITER_END;
   lval = lval_eval(env, lval);
-  if (lval->type == LVAL_ERR) return lval;
+  if (lval->group == LVAL_ERR) return lval;
 
   bind_symbol(lval_sym, lval);
   release(lval);
@@ -91,7 +91,7 @@ Lval* eval_if(Lenv* env, Lval* arg_list) {
   ITER_NEW_MIN_MAX("if", 2, 3);
   ITER_NEXT;
   scoped Lval* cond = lval_eval(env, arg);
-  if (cond->type == LVAL_ERR) return retain(cond);
+  if (cond->group == LVAL_ERR) return retain(cond);
   Lval* branch = NIL;
   if (cond->subtype != LFALSE && cond->subtype != LNIL) { /* TRUE */
     ITER_NEXT;
@@ -137,7 +137,7 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
   int rest_arg_index = 0;
   int offset = 0;
   while (param) {
-    if (((Lval*)param->car)->type != LVAL_SYMBOL) {
+    if (((Lval*)param->car)->group != LVAL_SYMBOL) {
       return make_lambda_err(
           make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
                         lval_type_to_name(param->car),
@@ -195,7 +195,7 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     Lval* first_arg = ((Lval*)head->car);
     printf("-------------------\n");
     lval_println(first_arg);
-    if (first_arg->type == LVAL_SYMBOL) {
+    if (first_arg->group == LVAL_SYMBOL) {
       fn_name = first_arg;
       head = head->cdr;
     }
@@ -288,10 +288,10 @@ Lval* eval_macro(Lenv* env, Lval* arg_list) {
 }
 
 int is_fn_call(Lval* lval, char* sym, int min_node_count) {
-  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
+  if (lval->group == LVAL_COLLECTION && lval->subtype == LIST &&
       list_count(lval->data.head) >= min_node_count) {
     lval = lval->data.head->car;
-    return lval->type == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
+    return lval->group == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
   }
   return 0;
 }
@@ -304,7 +304,7 @@ Lval* eval_unquote(Lenv* env, Lval* lval) {                     /*  */
 Lval* eval_splice_unquote(Lenv* env, Lval* lval) {                     /*  */
   LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "splice-unquote"); /*  */
   Lval* ret = lval_eval(env, lval->data.head->cdr->car);               /*  */
-  if (ret->type == LVAL_ERR) return ret;                               /*  */
+  if (ret->group == LVAL_ERR) return ret;                              /*  */
   if (ret->subtype == LNIL) return ret;                                /*  */
   LASSERT_LVAL_IS_LIST_TYPE(ret, "splice-unquote");                    /*  */
   return ret;                                                          /*  */
@@ -324,7 +324,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) { /*  */
     if (is_fn_call(arg, "unquote", 2)) {
       /* Eval if node is unquoted */
       Lval* unquoted_lval = eval_unquote(env, arg);
-      if (unquoted_lval->type == LVAL_ERR) {
+      if (unquoted_lval->group == LVAL_ERR) {
         release(evalled_list);
         return unquoted_lval;
       }
@@ -338,7 +338,7 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) { /*  */
     } else if (is_fn_call(arg, "splice-unquote", 2)) {
       /* Eval if node is splice unquoted */
       Lval* splice_unquoted_eval = eval_splice_unquote(env, arg);
-      if (splice_unquoted_eval->type == LVAL_ERR) {
+      if (splice_unquoted_eval->group == LVAL_ERR) {
         release(evalled_list);
         return splice_unquoted_eval;
       }
@@ -350,10 +350,10 @@ Lval* eval_quasiquote_nodes(Lenv* env, Lval* arg_list) { /*  */
       lp = &(last_cell->cdr);
     } else {
       /* if node is a list apply quasiquote recursively */
-      if (arg->type == LVAL_COLLECTION) {
+      if (arg->group == LVAL_COLLECTION) {
         int subtype = arg->subtype;
         arg = eval_quasiquote_nodes(env, arg);
-        if (arg->type == LVAL_ERR) {
+        if (arg->group == LVAL_ERR) {
           release(evalled_list);
           return arg;
         }
@@ -382,7 +382,7 @@ Lval* eval_quasiquote(Lenv* env, Lval* arg_list) {
   Lval* qq_arg = arg;
   ITER_END;
   Lval* ret = NIL;
-  switch (qq_arg->type) {
+  switch (qq_arg->group) {
     case LVAL_COLLECTION:
       switch (qq_arg->subtype) {
         case LIST:
@@ -432,7 +432,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
         if (is_fn_call(node, "catch", 1)) {
           debug("from EXPR, found catch\n");
           mode = CATCH;
-          if (ret->type == LVAL_ERR) {
+          if (ret->group == LVAL_ERR) {
             if (list_count(node->data.head) < 4) {
               release(ret);
               return make_lval_err(
@@ -442,7 +442,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             Lval* lval_sym =
                 list_nth(node->data.head, 2); /* sym to bind msg to */
 
-            if (lval_sym->type != LVAL_SYMBOL) {
+            if (lval_sym->group != LVAL_SYMBOL) {
               release(lval_sym);
               release(ret);
               return make_lval_err(
@@ -465,7 +465,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             release(catch_env);
             release(catch_body);
 
-            if (ret->type == LVAL_ERR) {
+            if (ret->group == LVAL_ERR) {
               return ret;
             }
           }
@@ -478,7 +478,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           body->data.head = list_rest(node->data.head);
           Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
           release(body);
-          if (finally_ret->type == LVAL_ERR) {
+          if (finally_ret->group == LVAL_ERR) {
             release(ret);
             return finally_ret;
           }
@@ -488,12 +488,12 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           continue;
         }
         /* Normal node, but skip if we already have a value that's an error */
-        else if (ret->type != LVAL_ERR) {
+        else if (ret->group != LVAL_ERR) {
           release(ret);
           ret = lval_eval(env, node);
           /* printf("evalling expr node\n"); */
           /* lval_println(ret); */
-          if (ret->type == LVAL_ERR) {
+          if (ret->group == LVAL_ERR) {
             if (ret->subtype == SYS) {
               // We're not catching system errors
               return ret;
@@ -512,7 +512,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
           body->data.head = list_rest(node->data.head);
           Lval* finally_ret = do_list(env, body, RETURN_ON_ERROR);
 
-          if (finally_ret->type == LVAL_ERR) {
+          if (finally_ret->group == LVAL_ERR) {
             release(ret);
             return finally_ret;
           }
@@ -557,7 +557,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
   Lval* lval_sym = iter_next(b);
 
   while (lval_sym) {
-    if (lval_sym->type != LVAL_SYMBOL) {
+    if (lval_sym->group != LVAL_SYMBOL) {
       release(let_env);
       return make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
                            lval_type_to_name(lval_sym),
@@ -566,7 +566,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
 
     Lval* lval = iter_next(b);
     lval = lval_eval(let_env, lval);
-    if (lval->type == LVAL_ERR) {
+    if (lval->group == LVAL_ERR) {
       release(let_env);
       return lval;
     }

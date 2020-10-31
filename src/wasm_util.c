@@ -269,7 +269,7 @@ void leave_env(Wasm* wasm) {
 
 Lval* make_lval_ref(Context* context, int subtype, int local_index) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_REF,
+  *lval = (Lval){.group = LVAL_REF,
                  .subtype = subtype,
                  .local_index = local_index,
                  .context = context};

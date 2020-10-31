@@ -26,7 +26,7 @@ int sym_seed = 125;
 
 int lval_hash(Lval* lval) {
   int hash = -1;
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_FUNCTION:
     case LVAL_ERR:
       /* hash = murmur3_int(long_hash((unsigned long)lval), seed); */
@@ -79,14 +79,14 @@ int lval_hash(Lval* lval) {
     /* case LVAL_NAMESPACE: */
     /*   break; */
     default:
-      printf("OOPS, can't calculate hash of unknown type %d\n", lval->type);
+      printf("OOPS, can't calculate hash of unknown type %d\n", lval->group);
   }
   return hash;
 }
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_SYMBOL,
+  *lval = (Lval){.group = LVAL_SYMBOL,
                  .subtype = -1,
                  .data.str = retain(s),
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -96,7 +96,7 @@ Lval* make_lval_sym(char* s) {
 
 Lval* make_lval_keyword(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL,
+  *lval = (Lval){.group = LVAL_LITERAL,
                  .subtype = KEYWORD,
                  .data.str = retain(s),
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -109,14 +109,14 @@ Lval* make_lval_keyword(char* s) {
 Lval* make_lval_list(void) {
   Lval* lval = lalloc_type(LVAL);
   *lval =
-      (Lval){.type = LVAL_COLLECTION, .subtype = LIST, INIT(FTI_RTE_NOT_A_FN)};
+      (Lval){.group = LVAL_COLLECTION, .subtype = LIST, INIT(FTI_RTE_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* new_lval_list(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION,
+  *lval = (Lval){.group = LVAL_COLLECTION,
                  .subtype = LIST,
                  .data.head = head,
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -126,7 +126,7 @@ Lval* new_lval_list(void* head) {
 
 Lval* new_lval_vector(void* head) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION,
+  *lval = (Lval){.group = LVAL_COLLECTION,
                  .subtype = VECTOR,
                  .data.head = head,
                  INIT(FTI_VECTOR)};
@@ -136,14 +136,14 @@ Lval* new_lval_vector(void* head) {
 
 Lval* make_lval_vector(void) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = VECTOR, INIT(FTI_MAP)};
+  *lval = (Lval){.group = LVAL_COLLECTION, .subtype = VECTOR, INIT(FTI_MAP)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_map(void) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_COLLECTION, .subtype = MAP, INIT(FTI_MAP)};
+  *lval = (Lval){.group = LVAL_COLLECTION, .subtype = MAP, INIT(FTI_MAP)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -152,7 +152,8 @@ Lval* make_lval_map(void) {
 
 Lval* make_lval_nil() {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL, .subtype = LNIL, INIT(FTI_RTE_NOT_A_FN)};
+  *lval =
+      (Lval){.group = LVAL_LITERAL, .subtype = LNIL, INIT(FTI_RTE_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -160,7 +161,7 @@ Lval* make_lval_nil() {
 Lval* make_lval_true() {
   Lval* lval = lalloc_type(LVAL);
   *lval =
-      (Lval){.type = LVAL_LITERAL, .subtype = LTRUE, INIT(FTI_RTE_NOT_A_FN)};
+      (Lval){.group = LVAL_LITERAL, .subtype = LTRUE, INIT(FTI_RTE_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
@@ -168,14 +169,14 @@ Lval* make_lval_true() {
 Lval* make_lval_false() {
   Lval* lval = lalloc_type(LVAL);
   *lval =
-      (Lval){.type = LVAL_LITERAL, .subtype = LFALSE, INIT(FTI_RTE_NOT_A_FN)};
+      (Lval){.group = LVAL_LITERAL, .subtype = LFALSE, INIT(FTI_RTE_NOT_A_FN)};
   lval->hash = lval_hash(lval);
   return lval;
 }
 
 Lval* make_lval_num(long x) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL,
+  *lval = (Lval){.group = LVAL_LITERAL,
                  .subtype = NUMBER,
                  .data.num = x,
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -185,7 +186,7 @@ Lval* make_lval_num(long x) {
 
 Lval* make_lval_str(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_LITERAL,
+  *lval = (Lval){.group = LVAL_LITERAL,
                  .subtype = STRING,
                  .data.str = retain(s),
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -201,7 +202,7 @@ Lval* make_lval_fun(Lbuiltin func, char* func_name, int subtype) {
   return NULL;
 #else
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_FUNCTION,
+  *lval = (Lval){.group = LVAL_FUNCTION,
                  .subtype = subtype,
                  .c_fn = func,
                  .data.str = retain(func_name),
@@ -236,7 +237,7 @@ Lval* make_lval_lambda(Lenv* env, int subtype, Lambda** lambdas) {
   return NULL;
 #else
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_FUNCTION,
+  *lval = (Lval){.group = LVAL_FUNCTION,
                  .subtype = subtype,
                  .closure = env,
                  .lambdas = lambdas,
@@ -252,7 +253,7 @@ Lval* make_lval_lambda(Lenv* env, int subtype, Lambda** lambdas) {
 // System error
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.type = LVAL_ERR,
+  *lval = (Lval){.group = LVAL_ERR,
                  .subtype = SYS,
                  .data.str = lalloc_size(512),
                  INIT(FTI_RTE_NOT_A_FN)};
@@ -343,7 +344,7 @@ char* lval_type_constant_to_name(int t) {
 }
 
 char* lval_type_to_name(Lval* lval) {
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_SYMBOL:
       return "Symbol";
     case LVAL_COLLECTION:

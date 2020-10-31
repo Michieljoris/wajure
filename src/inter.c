@@ -120,12 +120,12 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
   *(int*)(p + ref_count_offset) = 1;
 
   if (lval) {
-    *(char*)(p + type_offset) = lval->type;
+    *(char*)(p + type_offset) = lval->group;
     *(char*)(p + subtype_offset) = lval->subtype;
 
     if (lval->subtype == NUMBER)
       *(int*)(p + d_offset) = lval->data.num;
-    else if (lval->type == LVAL_COLLECTION)
+    else if (lval->group == LVAL_COLLECTION)
       *(Cell**)(p + d_offset) = lval->data.head;
     else if (lval->data.str) {
       // string, symbol, keyword, fn_name or regex

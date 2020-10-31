@@ -93,7 +93,7 @@ void reset_lval(Lval* lval) {
   lval->data_offset = 0;
   lval->fn_table_index = 0;
   lval->context = NULL;
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_COLLECTION: {
       switch (lval->subtype) {
         case LIST:

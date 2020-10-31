@@ -108,7 +108,7 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   /* printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
    */
   /* lval_println(lval); */
-  if (lval->type == LVAL_SYMBOL)
+  if (lval->group == LVAL_SYMBOL)
     return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
   switch (lval->subtype) {
     case NUMBER:;
@@ -191,7 +191,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         .fn_table_index = lval->fn_table_index};
     return _ret;
   }
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_COLLECTION:
       if (global_name) {
         ret.ber =

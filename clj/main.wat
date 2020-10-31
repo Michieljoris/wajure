@@ -5,13 +5,13 @@
  (type $none_=>_i32 (func (result i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
- (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $none_=>_none (func))
+ (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2 65536))
- (data (global.get $data_offset) "\0f\0f\0f\0f\01\00\00\00\00\00\00\00\00\00\00\00\14\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\04\00\00\000\00\00\00\\\00\00\00\02\00\00\00d\00\00\00\00\00\00\00\10\00\00\00")
+ (data (global.get $data_offset) "\0f\0f\0f\0ffoo\00\01\00\00\00\00\00\00\00\00\00\00\00\18\00\00\00\02\t\00\00\04\00\00\00\ff\ff\ff\ff\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00D\00\00\00\03\0f\00\00\00\00\00\00\ff\ff\ff\ff\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\08\00\00\004\00\00\00`\00\00\00\02\00\00\00h\00\00\00\00\00\00\00\10\00\00\00")
  (import "env" "fn_table" (table $0 100000 1000000 funcref))
- (elem (global.get $fn_table_offset) $f_0_a2 $f_0 $main_1_a0 $main_1)
+ (elem (global.get $fn_table_offset) $main_0_a0 $main_0)
  (import "env" "__data_end" (global $__data_end i32))
  (import "env" "data_offset" (global $data_offset i32))
  (import "env" "fn_table_offset" (global $fn_table_offset i32))
@@ -78,71 +78,63 @@
  (import "env" "hash_fn" (func $hash_fn (param i32 i32) (result i32)))
  (import "env" "str_fn" (func $str_fn (param i32 i32) (result i32)))
  (import "env" "read_string_fn" (func $read_string_fn (param i32 i32) (result i32)))
- (export "main" (func $main_1))
+ (import "env" "is_symbol_fn" (func $is_symbol_fn (param i32 i32) (result i32)))
+ (export "main" (func $main_0))
  (export "mem" (memory $0))
- (func $f_0_a2 (param $0 i32) (param $1 i32) (result i32)
-  (block $do_1 (result i32)
-   (call $new_lval_vector
-    (call $prefix_list
-     (call $retain
-      (local.get $0)
-     )
-     (call $prefix_list
-      (call $retain
-       (local.get $1)
-      )
-      (i32.const 0)
-     )
-    )
-   )
-  )
- )
- (func $f_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
-  (block $rt_error
-   (block $case2
-    (br_table $rt_error $rt_error $case2 $rt_error
-     (local.get $2)
-    )
-    (nop)
-   )
-   (return
-    (call $f_0_a2
-     (i32.load align=2
-      (local.get $1)
-     )
-     (i32.load offset=4 align=2
-      (local.get $1)
-     )
-    )
-   )
-  )
-  (return
-   (block (result i32)
-    (call $log_int
-     (local.get $2)
-    )
-    (call $runtime_error
-     (i32.const 0)
-     (i32.const 0)
-    )
-    (i32.const 0)
-   )
-  )
- )
- (func $main_1_a0 (param $0 i32) (result i32)
+ (func $main_0_a0 (param $0 i32) (result i32)
   (local $1 i32)
-  (block $do_3 (result i32)
-   (block $lambda_call_2 (result i32)
-    (local.set $1
-     (call_indirect (type $none_=>_i32)
-      (global.get $fn:test.run/run-tests_0_a0)
+  (local $2 i32)
+  (local $3 i32)
+  (local $4 i32)
+  (local $5 i32)
+  (block $do_5 (result i32)
+   (local.set $3
+    (block $sys_call_1 (result i32)
+     (local.set $2
+      (call $print_fn
+       (i32.const 0)
+       (local.tee $1
+        (call $new_lval_list
+         (call $prefix_list
+          (call $retain
+           (i32.add
+            (global.get $data_offset)
+            (i32.const 24)
+           )
+          )
+          (i32.const 0)
+         )
+        )
+       )
+      )
+     )
+     (call $release
+      (local.get $1)
+     )
+     (local.get $2)
+    )
+   )
+   (block $do_body_result_4 (result i32)
+    (local.set $5
+     (block $lambda_call_2 (result i32)
+      (local.set $4
+       (call_indirect (type $none_=>_i32)
+        (global.get $fn:test.run/run-tests_0_a0)
+       )
+      )
+      (local.get $4)
      )
     )
-    (local.get $1)
+    (block $release_locals_for_do_3
+     (call $release
+      (local.get $3)
+     )
+    )
+    (local.get $5)
    )
   )
  )
- (func $main_1 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
+ (func $main_0 (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
   (block $rest_arg
    (br_table $rest_arg
     (local.get $2)
@@ -150,7 +142,7 @@
    (nop)
   )
   (return
-   (call $main_1_a0
+   (call $main_0_a0
     (call $listify_args
      (i32.add
       (local.get $1)
@@ -164,8 +156,8 @@
    )
   )
  )
- ;; custom section "symbol_table", size 104
+ ;; custom section "symbol_table", size 55
  ;; custom section "deps", size 27
- ;; custom section "data_size", size 3, contents: "120"
- ;; custom section "fn_table_size", size 1, contents: "4"
+ ;; custom section "data_size", size 3, contents: "124"
+ ;; custom section "fn_table_size", size 1, contents: "2"
 )

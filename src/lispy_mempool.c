@@ -90,7 +90,7 @@ void destroy_lval(void* data) {
   /* printf("destroying lval: %li (%s):", (long int)lval,
    * lval_type_to_name(lval)); */
   /* lval_println(lval); */
-  switch (lval->type) {
+  switch (lval->group) {
     case LVAL_SYMBOL:
       release(lval->data.str);
       break;
@@ -143,7 +143,7 @@ void destroy_lval(void* data) {
       release(lval->data.str);
       break;
     default:
-      error("Can't delete unknown type: %d\n", lval->type);
+      error("Can't delete unknown type: %d\n", lval->group);
   }
 }
 

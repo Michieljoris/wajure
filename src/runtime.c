@@ -23,7 +23,7 @@ Lval* make_lval_wasm_lambda(int fn_table_index,
 #ifdef WASM
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){
-      .type = LVAL_FUNCTION,
+      .group = LVAL_FUNCTION,
       .subtype = LAMBDA,
       .fn_table_index = fn_table_index,
       .closure = closure,
@@ -60,7 +60,7 @@ void dbg(Lval* lval) {
 
 #ifdef WASM
 // Used in runtime of lispy compiler
-int get_wval_type(Lval* lval) { return lval->type; }
+int get_wval_type(Lval* lval) { return lval->group; }
 int get_wval_subtype(Lval* lval) { return lval->subtype; }
 int get_wval_fn_table_index(Lval* wval) { return wval->fn_table_index; }
 /* int get_wval_param_count(Lval* wval) { return wval->param_count; } */
@@ -100,8 +100,8 @@ void wval_print(Lval* lval) {
 #ifdef WASM
   printf("WVAL---------------------:\n");
   printf("wval pointer: %li\n", (long)lval);
-  printf("type: %d %s %lu\n", lval->type,
-         lval_type_constant_to_name(lval->type), offsetof(Lval, type));
+  printf("type: %d %s %lu\n", lval->group,
+         lval_type_constant_to_name(lval->group), offsetof(Lval, group));
   printf("subtype: %d %s %lu\n", lval->subtype,
          lval_type_constant_to_name(lval->subtype), offsetof(Lval, subtype));
 
@@ -158,7 +158,7 @@ void rewrite_pointers(int data_offset, int data_size, int fn_table_offset) {
 #ifdef WASM
     // Other types have fns in builtins module, with fn_table_index that's
     // absolute
-    if (lval_ptr->type == LVAL_FUNCTION)
+    if (lval_ptr->group == LVAL_FUNCTION)
       lval_ptr->fn_table_index += fn_table_offset;
 #endif
 

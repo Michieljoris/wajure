@@ -16,14 +16,14 @@
 #include "state.h"
 
 int is_lval_type(Lval* lval, int type, int subtype) {
-  return lval->type == type && lval->subtype == subtype;
+  return lval->group == type && lval->subtype == subtype;
 }
 
 Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
   if (is_lval_type(lval, LVAL_COLLECTION, LIST) &&
       list_count(lval->data.head) > 0 &&
-      ((Lval*)(lval->data.head->car))->type == LVAL_SYMBOL) {
+      ((Lval*)(lval->data.head->car))->group == LVAL_SYMBOL) {
     /* Have a peek at the eval of that symbol */
     scoped Lval* lval_fun = lenv_get_or_error(env, lval->data.head->car);
     /* If it's a macro then eval it with the lval args */
@@ -36,7 +36,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
       /* lval_println(bound_macro); */
       /* info("*******************************************\n"); */
       // release fun and args
-      if (bound_macro->type == LVAL_ERR) {
+      if (bound_macro->group == LVAL_ERR) {
         return bound_macro;
       }
       /* Recursively expand  */
@@ -125,14 +125,14 @@ Lval* load(Lenv* _, char* file_name) {
     lval = read_expr(str, &pos, '\0');
     if (!lval) break;
     release(result);
-    if (lval->type == LVAL_ERR) {
+    if (lval->group == LVAL_ERR) {
       lval_println(lval);
       result = retain(lval);
       break;
     } else {
       Namespace* current_ns = get_current_ns();
       result = lval_eval(current_ns->env, lval);
-      if (result->type == LVAL_ERR) {
+      if (result->group == LVAL_ERR) {
         printf("Encountered error while evalling expression in file %s: \n",
                file_name);
         lval_println(lval);
@@ -230,7 +230,7 @@ struct require_info parse_require_vector(Lval* vector) {
   if (list_count(vector->data.head) > 5) {
     ret.error = make_lval_err("Too many args passed to require (>5)");
     return ret;
-  } else if (head && ((Lval*)head->car)->type == LVAL_SYMBOL) {
+  } else if (head && ((Lval*)head->car)->group == LVAL_SYMBOL) {
     ret.namespace_str = ((Lval*)head->car)->data.str;
   } else {
     ret.error = make_lval_err(
@@ -307,7 +307,7 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
   Namespace* required_ns = get_namespace(info.namespace_str);
   if (!required_ns) {
     Lval* ret = require_ns(NULL, info.namespace_str);
-    if (ret->type == LVAL_ERR) return ret;
+    if (ret->group == LVAL_ERR) return ret;
     release(ret);
     required_ns = get_namespace(info.namespace_str);
 
@@ -340,10 +340,10 @@ Lval* require_fn(Lenv* _, Lval* arg_list) {
     while (head) {
       Lval* lval_sym = head->car;
       Lval* lval = lenv_get_or_error(required_ns->env, lval_sym);
-      if (lval->type == LVAL_ERR) return lval;
+      if (lval->group == LVAL_ERR) return lval;
       release(lval);
       lval = lenv_get_or_error(current_namespace->env, lval_sym);
-      if (lval->type != LVAL_ERR) {
+      if (lval->group != LVAL_ERR) {
         release(lval);
         return make_lval_err(
             "%s can't refer to %s/%s because it's already bound in the current "
@@ -379,7 +379,7 @@ Lval* partial_fn(Lenv* env, Lval* arg_list) {
     return make_lval_err(
         "Can't take value of a macro or special form such as %s",
         lval_fn->data.str);
-  if (lval_fn->type != LVAL_FUNCTION) {
+  if (lval_fn->group != LVAL_FUNCTION) {
     return retain(lval_fn);
   }
   /* return make_lval_err( */

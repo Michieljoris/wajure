@@ -47,7 +47,7 @@ CResult compile_let(Wasm* wasm, Cell* arg_list) {
   // Bindings
   int let_body_count = 0;
   while (lval_sym) {
-    if (lval_sym->type != LVAL_SYMBOL) {
+    if (lval_sym->group != LVAL_SYMBOL) {
       quit(wasm, "Canot bind non-symbol. Got %s, expected %s.",
            lval_type_to_name(lval_sym),
            lval_type_constant_to_name(LVAL_SYMBOL));

@@ -264,7 +264,7 @@ Cell* read_cell(char* s, int* i, char end) {
   Lval* expr = read_expr(s, i, end);
   if (!expr) return NULL;
   /* If an error then return this and stop */
-  if (expr->type == LVAL_ERR) {
+  if (expr->group == LVAL_ERR) {
     lval_err = expr;
     return NULL;
   }
@@ -351,7 +351,7 @@ static Lval* reader_macro(char* reader_token, char* lispy_fn, char* s, int* i) {
   if (!next_expression)
     return make_lval_err("The reader macro \"%s\" has nothing to (un)quote.",
                          reader_token);
-  if (next_expression->type == LVAL_ERR) return next_expression;
+  if (next_expression->group == LVAL_ERR) return next_expression;
   Lval* lval = make_lval_list();
   Cell* cell = make_cell();
   lval->data.head = cell;

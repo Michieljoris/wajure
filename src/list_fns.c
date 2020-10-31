@@ -103,7 +103,7 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
     printf("head->car: %li\n", (long)head->car);
     printf("head->cdr: %li\n", (long)head->cdr);
     Lval* arg = (Lval*)head->car;
-    printf("type of arg: %s\n", lval_type_constant_to_name(arg->type));
+    printf("type of arg: %s\n", lval_type_constant_to_name(arg->group));
     head = head->cdr;
 
     Cell* h = arg->data.head;
@@ -121,7 +121,7 @@ Lval* foo_fn(Lenv* env, Lval* arg_list) {
 Lval* count_fn(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("count", 1)
   ITER_NEXT
-  if (arg->type == LVAL_LITERAL && arg->subtype == LNIL)
+  if (arg->group == LVAL_LITERAL && arg->subtype == LNIL)
     return make_lval_num(0);
   LASSERT_TYPE("count", arg_list, 1, LVAL_COLLECTION, -1, arg)
   int count = list_count(arg->data.head);

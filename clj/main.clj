@@ -1,7 +1,7 @@
 (in-ns 'main)
 ;; (clojure.core/use 'clojure.core)
 ;; (require '[wajure.core])
-;; (require '[test.run :as r :refer [run-tests]])
+(require '[test.run :as r :refer [run-tests]])
 
 ;; (require '[test.test-partial :refer [test-partial]])
 
@@ -46,7 +46,7 @@
   ;; (let [f (fn foo  [x] (if false (foo 1)) x)]
   ;;   (print (f 1))
   ;;   )
-  ;; (run-tests)
+  (run-tests)
   ;; (let [p (partial partial f)]
   ;;   (t ((p 1) 2) [1 2]))
 
