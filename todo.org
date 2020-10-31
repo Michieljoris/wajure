@@ -116,6 +116,7 @@ http://clojure-doc.org/articles/language/macros.html
 ** try/throw/catch
 ** implement: quasiquote, doseq,  and, or, xor, doseq, destructering, meta data, atoms
 ** ----------------------------
+** lval_fun_print: if arity == 1 leave out surrounding () for the one lambda
 ** ([1] 0) => 1
 ** when macros return a function (when called from within another fn), are they deduplicated, no!
 (defmacro foo [x] (if (= x 1) '(fn [] 1) '(fn [] 2)))

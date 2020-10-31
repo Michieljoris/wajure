@@ -79,11 +79,13 @@ void lenv_put(Lenv* env, Lval* lval_sym, Lval* lval) {
 }
 
 // Returns new env with sym/lval pair prepended. Does not copy over any other
-// attributes. Assumes lval_sym, lvalv alist are retained already. Retains head
-// of old kv list
+// attributes. Retains head of old kv list. Both lval_sym and lval are assumed
+// to be retained already.
 Lenv* lenv_prepend(Lenv* env, Lval* lval_sym, Lval* lval) {
   Lenv* next_env = lenv_new();
-  next_env->kv = alist_prepend(retain(env->kv), retain(lval_sym), retain(lval));
+  next_env->kv = alist_prepend(retain(env->kv), lval_sym, lval);
+  next_env->parent_env = retain(env->parent_env);
+  release(env);
   return next_env;
 }
 

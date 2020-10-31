@@ -3,7 +3,85 @@
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
 
-(main 1 2)
+
+(defmacro fn [& args]
+  (let [symbol (first args)]
+    (if (symbol? symbol)
+      (let [args (rest args)]
+        (if (list? (first args)) `(fn* ~symbol ~@args)
+            `(fn* ~symbol ~args)))
+      (if (list? (first args))
+        `(fn* ~@args)
+        `(fn* ~args)))))
+
+(print "macroexpand: " (macroexpand '(fn foo [x] x) ))
+(print "macroexpand: " (macroexpand '(fn [x] x) ))
+(print "macroexpand: " (macroexpand '(fn foo ([x] x) ([x y] x y)) ))
+(print "macroexpand: " (macroexpand '(fn ([x] x) ([x y] x y)) ))
+
+;; (print "-------------")
+;; (print-env)
+;; (print "-------------")
+;; (def foobar :foobar)
+;; (let [k 1
+;;       l (let [x 1
+;;               foox2 (fn foox ([]
+;;                              (print "in foox: " foox2)))
+;;               ]
+;;           foox2)
+;;       m :m]
+;;   (def foobar :redefined)
+;;   (l))
+
+(do
+  (defn bax [x] (print bax))
+  (bax 1))
+
+
+(do
+  (def bax (do (fn [x] (print bax))))
+  (bax 1))
+
+(do
+  (def bax (let [x 1 y (fn [x] (print bax) )] y))
+  (bax 1))
+
+(let [bar (fn bar [x] (print bar))]
+  (bar 1)
+  )
+
+(do
+  (def q (let [r q] q))
+  (print "hello:" (+ 1 q))
+  )
+
+(do
+  (def a (if true (fn [x] x)))
+  (print a)
+  )
+
+;; (declare bom2)
+;; (print bom2)
+(def bloo (fn [] (+ bom2 1)))
+(bloo)
+(def bom2 123)
+;; (do
+;;   (def foobar 1111)
+;;   (defn foo [x]
+;;     (print "in foo" foobar2)
+;;     )
+;;   (def foobar2 2222)
+;;   (foo 1)
+
+;;   )
+
+;; (do
+;;   (def bax :before)
+;;   (defn g [x] (print "in g" bax))
+;;   (def bax  :after)
+;;   (g 1))
+;; (def foobar 123)
+;; (main 1 2)
 ;; (defmacro fn [& sigs]
 ;;   (print (first sigs))
 ;;   )
@@ -34,7 +112,6 @@
 ;; (print "----------")
 
 
-;; (print (macroexpand '(fn [x] x) ))
 ;; (print (macroexpand '(fn ([x] x)
 ;;                           ([x y] [x y])) ))
 

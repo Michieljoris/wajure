@@ -159,6 +159,15 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
   Lval* lval_resolved_sym;
   scoped char* namespace_or_alias = get_namespace_part(lval_symbol);
   Namespace* current_ns = get_current_ns();
+  if (_strcmp(lval_symbol->data.str, "foox") == 0) {
+    printf("eval symbol: %s\n", lval_symbol->data.str);
+    printf("Env:\n");
+    env_print(env);
+    printf("Parent env:\n");
+    env_print(env->parent_env);
+    printf("Grandparent env:\n");
+    if (env->parent_env) env_print(env->parent_env->parent_env);
+  }
   // From a required namespace
   if (namespace_or_alias) {
     /* printf("eval_symbol: %s\n", lval_symbol->data.str); */
@@ -179,7 +188,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
     return lval;
   }
 
-  // From the current namespace
+  // From the current env
   lval_resolved_sym = lenv_get(env, lval_symbol);
   if (lval_resolved_sym) {
     return lval_resolved_sym;  // resolved in symbols lexical env
@@ -200,7 +209,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
     return lval;
   }
 
-  // From stdlib
+  // From stdlib (wajure.core)
   ns = state->stdlib_ns;
   if (ns) {
     lval_resolved_sym = lenv_get(ns->env, lval_symbol);
@@ -209,7 +218,7 @@ Lval* eval_symbol(Lenv* env, Lval* lval_symbol) {
     }
   }
 
-  // From builtins
+  // From builtins (c functions)
   Lenv* builtins_env = state->builtins_env;
   return lenv_get_or_error(builtins_env,
                            lval_symbol);  // resolved in builtins env

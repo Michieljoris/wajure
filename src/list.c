@@ -127,6 +127,13 @@ void list_print(Cell* cell, void print(void*), char* seperator) {
   printf("\n");
 }
 
+void list_reverse_print(Cell* cell, void print(void*), char* seperator) {
+  if (!cell) return;
+  if (cell->cdr) list_reverse_print(cell->cdr, print, seperator);
+  print(cell->car);
+  printf("%s", seperator);
+}
+
 // Association list ========================================
 
 // Finds and returns cell for the appropriate association pair in alist for key.

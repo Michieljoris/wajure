@@ -111,6 +111,18 @@ Lval* str_fn(Lenv* env, Lval* arg_list) {
   return make_lval_str(str);
 }
 
+Lval* is_symbol_fn(Lenv* env, Lval* arg_list) {
+  Lval* result;
+  ITER_NEW_N("symbol?", 1)
+  ITER_NEXT
+  if (arg->type == LVAL_SYMBOL)
+    result = make_lval_true();
+  else
+    result = make_lval_false();
+  ITER_END
+  return result;
+}
+
 CFn util_c_fns[] = {{"print", print_fn, "print_fn", 2, 1},
                     {"pr", pr_fn, "pr_fn", 2, 1},
                     {"debug", debug_fn, "debug_fn", 2, 1},
@@ -118,6 +130,7 @@ CFn util_c_fns[] = {{"print", print_fn, "print_fn", 2, 1},
                     {"hash", hash_fn, "hash_fn", 2, 1},
                     {"str", str_fn, "str_fn", 2, 1},
                     {"read-string", read_string_fn, "read_string_fn", 2, 1},
+                    {"symbol?", is_symbol_fn, "is_symbol_fn", 2, 1},
                     {NIL}
 
 };

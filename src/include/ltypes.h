@@ -201,16 +201,19 @@ enum {
   STRING,   // 9
   REGEX,    // 10
   KEYWORD,  // 11
+  /* SYMBOL, */
+  /* UNBOUND */
   // function subtypes
   SYS,      // 12
   MACRO,    // 13
   SPECIAL,  // 14
   LAMBDA,   // 15
   // collection subtypes
-  LIST,    // 16
-  MAP,     // 17
-  VECTOR,  // 18
-  SET,     // 19
+  LIST,     // 16
+  MAP,      // 17
+  VECTOR,   // 18
+  SET,      // 19
+  UNBOUND,  // 20
   // error subtypes
   USER,
 

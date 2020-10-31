@@ -33,7 +33,12 @@ char* make_cname(char* name) {
 
 void bind_symbol(Lval* lval_sym, Lval* lval) {
   Namespace* ns = get_current_ns();
-  Lval* bound_symbol = eval_symbol(ns->env, lval_sym);
+  // We want any fn that's defined too have only access to the env as defined
+  // sofar.
+  Lenv* env = lenv_new();
+  env->kv = retain(ns->env->kv);
+  Lval* bound_symbol = eval_symbol(env, lval_sym);
+  release(env);
   /* printf("bound_symbol:"); */
   /* lval_println(bound_symbol); */
   if (bound_symbol->type != LVAL_ERR) {
@@ -59,6 +64,7 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
     lval->cname = make_cname(lval_sym->data.str);
     lval->ns = retain(get_current_ns());
   }
+  // We want to mutate env as we update it as this is a namespace root binding.
   lenv_put(ns->env, lval_sym, lval);
 }
 
@@ -66,10 +72,12 @@ Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("def", 2);
   ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
   Lval* lval_sym = arg;
-  /* printf("\n++++++++++++in eval_def\n"); */
+  printf("\n++++++++++++in eval_def\n");
+
   /* lval_println(lval_sym); */
   ITER_NEXT;
   Lval* lval = arg;
+  lval_println(lval);
   ITER_END;
   lval = lval_eval(env, lval);
   if (lval->type == LVAL_ERR) return lval;
@@ -120,7 +128,7 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list, int subtype) {
   Cell* head = lval_list->data.head;
   if (!head || ((Lval*)head->car)->subtype != VECTOR)
     return make_lambda_err(
-        make_lval_err("lambda expects at least a vector with params"));
+        make_lval_err("lambda expects at least a param vector"));
 
   Lval* lval_params = head->car;
   Cell* param = lval_params->data.head;
@@ -182,6 +190,16 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
   int max_param_count = 0;
   int has_rest_arg = 0;
   Lval* err = NULL;
+  Lval* fn_name = NULL;
+  if (head->car) {
+    Lval* first_arg = ((Lval*)head->car);
+    printf("-------------------\n");
+    lval_println(first_arg);
+    if (first_arg->type == LVAL_SYMBOL) {
+      fn_name = first_arg;
+      head = head->cdr;
+    }
+  }
   do {
     Lambda* lambda = eval_lambda_form(env, head->car, LAMBDA);
     if (lambda->err) {
@@ -231,18 +249,27 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     return err;
   }
 
-  Lenv* closure_env = lenv_new();
-  /* closure_env->parent_env = retain(env); */
-  closure_env->parent_env = retain(env->parent_env);
-  closure_env->kv = retain(env->kv);
-  ddebug("lambda has retained env: %d ", is_ns_env(env));
-  /* lenv_print(env); */
-  ddebug("refcount: %d\n", get_ref_count(env));
   // Creates fn and sets the parent_env of its env field (bindings)
   // to the passed in env
-  Lval* fn = make_lval_lambda(closure_env, type, lambdas);
-  /* printf("!!!!!!!!!!!!!!!!\n"); */
-  /* lval_println(fn); */
+  /* Lenv* closure_env = lenv_new(); */
+  Lval* fn = make_lval_lambda(retain(env), type, lambdas);
+  if (fn_name) {
+    fn->closure = lenv_prepend(env, retain(fn_name), retain(fn));
+    fn->data.str = retain(fn_name->data.str);
+  }
+
+  /* printf("!!!!!!!!!!!!!!!! %p\n", env); */
+  /* printf("closure_env of eval_lambda: \n"); */
+  /* printf("env:\n"); */
+  /* env_print(env); */
+  /* /\* /\\* lval_println(fn); *\\/ *\/ */
+  /* printf("closure_env:\n"); */
+  /* env_print(fn->closure); */
+  /* printf("closure_env parent_env:\n"); */
+  /* env_print(fn->closure->parent_env); */
+  /* printf("closure_env parent parent_env:\n"); */
+  /* if (fn->closure->parent_env)
+   * env_print(fn->closure->parent_env->parent_env); */
   /* printf("!!!!!!!!!!!!!!!!\n"); */
   return fn;
 }
@@ -260,16 +287,15 @@ Lval* eval_macro(Lenv* env, Lval* arg_list) {
   return eval_lambdas(env, head, MACRO); /*  */
 }
 
-int is_fn_call(Lval* lval, char* sym, int min_node_count) {     /*  */
-  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST && /*  */
-      list_count(lval->data.head) >= min_node_count) {          /*  */
-    lval = lval->data.head->car;                                /*  */
-    return lval->type == LVAL_SYMBOL &&
-           _strcmp(lval->data.str, sym) == 0; /*  */
-  }                                           /*  */
-  return 0;                                   /*  */
-} /*  */
-/*  */
+int is_fn_call(Lval* lval, char* sym, int min_node_count) {
+  if (lval->type == LVAL_COLLECTION && lval->subtype == LIST &&
+      list_count(lval->data.head) >= min_node_count) {
+    lval = lval->data.head->car;
+    return lval->type == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
+  }
+  return 0;
+}
+
 Lval* eval_unquote(Lenv* env, Lval* lval) {                     /*  */
   LASSERT_LIST_COUNT(lval, lval->data.head->cdr, 1, "unquote"); /*  */
   return lval_eval(env, lval->data.head->cdr->car);             /*  */
@@ -544,11 +570,7 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
       release(let_env);
       return lval;
     }
-    Lenv* new_let_env = lenv_prepend(let_env, lval_sym, lval);
-    release(lval);
-    new_let_env->parent_env = let_env;
-
-    let_env = new_let_env;
+    let_env = lenv_prepend(let_env, retain(lval_sym), lval);
     lval_sym = iter_next(b);
   }
 

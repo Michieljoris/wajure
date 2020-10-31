@@ -123,6 +123,8 @@ int lval_fun_print(void (*out)(char character, void* arg), void* arg,
 #else
       char* lambda_type = lval->subtype == LAMBDA ? "fn" : "macro";
       ret += fctprintf(out, arg, "(%s ", lambda_type);
+      if (lval->data.str) ret += fctprintf(out, arg, "%s ", lval->data.str);
+      // TODO: if arity == 1 leave out surrounding () for the one lambda
       for (int i = 0; i <= MAX_FN_PARAMS; i++) {
         Lambda** lambdas = lval->lambdas;
         Lambda* lambda = lambdas[i];
@@ -219,6 +221,9 @@ void print_kv(void* pair) {
 }
 
 void alist_print(Cell* alist) { list_print(alist, print_kv, "\n"); }
+void alist_reverse_print(Cell* alist) {
+  list_reverse_print(alist, print_kv, "\n");
+}
 
 // Debug version
 void lenv_print(Lenv* env) {
@@ -232,12 +237,10 @@ void lenv_print(Lenv* env) {
 }
 
 void env_print(Lenv* env) {
-  if (env->parent_env) {
-    alist_print(env->kv);
-  } else {
-    /* printf("ROOT env!!! \n"); */
-    list_print(env->kv, print_kv, "\n");
-  }
+  if (env)
+    alist_reverse_print(env->kv);
+  else
+    printf("NULL env\n");
 }
 
 void out(char character, void* arg) { putchar(character); }
