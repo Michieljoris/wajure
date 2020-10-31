@@ -37,11 +37,13 @@ const lval_types_to_str = {
     "9": "string",
     "10": "regex",
     "11": "keyword",
+    "12": "symbol",
+    "13": "unbound",
     // collection subtypes
-    "16": "list",
-    "17": "map",
-    "18": "vector",
-    "19": "set",
+    "18": "list",
+    "19": "map",
+    "20": "vector",
+    "21": "set",
 }
 
 function offset_to_str(offset) {

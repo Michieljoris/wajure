@@ -3,19 +3,26 @@
 ;; (require '[test.test-partial :refer [test-partial]])
 ;; (require '[foo.core :as foo])
 
-(defmacro t [expr expected & str]
-  `(let [evalled ~expr]
-     (when (not= evalled (quote ~expected))
-      (do
-        (pr "FAIL" ~@str)
-        (pr (quote ~expr) )
-        (pr "Expected:" (quote ~expected))
-        (pr "Got:" ~expr))
-      )))
-  (print "macroexpand: " (macroexpand '(t 11 11)))
-(t 11 11)
+;; (defmacro t [expr expected & str]
+;;   `(let [evalled ~expr]
+;;      (when (not= evalled (quote ~expected))
+;;       (do
+;;         (pr "FAIL" ~@str)
+;;         (pr (quote ~expr) )
+;;         (pr "Expected:" (quote ~expected))
+;;         (pr "Got:" ~expr))
+;;       )))
+  ;; (print "macroexpand: " (macroexpand '(t 11 11)))
+;; (t 11 11)
 (main 1 2)
+(print (= [] (list)))
 
+  ;; (t (= [] (list))
+  ;;    true)
+;; (print (= "abc" (quote abc)))
+;; (print (= :abc (quote abc)))
+
+;; (t (quote abc) "abc")
 ;; (defmacro fn [& args]
 ;;   (let [symbol (first args)]
 ;;     (if (symbol? symbol)

@@ -393,14 +393,26 @@ CResult compile_vector(Wasm* wasm, Lval* lval) {
 // on the stack. This time the lval can also be a lambda. Eg a symbol might
 // resolve to something we know is a function (like a sys or a root fn), or a
 // list is of the form (fn [..] ..).
+
 CResult lval_compile(Wasm* wasm, Lval* lval) {
   /* printf("lval_compile: "); */
   /* lval_println(lval); */
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
 
   Lval* resolved_sym = NULL;
-  switch (lval->group) {
-    case LVAL_SYMBOL:;
+  switch (lval->type) {
+    case LIST: {
+      CResult ret = compile_application(wasm, lval);  // fn call
+      ret.lval = lval;
+      return ret;
+    }
+    case VECTOR: {
+      CResult ret = compile_vector(wasm, lval);  // fn call
+      ret.lval = lval;
+      return ret;
+    }
+
+    case SYMBOL:;
       // Resolve symbol in our compiler env and compile it. At runtime there's
       // no notion of environments or symbols that resolve to other lvalues.
       // Symbols at runtime are just that, a literal similar to strings,
@@ -413,25 +425,41 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           return quit(wasm, resolved_sym->data.str);
         case LVAL_REF:;
           // Symbol has been added to env while compiling, so it's a param or
-          // local (let) var, either from the current function, or a closed over
-          // value.
+          // local (let) var, either from the current function, or a closed
+          // over value.
           CResult ret =
               compile_lval_ref(wasm, lval_sym->data.str, resolved_sym);
           ret.lval = resolved_sym;
           release(resolved_sym);
           return ret;
-        case LVAL_FUNCTION:  // as evalled in our compiler env
-          switch (resolved_sym->type) {
-            case MACRO:
-            case LAMBDA:  // functions in compiler env
-              if (resolved_sym->data.str == NULL)
-                resolved_sym->data.str = retain(lval_sym->data.str);
-            default:;
-          }
+        /* case LVAL_FUNCTION:  // as evalled in our compiler env */
+        /*   switch (resolved_sym->type) { */
+        /*     case MACRO: */
+        /*     case LAMBDA:  // functions in compiler env */
+        /*       if (resolved_sym->data.str == NULL) */
+        /*         resolved_sym->data.str = retain(lval_sym->data.str); */
+        /*     default:; */
+        /*   } */
         default:
           lval = resolved_sym;
       };
-      break;
+
+    default:;
+  }
+
+  CResult ret = datafy_lval(wasm, lval);
+  ret.lval = lval;
+  release(resolved_sym);
+  return ret;
+}
+
+CResult lval_compile2(Wasm* wasm, Lval* lval) {
+  /* printf("lval_compile: "); */
+  /* lval_println(lval); */
+  /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
+
+  Lval* resolved_sym = NULL;
+  switch (lval->group) {
     case LVAL_COLLECTION:
       switch (lval->type) {
         case LIST: {
@@ -445,6 +473,41 @@ CResult lval_compile(Wasm* wasm, Lval* lval) {
           return ret;
         }
       }
+    case LVAL_LITERAL:
+      if (lval->type == SYMBOL) {
+        // Resolve symbol in our compiler env and compile it. At runtime
+        // there's no notion of environments or symbols that resolve to other
+        // lvalues. Symbols at runtime are just that, a literal similar to
+        // strings, numbers etc.
+        Lval* lval_sym = lval;
+        Lval* resolved_sym = eval_symbol(wasm->env, lval_sym);
+
+        switch (resolved_sym->group) {
+          case LVAL_ERR:
+            return quit(wasm, resolved_sym->data.str);
+          case LVAL_REF:;
+            // Symbol has been added to env while compiling, so it's a param
+            // or local (let) var, either from the current function, or a
+            // closed over value.
+            CResult ret =
+                compile_lval_ref(wasm, lval_sym->data.str, resolved_sym);
+            ret.lval = resolved_sym;
+            release(resolved_sym);
+            return ret;
+          case LVAL_FUNCTION:  // as evalled in our compiler env
+            switch (resolved_sym->type) {
+              case MACRO:
+              case LAMBDA:  // functions in compiler env
+                if (resolved_sym->data.str == NULL)
+                  resolved_sym->data.str = retain(lval_sym->data.str);
+              default:;
+            }
+          default:
+            lval = resolved_sym;
+        };
+      }
+      break;
+
     default:;
   }
 

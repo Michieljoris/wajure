@@ -23,7 +23,7 @@ Lval* macroexpand(Lenv* env, Lval* lval, int do_recurse) {
   /* Check we have non-empty list where the first expr is a symbol */
   if (is_lval_type(lval, LVAL_COLLECTION, LIST) &&
       list_count(lval->data.head) > 0 &&
-      ((Lval*)(lval->data.head->car))->group == LVAL_SYMBOL) {
+      ((Lval*)(lval->data.head->car))->type == SYMBOL) {
     /* Have a peek at the eval of that symbol */
     scoped Lval* lval_fun = lenv_get_or_error(env, lval->data.head->car);
     /* If it's a macro then eval it with the lval args */
@@ -181,7 +181,7 @@ Lval* in_ns(char* namespace_str) {
 
 Lval* in_ns_fn(Lenv* _, Lval* arg_list) {
   ITER_NEW_N("in-ns", 1);
-  ITER_NEXT_TYPE(LVAL_SYMBOL, -1)
+  ITER_NEXT_TYPE(LVAL_LITERAL, SYMBOL)
   Lval* lval_symbol = arg;
   ITER_END
   /* Namespace* ns = alist_get(state->namespaces, is_eq_str,
@@ -230,7 +230,7 @@ struct require_info parse_require_vector(Lval* vector) {
   if (list_count(vector->data.head) > 5) {
     ret.error = make_lval_err("Too many args passed to require (>5)");
     return ret;
-  } else if (head && ((Lval*)head->car)->group == LVAL_SYMBOL) {
+  } else if (head && ((Lval*)head->car)->type == SYMBOL) {
     ret.namespace_str = ((Lval*)head->car)->data.str;
   } else {
     ret.error = make_lval_err(

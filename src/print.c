@@ -159,8 +159,6 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
   /* printf("Trying to print: type:%d %s\n", lval->type, */
   /*        lval_type_constant_to_name(lval->type)); */
   switch (lval->group) {
-    case LVAL_SYMBOL:
-      return fctprintf(out, arg, "%s", lval->data.str);
     case LVAL_COLLECTION:
       switch (lval->type) {
         case LIST:
@@ -175,6 +173,8 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
       }
     case LVAL_LITERAL:
       switch (lval->type) {
+        case SYMBOL:
+          return fctprintf(out, arg, "%s", lval->data.str);
         case NUMBER:
           return fctprintf(out, arg, "%li", lval->data.num);
         case STRING:

@@ -29,13 +29,12 @@ Lval* next_arg(int do_expect, Cell* i, char* _fn_name, int _min_count,
                  &_index, arg_list);                                      \
   if (arg && arg->group == LVAL_ERR) return arg;
 
-#define ITER_NEXT_TYPE(expected_group, expected_subtype)                     \
-  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count,    \
-                 &_index, arg_list);                                         \
-  if (arg->group == LVAL_ERR) return arg;                                    \
-                                                                             \
-  LASSERT_TYPE(_fn_name, arg_list, _index, expected_group, expected_subtype, \
-               arg);
+#define ITER_NEXT_TYPE(expected_group, expected_type)                     \
+  arg = next_arg(1, i, _fn_name, _min_count, _max_count, _expected_count, \
+                 &_index, arg_list);                                      \
+  if (arg->group == LVAL_ERR) return arg;                                 \
+                                                                          \
+  LASSERT_TYPE(_fn_name, arg_list, _index, expected_group, expected_type, arg);
 
 #define ITER_END                                                          \
   arg = next_arg(0, i, _fn_name, _min_count, _max_count, _expected_count, \

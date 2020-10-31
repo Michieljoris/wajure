@@ -70,7 +70,7 @@ void bind_symbol(Lval* lval_sym, Lval* lval) {
 
 Lval* eval_def(Lenv* env, Lval* arg_list) {
   ITER_NEW_N("def", 2);
-  ITER_NEXT_TYPE(LVAL_SYMBOL, -1);
+  ITER_NEXT_TYPE(LVAL_LITERAL, SYMBOL);
   Lval* lval_sym = arg;
   printf("\n++++++++++++in eval_def\n");
 
@@ -137,11 +137,10 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list) {
   int rest_arg_index = 0;
   int offset = 0;
   while (param) {
-    if (((Lval*)param->car)->group != LVAL_SYMBOL) {
-      return make_lambda_err(
-          make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
-                        lval_type_to_name(param->car),
-                        lval_type_constant_to_name(LVAL_SYMBOL)));
+    if (((Lval*)param->car)->type != SYMBOL) {
+      return make_lambda_err(make_lval_err(
+          "Canot bind non-symbol. Got %s, expected %s.",
+          lval_type_to_name(param->car), lval_type_constant_to_name(SYMBOL)));
     }
     if (rest_arg_index && param_count == rest_arg_index) {
       return make_lambda_err(
@@ -195,7 +194,7 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     Lval* first_arg = ((Lval*)head->car);
     printf("-------------------\n");
     lval_println(first_arg);
-    if (first_arg->group == LVAL_SYMBOL) {
+    if (first_arg->type == SYMBOL) {
       fn_name = first_arg;
       head = head->cdr;
     }
@@ -291,7 +290,7 @@ int is_fn_call(Lval* lval, char* sym, int min_node_count) {
   if (lval->group == LVAL_COLLECTION && lval->type == LIST &&
       list_count(lval->data.head) >= min_node_count) {
     lval = lval->data.head->car;
-    return lval->group == LVAL_SYMBOL && _strcmp(lval->data.str, sym) == 0;
+    return lval->type == SYMBOL && _strcmp(lval->data.str, sym) == 0;
   }
   return 0;
 }
@@ -442,7 +441,7 @@ Lval* eval_try(Lenv* env, Lval* arg_list) {
             Lval* lval_sym =
                 list_nth(node->data.head, 2); /* sym to bind msg to */
 
-            if (lval_sym->group != LVAL_SYMBOL) {
+            if (lval_sym->type != SYMBOL) {
               release(lval_sym);
               release(ret);
               return make_lval_err(
@@ -557,11 +556,11 @@ Lval* eval_let(Lenv* env, Lval* arg_list) {
   Lval* lval_sym = iter_next(b);
 
   while (lval_sym) {
-    if (lval_sym->group != LVAL_SYMBOL) {
+    if (lval_sym->type != SYMBOL) {
       release(let_env);
       return make_lval_err("Canot bind non-symbol. Got %s, expected %s.",
                            lval_type_to_name(lval_sym),
-                           lval_type_constant_to_name(LVAL_SYMBOL));
+                           lval_type_constant_to_name(SYMBOL));
     }
 
     Lval* lval = iter_next(b);

@@ -186,14 +186,12 @@ typedef struct {
 
 /* lval types */
 enum {
-  LVAL_SYMBOL,      // 0
-  LVAL_COLLECTION,  // 1
-  LVAL_LITERAL,     // 2
-  LVAL_FUNCTION,    // 3
-  LVAL_ERR,         // 4
+  LVAL_COLLECTION = 1,  // 1
+  LVAL_LITERAL,         // 2
+  LVAL_FUNCTION,        // 3
+  LVAL_ERR,             // 4
 
-  /* subtypes */
-  // literal subtypes
+  // literal types
   LNIL,     // 5
   LTRUE,    // 6
   LFALSE,   // 7
@@ -201,26 +199,29 @@ enum {
   STRING,   // 9
   REGEX,    // 10
   KEYWORD,  // 11
-  /* SYMBOL, */
-  /* UNBOUND */
-  // function subtypes
-  SYS,      // 12
-  MACRO,    // 13
-  SPECIAL,  // 14
-  LAMBDA,   // 15
-  // collection subtypes
-  LIST,     // 16
-  MAP,      // 17
-  VECTOR,   // 18
-  SET,      // 19
-  UNBOUND,  // 20
-  // error subtypes
-  USER,
+  SYMBOL,   // 12
+  UNBOUND,  // 13
 
-  // compiler types
+  // function types
+  SYS,      // 14
+  MACRO,    // 15
+  SPECIAL,  // 16
+  LAMBDA,   // 17
+
+  // collection types
+  LIST,    // 18
+  MAP,     // 19
+  VECTOR,  // 20
+  SET,     // 21
+
+  // error types
+  EXCEPTION,
+  ERROR,
+
+  // compiler group
   LVAL_REF,
-  LVAL_EXTERNAL,  // a required symbol
-  // local ref subtypes
+
+  // local ref types
   PARAM,
   LOCAL
 

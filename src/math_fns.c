@@ -98,12 +98,10 @@ MATH_FN(gte_fn, ">=", >=);
 
 int lval_eq(Lval* x, Lval* y) {
   /* if (x->hash != y->hash) return 0; */
-  if (x->group != y->group) return 0;
 
   switch (x->group) {
-    case LVAL_SYMBOL:
-      return (_strcmp(x->data.str, y->data.str) == 0);
     case LVAL_COLLECTION:
+      if (y->group != LVAL_COLLECTION) return 0;
       if (list_count(x->data.head) != list_count(y->data.head)) {
         return 0;
       }
@@ -119,10 +117,17 @@ int lval_eq(Lval* x, Lval* y) {
       return 1;
     case LVAL_LITERAL:
       switch (x->type) {
+        case SYMBOL:
+          if (y->type != SYMBOL) return 0;
+          return (_strcmp(x->data.str, y->data.str) == 0);
         case NUMBER:
+          if (y->type != NUMBER) return 0;
           return (x->data.num == y->data.num);
         case KEYWORD:
+          if (y->type != KEYWORD) return 0;
+          return (_strcmp(x->data.str, y->data.str) == 0);
         case STRING:
+          if (y->type != STRING) return 0;
           return (_strcmp(x->data.str, y->data.str) == 0);
         case LNIL:
         case LTRUE:

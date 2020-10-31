@@ -294,8 +294,6 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
   /* printf("lval->type: %s\n", lval_type_constant_to_name(lval->type)); */
   /* Lval* ret = NIL; */
   switch (lval->group) {
-    case LVAL_SYMBOL:
-      return eval_symbol(env, lval);
     case LVAL_COLLECTION:
       switch (lval->type) {
         case LIST:
@@ -309,6 +307,8 @@ Lval* lval_eval(Lenv* env, Lval* lval) {
           return make_lval_err("Unknown seq type: %d ", lval->type);
       }
       break;
+    case LVAL_LITERAL:
+      if (lval->type == SYMBOL) return eval_symbol(env, lval);
     default:
       return retain(lval);
   }

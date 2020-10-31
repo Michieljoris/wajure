@@ -99,7 +99,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
     case MAP:;
     case SET:;
     default:
-      return quit(wasm, "Unknown or unimplemented collection subtype %s %d",
+      return quit(wasm, "Unknown or unimplemented collection type %s %d",
                   lval_type_to_name(lval), lval->type);
   }
 }
@@ -108,7 +108,7 @@ int inter_literal(Wasm* wasm, Lval* lval) {
   /* printf("------------------datafy_literal %s\n", lval_type_to_name(lval));
    */
   /* lval_println(lval); */
-  if (lval->group == LVAL_SYMBOL)
+  if (lval->type == SYMBOL)
     return inter_lval_str_type(wasm, &wasm->lval_symbol_pool, lval);
   switch (lval->type) {
     case NUMBER:;
@@ -180,8 +180,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   // A data offset in another module is of no use.
   if (!lval_is_external && lval->data_offset > 0) {
     int data_offset = lval->data_offset;
-    printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->type));
-    lval_println(lval);
+    /* printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->type)); */
+    /* lval_println(lval); */
     CResult _ret = {
         .ber = lval->type == SYS  // we have absolute data offsets for sys fns
                    ? make_int32(wasm->module, data_offset)
@@ -219,7 +219,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
           return quit(wasm, "ERROR: Can't take value of a macro such as %s",
                       global_name ? global_name : lval->data.str);
         default:;
-          return quit(wasm, "ERROR: Can't compile function with subtype %d\n",
+          return quit(wasm, "ERROR: Can't compile function with type %d\n",
                       lval->type);
       }
       break;

@@ -31,11 +31,11 @@ int lval_hash(Lval* lval) {
     case LVAL_ERR:
       /* hash = murmur3_int(long_hash((unsigned long)lval), seed); */
       break;
-    case LVAL_SYMBOL:
-      /* hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed); */
-      break;
     case LVAL_LITERAL:
       switch (lval->type) {
+        case SYMBOL:
+          /* hash = murmur3_str(lval->str, _strlen(lval->str), sym_seed); */
+          break;
         case STRING:
           /* hash = murmur3_str(lval->str, _strlen(lval->str), str_seed);  // */
           break;
@@ -84,8 +84,8 @@ int lval_hash(Lval* lval) {
 
 Lval* make_lval_sym(char* s) {
   Lval* lval = lalloc_type(LVAL);
-  *lval = (Lval){.group = LVAL_SYMBOL,
-                 .type = -1,
+  *lval = (Lval){.group = LVAL_LITERAL,
+                 .type = SYMBOL,
                  .data.str = retain(s),
                  INIT(FTI_RTE_NOT_A_FN)};
   lval->hash = lval_hash(lval);
@@ -249,7 +249,7 @@ Lval* make_lval_lambda(Lenv* env, int type, Lambda** lambdas) {
 Lval* make_lval_err(char* fmt, ...) {
   Lval* lval = lalloc_type(LVAL);
   *lval = (Lval){.group = LVAL_ERR,
-                 .type = SYS,
+                 .type = ERROR,
                  .data.str = lalloc_size(512),
                  INIT(FTI_RTE_NOT_A_FN)};
 
@@ -265,7 +265,7 @@ Lval* make_lval_err(char* fmt, ...) {
 // User error
 Lval* make_lval_exception(char* msg) {
   Lval* lval = make_lval_err(msg);
-  lval->type = USER;
+  lval->type = EXCEPTION;
   return lval;
 }
 
@@ -285,12 +285,8 @@ char* lval_type_constant_to_name(int t) {
       return "Literal";
     case NUMBER:
       return "Number";
-    case LVAL_SYMBOL:
-      return "Symbol";
     case LVAL_COLLECTION:
       return "Collection";
-    /* case LVAL_NAMESPACE: */
-    /*   return "Namespace"; */
     case LVAL_ERR:
       return "Error";
     case LVAL_FUNCTION:
@@ -319,6 +315,14 @@ char* lval_type_constant_to_name(int t) {
       return "Local ref";
     case REGEX:
       return "regex";
+    case SYMBOL:
+      return "symbol";
+    case UNBOUND:
+      return "unbound";
+    case ERROR:
+      return "error";
+    case EXCEPTION:
+      return "exception";
     case SYS:
       return "sys";
     case LAMBDA:
@@ -327,8 +331,6 @@ char* lval_type_constant_to_name(int t) {
       return "macro";
     case SPECIAL:
       return "special";
-    case LVAL_EXTERNAL:
-      return "External";
     case PARAM:
       return "param";
     case LOCAL:
@@ -339,53 +341,7 @@ char* lval_type_constant_to_name(int t) {
 }
 
 char* lval_type_to_name(Lval* lval) {
-  switch (lval->group) {
-    case LVAL_SYMBOL:
-      return "Symbol";
-    case LVAL_COLLECTION:
-      switch (lval->type) {
-        case LIST:
-          return "List";
-        case VECTOR:
-          return "Vector";
-        case MAP:
-          return "Map";
-        default:
-          return "unknown collection subtype";
-      }
-    case LVAL_LITERAL:
-      switch (lval->type) {
-        case NUMBER:
-          return "Number";
-        case STRING:
-          return "String";
-        case LTRUE:
-          return "true";
-        case LFALSE:
-          return "false";
-        case LNIL:
-          return "nil";
-        case KEYWORD:
-          return "Keyword";
-      }
-    case LVAL_FUNCTION:
-      switch (lval->type) {
-        case SYS:
-          return "Function (sys)";
-        case LAMBDA:
-          return "Function";
-        case SPECIAL:
-          return "Special form";
-        case MACRO:
-          return "Macro";
-      }
-    /* case LVAL_NAMESPACE: */
-    /*   return "Namespace"; */
-    case LVAL_ERR:
-      return "Error";
-    default:
-      return "Unknown";
-  }
+  return lval_type_constant_to_name(lval->type);
 }
 
 char* get_namespace_part(Lval* lval_sym) {

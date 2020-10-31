@@ -5,10 +5,20 @@
                         `(def ~sym (macro ~@args))
                         `(def ~sym (macro ~args))))))
 
+;; (defmacro fn [& args]
+;;   (if (list? (first args))
+;;     `(fn* ~@args)
+;;     `(fn* ~args)))
+
 (defmacro fn [& args]
-  (if (list? (first args))
-    `(fn* ~@args)
-    `(fn* ~args)))
+  (let [symbol (first args)]
+    (if (symbol? symbol)
+      (let [args (rest args)]
+        (if (list? (first args)) `(fn* ~symbol ~@args)
+            `(fn* ~symbol ~args)))
+      (if (list? (first args))
+        `(fn* ~@args)
+        `(fn* ~args)))))
 
 (defmacro defn [sym & args]
   `(def ~sym (fn ~@args)))
@@ -45,4 +55,28 @@
              form)
            form)))
 
+;; TODO:
+;; Full clojure.core macro: (needs map and meta)
+;; (defmacro declare
+;;   "defs the supplied var names with no bindings, useful for making forward declarations."
+;;   {:added "1.0"}
+;;   [& names] `(do ~@(map #(list 'def (vary-meta % assoc :declared true)) names)))
+
+;;TODO: we need map for this macro, and reader fns.
+;; (defmacro declare
+;;   "defs the supplied var names with no bindings, useful for making forward declarations."
+;;   {:added "1.0"}
+;;   [& names] `(do ~@(map #(list 'def %) names)))
+
+;;TODO: needs map
+;; (defmacro declare
+;;   "defs the supplied var names with no bindings, useful for making forward declarations."
+;;   {:added "1.0"}
+;;   [& names] `(do ~@(map (fn [name] (list 'def name)) names)))
+
+(defmacro declare [name]
+  `(def ~name))
+
+;; (defn foo {:a :b} [x] x)
+;; (meta #'foo)
 ;; (defn range [x] (print "TODO: implement range" x))

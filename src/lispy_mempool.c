@@ -91,9 +91,6 @@ void destroy_lval(void* data) {
    * lval_type_to_name(lval)); */
   /* lval_println(lval); */
   switch (lval->group) {
-    case LVAL_SYMBOL:
-      release(lval->data.str);
-      break;
     case LVAL_COLLECTION:
       /* printf("releasing head\n"); */
       /* printf("head rc %d\n", get_ref_count(lval->head)); */
@@ -103,6 +100,9 @@ void destroy_lval(void* data) {
       break;
     case LVAL_LITERAL:
       switch (lval->type) {
+        case SYMBOL:
+          release(lval->data.str);
+          break;
         case NUMBER:
           break;
         case KEYWORD:

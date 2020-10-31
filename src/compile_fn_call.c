@@ -123,16 +123,18 @@ Ber call_fn_by_ref(Wasm* wasm, Ber wval, Cell* args, int args_block_ptr_local,
       BinaryenLocalSet(module, args_block_ptr_local, args_block_ptr);
   block_children[(*block_children_count)++] = local_set_args_block_ptr;
 
-  block_children[(*block_children_count)++] = wasm_log_int(
-      wasm,
-      get_wval_prop(module, local_get_int32(module, wval_local), "group"));
+  /* block_children[(*block_children_count)++] = wasm_log_int( */
+  /*     wasm, */
+  /*     get_wval_prop(module, local_get_int32(module, wval_local), "group"));
+   */
 
-  block_children[(*block_children_count)++] = wasm_log_int(
-      wasm, get_wval_prop(module, local_get_int32(module, wval_local), "type"));
+  /* block_children[(*block_children_count)++] = wasm_log_int( */
+  /*     wasm, get_wval_prop(module, local_get_int32(module, wval_local),
+   * "type")); */
 
-  block_children[(*block_children_count)++] = wasm_log_int(
-      wasm, get_wval_prop(module, local_get_int32(module, wval_local),
-                          "fn_table_index"));
+  /* block_children[(*block_children_count)++] = wasm_log_int( */
+  /*     wasm, get_wval_prop(module, local_get_int32(module, wval_local), */
+  /*                         "fn_table_index")); */
 
   // Load partials and args into the args block
   Ber args_block =
@@ -386,7 +388,7 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
   CResult fn_call = cnull();
 
   // Fn call > (symbol args ...)
-  if (lval_applicator->group == LVAL_SYMBOL) {
+  if (lval_applicator->type == SYMBOL) {
     Lval* lval_sym = lval_applicator;
     // Let's see if the symbol refers to something we know how to compile
     // already
@@ -475,9 +477,11 @@ CResult compile_application(Wasm* wasm, Lval* lval_list) {
         fn_call = apply(wasm, BER, fn_ref, NULL, NULL, args, -1);
         fn_call.is_fn_call = 1;
         break;
-      case LVAL_SYMBOL:
-        quit(wasm, "ERROR: A symbol can't be cast to a fn: %s",
-             resolved_sym->data.str);
+      /* case LVAL_LITERAL: */
+      /*   if (resolved_sym->type == SYMBOL) */
+      /*     quit(wasm, "ERROR: A symbol can't be cast to a fn: %s", */
+      /*          resolved_sym->data.str); */
+      /*   break; */
       case LVAL_COLLECTION:
         switch (resolved_sym->type) {
           case LIST:
