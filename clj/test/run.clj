@@ -39,6 +39,7 @@
   (test7/test7c)
   (pr "test8")
   (test8/test)
+  (test8/test-self-recursive-fn)
   ;; (pr "-------------- Done running tests ---------------------")
 
   ;; (test5/test)

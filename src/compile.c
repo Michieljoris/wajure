@@ -216,8 +216,8 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
   if (lval_fn->group == LVAL_ERR) quit(wasm, lval_fn->data.str);
 
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
-  lval_fn->data.str = lambda_name;
-  /* lval_fn->cname = lambda_name; */
+  /* lval_fn->data.str = lambda_name; */
+  lval_fn->cname = lambda_name;
   FunctionData function_data = add_local_lambda(wasm, lval_fn);
 
   // Which gives us info on the wasm fn's fn_table_index and which and

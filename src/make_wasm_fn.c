@@ -126,9 +126,10 @@ Ber switch_on_args_count(Wasm* wasm, Lval* lval_fn, int args_count_param,
   return body;
 }
 
-FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
+FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* self,
                                Lambda* lambda, Cell* symbol_to_ref,
                                int wajure_args) {
+  char* fn_name = lambda->name;
   printf(">>>>>>>> add_wasm_function %s\n", fn_name);
   int param_count = lambda->param_count;
   // The function's closure, args_count_ptr and args_count, or closure and
@@ -145,12 +146,12 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // Params
   Lenv* ref_env = enter_env(wasm);
 
-  /* if (self) { */
-  /*   printf("setting self lval_ref %s\n", self); */
-  /*   Lval* lval_sym = make_lval_sym(retain(self)); */
-  /*   lenv_put(ref_env, lval_sym, make_lval_ref(context, SELF, -1)); */
-  /*   /\* release(lval_sym); *\/ */
-  /* } */
+  if (self) {
+    printf("setting self lval_ref %s\n", self);
+    Lval* lval_sym = make_lval_sym(retain(self));
+    lenv_put(ref_env, lval_sym, make_lval_ref(context, SELF, -1));
+    release(lval_sym);
+  }
 
   int has_rest_arg = lambda->has_rest_arg;  // 1 based
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
@@ -277,8 +278,8 @@ Ber make_root_fn(Wasm* wasm, Lval* lval_fn, int arity) {
   Lambda* lambda = lval_fn->lambdas[arity];
   lambda->name = wajure_fn_name;
   printf("make_root_fn, lambda_name is: %s\n", wajure_fn_name);
-  FunctionData function_data = add_wasm_function(
-      wasm, lval_fn->closure, wajure_fn_name, lambda, NULL, ABI_PARAMS);
+  FunctionData function_data =
+      add_wasm_function(wasm, lval_fn->closure, NULL, lambda, NULL, ABI_PARAMS);
 
   // This is so that we can call this fn using params (iso args_block)
   // indirectly from other namespaces
@@ -315,12 +316,14 @@ Ber make_local_lambda(Wasm* wasm, Lval* lval_fn, int arity) {
   printf("make_local_lambda\n");
   Context* context = wasm->context->car;
   BinaryenModuleRef module = wasm->module;
-  char* lambda_name = add_arity_to_fn_name(lval_fn->data.str, arity);
+  char* lambda_name = add_arity_to_fn_name(lval_fn->cname, arity);
 
   Lambda* lambda = lval_fn->lambdas[arity];  // TODO!!!!!!!!
   lambda->name = lambda_name;
-  FunctionData function_data = add_wasm_function(
-      wasm, wasm->env, lambda_name, lambda, context->cell, ABI_ARGS_BLOCK);
+
+  char* self = lval_fn->data.str;
+  FunctionData function_data = add_wasm_function(wasm, wasm->env, self, lambda,
+                                                 context->cell, ABI_ARGS_BLOCK);
   context->cell = function_data.symbol_to_ref;
 
   // Call the root fn with actual params (not args_block)
@@ -348,11 +351,11 @@ FunctionData add_local_lambda(Wasm* wasm, Lval* lval_fn) {
   BinaryenType params_type = make_type_int32(3);
   BinaryenType results_type = make_type_int32(1);
 
-  BinaryenAddFunction(module, lval_fn->data.str, params_type, results_type,
-                      NULL, 0, branch_on_arity);
+  BinaryenAddFunction(module, lval_fn->cname, params_type, results_type, NULL,
+                      0, branch_on_arity);
 
   FunctionData function_data = {
-      .fn_table_index = add_fn_to_table(wasm, lval_fn->data.str),
+      .fn_table_index = add_fn_to_table(wasm, lval_fn->cname),
       .symbol_to_ref = retain(context->cell)};
   return function_data;
 }

@@ -147,3 +147,11 @@
 
   (t (let [x2 3] (a))
      2))
+
+
+(defn test-self-recursive-fn []
+  (pr "test-self-recursive-fn")
+  (let [f (fn foo [n]
+            (when (> n 0)
+              (cons n (foo (- n 1)))))]
+    (t (f 5) (5 4 3 2 1))))

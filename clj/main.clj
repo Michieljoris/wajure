@@ -46,6 +46,13 @@
 
 (defn main [& args]
   ;; (f)
+  ;; (let [x 123
+  ;;       f (fn foo [n]
+  ;;           (when (> n 0)
+  ;;             (cons n (foo (- n 1)))))]
+  ;;   (t (f 5) (5 4 3 2 1))
+  ;;   ;; f
+  ;;   )
   (run-tests)
   ;; (let [p (partial partial f)]
   ;;   (t ((p 1) 2) [1 2]))
