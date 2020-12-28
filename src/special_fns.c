@@ -224,6 +224,7 @@ Lambda* eval_lambda_form(Lenv* env, Lval* lval_list) {
   return lambda;
 }
 
+// Processes list of lambdas
 Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
   Cell* head = arg_list;
   int s = (MAX_FN_PARAMS + 1) * (sizeof(char*));
@@ -236,8 +237,8 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
   Lval* fn_name = NULL;
   if (head->car) {
     Lval* first_arg = ((Lval*)head->car);
-    printf("-------------------\n");
-    lval_println(first_arg);
+    /* printf("-------------------\n"); */
+    /* lval_println(first_arg); */
     if (first_arg->type == SYMBOL) {
       fn_name = first_arg;
       head = head->cdr;
@@ -292,10 +293,9 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
     return err;
   }
 
-  // Creates fn and sets the parent_env of its env field (bindings)
-  // to the passed in env
   Lval* fn = make_lval_lambda(retain(env), type, lambdas);
   if (fn_name) {
+    // The fn can be found in its own closure
     fn->closure = lenv_prepend(env, retain(fn_name), retain(fn));
     fn->data.str = retain(fn_name->data.str);
   }
@@ -316,6 +316,7 @@ Lval* eval_lambdas(Lenv* env, Cell* arg_list, int type) {
   return fn;
 }
 
+// fn*
 Lval* eval_lambda(Lenv* env, Lval* arg_list) {
   Cell* head = arg_list->data.head;
   if (!head) return make_lval_err("fn* expects at least one arg");

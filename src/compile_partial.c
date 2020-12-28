@@ -262,7 +262,7 @@ CResult compile_partial_call(Wasm* wasm, WasmFn native_fn, Cell* args) {
       while (partials_head) {
         Lval* lval = partials_head->car;
         CResult result = datafy_lval(wasm, lval);
-        Ber wval_ptr = make_int32(module, result.data_offset);
+        Ber wval_ptr = make_int32(module, result.lval_ptr);
         wval_ptr = BinaryenBinary(
             module, BinaryenAddInt32(), wval_ptr,
             BinaryenGlobalGet(module, "data_offset", BinaryenTypeInt32()));

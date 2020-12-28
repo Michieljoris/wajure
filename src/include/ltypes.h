@@ -223,7 +223,8 @@ enum {
 
   // local ref types
   PARAM,
-  LOCAL
+  LOCAL,
+  SELF
 
 };
 

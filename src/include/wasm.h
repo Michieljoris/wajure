@@ -8,7 +8,7 @@
 
 typedef struct {
   Ber ber;
-  int data_offset;
+  int lval_ptr;
   int is_fn_call;
   int fn_table_index;
   Lval* lval;

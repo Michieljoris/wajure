@@ -21,6 +21,8 @@ void add_test_fn(Wasm* wasm);
 int add_string_to_data(Wasm* wasm, char* str);
 
 int add_bytes_to_data(Wasm* wasm, char* data, int len);
+int reserve_data(Wasm* wasm, int len);
+void set_data(Wasm* wasm, char* data, int len, int offset);
 int add_fn_to_table(Wasm* wasm, char* fn_name);
 int fn_exists(Wasm* wasm, char* fn_name);
 

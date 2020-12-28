@@ -9,10 +9,8 @@
 #include "lval.h"
 #include "print.h"
 
-Lval* make_lval_wasm_lambda(int fn_table_index,
-                            /* int param_count, */
-                            /* int has_rest_arg, */
-                            int closure, int partials, int partial_count) {
+Lval* make_lval_wasm_lambda(int fn_table_index, int closure, int partials,
+                            int partial_count) {
   /* printf( */
   /*     "fn_table_index %d, closure: %d, partials %d, fn_call_relay_array
    * %d\n", */
@@ -100,10 +98,10 @@ void wval_print(Lval* lval) {
 #ifdef WASM
   printf("WVAL---------------------:\n");
   printf("wval pointer: %li\n", (long)lval);
-  printf("type: %d %s %lu\n", lval->group,
-         lval_type_constant_to_name(lval->group), offsetof(Lval, group));
   printf("type: %d %s %lu\n", lval->type,
          lval_type_constant_to_name(lval->type), offsetof(Lval, type));
+  printf("group: %d %s %lu\n", lval->group,
+         lval_type_constant_to_name(lval->group), offsetof(Lval, group));
 
   printf("head: %d \n", lval->data.head);
   printf("fn_table_index: %d %lu\n", lval->fn_table_index,

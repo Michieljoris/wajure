@@ -1,0 +1,3 @@
+bin/clean
+PLATFORM=wasm make runtime
+make compile

@@ -141,6 +141,20 @@ Ber wasm_printf(Wasm* wasm, int offset) {
 
 int pad(int s) { return (s % 4) ? (s + 4 - (s % 4)) : s; }
 
+int reserve_data(Wasm* wasm, int len) {
+  len = pad(len);
+  int data_offset = wasm->data_offset;
+  wasm->data = realloc(wasm->data, data_offset + len);
+  wasm->data_offset += len;
+
+  return data_offset;
+}
+
+void set_data(Wasm* wasm, char* data, int len, int offset) {
+  len = pad(len);
+  _memmove(wasm->data + offset, data, len);
+}
+
 int add_bytes_to_data(Wasm* wasm, char* data, int len) {
   len = pad(len);
   int offset = wasm->data_offset;
@@ -439,7 +453,7 @@ void add_test_fn(Wasm* wasm) {
 
 char* number_fn_name(Wasm* wasm, char* fn_name) {
   char* numbered_fn_name = lalloc_size(512);
-  sprintf(numbered_fn_name, "%s#%d", fn_name, wasm->fns_count);
+  sprintf(numbered_fn_name, "%sL%d", fn_name, wasm->fns_count);
   return numbered_fn_name;
 }
 

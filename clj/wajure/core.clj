@@ -5,17 +5,13 @@
                         `(def ~sym (macro ~@args))
                         `(def ~sym (macro ~args))))))
 
-;; (defmacro fn [& args]
-;;   (if (list? (first args))
-;;     `(fn* ~@args)
-;;     `(fn* ~args)))
-
 (defmacro fn [& args]
   (let [symbol (first args)]
     (if (symbol? symbol)
       (let [args (rest args)]
-        (if (list? (first args)) `(fn* ~symbol ~@args)
-            `(fn* ~symbol ~args)))
+        (if (list? (first args))
+          `(fn* ~symbol ~@args)
+          `(fn* ~symbol ~args)))
       (if (list? (first args))
         `(fn* ~@args)
         `(fn* ~args)))))

@@ -41,7 +41,7 @@ CResult datafy_native_fn(Wasm* wasm, Lval* lval_fn_native) {
                                 lval_fn_native->data.str);
   int lval_ptr = native_fn->data_offset;
   CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
-                 .data_offset = lval_ptr,
+                 .lval_ptr = lval_ptr,
                  .fn_table_index = native_fn->fn_table_index};
   return ret;
 }
@@ -53,14 +53,14 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
 
   int lval_ptr = c_fn->data_offset;
   CResult ret = {.ber = make_int32(wasm->module, lval_ptr),
-                 .data_offset = lval_ptr,
+                 .lval_ptr = lval_ptr,
                  .fn_table_index = c_fn->fn_table_index};
   return ret;
 }
 
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
-  printf("datafy root fn:\n");
-  lval_println(lval_fn);
+  /* printf("datafy root fn:\n"); */
+  /* lval_println(lval_fn); */
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
   int fn_table_index;
   if (cfn) {
@@ -83,7 +83,7 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
 
   // And return a wasm pointer so that it can be attached to the lval for future
   // reference
-  CResult ret = {.data_offset = lval_ptr,
+  CResult ret = {.lval_ptr = lval_ptr,
                  .fn_table_index = lval_fn->fn_table_index};
   return ret;
 }
@@ -96,7 +96,7 @@ CResult datafy_collection(Wasm* wasm, Lval* lval) {
     case LIST:
     case VECTOR:;
       int lval_ptr = inter_list(wasm, lval);
-      CResult ret = {.ber = make_ptr(wasm, lval_ptr), .data_offset = lval_ptr};
+      CResult ret = {.ber = make_ptr(wasm, lval_ptr), .lval_ptr = lval_ptr};
       return ret;
     case MAP:;
     case SET:;
@@ -188,7 +188,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         .ber = lval->type == SYS  // we have absolute data offsets for sys fns
                    ? make_int32(wasm->module, data_offset)
                    : make_ptr(wasm, data_offset),
-        .data_offset = data_offset,
+        .lval_ptr = data_offset,
         .fn_table_index = lval->fn_table_index};
     return _ret;
   }
@@ -233,11 +233,11 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
       else {
         int data_offset = inter_literal(wasm, lval);
         CResult _ret = {.ber = make_ptr(wasm, data_offset),
-                        .data_offset = data_offset};
+                        .lval_ptr = data_offset};
         ret = _ret;
       }
   }
-  lval->lval_ptr = ret.data_offset;
+  lval->lval_ptr = ret.lval_ptr;
   lval->fn_table_index = ret.fn_table_index;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */

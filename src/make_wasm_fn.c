@@ -143,7 +143,14 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   // This does nothing!!!
 
   // Params
-  Lenv* params_env = enter_env(wasm);
+  Lenv* ref_env = enter_env(wasm);
+
+  /* if (self) { */
+  /*   printf("setting self lval_ref %s\n", self); */
+  /*   Lval* lval_sym = make_lval_sym(retain(self)); */
+  /*   lenv_put(ref_env, lval_sym, make_lval_ref(context, SELF, -1)); */
+  /*   /\* release(lval_sym); *\/ */
+  /* } */
 
   int has_rest_arg = lambda->has_rest_arg;  // 1 based
   int min_param_count = has_rest_arg ? param_count - 1 : param_count;
@@ -154,7 +161,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
   while (i < min_param_count) {
     Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
     Lval* lval_sym = param->car;
-    lenv_put(params_env, lval_sym, lval_ref);
+    lenv_put(ref_env, lval_sym, lval_ref);
     release(lval_ref);
     param = param->cdr;
     i++;
@@ -164,7 +171,7 @@ FunctionData add_wasm_function(Wasm* wasm, Lenv* env, char* fn_name,
     param = param->cdr;
     Lval* lval_ref = make_lval_ref(context, PARAM, first_free_local + i);
     Lval* lval_sym = param->car;
-    lenv_put(params_env, lval_sym, lval_ref);
+    lenv_put(ref_env, lval_sym, lval_ref);
   }
   /* env_print(params_env); */
 

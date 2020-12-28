@@ -45,7 +45,7 @@ CResult inter_data_cell(Wasm* wasm, char* data_cell) {
   int wcell_ptr = wasm->__data_end + offset + slot_type_size;
 
   CResult ret = {/* .ber = make_ptr(wasm, wcell_ptr), */
-                 .data_offset = wcell_ptr};
+                 .lval_ptr = wcell_ptr};
   return ret;
 }
 
@@ -72,7 +72,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   char* data_cells[count];
   int i = 0;
   while (head) {
-    int v_ptr = datafy_lval(wasm, head->car).data_offset;
+    int v_ptr = datafy_lval(wasm, head->car).lval_ptr;
     char* data_cell = make_data_cell(wasm, head);
     *(int*)(data_cell + car_offset) = v_ptr;
     data_cells[i++] = data_cell;
@@ -83,7 +83,7 @@ int inter_list(Wasm* wasm, Lval* lval) {
   while (i--) {
     char* data_cell = data_cells[i];
     *(int*)(data_cell + cdr_offset) = cdr;
-    cdr = inter_data_cell(wasm, (char*)data_cell).data_offset;
+    cdr = inter_data_cell(wasm, (char*)data_cell).lval_ptr;
     last_cdr = cdr;
   }
   char* data_list = make_data_lval(wasm, lval, FTI_RTE_NOT_A_FN);
@@ -152,7 +152,7 @@ char* make_data_lval(Wasm* wasm, Lval* lval, int fn_table_index) {
     while (head) {
       Lval* lval = head->car;
       CResult result = datafy_lval(wasm, lval);
-      partial_ptrs[i++] = result.data_offset;
+      partial_ptrs[i++] = result.lval_ptr;
       head = head->cdr;
     }
     if (partial_count) {
