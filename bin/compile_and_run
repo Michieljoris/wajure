@@ -1,6 +1,6 @@
 #!/bin/bash
 
-out/lispy -c clj/compile.clj;
+out/wajure -c clj/compile.clj;
 ## get status ##
 status=$?
 echo "NODE VERSION:"

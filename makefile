@@ -42,13 +42,13 @@ ifeq ($(PLATFORM),wasm)
 	EXEC = node -v;wasm2wat -f --inline-imports --inline-exports out_wasm/runtime.wasm -o out_wasm/runtime.wat; node nodejs.js
 	# EXEC = wasm-opt out/lispy.wasm --print > out/lispy.wat
 else
-	BUILD_ARTIFACT = out/lispy
+	BUILD_ARTIFACT = out/wajure
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
 	COMPILE = bin/compile_and_run
-	# COMPILE = out/lispy -c clj/compile.clj;  ~/bin/node nodejs.js
-	# COMPILE = out/lispy -c clj/compile.clj;
-	RUN = out/lispy -r wajure/main.clj
+	# COMPILE = out/wajure -c clj/compile.clj;  ~/bin/node nodejs.js
+	# COMPILE = out/wajure -c clj/compile.clj;
+	RUN = out/wajure -r wajure/main.clj
 endif
 
 
@@ -89,4 +89,4 @@ $(BUILD_ARTIFACT): $(objs)
 
 
 clean:
-	rm -f $(objs) $(deps) $(BUILD_ARTIFACT)
+	rm -f $(objs) $(deps) $(BUILD_ARTIFACT) out_wasm/builtin.wasm
