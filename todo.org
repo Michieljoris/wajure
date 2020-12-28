@@ -131,7 +131,7 @@ In eval.c, eval_lambda_call:
   state->current_ns = old_ns;
 
   Maybe make sure things are included in the lval_fn's closure
-** fix self recursive calls
+** DONE fix self recursive calls
 ***  Since we point the closure of a fn to what it's in the env up to that point
     when the fn is defined the fn itself is not in the env yet. So (defn foo []
     (foo)) will not work since foo is not yet defined when we add the foo fn to

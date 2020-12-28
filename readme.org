@@ -24,6 +24,8 @@ TODO:
 - [x] str and read-str
 - [x] partial
 - [x] multi-arity fns
+- [x] self recursive fns
+- [x] keywords, vectors etc as fns
 - [ ] apply
 - [ ] loop/recur
 - [ ] try/throw/catch
@@ -57,7 +59,7 @@ reallocating.
 
 Env is a association list.
 
-WIP: getting the whole thing to compile to webassembly (without Emscripten!) so we have a lispy interpreter in the browser.
+WIP: getting the whole thing to compile to webassembly (without Emscripten!) so we have a wajure interpreter in the browser.
 
 Idea is to remove all dependencies on libc or any other libray which depends on
 libc since we don't have it in the browser. Or rather, as a challenge we try not
@@ -179,17 +181,17 @@ make run
 ** Build executable and compile clj/compile.clj
 make clean
 make compile
-** Build wasm runtime (compiles lispy interpreter to wasm):
+** Build wasm runtime (compiles wajure interpreter to wasm):
 PLATFORM=wasm make clean
 PLATFORM=wasm make runtime
 
 Alternatively:
 
-    out/lispy -r clj/run.clj
+    out/wajure -r clj/run.clj
 
 or
 
-    out/lispy -c clj/compile.clj
+    out/wajure -c clj/compile.clj
 
 There's a repl, but compilation is fast enough to make for a faster feedback loop.
 
@@ -200,22 +202,22 @@ There's a repl, but compilation is fast enough to make for a faster feedback loo
 
   add_compile_flag("-pthread")
 
-  otherwise you get an error that pthread_create symbol can't be found on running the executable lispy.
+  otherwise you get an error that pthread_create symbol can't be found on running the executable wajure.
 
   make uses an relative rpath but better is to install libbinaryen.so in
   /usr/lib or /usr/local/lib manually or run make install in the binaryen repo
   (after editing the CMakeLists.txt)
 
- - when using the included libbinaryen.so run lispy from the repo's root dir
+ - when using the included libbinaryen.so run wajure from the repo's root dir
    since it's linked relatively from there by rpath.
 
 * TODO:
-- expand lispy stdlib somewhat
+- expand wajure stdlib somewhat
 
   Would be nice:
 - persistent vectors and maps, but plists could function as such
 - namespaces, keywords, loop/recur, atoms, meta data, multimethods, sets, seq abstraction
-- interpreter/compiler in lispy!
+- interpreter/compiler in wajure!
 
 Plan is when memory management is under control with memory pools and reference counting to slowly build a compiler to webassembly and/or llvm IR.
 * references
