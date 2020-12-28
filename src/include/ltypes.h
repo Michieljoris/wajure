@@ -117,7 +117,7 @@ struct lval {
   Lval* cfn;
 
   // Compiler to wasm data
-  int data_offset;  // offset of datafied lval relative to module's data offset
+  int lval_ptr;  // offset of datafied lval relative to module's data offset
   Context* context;
   int fn_table_index;  // fn_table_index, local_index or closure offset.
   int local_index;

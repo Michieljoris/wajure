@@ -176,7 +176,7 @@ void write_symbol_table_line(Wasm* wasm, int type, char* fn_name,
 }
 
 void add_to_symbol_table(Wasm* wasm, char* sym, Lval* lval) {
-  int data_offset = lval->data_offset;
+  int data_offset = lval->lval_ptr;
   int fn_table_index = -1;
   int param_count = -1;
   int has_rest_arg = -1;

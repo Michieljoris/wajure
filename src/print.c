@@ -209,8 +209,8 @@ int _lval_print(void (*out)(char character, void* arg), void* arg, Lval* lval) {
           return fctprintf(out, arg, "P%d", lval->local_index);
         case LOCAL:
           return fctprintf(out, arg, "L%d", lval->local_index);
-        case SELF:
-          return fctprintf(out, arg, "SELF");
+          /* case SELF: */
+          /*   return fctprintf(out, arg, "SELF"); */
       }
 #endif
     case LVAL_ERR:

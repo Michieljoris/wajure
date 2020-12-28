@@ -152,7 +152,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   scoped char* global_name = NULL;
 
   /* if (lval->subtype == LTRUE) { */
-  printf("datafy ======================= wval_ptr: %d, ", lval->data_offset);
+  /* printf("datafy ======================= wval_ptr: %d, ", lval->data_offset);
+   */
   /*   printf("%s ", lval->ns->namespace); */
   /*   lval_println(lval); */
   /* } */
@@ -179,8 +180,8 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
 
   CResult ret = {};
   // A data offset in another module is of no use.
-  if (!lval_is_external && lval->data_offset > 0) {
-    int data_offset = lval->data_offset;
+  if (!lval_is_external && lval->lval_ptr > 0) {
+    int data_offset = lval->lval_ptr;
     /* printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->type)); */
     /* lval_println(lval); */
     CResult _ret = {
@@ -236,7 +237,7 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
         ret = _ret;
       }
   }
-  lval->data_offset = ret.data_offset;
+  lval->lval_ptr = ret.data_offset;
   lval->fn_table_index = ret.fn_table_index;
   /* printf("lval->wval_ptr: %d!!\n", lval->wval_ptr); */
   /* printf("------------------------- \n"); */

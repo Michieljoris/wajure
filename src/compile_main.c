@@ -90,7 +90,7 @@ void p_info(Namespace* ns) {
 // Not the best solution, better would be to separate compiler data from lvals
 // in a new datastructure, and just wipe that on every compile.
 void reset_lval(Lval* lval) {
-  lval->data_offset = 0;
+  lval->lval_ptr = 0;
   lval->fn_table_index = 0;
   lval->context = NULL;
   switch (lval->group) {
