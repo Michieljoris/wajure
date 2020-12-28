@@ -125,6 +125,7 @@ CResult compile_do_list(Wasm* wasm, Lval* lval_list, Ber init) {
 // can retrieve at runtime, because it's either a local var, a param or a closed
 // over var. So we insert the code to do this in place of the symbol.
 CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
+  int wval_param = 0;  // first param to fn is wval pointer
   /* Lval* lval_wasm_ref = lval_resolved_sym; */
   /* printf( */
   /*     "We've got a LVAL_REF (param, local or closed over binding)!!! "
@@ -150,6 +151,10 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
         Ber local = BinaryenLocalGet(wasm->module, lval_ref->local_index,
                                      BinaryenTypeInt32());
         return cresult(local);
+      }
+      case SELF: {
+        Ber wval_ptr = local_get_int32(wasm->module, wval_param);
+        return cresult(wval_ptr);
       }
       default:
         quit(wasm, "ERROR: Unknown lval_ref type: %d", lval_ref->type);
@@ -179,7 +184,6 @@ CResult compile_lval_ref(Wasm* wasm, char* symbol_str, Lval* lval_ref) {
     }
 
     // Retrieve closed over value at closure_index in closure block
-    int wval_param = 0;  // first param to fn is wval pointer
     Ber wval_ptr = local_get_int32(wasm->module, wval_param);
     Ber closure_ptr = get_wval_prop(wasm->module, wval_ptr, "closure");
     Ber load_closure_lval = BinaryenLoad(wasm->module, 4, 0, closure_index * 4,
@@ -213,6 +217,7 @@ CResult compile_local_lambda(Wasm* wasm, Cell* args) {
 
   char* lambda_name = number_fn_name(wasm, context->function_context->fn_name);
   lval_fn->data.str = lambda_name;
+  /* lval_fn->cname = lambda_name; */
   FunctionData function_data = add_local_lambda(wasm, lval_fn);
 
   // Which gives us info on the wasm fn's fn_table_index and which and

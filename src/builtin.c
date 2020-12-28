@@ -158,8 +158,9 @@ void add_c_fn_wrapper(Wasm* wasm, CFn c_fn) {
   c_fn.fn_table_index = add_fn_to_table(wasm, c_fn.wajure_fn_name);
 
   char* data_lval = make_data_lval(wasm, NULL, c_fn.fn_table_index);
+  int offset = reserve_data(wasm, lval_type_size);
   c_fn.data_offset =
-      inter_data_lval(wasm, data_lval) + wasm->builtins_data_start;
+      inter_data_lval(wasm, data_lval, offset) + wasm->builtins_data_start;
 
   write_symbol_table_line(wasm, LVAL_FUNCTION, c_fn.wajure_fn_name,
                           c_fn.data_offset, c_fn.fn_table_index, 1, 1);
@@ -192,7 +193,8 @@ void add_wasm_fns(Wasm* wasm) {
     wasm_fn.add_fn(wasm, wasm_fn.wasm_fn_name);
     add_native_fn_to_table(wasm, wasm_fn.wasm_fn_name, wasm_fn.fn_table_index);
     char* data_lval = make_data_lval(wasm, NULL, wasm_fn.fn_table_index);
-    int data_ptr = inter_data_lval(wasm, data_lval);
+    int offset = reserve_data(wasm, lval_type_size);
+    int data_ptr = inter_data_lval(wasm, data_lval, offset);
 
     // Make sure we set the mempool's slot's pointer to the data properly as
     // well

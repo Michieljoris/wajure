@@ -61,6 +61,12 @@ CResult datafy_sys_fn(Wasm* wasm, Lval* lval_fn_sys) {
 CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   /* printf("datafy root fn:\n"); */
   /* lval_println(lval_fn); */
+
+  // We set the lval_ptr on the lval_fn so that we don't try to datafy it again
+  // if we encounter it again while compiling the root fn
+  int data_offset = reserve_data(wasm, lval_type_size);
+  lval_fn->lval_ptr = data_offset + slot_type_size;
+
   Lval* cfn = lval_fn->cfn;  // only partial fns have a cfn
   int fn_table_index;
   if (cfn) {
@@ -79,7 +85,7 @@ CResult datafy_root_fn(Wasm* wasm, Lval* lval_fn) {
   char* data_lval =
       make_data_lval(wasm, lval_fn, wasm->__fn_table_end + fn_table_index);
 
-  int lval_ptr = inter_data_lval(wasm, data_lval);
+  int lval_ptr = inter_data_lval(wasm, data_lval, data_offset);
 
   // And return a wasm pointer so that it can be attached to the lval for future
   // reference
@@ -181,14 +187,14 @@ CResult datafy_lval(Wasm* wasm, Lval* lval) {
   CResult ret = {};
   // A data offset in another module is of no use.
   if (!lval_is_external && lval->lval_ptr > 0) {
-    int data_offset = lval->lval_ptr;
+    int lval_ptr = lval->lval_ptr;
     /* printf("ah!!!!!! %s\n", lval_type_constant_to_name(lval->type)); */
     /* lval_println(lval); */
     CResult _ret = {
         .ber = lval->type == SYS  // we have absolute data offsets for sys fns
-                   ? make_int32(wasm->module, data_offset)
-                   : make_ptr(wasm, data_offset),
-        .lval_ptr = data_offset,
+                   ? make_int32(wasm->module, lval_ptr)
+                   : make_ptr(wasm, lval_ptr),
+        .lval_ptr = lval_ptr,
         .fn_table_index = lval->fn_table_index};
     return _ret;
   }

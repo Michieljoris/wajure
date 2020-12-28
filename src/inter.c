@@ -49,21 +49,24 @@ CResult inter_data_cell(Wasm* wasm, char* data_cell) {
   return ret;
 }
 
-int inter_data_lval(Wasm* wasm, char* data_lval) {
+int inter_data_lval(Wasm* wasm, char* data_lval, int data_offset) {
   *(int*)(data_lval + data_p_offset) =
-      wasm->__data_end + wasm->data_offset + slot_type_size;
-  int offset = add_bytes_to_data(wasm, data_lval, lval_type_size);
+      wasm->__data_end + data_offset + slot_type_size;
+  /* int offset = add_bytes_to_data(wasm, data_lval, lval_type_size); */
+  /* int offset = reserve_data(wasm, lval_type_size); */
+  set_data(wasm, data_lval, lval_type_size, data_offset);
   add_to_offset_list(&wasm->lval_offsets, &wasm->lval_offsets_count,
-                     &wasm->lval_offsets_allocated, offset);
+                     &wasm->lval_offsets_allocated, data_offset);
   free(data_lval);
-  int wval_ptr = wasm->__data_end + offset + slot_type_size;
+  int wval_ptr = wasm->__data_end + data_offset + slot_type_size;
   return wval_ptr;
 }
 
 // Primitive types (int, true, false, nil, str)
 int inter_lval(Wasm* wasm, Lval* lval) {
   char* data_lval = make_data_lval(wasm, lval, FTI_RTE_NOT_A_FN);
-  return inter_data_lval(wasm, data_lval);
+  int offset = reserve_data(wasm, lval_type_size);
+  return inter_data_lval(wasm, data_lval, offset);
 }
 
 int inter_list(Wasm* wasm, Lval* lval) {
@@ -90,7 +93,8 @@ int inter_list(Wasm* wasm, Lval* lval) {
 
   *(int*)(data_list + d_offset) = cdr;
   /* printf("cdr: %d\n", cdr); */
-  int ret = inter_data_lval(wasm, data_list);
+  int offset = reserve_data(wasm, lval_type_size);
+  int ret = inter_data_lval(wasm, data_list, offset);
   return ret;
 }
 
