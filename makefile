@@ -46,9 +46,9 @@ else
 	CFLAGS = $(X86FLAGS)
 	LDFLAGS = $(X86LDFLAGS)
 	COMPILE = bin/compile_and_run
-	# COMPILE = out/wajure -c clj/compile.clj;  ~/bin/node nodejs.js
-	# COMPILE = out/wajure -c clj/compile.clj;
-	RUN = out/wajure -r wajure/main.clj
+	# COMPILE = out/wajure -c;  ~/bin/node nodejs.js
+	# COMPILE = out/wajure -c;
+	RUN = out/wajure -r
 endif
 
 

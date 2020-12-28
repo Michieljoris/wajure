@@ -54,14 +54,12 @@ int main(int argc, char** argv) {
   printf("making builtin module\n");
   make_builtin_module(config->out_wasm, config->builtin);
   /* printf("DONE making builtin module\n"); */
-  for (int i = 2; i < argc; ++i) {
-    if (config->do_compile) {
-      printf("COMPILING!!!\n");
-      compile_main();
-    } else {
-      printf("INTERPRETING!!!\n");
-      run();
-    }
+  if (config->do_compile) {
+    printf("COMPILING!!!\n");
+    compile_main();
+  } else {
+    printf("INTERPRETING!!!\n");
+    run();
   }
   printf("Back in main\n");
   free(state);

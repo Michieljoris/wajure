@@ -1,6 +1,6 @@
 #!/bin/bash
 
-out/wajure -c clj/compile.clj;
+out/wajure -c
 ## get status ##
 status=$?
 echo "NODE VERSION:"

@@ -80,6 +80,36 @@
                (cons n (bix2 (- n 1)))))]
   (t (= (foobar 5) (list 5 4 3 2 1)) true))
 
+
+(defn bix [n]
+  (when (> n 0)
+    (cons n (bix (- n 1)))))
+
+(def bix2
+  (fn bix3 [n]
+    (when (> n 0)
+      (cons n (bix3 (- n 1))))))
+
+(def bix4
+  (fn [n]
+    (when (> n 0)
+      (cons n (bix4 (- n 1))))))
+
+(defn bix5 [n]
+  (let [b bix5]
+    (when (> n 0)
+      (cons n (b (- n 1))))))
+
+
+
+
+(defn main [& args]
+  (t  (= (bix 5) (list 5 4 3 2 1)) true)
+  (t  (= (bix2 5) (list 5 4 3 2 1)) true)
+  (t  (= (bix4 5) (list 5 4 3 2 1)) true)
+  (t  (= (bix5 5) (list 5 4 3 2 1)) true)
+  )
+
 ** clean up and comment all of code
 ** fix all memory leaks for interpreter, compiler and wasm
 *** release rest arg list when f in (f 1 2 3) is a lval_ref and has a rest arg
@@ -151,9 +181,28 @@ last arg is a list (put a check in if it's a lval_compiler)
    fns for that first.
 ** reduce,
 map is special case of reduce
+** map
 ** gensym and #foo in macro
 http://clojure-doc.org/articles/language/macros.html
 ** ----------------------------
+** optimize lval_refs
+We can sometimes know what lval_refs actually are, we don't always have to
+retrieve by local index and then get the data out of them.
+
+For instance the 'self' ref can probably be called by fn_table_index if not by
+name directly
+
+Also when assigning literals to a lval_ref we might as well substitute the
+literal iso retrieving the wval by local index.
+
+Same when fns are assigned directly to a lval_ref/local and we want to call them
+we can call by name I think.
+
+Also no need to assign a lval_ref/local/wval to another local when it already is
+retrieved by local index.
+
+Do assign closure to a local because the are retrieved with a load and a
+local_get is faster.
 ** replace list implementations of maps, sets and vectors with permanent data structures other than list
 -> vector and map hamt.
 ** loop/recur
@@ -645,3 +694,5 @@ limit args_count
 add call_table  args_count
 load fn_table_index from call_table
 indirect call
+
+* xestro
